@@ -1,13 +1,12 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
-import Homepage from "../pages/public/Homepage";
 import AuthLayout from "../components/layouts/AuthLayout";
+import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import LoginPage from "../pages/auth/LoginPage";
-import RegisterSelectionPage from "../pages/auth/RegisterSelectionPage";
-import RegisterPersonalPage from "../pages/auth/RegisterPersonalPage";
 import RegisterBusinessPage from "../pages/auth/RegisterBusinessPage";
-// import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage'; // Bạn có thể tự tạo file này bằng logic State tương tự
+import RegisterPersonalPage from "../pages/auth/RegisterPersonalPage";
+import RegisterSelectionPage from "../pages/auth/RegisterSelectionPage";
+import Homepage from "../pages/public/Homepage";
 
 const AppRouter = () => {
   return (
@@ -27,7 +26,7 @@ const AppRouter = () => {
           path="/auth/register/business"
           element={<RegisterBusinessPage />}
         />
-        {/* <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} /> */}
+        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       </Route>
     </Routes>
   );
