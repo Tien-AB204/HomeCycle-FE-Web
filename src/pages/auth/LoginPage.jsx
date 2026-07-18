@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { ROLES } from "../../constants/roles"; // Import ROLES để so sánh quyền
+import { useAuth } from "../../hooks/useAuth"; // Import hook useAuth
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Lấy hàm login từ Context
+
   const [step, setStep] = useState(1); // 1: Email, 2: Password
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,11 +19,27 @@ const LoginPage = () => {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    // Chỗ này sau này gọi API thật, có token thì save context
-    console.log("Đăng nhập với:", email, password);
-    // Lưu trạng thái đăng nhập ảo vào trình duyệt
-    localStorage.setItem("isLoggedIn", "true");
-    navigate("/"); // Về trang chủ
+
+    // Gọi hàm login từ AuthContext
+    const loggedInUser = login(email, password);
+
+    if (loggedInUser) {
+      console.log("Đăng nhập thành công với quyền:", loggedInUser.role);
+
+      // Lưu trạng thái đăng nhập ảo vào trình duyệt (Tùy chọn)
+      localStorage.setItem("isLoggedIn", "true");
+
+      // PHÂN LUỒNG ĐIỀU HƯỚNG DỰA TRÊN ROLE
+      if (loggedInUser.role === ROLES.MODERATOR) {
+        navigate("/mod/posts"); // Chuyển hướng Moderator
+      } else if (loggedInUser.role === ROLES.ADMIN) {
+        navigate("/admin"); // Chuyển hướng Admin (nếu có sau này)
+      } else {
+        navigate("/"); // Chuyển hướng người dùng bình thường về trang chủ
+      }
+    } else {
+      alert("Email hoặc mật khẩu không chính xác!");
+    }
   };
 
   return (
