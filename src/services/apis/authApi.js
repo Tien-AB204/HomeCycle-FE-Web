@@ -1,28 +1,92 @@
-﻿import axiosClient from './axiosClient';
+﻿import axiosClient from "./axiosClient";
 
 const authApi = {
-  login: ({ email, password }) =>
-    axiosClient.post('/auth/login', { email, password }),
+  /**
+   * Đăng nhập bằng email và mật khẩu.
+   */
+  login: ({ email, password }) => {
+    return axiosClient.post("/auth/login", {
+      email,
+      password,
+    });
+  },
 
-  refreshToken: (refreshToken) =>
-    axiosClient.post('/auth/refresh-token', { refreshToken }),
+  /**
+   * Gửi OTP xác thực email đăng ký.
+   */
+  sendOtp: (email) => {
+    return axiosClient.post("/auth/send-otp", {
+      email,
+    });
+  },
 
-  googleLogin: (idToken) =>
-    axiosClient.post('/auth/google-login', { idToken }),
+  /**
+   * Xác thực OTP.
+   *
+   * Response thành công:
+   * {
+   *   success: true,
+   *   message: string,
+   *   registrationToken: string
+   * }
+   */
+  verifyOtp: ({ email, otp }) => {
+    return axiosClient.post("/auth/verify-otp", {
+      email,
+      otp,
+    });
+  },
 
-  sendOtp: (email) =>
-    axiosClient.post('/auth/send-otp', { email }),
+  /**
+   * Đăng ký tài khoản cá nhân.
+   *
+   * registrationToken được nhận từ API verify-otp.
+   * formData phải là instance của FormData.
+   */
+  registerPersonal: (formData, registrationToken) => {
+    if (!(formData instanceof FormData)) {
+      throw new TypeError("Dữ liệu đăng ký phải là FormData.");
+    }
 
-  verifyOtp: ({ email, otp }) =>
-    axiosClient.post('/auth/verify-otp', { email, otp }),
+    if (!registrationToken) {
+      throw new Error("Thiếu registration token.");
+    }
 
-  registerPersonal: (formData, registrationToken) =>
-    axiosClient.post('/Personal/Register', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        ...(registrationToken ? { 'X-Registration-Token': registrationToken } : {}),
-      },
-    }),
+    return axiosClient.post(
+      "/auth/Personal/Register", formData, 
+      {
+        headers: {
+        "Content-Type": "multipart/form-data",
+        "X-Registration-Token": registrationToken,
+        },
+      }
+    );
+  },
+
+  /**
+   * Đăng nhập bằng Google.
+   */
+  googleLogin: (idToken) => {
+    return axiosClient.post("/auth/google-login", {
+      idToken,
+    });
+  },
+
+  /**
+   * Làm mới access token.
+   *
+   * Backend sử dụng refresh-token rotation nên response sẽ trả về
+   * cả accessToken mới và refreshToken mới.
+   */
+  refreshToken: (refreshToken) => {
+    if (!refreshToken) {
+      throw new Error("Thiếu refresh token.");
+    }
+
+    return axiosClient.post("/auth/refresh-token", {
+      refreshToken,
+    });
+  },
 };
 
 export default authApi;
