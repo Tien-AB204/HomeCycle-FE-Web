@@ -1,76 +1,82 @@
-import React from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth'; // Import hook xác thực
+﻿import React from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import {
+  DashboardOutlined,
+  IdcardOutlined,
+  ProfileOutlined,
+  WalletOutlined,
+  ShoppingOutlined,
+  CalendarOutlined,
+  ExceptionOutlined,
+  CarOutlined,
+  FlagOutlined,
+} from '@ant-design/icons';
 
 const ModLayout = () => {
-  const { logout } = useAuth(); // Lấy hàm đăng xuất từ Context
-  const navigate = useNavigate(); // Hook dùng để chuyển hướng trang
+  const location = useLocation();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
-  // Hàm xử lý khi bấm nút Đăng xuất
   const handleLogout = () => {
-    localStorage.setItem("isLoggedIn", "false");
-
-    // Ép trang web tự động reload hoặc chuyển hướng về trang chủ để reset lại State
-    window.location.href = "/"; 
+    logout();
+    navigate('/');
   };
 
+  const navigation = [
+    { name: 'Tổng quan', path: '/mod/dashboard', icon: <DashboardOutlined /> },
+    { name: 'Duyệt hồ sơ', path: '/mod/verification', icon: <IdcardOutlined /> },
+    { name: 'Kiểm duyệt bài đăng', path: '/mod/posts', icon: <ProfileOutlined /> },
+    { name: 'Yêu cầu rút tiền', path: '/mod/withdrawals', icon: <WalletOutlined /> },
+    { name: 'Quản lý giao dịch', path: '/mod/transactions', icon: <ShoppingOutlined /> },
+    { name: 'Quản lý lịch hẹn', path: '/mod/schedules', icon: <CalendarOutlined /> },
+    { name: 'Xử lý tranh chấp', path: '/mod/disputes', icon: <ExceptionOutlined /> },
+    { name: 'Sự cố vận chuyển', path: '/mod/shipping-issues', icon: <CarOutlined /> },
+    { name: 'Đánh giá vi phạm', path: '/mod/reports', icon: <FlagOutlined /> },
+  ];
+
   return (
-    <div className="flex h-screen bg-[#f8f9fa] overflow-hidden">
-      
-      {/* SIDEBAR BÊN TRÁI */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col">
-        {/* Logo / Tên hệ thống */}
-        <div className="h-16 flex items-center justify-center border-b border-slate-700">
-          <h1 className="text-xl font-bold tracking-wider">HomeCycle <span className="text-teal-400 text-sm">MOD</span></h1>
+    <div className="flex h-screen bg-[#f8fafc] font-sans">
+      <aside className="w-[250px] bg-[#1a202c] text-white flex flex-col shrink-0 shadow-lg z-20">
+        <div className="h-20 flex items-center px-8">
+          <h1 className="text-2xl font-bold tracking-wide">
+            HomeCycle <span className="text-[#0aa679]">MOD</span>
+          </h1>
         </div>
 
-        {/* Menu Điều hướng */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          <NavLink 
-            to="/mod/dashboard"
-            className={({ isActive }) => 
-              `block px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-teal-600' : 'hover:bg-slate-800'}`
-            }
-          >
-            Tổng quan
-          </NavLink>
-          
-          <NavLink 
-            to="/mod/posts"
-            className={({ isActive }) => 
-              `block px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-teal-600' : 'hover:bg-slate-800'}`
-            }
-          >
-            Duyệt bài viết
-          </NavLink>
-
-          <NavLink 
-            to="/mod/businesses"
-            className={({ isActive }) => 
-              `block px-4 py-3 rounded-lg transition-colors ${isActive ? 'bg-teal-600' : 'hover:bg-slate-800'}`
-            }
-          >
-            Duyệt doanh nghiệp
-          </NavLink>
+        <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+          {navigation.map((item) => {
+            const isActive = location.pathname.includes(item.path);
+            return (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-[#0aa679] text-white font-medium shadow-md'
+                    : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                }`}
+              >
+                <span className="text-lg flex items-center">{item.icon}</span>
+                <span className="text-[15px]">{item.name}</span>
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Đăng xuất */}
-        <div className="p-4 border-t border-slate-700">
-          <button 
-            onClick={handleLogout} // Gắn hàm xử lý vào nút
-            className="w-full py-2 px-4 bg-slate-800 hover:bg-red-600 transition-colors rounded text-sm font-medium"
+        <div className="p-4 mt-auto border-t border-gray-800">
+          <button
+            onClick={handleLogout}
+            className="w-full py-3 bg-[#2d3748] hover:bg-red-600 text-gray-200 hover:text-white text-sm font-medium rounded-lg transition-colors border border-gray-600/50 hover:border-red-500"
           >
             Đăng xuất
           </button>
         </div>
       </aside>
 
-      {/* KHU VỰC NỘI DUNG CHÍNH (BÊN PHẢI) */}
-      <main className="flex-1 overflow-y-auto">
-        {/* Outlet là nơi các trang như PostModerationPage sẽ được render vào */}
+      <main className="flex-1 overflow-auto relative">
         <Outlet />
       </main>
-      
     </div>
   );
 };
