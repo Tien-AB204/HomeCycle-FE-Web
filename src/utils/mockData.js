@@ -132,6 +132,16 @@ export const mockPersonalPosts = [
 
 export const mockUsers = [
   {
+    id: "u_admin_001",
+    email: "admin@homecycle.vn",
+    password: "123", // Mật khẩu test cho Admin
+    fullName: "Nguyễn Quản Trị",
+    role: ROLES.ADMIN,
+    avatar: "https://ui-avatars.com/api/?name=Admin&background=16a34a&color=fff",
+    isActive: true,
+  },
+
+  {
     id: "u_mod_001",
     email: "mod@homecycle.vn",
     password: "123", // Dùng để test form đăng nhập
