@@ -1,26 +1,53 @@
-// src/contexts/AuthContext.jsx
-import React, { createContext, useState } from 'react';
-import { mockUsers } from '../utils/mockData'; // Đảm bảo đường dẫn đúng
+﻿import React, { createContext, useState } from 'react';
+import authApi from '../services/apis/authApi';
 
 export const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
-  // Ban đầu chưa ai đăng nhập nên user là null
-  const [user, setUser] = useState(null);
+const getStoredUser = () => {
+  try {
+    const raw = localStorage.getItem('user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
 
-  // Hàm xử lý đăng nhập thực tế (Tạm dùng mockUsers thay cho gọi API backend)
-  const login = (email, password) => {
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password);
-    if (foundUser) {
-      setUser(foundUser);
-      return foundUser; // BƯỚC SỬA: Trả về nguyên object user để LoginPage biết role là gì
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(getStoredUser());
+
+  const saveAuth = ({ user: userData, accessToken, refreshToken }) => {
+    if (accessToken) {
+      localStorage.setItem('accessToken', accessToken);
     }
-    return null; // BƯỚC SỬA: Trả về null nếu sai email/password
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
+    }
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
   };
 
-  const logout = () => setUser(null);
+  const login = async (email, password) => {
+    const authResult = await authApi.login({ email, password });
 
-  // Trạng thái true/false xem đã đăng nhập chưa
+    const userInfo = authResult?.user || authResult?.data || authResult;
+    const accessToken = authResult?.accessToken || authResult?.token || '';
+    const refreshToken = authResult?.refreshToken || authResult?.refresh_token || '';
+
+    if (!userInfo) {
+      throw new Error('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+    }
+
+    saveAuth({ user: userInfo, accessToken, refreshToken });
+    return userInfo;
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+  };
+
   const isAuthenticated = !!user;
 
   return (
