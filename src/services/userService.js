@@ -1,26 +1,110 @@
-// src/services/userService.js
-import axiosClient from './apis/axiosClient';
+import axiosClient from "./apis/axiosClient";
 
 export const userService = {
   /**
-   * 1. Lấy thông tin hồ sơ của user đang đăng nhập
-   * Lưu ý: Thay đổi '/users/me' thành endpoint chính xác của Backend nhóm bạn
+   * Lấy hồ sơ người dùng đang đăng nhập.
    */
   getProfile: () => {
-    return axiosClient.get('/personals/me'); 
+    return axiosClient.get(
+      "/personal-profiles/me",
+    );
   },
 
   /**
-   * 2. Cập nhật thông tin cá nhân cơ bản
+   * Cập nhật thông tin cá nhân cơ bản.
    */
-  updateProfile: (data) => {
-    return axiosClient.put('/personals/me', data);
+  updateProfile: ({
+    username,
+    fullName,
+    phoneNumber,
+    address,
+  }) => {
+    return axiosClient.put(
+      "/personal-profiles/me/profile",
+      {
+        username,
+        fullName,
+        phoneNumber,
+        address,
+      },
+    );
   },
 
   /**
-   * 3. Cập nhật thông tin tài khoản ngân hàng
+   * Cập nhật thông tin giấy tờ tùy thân.
    */
-  updateBankInfo: (data) => {
-    return axiosClient.put('/personals/me/bank', data);
-  }
+  updateIdentity: ({
+    representativeCode,
+    representativeName,
+    representativeDob,
+    representativeAddress,
+    frontIdCardFile,
+    backIdCardFile,
+  }) => {
+    const payload = new FormData();
+
+    payload.append(
+      "RepresentativeCode",
+      representativeCode,
+    );
+
+    payload.append(
+      "RepresentativeName",
+      representativeName,
+    );
+
+    payload.append(
+      "RepresentativeDob",
+      representativeDob,
+    );
+
+    payload.append(
+      "RepresentativeAddress",
+      representativeAddress,
+    );
+
+    if (frontIdCardFile) {
+      payload.append(
+        "FrontIDCardImage",
+        frontIdCardFile,
+      );
+    }
+
+    if (backIdCardFile) {
+      payload.append(
+        "BackIDCardImage",
+        backIdCardFile,
+      );
+    }
+
+    return axiosClient.put(
+      "/personal-profiles/me/identity",
+      payload,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+  },
+
+  /**
+   * Cập nhật thông tin tài khoản ngân hàng.
+   */
+  updateBank: ({
+    bankCode,
+    bankName,
+    accountNumber,
+    accountName,
+  }) => {
+    return axiosClient.put(
+      "/personal-profiles/me/bank",
+      {
+        bankCode,
+        bankName,
+        accountNumber,
+        accountName,
+      },
+    );
+  },
 };
