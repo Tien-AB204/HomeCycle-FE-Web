@@ -2,7 +2,7 @@ import axiosClient from "./apis/axiosClient";
 
 export const userService = {
   /**
-   * Lấy hồ sơ người dùng đang đăng nhập.
+   * Lấy hồ sơ cá nhân đang đăng nhập.
    */
   getProfile: () => {
     return axiosClient.get(
@@ -31,7 +31,36 @@ export const userService = {
   },
 
   /**
-   * Cập nhật thông tin giấy tờ tùy thân.
+   * Cập nhật ảnh đại diện.
+   */
+  updateAvatar: (avatarFile) => {
+    if (!avatarFile) {
+      throw new Error(
+        "Vui lòng chọn ảnh đại diện.",
+      );
+    }
+
+    const payload = new FormData();
+
+    payload.append(
+      "AvatarUrl",
+      avatarFile,
+    );
+
+    return axiosClient.patch(
+      "/personal-profiles/me/avatar",
+      payload,
+      {
+        headers: {
+          "Content-Type":
+            "multipart/form-data",
+        },
+      },
+    );
+  },
+
+  /**
+   * Cập nhật giấy tờ tùy thân.
    */
   updateIdentity: ({
     representativeCode,
@@ -82,7 +111,8 @@ export const userService = {
       payload,
       {
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type":
+            "multipart/form-data",
         },
       },
     );
