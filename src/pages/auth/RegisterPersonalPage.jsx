@@ -5,7 +5,8 @@ import authApi from "../../services/apis/authApi";
 const STEPS = {
   EMAIL: "EMAIL",
   OTP: "OTP",
-  PROFILE: "PROFILE",
+  BASIC: "BASIC",
+  OPTIONAL: "OPTIONAL",
   SUCCESS: "SUCCESS",
 };
 
@@ -24,20 +25,26 @@ const INITIAL_FORM = {
   confirmPassword: "",
   fullName: "",
   phoneNumber: "",
+
   representativeCode: "",
   representativeName: "",
   representativeDob: "",
   representativeAddress: "",
+
   bankCode: "",
   bankName: "",
   accountNumber: "",
   accountName: "",
+
   avatarFile: null,
   frontIdCardFile: null,
   backIdCardFile: null,
 };
 
-const getApiErrorMessage = (error, fallbackMessage) => {
+const getApiErrorMessage = (
+  error,
+  fallbackMessage,
+) => {
   return (
     error?.response?.data?.message ||
     error?.response?.data?.error?.message ||
@@ -78,10 +85,13 @@ const TextInput = ({
     <div>
       <label
         htmlFor={id}
-        className="block text-xs font-bold text-slate-800 mb-1"
+        className="mb-1 block text-xs font-bold text-slate-800"
       >
         {label}
-        {required && <span className="text-red-500"> *</span>}
+
+        {required && (
+          <span className="text-red-500"> *</span>
+        )}
       </label>
 
       <input
@@ -94,7 +104,7 @@ const TextInput = ({
         placeholder={placeholder}
         autoComplete={autoComplete}
         minLength={minLength}
-        className="w-full border border-slate-300 rounded-md py-2.5 px-3 text-sm focus:outline-none focus:border-[#244f4d] focus:ring-1 focus:ring-[#244f4d]"
+        className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
       />
     </div>
   );
@@ -105,17 +115,15 @@ const FileInput = ({
   label,
   name,
   onChange,
-  required = false,
   description,
 }) => {
   return (
     <div>
       <label
         htmlFor={id}
-        className="block text-xs font-bold text-slate-800 mb-1"
+        className="mb-1 block text-xs font-bold text-slate-800"
       >
         {label}
-        {required && <span className="text-red-500"> *</span>}
       </label>
 
       <input
@@ -123,13 +131,14 @@ const FileInput = ({
         name={name}
         type="file"
         accept="image/jpeg,image/png,image/webp"
-        required={required}
         onChange={onChange}
         className="block w-full rounded-md border border-slate-300 bg-white text-sm text-slate-600 file:mr-4 file:border-0 file:bg-[#e6f2f1] file:px-4 file:py-2.5 file:font-medium file:text-[#244f4d] hover:file:bg-[#d7ebe9]"
       />
 
       {description && (
-        <p className="mt-1 text-xs text-slate-500">{description}</p>
+        <p className="mt-1 text-xs text-slate-500">
+          {description}
+        </p>
       )}
     </div>
   );
@@ -141,14 +150,29 @@ const RegisterPersonalPage = () => {
   const [step, setStep] = useState(STEPS.EMAIL);
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
-  const [registrationToken, setRegistrationToken] = useState("");
-  const [form, setForm] = useState(INITIAL_FORM);
+  const [
+    registrationToken,
+    setRegistrationToken,
+  ] = useState("");
 
-  const [loadingAction, setLoadingAction] = useState("");
+  const [form, setForm] =
+    useState(INITIAL_FORM);
+
+  const [loadingAction, setLoadingAction] =
+    useState("");
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [registeredUser, setRegisteredUser] = useState(null);
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
+  const [
+    resendCooldown,
+    setResendCooldown,
+  ] = useState(0);
+  const [
+    registeredUser,
+    setRegisteredUser,
+  ] = useState(null);
 
   const isLoading = loadingAction !== "";
 
@@ -192,7 +216,10 @@ const RegisterPersonalPage = () => {
       backIdCardFile: "Ảnh CCCD mặt sau",
     };
 
-    const validationError = validateImage(file, labels[name]);
+    const validationError = validateImage(
+      file,
+      labels[name],
+    );
 
     if (validationError) {
       setError(validationError);
@@ -212,28 +239,37 @@ const RegisterPersonalPage = () => {
     event.preventDefault();
     clearMessages();
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = email
+      .trim()
+      .toLowerCase();
 
     if (!normalizedEmail) {
-      setError("Vui lòng nhập địa chỉ email.");
+      setError(
+        "Vui lòng nhập địa chỉ email.",
+      );
       return;
     }
 
     setLoadingAction("SEND_OTP");
 
     try {
-      const response = await authApi.sendOtp(normalizedEmail);
+      const response =
+        await authApi.sendOtp(normalizedEmail);
 
       setEmail(normalizedEmail);
       setOtp("");
       setRegistrationToken("");
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      setResendCooldown(
+        RESEND_COOLDOWN_SECONDS,
+      );
       setSuccessMessage(
-        response?.message || "Mã OTP đã được gửi đến email của bạn.",
+        response?.message ||
+          "Mã OTP đã được gửi đến email của bạn.",
       );
       setStep(STEPS.OTP);
     } catch (sendOtpError) {
-      const errorCode = sendOtpError?.response?.data?.code;
+      const errorCode =
+        sendOtpError?.response?.data?.code;
 
       if (errorCode === "AUTH_EMAIL_EXISTS") {
         setError(
@@ -261,12 +297,16 @@ const RegisterPersonalPage = () => {
     setLoadingAction("RESEND_OTP");
 
     try {
-      const response = await authApi.sendOtp(email);
+      const response =
+        await authApi.sendOtp(email);
 
       setOtp("");
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      setResendCooldown(
+        RESEND_COOLDOWN_SECONDS,
+      );
       setSuccessMessage(
-        response?.message || "Mã OTP mới đã được gửi.",
+        response?.message ||
+          "Mã OTP mới đã được gửi.",
       );
     } catch (resendError) {
       setError(
@@ -287,30 +327,39 @@ const RegisterPersonalPage = () => {
     const normalizedOtp = otp.trim();
 
     if (!/^\d{6}$/.test(normalizedOtp)) {
-      setError("Mã OTP phải gồm đúng 6 chữ số.");
+      setError(
+        "Mã OTP phải gồm đúng 6 chữ số.",
+      );
       return;
     }
 
     setLoadingAction("VERIFY_OTP");
 
     try {
-      const response = await authApi.verifyOtp({
-        email,
-        otp: normalizedOtp,
-      });
+      const response =
+        await authApi.verifyOtp({
+          email,
+          otp: normalizedOtp,
+        });
 
-      if (!response?.success || !response?.registrationToken) {
+      if (
+        !response?.success ||
+        !response?.registrationToken
+      ) {
         throw new Error(
           response?.message ||
             "Không nhận được registration token từ máy chủ.",
         );
       }
 
-      setRegistrationToken(response.registrationToken);
-      setSuccessMessage(
-        response.message || "Email đã được xác thực thành công.",
+      setRegistrationToken(
+        response.registrationToken,
       );
-      setStep(STEPS.PROFILE);
+      setSuccessMessage(
+        response.message ||
+          "Email đã được xác thực thành công.",
+      );
+      setStep(STEPS.BASIC);
     } catch (verifyError) {
       setError(
         getApiErrorMessage(
@@ -323,41 +372,205 @@ const RegisterPersonalPage = () => {
     }
   };
 
-  const handleChangeEmail = () => {
-    clearMessages();
-    setOtp("");
-    setRegistrationToken("");
-    setResendCooldown(0);
-    setStep(STEPS.EMAIL);
-  };
-
-  const validateRegistrationForm = () => {
+  const validateBasicInformation = () => {
     if (!registrationToken) {
       return "Phiên xác thực email không hợp lệ. Vui lòng xác thực lại OTP.";
+    }
+
+    if (form.username.trim().length < 3) {
+      return "Tên đăng nhập phải có ít nhất 3 ký tự.";
+    }
+
+    if (!form.fullName.trim()) {
+      return "Vui lòng nhập họ và tên.";
     }
 
     if (form.password.length < 6) {
       return "Mật khẩu phải có ít nhất 6 ký tự.";
     }
 
-    if (form.password !== form.confirmPassword) {
+    if (
+      form.password !== form.confirmPassword
+    ) {
       return "Mật khẩu và xác nhận mật khẩu không khớp.";
     }
 
-    const phoneNumber = form.phoneNumber.trim();
-
-    if (!/^[0-9]{9,11}$/.test(phoneNumber)) {
+    if (
+      !/^[0-9]{9,11}$/.test(
+        form.phoneNumber.trim(),
+      )
+    ) {
       return "Số điện thoại phải gồm từ 9 đến 11 chữ số.";
     }
 
+    return "";
+  };
+
+  const handleContinueToOptional = (
+    event,
+  ) => {
+    event.preventDefault();
+    clearMessages();
+
+    const validationError =
+      validateBasicInformation();
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      representativeName:
+        currentForm.representativeName ||
+        currentForm.fullName,
+      accountName:
+        currentForm.accountName ||
+        currentForm.fullName,
+    }));
+
+    setStep(STEPS.OPTIONAL);
+  };
+
+  const appendOptionalText = (
+    payload,
+    fieldName,
+    value,
+  ) => {
+    const normalizedValue = value?.trim();
+
+    if (normalizedValue) {
+      payload.append(
+        fieldName,
+        normalizedValue,
+      );
+    }
+  };
+
+  const createRegistrationPayload = (
+    includeOptionalInformation,
+  ) => {
+    const payload = new FormData();
+
+    /*
+     * Bốn thông tin bắt buộc.
+     */
+    payload.append(
+      "Username",
+      form.username.trim(),
+    );
+    payload.append(
+      "Password",
+      form.password,
+    );
+    payload.append(
+      "FullName",
+      form.fullName.trim(),
+    );
+    payload.append(
+      "PhoneNumber",
+      form.phoneNumber.trim(),
+    );
+
+    if (!includeOptionalInformation) {
+      return payload;
+    }
+
+    /*
+     * Chỉ append field tùy chọn khi có dữ liệu.
+     */
+    appendOptionalText(
+      payload,
+      "RepresentativeCode",
+      form.representativeCode,
+    );
+
+    appendOptionalText(
+      payload,
+      "RepresentativeName",
+      form.representativeName,
+    );
+
+    appendOptionalText(
+      payload,
+      "RepresentativeDob",
+      form.representativeDob,
+    );
+
+    appendOptionalText(
+      payload,
+      "RepresentativeAddress",
+      form.representativeAddress,
+    );
+
+    appendOptionalText(
+      payload,
+      "BankCode",
+      form.bankCode,
+    );
+
+    appendOptionalText(
+      payload,
+      "BankName",
+      form.bankName,
+    );
+
+    appendOptionalText(
+      payload,
+      "AccountNumber",
+      form.accountNumber,
+    );
+
+    appendOptionalText(
+      payload,
+      "AccountName",
+      form.accountName,
+    );
+
+    if (form.avatarFile) {
+      payload.append(
+        "AvatarUrl",
+        form.avatarFile,
+      );
+    }
+
+    if (form.frontIdCardFile) {
+      payload.append(
+        "FrontIDCardImage",
+        form.frontIdCardFile,
+      );
+    }
+
+    if (form.backIdCardFile) {
+      payload.append(
+        "BackIDCardImage",
+        form.backIdCardFile,
+      );
+    }
+
+    return payload;
+  };
+
+  const validateOptionalFiles = () => {
     const files = [
-      [form.avatarFile, "Ảnh đại diện"],
-      [form.frontIdCardFile, "Ảnh CCCD mặt trước"],
-      [form.backIdCardFile, "Ảnh CCCD mặt sau"],
+      [
+        form.avatarFile,
+        "Ảnh đại diện",
+      ],
+      [
+        form.frontIdCardFile,
+        "Ảnh CCCD mặt trước",
+      ],
+      [
+        form.backIdCardFile,
+        "Ảnh CCCD mặt sau",
+      ],
     ];
 
     for (const [file, label] of files) {
-      const validationError = validateImage(file, label);
+      const validationError =
+        validateImage(file, label);
 
       if (validationError) {
         return validationError;
@@ -367,80 +580,54 @@ const RegisterPersonalPage = () => {
     return "";
   };
 
-  const handleRegister = async (event) => {
-    event.preventDefault();
+  const registerAccount = async (
+    includeOptionalInformation,
+  ) => {
     clearMessages();
 
-    const validationError = validateRegistrationForm();
+    const basicValidationError =
+      validateBasicInformation();
 
-    if (validationError) {
-      setError(validationError);
+    if (basicValidationError) {
+      setError(basicValidationError);
+      setStep(STEPS.BASIC);
       return;
+    }
+
+    if (includeOptionalInformation) {
+      const fileValidationError =
+        validateOptionalFiles();
+
+      if (fileValidationError) {
+        setError(fileValidationError);
+        return;
+      }
     }
 
     setLoadingAction("REGISTER");
 
     try {
-      const payload = new FormData();
-
-      payload.append("Username", form.username.trim());
-      payload.append("Password", form.password);
-      payload.append("PhoneNumber", form.phoneNumber.trim());
-      payload.append("FullName", form.fullName.trim());
-      payload.append(
-        "RepresentativeCode",
-        form.representativeCode.trim(),
-      );
-      payload.append(
-        "RepresentativeName",
-        form.representativeName.trim(),
-      );
-      payload.append(
-        "RepresentativeDob",
-        form.representativeDob,
-      );
-      payload.append(
-        "RepresentativeAddress",
-        form.representativeAddress.trim(),
-      );
-      payload.append("BankCode", form.bankCode.trim());
-      payload.append("BankName", form.bankName.trim());
-      payload.append(
-        "AccountNumber",
-        form.accountNumber.trim(),
-      );
-      payload.append("AccountName", form.accountName.trim());
-
-      if (form.avatarFile) {
-        payload.append("AvatarUrl", form.avatarFile);
-      }
-
-      if (form.frontIdCardFile) {
-        payload.append(
-          "FrontIDCardImage",
-          form.frontIdCardFile,
+      const payload =
+        createRegistrationPayload(
+          includeOptionalInformation,
         );
-      }
 
-      if (form.backIdCardFile) {
-        payload.append(
-          "BackIDCardImage",
-          form.backIdCardFile,
+      const response =
+        await authApi.registerPersonal(
+          payload,
+          registrationToken,
         );
-      }
-
-      const response = await authApi.registerPersonal(
-        payload,
-        registrationToken,
-      );
 
       if (response?.success === false) {
         throw new Error(
-          response?.message || "Đăng ký tài khoản thất bại.",
+          response?.message ||
+            "Đăng ký tài khoản thất bại.",
         );
       }
 
-      setRegisteredUser(response?.data?.user || null);
+      setRegisteredUser(
+        response?.data?.user || null,
+      );
       setSuccessMessage(
         response?.message ||
           "Đăng ký tài khoản cá nhân thành công.",
@@ -458,46 +645,93 @@ const RegisterPersonalPage = () => {
     }
   };
 
+  const handleSubmitOptional = (event) => {
+    event.preventDefault();
+    registerAccount(true);
+  };
+
+  const handleSkipOptional = () => {
+    registerAccount(false);
+  };
+
+  const handleChangeEmail = () => {
+    clearMessages();
+    setOtp("");
+    setRegistrationToken("");
+    setResendCooldown(0);
+    setStep(STEPS.EMAIL);
+  };
+
+  const handleBackToBasic = () => {
+    clearMessages();
+    setStep(STEPS.BASIC);
+  };
+
+  const getCurrentStepNumber = () => {
+    switch (step) {
+      case STEPS.EMAIL:
+        return 1;
+      case STEPS.OTP:
+        return 2;
+      case STEPS.BASIC:
+        return 3;
+      case STEPS.OPTIONAL:
+        return 4;
+      default:
+        return 4;
+    }
+  };
+
   const renderStepIndicator = () => {
-    const currentStep =
-      step === STEPS.EMAIL
-        ? 1
-        : step === STEPS.OTP
-          ? 2
-          : 3;
+    const currentStepNumber =
+      getCurrentStepNumber();
+
+    const stepLabels = [
+      "Email",
+      "OTP",
+      "Tài khoản",
+      "Bổ sung",
+    ];
 
     return (
       <div className="mb-6">
-        <div className="flex items-center justify-center gap-2">
-          {[1, 2, 3].map((item) => (
-            <div key={item} className="flex items-center">
+        <div className="flex items-center justify-center">
+          {[1, 2, 3, 4].map(
+            (stepNumber) => (
               <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
-                  item <= currentStep
-                    ? "bg-[#244f4d] text-white"
-                    : "bg-slate-200 text-slate-500"
-                }`}
+                key={stepNumber}
+                className="flex items-center"
               >
-                {item}
-              </div>
-
-              {item < 3 && (
                 <div
-                  className={`mx-2 h-0.5 w-10 ${
-                    item < currentStep
-                      ? "bg-[#244f4d]"
-                      : "bg-slate-200"
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
+                    stepNumber <=
+                    currentStepNumber
+                      ? "bg-[#244f4d] text-white"
+                      : "bg-slate-200 text-slate-500"
                   }`}
-                />
-              )}
-            </div>
-          ))}
+                >
+                  {stepNumber}
+                </div>
+
+                {stepNumber < 4 && (
+                  <div
+                    className={`mx-1 h-0.5 w-6 sm:mx-2 sm:w-10 ${
+                      stepNumber <
+                      currentStepNumber
+                        ? "bg-[#244f4d]"
+                        : "bg-slate-200"
+                    }`}
+                  />
+                )}
+              </div>
+            ),
+          )}
         </div>
 
-        <div className="mt-2 flex justify-center gap-8 text-xs text-slate-500">
-          <span>Email</span>
-          <span>OTP</span>
-          <span>Thông tin</span>
+        <div className="mt-2 grid grid-cols-4 text-center text-[10px] text-slate-500 sm:text-xs">
+          {stepLabels.map((label) => (
+            <span key={label}>{label}</span>
+          ))}
         </div>
       </div>
     );
@@ -505,7 +739,7 @@ const RegisterPersonalPage = () => {
 
   if (step === STEPS.SUCCESS) {
     return (
-      <div className="w-full max-w-xl mx-auto animate-fade-in">
+      <div className="mx-auto w-full max-w-xl animate-fade-in">
         <div className="rounded-xl border border-green-200 bg-white p-8 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
             <span className="material-symbols-outlined text-4xl">
@@ -513,9 +747,9 @@ const RegisterPersonalPage = () => {
             </span>
           </div>
 
-          <h2 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-2xl font-bold text-slate-800">
             Đăng ký thành công
-          </h2>
+          </h1>
 
           <p className="mt-2 text-sm text-slate-600">
             {successMessage}
@@ -523,13 +757,17 @@ const RegisterPersonalPage = () => {
 
           <div className="mt-5 rounded-md bg-slate-50 p-4 text-left text-sm">
             <p>
-              <span className="font-semibold">Email:</span>{" "}
+              <span className="font-semibold">
+                Email:
+              </span>{" "}
               {registeredUser?.email || email}
             </p>
 
             {registeredUser?.username && (
               <p className="mt-1">
-                <span className="font-semibold">Tên đăng nhập:</span>{" "}
+                <span className="font-semibold">
+                  Tên đăng nhập:
+                </span>{" "}
                 {registeredUser.username}
               </p>
             )}
@@ -541,7 +779,9 @@ const RegisterPersonalPage = () => {
               navigate("/auth/login", {
                 replace: true,
                 state: {
-                  registeredEmail: registeredUser?.email || email,
+                  registeredEmail:
+                    registeredUser?.email ||
+                    email,
                 },
               })
             }
@@ -555,7 +795,7 @@ const RegisterPersonalPage = () => {
   }
 
   return (
-    <div className="w-full max-w-xl mx-auto animate-fade-in">
+    <div className="mx-auto w-full max-w-xl animate-fade-in">
       <div className="mb-6 flex flex-col items-center">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-[#244f4d] text-white">
           <span className="material-symbols-outlined">
@@ -568,7 +808,7 @@ const RegisterPersonalPage = () => {
         </h1>
 
         <p className="mt-2 text-center text-sm text-slate-500">
-          Xác thực email và hoàn thiện thông tin tài khoản.
+          Xác thực email và hoàn thiện tài khoản.
         </p>
       </div>
 
@@ -583,14 +823,15 @@ const RegisterPersonalPage = () => {
         </div>
       )}
 
-      {successMessage && step !== STEPS.PROFILE && (
-        <div
-          aria-live="polite"
-          className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
-        >
-          {successMessage}
-        </div>
-      )}
+      {successMessage &&
+        step === STEPS.OTP && (
+          <div
+            aria-live="polite"
+            className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+          >
+            {successMessage}
+          </div>
+        )}
 
       {step === STEPS.EMAIL && (
         <form
@@ -600,9 +841,13 @@ const RegisterPersonalPage = () => {
           <div>
             <label
               htmlFor="registration-email"
-              className="block text-xs font-bold text-slate-800 mb-1"
+              className="mb-1 block text-xs font-bold text-slate-800"
             >
-              Email <span className="text-red-500">*</span>
+              Email
+              <span className="text-red-500">
+                {" "}
+                *
+              </span>
             </label>
 
             <input
@@ -610,7 +855,9 @@ const RegisterPersonalPage = () => {
               name="email"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) =>
+                setEmail(event.target.value)
+              }
               required
               autoComplete="email"
               placeholder="Nhập địa chỉ email"
@@ -662,9 +909,13 @@ const RegisterPersonalPage = () => {
           <div>
             <label
               htmlFor="registration-otp"
-              className="block text-xs font-bold text-slate-800 mb-1"
+              className="mb-1 block text-xs font-bold text-slate-800"
             >
-              Mã OTP <span className="text-red-500">*</span>
+              Mã OTP
+              <span className="text-red-500">
+                {" "}
+                *
+              </span>
             </label>
 
             <input
@@ -677,7 +928,9 @@ const RegisterPersonalPage = () => {
               value={otp}
               onChange={(event) =>
                 setOtp(
-                  event.target.value.replace(/\D/g, "").slice(0, 6),
+                  event.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 6),
                 )
               }
               required
@@ -688,7 +941,9 @@ const RegisterPersonalPage = () => {
 
           <button
             type="submit"
-            disabled={isLoading || otp.length !== 6}
+            disabled={
+              isLoading || otp.length !== 6
+            }
             className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction === "VERIFY_OTP"
@@ -699,7 +954,10 @@ const RegisterPersonalPage = () => {
           <button
             type="button"
             onClick={handleResendOtp}
-            disabled={isLoading || resendCooldown > 0}
+            disabled={
+              isLoading ||
+              resendCooldown > 0
+            }
             className="w-full text-sm font-semibold text-[#244f4d] hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
           >
             {loadingAction === "RESEND_OTP"
@@ -720,13 +978,24 @@ const RegisterPersonalPage = () => {
         </form>
       )}
 
-      {step === STEPS.PROFILE && (
+      {step === STEPS.BASIC && (
         <form
-          onSubmit={handleRegister}
+          onSubmit={handleContinueToOptional}
           className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
-            Email <strong>{email}</strong> đã được xác thực.
+            Email <strong>{email}</strong> đã được
+            xác thực.
+          </div>
+
+          <div>
+            <h2 className="font-bold text-slate-800">
+              Thông tin tài khoản
+            </h2>
+
+            <p className="mt-1 text-xs text-slate-500">
+              Các trường có dấu * là bắt buộc.
+            </p>
           </div>
 
           <TextInput
@@ -789,6 +1058,42 @@ const RegisterPersonalPage = () => {
             autoComplete="new-password"
           />
 
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            TIẾP TỤC
+          </button>
+
+          <button
+            type="button"
+            onClick={handleChangeEmail}
+            disabled={isLoading}
+            className="w-full text-sm text-slate-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Xác thực lại bằng email khác
+          </button>
+        </form>
+      )}
+
+      {step === STEPS.OPTIONAL && (
+        <form
+          onSubmit={handleSubmitOptional}
+          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+        >
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">
+              Bổ sung hồ sơ
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Các thông tin dưới đây không bắt buộc.
+              Bạn có thể cập nhật sau trong trang hồ
+              sơ cá nhân.
+            </p>
+          </div>
+
           <FileInput
             id="registration-avatar"
             label="Ảnh đại diện"
@@ -799,9 +1104,9 @@ const RegisterPersonalPage = () => {
 
           <hr className="border-slate-200" />
 
-          <h2 className="text-base font-bold text-slate-800">
+          <h3 className="font-bold text-slate-800">
             Thông tin định danh
-          </h2>
+          </h3>
 
           <TextInput
             id="registration-representative-code"
@@ -809,7 +1114,6 @@ const RegisterPersonalPage = () => {
             name="representativeCode"
             value={form.representativeCode}
             onChange={handleFormChange}
-            required
             placeholder="Nhập số CCCD"
           />
 
@@ -819,7 +1123,6 @@ const RegisterPersonalPage = () => {
             name="representativeName"
             value={form.representativeName}
             onChange={handleFormChange}
-            required
             placeholder="Nhập họ tên trên CCCD"
           />
 
@@ -829,19 +1132,16 @@ const RegisterPersonalPage = () => {
             name="representativeDob"
             value={form.representativeDob}
             onChange={handleFormChange}
-            required
             type="date"
           />
 
           <TextInput
             id="registration-representative-address"
-            label="Địa chỉ"
+            label="Địa chỉ trên CCCD"
             name="representativeAddress"
             value={form.representativeAddress}
             onChange={handleFormChange}
-            required
-            placeholder="Nhập địa chỉ"
-            autoComplete="street-address"
+            placeholder="Nhập địa chỉ trên CCCD"
           />
 
           <FileInput
@@ -862,9 +1162,9 @@ const RegisterPersonalPage = () => {
 
           <hr className="border-slate-200" />
 
-          <h2 className="text-base font-bold text-slate-800">
+          <h3 className="font-bold text-slate-800">
             Thông tin ngân hàng
-          </h2>
+          </h3>
 
           <TextInput
             id="registration-bank-name"
@@ -872,7 +1172,6 @@ const RegisterPersonalPage = () => {
             name="bankName"
             value={form.bankName}
             onChange={handleFormChange}
-            required
             placeholder="Ví dụ: MB Bank"
           />
 
@@ -882,7 +1181,6 @@ const RegisterPersonalPage = () => {
             name="bankCode"
             value={form.bankCode}
             onChange={handleFormChange}
-            required
             placeholder="Nhập mã ngân hàng"
           />
 
@@ -892,7 +1190,6 @@ const RegisterPersonalPage = () => {
             name="accountNumber"
             value={form.accountNumber}
             onChange={handleFormChange}
-            required
             placeholder="Nhập số tài khoản"
           />
 
@@ -902,7 +1199,6 @@ const RegisterPersonalPage = () => {
             name="accountName"
             value={form.accountName}
             onChange={handleFormChange}
-            required
             placeholder="Nhập tên chủ tài khoản"
           />
 
@@ -918,11 +1214,20 @@ const RegisterPersonalPage = () => {
 
           <button
             type="button"
-            onClick={handleChangeEmail}
+            onClick={handleSkipOptional}
+            disabled={isLoading}
+            className="w-full rounded-md border border-slate-300 bg-white py-3 font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            BỎ QUA, CẬP NHẬT SAU
+          </button>
+
+          <button
+            type="button"
+            onClick={handleBackToBasic}
             disabled={isLoading}
             className="w-full text-sm text-slate-600 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Xác thực lại bằng email khác
+            Quay lại thông tin tài khoản
           </button>
         </form>
       )}
