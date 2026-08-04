@@ -13,12 +13,15 @@ const PUBLIC_AUTH_ENDPOINTS = [
   "/auth/send-otp",
   "/auth/verify-otp",
   "/auth/Personal/Register",
+  "/auth/business/register",
   "/auth/refresh-token",
 ];
 
 const isPublicAuthRequest = (url = "") => {
+  const normalizedUrl = url.toLowerCase();
+
   return PUBLIC_AUTH_ENDPOINTS.some((endpoint) =>
-    url.includes(endpoint),
+    normalizedUrl.includes(endpoint.toLowerCase()),
   );
 };
 
@@ -26,6 +29,12 @@ const clearStoredSession = () => {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
   localStorage.removeItem("user");
+};
+
+const notifySessionExpired = () => {
+  window.dispatchEvent(
+    new Event("auth:session-expired"),
+  );
 };
 
 const axiosClient = axios.create({
@@ -37,30 +46,27 @@ let refreshPromise = null;
 
 axiosClient.interceptors.request.use(
   (config) => {
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken =
+      localStorage.getItem("accessToken");
 
     /*
-     * Không gắn access token vào các API authentication công khai.
-     * Điều này tránh việc Login/Send OTP gặp 401 rồi kích hoạt refresh.
+     * Không gửi access token tới các API xác thực công khai.
      */
     if (
       accessToken &&
       !isPublicAuthRequest(config.url)
     ) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+      config.headers.Authorization =
+        `Bearer ${accessToken}`;
     }
 
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
 axiosClient.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
 
   async (error) => {
     const originalRequest = error?.config;
@@ -81,10 +87,7 @@ axiosClient.interceptors.response.use(
 
     if (!storedRefreshToken) {
       clearStoredSession();
-
-      window.dispatchEvent(
-        new Event("auth:session-expired"),
-      );
+      notifySessionExpired();
 
       return Promise.reject(error);
     }
@@ -93,8 +96,7 @@ axiosClient.interceptors.response.use(
 
     try {
       /*
-       * Chỉ cho phép một request refresh chạy tại một thời điểm.
-       * Các request 401 đồng thời sẽ cùng chờ refreshPromise.
+       * Chỉ cho phép một refresh request chạy cùng lúc.
        */
       if (!refreshPromise) {
         refreshPromise = axios
@@ -111,20 +113,26 @@ axiosClient.interceptors.response.use(
             },
           )
           .then((response) => {
-            const {
-              accessToken,
-              refreshToken: newRefreshToken,
-            } = response?.data || {};
+            const responseData =
+              response?.data || {};
 
-            if (!accessToken || !newRefreshToken) {
+            const accessToken =
+              responseData.accessToken;
+
+            const newRefreshToken =
+              responseData.refreshToken;
+
+            if (
+              !accessToken ||
+              !newRefreshToken
+            ) {
               throw new Error(
                 "Refresh token response không hợp lệ.",
               );
             }
 
             /*
-             * Backend sử dụng refresh-token rotation,
-             * vì vậy phải cập nhật cả hai token.
+             * Backend sử dụng refresh-token rotation.
              */
             localStorage.setItem(
               "accessToken",
@@ -143,22 +151,16 @@ axiosClient.interceptors.response.use(
           });
       }
 
-      const newAccessToken = await refreshPromise;
+      const newAccessToken =
+        await refreshPromise;
 
       originalRequest.headers.Authorization =
         `Bearer ${newAccessToken}`;
 
-      /*
-       * Gửi lại request ban đầu một lần với access token mới.
-       * Response tiếp tục đi qua interceptor và trả về response.data.
-       */
       return axiosClient(originalRequest);
     } catch (refreshError) {
       clearStoredSession();
-
-      window.dispatchEvent(
-        new Event("auth:session-expired"),
-      );
+      notifySessionExpired();
 
       return Promise.reject(refreshError);
     }
