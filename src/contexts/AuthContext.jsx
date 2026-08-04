@@ -5,20 +5,62 @@
   useState,
 } from "react";
 import authApi from "../services/apis/authApi";
+import { normalizeRole } from "../utils/authUtils";
 import AuthContext from "./auth-context";
 
 const TOKEN_REFRESH_THRESHOLD_SECONDS = 60;
 
 let sessionBootstrapPromise = null;
 
+const normalizeUser = (userData) => {
+  if (
+    !userData ||
+    typeof userData !== "object"
+  ) {
+    return null;
+  }
+
+  const normalizedRole = normalizeRole(
+    userData.role,
+  );
+
+  return {
+    ...userData,
+    role: normalizedRole,
+  };
+};
+
 const getStoredUser = () => {
   try {
     const rawUser =
       localStorage.getItem("user");
 
-    return rawUser
-      ? JSON.parse(rawUser)
-      : null;
+    if (!rawUser) {
+      return null;
+    }
+
+    const parsedUser =
+      JSON.parse(rawUser);
+
+    const normalizedUser =
+      normalizeUser(parsedUser);
+
+    if (!normalizedUser) {
+      localStorage.removeItem("user");
+      return null;
+    }
+
+    if (
+      normalizedUser.role !==
+      parsedUser.role
+    ) {
+      localStorage.setItem(
+        "user",
+        JSON.stringify(normalizedUser),
+      );
+    }
+
+    return normalizedUser;
   } catch {
     localStorage.removeItem("user");
     return null;
@@ -60,12 +102,11 @@ const decodeJwtPayload = (token) => {
     const binaryString =
       window.atob(base64);
 
-    const bytes =
-      Uint8Array.from(
-        binaryString,
-        (character) =>
-          character.charCodeAt(0),
-      );
+    const bytes = Uint8Array.from(
+      binaryString,
+      (character) =>
+        character.charCodeAt(0),
+    );
 
     const json = new TextDecoder().decode(
       bytes,
@@ -224,7 +265,7 @@ export const AuthProvider = ({
   }, []);
 
   /**
-   * Lưu phiên đăng nhập dùng chung.
+   * Lưu session và chuẩn hóa role trước khi lưu.
    */
   const saveSession = useCallback(
     ({
@@ -232,10 +273,10 @@ export const AuthProvider = ({
       accessToken,
       refreshToken,
     }) => {
-      if (
-        !userData ||
-        typeof userData !== "object"
-      ) {
+      const normalizedUser =
+        normalizeUser(userData);
+
+      if (!normalizedUser) {
         throw new Error(
           "Không nhận được thông tin người dùng.",
         );
@@ -265,12 +306,12 @@ export const AuthProvider = ({
 
       localStorage.setItem(
         "user",
-        JSON.stringify(userData),
+        JSON.stringify(normalizedUser),
       );
 
-      setUser(userData);
+      setUser(normalizedUser);
 
-      return userData;
+      return normalizedUser;
     },
     [],
   );
@@ -323,13 +364,11 @@ export const AuthProvider = ({
             responseData?.role || "",
         };
 
-      saveSession({
+      return saveSession({
         user: userInfo,
         accessToken,
         refreshToken,
       });
-
-      return userInfo;
     },
     [saveSession],
   );
@@ -351,10 +390,15 @@ export const AuthProvider = ({
           return currentUser;
         }
 
-        const updatedUser = {
-          ...currentUser,
-          ...updates,
-        };
+        const updatedUser =
+          normalizeUser({
+            ...currentUser,
+            ...updates,
+          });
+
+        if (!updatedUser) {
+          return currentUser;
+        }
 
         localStorage.setItem(
           "user",
