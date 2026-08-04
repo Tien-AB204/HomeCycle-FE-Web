@@ -2,14 +2,11 @@ import { useEffect, useState } from "react";
 import BankAccountSection from "../../features/profile/BankAccountSection";
 import { useAuth } from "../../hooks/useAuth";
 import { userService } from "../../services/userService";
+import AvatarUploader from "../../features/profile/AvatarUploader";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
-const ACCEPTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 const createProfileForm = (profile) => ({
   username: profile?.username || "",
@@ -18,28 +15,19 @@ const createProfileForm = (profile) => ({
 });
 
 const createIdentityForm = (profile) => ({
-  representativeCode:
-    profile?.representativeCode || "",
-  representativeName:
-    profile?.representativeName || "",
-  representativeDob:
-    profile?.representativeDob || "",
-  representativeAddress:
-    profile?.representativeAddress || "",
+  representativeCode: profile?.representativeCode || "",
+  representativeName: profile?.representativeName || "",
+  representativeDob: profile?.representativeDob || "",
+  representativeAddress: profile?.representativeAddress || "",
   frontIdCardFile: null,
   backIdCardFile: null,
 });
 
-const getApiErrorMessage = (
-  error,
-  fallbackMessage,
-) => {
+const getApiErrorMessage = (error, fallbackMessage) => {
   const responseData = error?.response?.data;
 
   const validationMessage = responseData?.errors
-    ? Object.values(responseData.errors)
-        .flat()
-        .find(Boolean)
+    ? Object.values(responseData.errors).flat().find(Boolean)
     : "";
 
   return (
@@ -72,8 +60,7 @@ const fetchProfileData = async () => {
 
   if (!response?.isSuccess || !response?.data) {
     throw new Error(
-      response?.error?.message ||
-        "Không thể tải thông tin hồ sơ.",
+      response?.error?.message || "Không thể tải thông tin hồ sơ.",
     );
   }
 
@@ -100,9 +87,7 @@ const ProfileField = ({
       >
         {label}
 
-        {required && (
-          <span className="text-red-500"> *</span>
-        )}
+        {required && <span className="text-red-500"> *</span>}
       </label>
 
       <input
@@ -125,16 +110,10 @@ const ProfileField = ({
   );
 };
 
-const IdentityImage = ({
-  label,
-  imageUrl,
-  emptyMessage,
-}) => {
+const IdentityImage = ({ label, imageUrl, emptyMessage }) => {
   return (
     <div>
-      <p className="mb-2 text-xs font-bold text-slate-500">
-        {label}
-      </p>
+      <p className="mb-2 text-xs font-bold text-slate-500">{label}</p>
 
       <div className="flex h-44 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-2">
         {imageUrl ? (
@@ -145,13 +124,9 @@ const IdentityImage = ({
           />
         ) : (
           <div className="text-center text-slate-400">
-            <span className="material-symbols-outlined text-4xl">
-              image
-            </span>
+            <span className="material-symbols-outlined text-4xl">image</span>
 
-            <p className="mt-1 text-sm">
-              {emptyMessage}
-            </p>
+            <p className="mt-1 text-sm">{emptyMessage}</p>
           </div>
         )}
       </div>
@@ -159,13 +134,7 @@ const IdentityImage = ({
   );
 };
 
-const IdentityFileInput = ({
-  id,
-  label,
-  name,
-  onChange,
-  previewUrl,
-}) => {
+const IdentityFileInput = ({ id, label, name, onChange, previewUrl }) => {
   return (
     <div>
       <IdentityImage
@@ -195,60 +164,37 @@ export default function UserProfilePage() {
 
   const [profile, setProfile] = useState(null);
 
-  const [profileForm, setProfileForm] =
-    useState(createProfileForm(null));
+  const [profileForm, setProfileForm] = useState(createProfileForm(null));
 
-  const [identityForm, setIdentityForm] =
-    useState(createIdentityForm(null));
+  const [identityForm, setIdentityForm] = useState(createIdentityForm(null));
 
-  const [
-    identityPreviews,
-    setIdentityPreviews,
-  ] = useState({
+  const [identityPreviews, setIdentityPreviews] = useState({
     front: "",
     back: "",
   });
 
-  const [activeTab, setActiveTab] =
-    useState("personal");
+  const [activeTab, setActiveTab] = useState("personal");
 
-  const [
-    isEditingProfile,
-    setIsEditingProfile,
-  ] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
-  const [
-    isEditingIdentity,
-    setIsEditingIdentity,
-  ] = useState(false);
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [
-    isSavingProfile,
-    setIsSavingProfile,
-  ] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  const [
-    isSavingIdentity,
-    setIsSavingIdentity,
-  ] = useState(false);
+  const [isSavingIdentity, setIsSavingIdentity] = useState(false);
 
   const [error, setError] = useState("");
 
-  const [
-    successMessage,
-    setSuccessMessage,
-  ] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     let isActive = true;
 
     const loadProfile = async () => {
       try {
-        const profileData =
-          await fetchProfileData();
+        const profileData = await fetchProfileData();
 
         if (!isActive) {
           return;
@@ -256,19 +202,13 @@ export default function UserProfilePage() {
 
         setProfile(profileData);
 
-        setProfileForm(
-          createProfileForm(profileData),
-        );
+        setProfileForm(createProfileForm(profileData));
 
-        setIdentityForm(
-          createIdentityForm(profileData),
-        );
+        setIdentityForm(createIdentityForm(profileData));
 
         setIdentityPreviews({
-          front:
-            profileData.frontIDCardImage || "",
-          back:
-            profileData.backIDCardImage || "",
+          front: profileData.frontIDCardImage || "",
+          back: profileData.backIDCardImage || "",
         });
       } catch (loadError) {
         if (!isActive) {
@@ -276,10 +216,7 @@ export default function UserProfilePage() {
         }
 
         setError(
-          getApiErrorMessage(
-            loadError,
-            "Không thể kết nối đến máy chủ.",
-          ),
+          getApiErrorMessage(loadError, "Không thể kết nối đến máy chủ."),
         );
       } finally {
         if (isActive) {
@@ -303,19 +240,13 @@ export default function UserProfilePage() {
   const applyProfileData = (profileData) => {
     setProfile(profileData);
 
-    setProfileForm(
-      createProfileForm(profileData),
-    );
+    setProfileForm(createProfileForm(profileData));
 
-    setIdentityForm(
-      createIdentityForm(profileData),
-    );
+    setIdentityForm(createIdentityForm(profileData));
 
     setIdentityPreviews({
-      front:
-        profileData.frontIDCardImage || "",
-      back:
-        profileData.backIDCardImage || "",
+      front: profileData.frontIDCardImage || "",
+      back: profileData.backIDCardImage || "",
     });
   };
 
@@ -336,9 +267,7 @@ export default function UserProfilePage() {
   const handleStartEditingProfile = () => {
     clearMessages();
 
-    setProfileForm(
-      createProfileForm(profile),
-    );
+    setProfileForm(createProfileForm(profile));
 
     setIsEditingProfile(true);
   };
@@ -346,17 +275,13 @@ export default function UserProfilePage() {
   const handleCancelEditingProfile = () => {
     clearMessages();
 
-    setProfileForm(
-      createProfileForm(profile),
-    );
+    setProfileForm(createProfileForm(profile));
 
     setIsEditingProfile(false);
   };
 
   const validateProfileForm = () => {
-    if (
-      profileForm.username.trim().length < 3
-    ) {
+    if (profileForm.username.trim().length < 3) {
       return "Tên đăng nhập phải có ít nhất 3 ký tự.";
     }
 
@@ -364,11 +289,7 @@ export default function UserProfilePage() {
       return "Vui lòng nhập họ và tên.";
     }
 
-    if (
-      !/^[0-9]{9,11}$/.test(
-        profileForm.phoneNumber.trim(),
-      )
-    ) {
+    if (!/^[0-9]{9,11}$/.test(profileForm.phoneNumber.trim())) {
       return "Số điện thoại phải gồm từ 9 đến 11 chữ số.";
     }
 
@@ -379,8 +300,7 @@ export default function UserProfilePage() {
     event.preventDefault();
     clearMessages();
 
-    const validationError =
-      validateProfileForm();
+    const validationError = validateProfileForm();
 
     if (validationError) {
       setError(validationError);
@@ -388,37 +308,27 @@ export default function UserProfilePage() {
     }
 
     const payload = {
-      username:
-        profileForm.username.trim(),
+      username: profileForm.username.trim(),
 
-      fullName:
-        profileForm.fullName.trim(),
+      fullName: profileForm.fullName.trim(),
 
-      phoneNumber:
-        profileForm.phoneNumber.trim(),
+      phoneNumber: profileForm.phoneNumber.trim(),
 
       /*
        * API hiện vẫn yêu cầu address nhưng frontend
        * chưa hỗ trợ cập nhật field này.
        */
-      address:
-        profile.address ||
-        profile.representativeAddress ||
-        "",
+      address: profile.address || profile.representativeAddress || "",
     };
 
     setIsSavingProfile(true);
 
     try {
-      const updateResponse =
-        await userService.updateProfile(
-          payload,
-        );
+      const updateResponse = await userService.updateProfile(payload);
 
       if (!updateResponse?.isSuccess) {
         throw new Error(
-          updateResponse?.error?.message ||
-            "Cập nhật hồ sơ thất bại.",
+          updateResponse?.error?.message || "Cập nhật hồ sơ thất bại.",
         );
       }
 
@@ -430,13 +340,9 @@ export default function UserProfilePage() {
       };
 
       try {
-        updatedProfile =
-          await fetchProfileData();
+        updatedProfile = await fetchProfileData();
       } catch (reloadError) {
-        console.error(
-          "Không thể tải lại hồ sơ:",
-          reloadError,
-        );
+        console.error("Không thể tải lại hồ sơ:", reloadError);
       }
 
       applyProfileData(updatedProfile);
@@ -446,14 +352,11 @@ export default function UserProfilePage() {
         updateUser({
           username: updatedProfile.username,
           fullName: updatedProfile.fullName,
-          phoneNumber:
-            updatedProfile.phoneNumber,
+          phoneNumber: updatedProfile.phoneNumber,
         });
       }
 
-      setSuccessMessage(
-        "Thông tin cá nhân đã được cập nhật thành công.",
-      );
+      setSuccessMessage("Thông tin cá nhân đã được cập nhật thành công.");
     } catch (updateError) {
       setError(
         getApiErrorMessage(
@@ -466,9 +369,7 @@ export default function UserProfilePage() {
     }
   };
 
-  const handleIdentityFormChange = (
-    event,
-  ) => {
+  const handleIdentityFormChange = (event) => {
     const { name, value } = event.target;
 
     setIdentityForm((currentForm) => ({
@@ -480,15 +381,11 @@ export default function UserProfilePage() {
   const handleStartEditingIdentity = () => {
     clearMessages();
 
-    setIdentityForm(
-      createIdentityForm(profile),
-    );
+    setIdentityForm(createIdentityForm(profile));
 
     setIdentityPreviews({
-      front:
-        profile.frontIDCardImage || "",
-      back:
-        profile.backIDCardImage || "",
+      front: profile.frontIDCardImage || "",
+      back: profile.backIDCardImage || "",
     });
 
     setIsEditingIdentity(true);
@@ -497,37 +394,25 @@ export default function UserProfilePage() {
   const handleCancelEditingIdentity = () => {
     clearMessages();
 
-    setIdentityForm(
-      createIdentityForm(profile),
-    );
+    setIdentityForm(createIdentityForm(profile));
 
     setIdentityPreviews({
-      front:
-        profile.frontIDCardImage || "",
-      back:
-        profile.backIDCardImage || "",
+      front: profile.frontIDCardImage || "",
+      back: profile.backIDCardImage || "",
     });
 
     setIsEditingIdentity(false);
   };
 
-  const handleIdentityFileChange = (
-    event,
-  ) => {
+  const handleIdentityFileChange = (event) => {
     const { name, files } = event.target;
     const file = files?.[0] || null;
 
-    const isFront =
-      name === "frontIdCardFile";
+    const isFront = name === "frontIdCardFile";
 
-    const label = isFront
-      ? "Ảnh CCCD mặt trước"
-      : "Ảnh CCCD mặt sau";
+    const label = isFront ? "Ảnh CCCD mặt trước" : "Ảnh CCCD mặt sau";
 
-    const validationError = validateImage(
-      file,
-      label,
-    );
+    const validationError = validateImage(file, label);
 
     if (validationError) {
       setError(validationError);
@@ -543,15 +428,12 @@ export default function UserProfilePage() {
     }));
 
     if (!file) {
-      setIdentityPreviews(
-        (currentPreviews) => ({
-          ...currentPreviews,
-          [isFront ? "front" : "back"]:
-            isFront
-              ? profile.frontIDCardImage || ""
-              : profile.backIDCardImage || "",
-        }),
-      );
+      setIdentityPreviews((currentPreviews) => ({
+        ...currentPreviews,
+        [isFront ? "front" : "back"]: isFront
+          ? profile.frontIDCardImage || ""
+          : profile.backIDCardImage || "",
+      }));
 
       return;
     }
@@ -559,65 +441,43 @@ export default function UserProfilePage() {
     const reader = new FileReader();
 
     reader.onload = () => {
-      setIdentityPreviews(
-        (currentPreviews) => ({
-          ...currentPreviews,
-          [isFront ? "front" : "back"]:
-            reader.result,
-        }),
-      );
+      setIdentityPreviews((currentPreviews) => ({
+        ...currentPreviews,
+        [isFront ? "front" : "back"]: reader.result,
+      }));
     };
 
     reader.readAsDataURL(file);
   };
 
   const validateIdentityForm = () => {
-    if (
-      !identityForm.representativeCode.trim()
-    ) {
+    if (!identityForm.representativeCode.trim()) {
       return "Vui lòng nhập số CCCD.";
     }
 
-    if (
-      !identityForm.representativeName.trim()
-    ) {
+    if (!identityForm.representativeName.trim()) {
       return "Vui lòng nhập họ tên trên CCCD.";
     }
 
-    if (
-      !identityForm.representativeDob
-    ) {
+    if (!identityForm.representativeDob) {
       return "Vui lòng chọn ngày sinh.";
     }
 
-    const selectedDate = new Date(
-      identityForm.representativeDob,
-    );
+    const selectedDate = new Date(identityForm.representativeDob);
 
-    if (
-      Number.isNaN(selectedDate.getTime()) ||
-      selectedDate > new Date()
-    ) {
+    if (Number.isNaN(selectedDate.getTime()) || selectedDate > new Date()) {
       return "Ngày sinh không hợp lệ.";
     }
 
-    if (
-      !identityForm.representativeAddress.trim()
-    ) {
+    if (!identityForm.representativeAddress.trim()) {
       return "Vui lòng nhập địa chỉ trên CCCD.";
     }
 
-    if (
-      !identityForm.frontIdCardFile &&
-      !profile.frontIDCardImage
-    ) {
+    if (!identityForm.frontIdCardFile && !profile.frontIDCardImage) {
       return "Vui lòng chọn ảnh CCCD mặt trước.";
     }
 
-    if (
-      !identityForm.backIdCardFile &&
-      !profile.backIDCardImage
-    ) {
+    if (!identityForm.backIdCardFile && !profile.backIDCardImage) {
       return "Vui lòng chọn ảnh CCCD mặt sau.";
     }
 
@@ -642,14 +502,11 @@ export default function UserProfilePage() {
     return "";
   };
 
-  const handleUpdateIdentity = async (
-    event,
-  ) => {
+  const handleUpdateIdentity = async (event) => {
     event.preventDefault();
     clearMessages();
 
-    const validationError =
-      validateIdentityForm();
+    const validationError = validateIdentityForm();
 
     if (validationError) {
       setError(validationError);
@@ -657,73 +514,53 @@ export default function UserProfilePage() {
     }
 
     const payload = {
-      representativeCode:
-        identityForm.representativeCode.trim(),
+      representativeCode: identityForm.representativeCode.trim(),
 
-      representativeName:
-        identityForm.representativeName.trim(),
+      representativeName: identityForm.representativeName.trim(),
 
-      representativeDob:
-        identityForm.representativeDob,
+      representativeDob: identityForm.representativeDob,
 
-      representativeAddress:
-        identityForm.representativeAddress.trim(),
+      representativeAddress: identityForm.representativeAddress.trim(),
 
-      frontIdCardFile:
-        identityForm.frontIdCardFile,
+      frontIdCardFile: identityForm.frontIdCardFile,
 
-      backIdCardFile:
-        identityForm.backIdCardFile,
+      backIdCardFile: identityForm.backIdCardFile,
     };
 
     setIsSavingIdentity(true);
 
     try {
-      const updateResponse =
-        await userService.updateIdentity(
-          payload,
-        );
+      const updateResponse = await userService.updateIdentity(payload);
 
       if (!updateResponse?.isSuccess) {
         throw new Error(
-          updateResponse?.error?.message ||
-            "Cập nhật giấy tờ thất bại.",
+          updateResponse?.error?.message || "Cập nhật giấy tờ thất bại.",
         );
       }
 
       let updatedProfile = {
         ...profile,
 
-        representativeCode:
-          payload.representativeCode,
+        representativeCode: payload.representativeCode,
 
-        representativeName:
-          payload.representativeName,
+        representativeName: payload.representativeName,
 
-        representativeDob:
-          payload.representativeDob,
+        representativeDob: payload.representativeDob,
 
-        representativeAddress:
-          payload.representativeAddress,
+        representativeAddress: payload.representativeAddress,
 
-        frontIDCardImage:
-          identityPreviews.front,
+        frontIDCardImage: identityPreviews.front,
 
-        backIDCardImage:
-          identityPreviews.back,
+        backIDCardImage: identityPreviews.back,
 
         verificationStatus: "Pending",
         rejectReason: null,
       };
 
       try {
-        updatedProfile =
-          await fetchProfileData();
+        updatedProfile = await fetchProfileData();
       } catch (reloadError) {
-        console.error(
-          "Không thể tải lại hồ sơ:",
-          reloadError,
-        );
+        console.error("Không thể tải lại hồ sơ:", reloadError);
       }
 
       applyProfileData(updatedProfile);
@@ -744,9 +581,30 @@ export default function UserProfilePage() {
     }
   };
 
+  const handleAvatarUpdated = (newAvatarUrl) => {
+    setProfile((currentProfile) => {
+      if (!currentProfile) {
+        return currentProfile;
+      }
+
+      return {
+        ...currentProfile,
+        avatarUrl: newAvatarUrl,
+      };
+    });
+
+    if (typeof updateUser === "function") {
+      updateUser({
+        avatarUrl: newAvatarUrl,
+      });
+    }
+
+    setError("");
+    setSuccessMessage("Ảnh đại diện đã được cập nhật thành công.");
+  };
+
   const handleBankUpdated = async () => {
-    const updatedProfile =
-      await fetchProfileData();
+    const updatedProfile = await fetchProfileData();
 
     applyProfileData(updatedProfile);
 
@@ -760,9 +618,7 @@ export default function UserProfilePage() {
           refresh
         </span>
 
-        <span className="ml-3 font-medium">
-          Đang tải hồ sơ...
-        </span>
+        <span className="ml-3 font-medium">Đang tải hồ sơ...</span>
       </div>
     );
   }
@@ -773,47 +629,32 @@ export default function UserProfilePage() {
         role="alert"
         className="rounded-md border border-red-200 bg-red-50 p-4 text-red-700"
       >
-        <p className="font-bold">
-          Không thể tải hồ sơ
-        </p>
+        <p className="font-bold">Không thể tải hồ sơ</p>
 
         <p className="mt-1 text-sm">
-          {error ||
-            "Không tìm thấy dữ liệu hồ sơ."}
+          {error || "Không tìm thấy dữ liệu hồ sơ."}
         </p>
       </div>
     );
   }
 
-  const displayAddress =
-    profile.address ||
-    profile.representativeAddress ||
-    "";
+  const displayAddress = profile.address || profile.representativeAddress || "";
 
-  const displayInitial = (
-    profile.fullName ||
-    profile.username ||
-    "U"
-  )
+  const displayInitial = (profile.fullName || profile.username || "U")
     .charAt(0)
     .toUpperCase();
 
-  const isVerified =
-    profile.verificationStatus === "Verified";
+  const isVerified = profile.verificationStatus === "Verified";
 
-  const isRejected =
-    profile.verificationStatus === "Rejected";
+  const isRejected = profile.verificationStatus === "Rejected";
 
   return (
     <div className="mx-auto max-w-5xl py-8 animate-fade-in">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">
-          Quản lý hồ sơ
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-800">Quản lý hồ sơ</h1>
 
         <p className="mt-1 text-sm text-slate-500">
-          Quản lý thông tin cá nhân và thông tin
-          xác minh.
+          Quản lý thông tin cá nhân và thông tin xác minh.
         </p>
       </div>
 
@@ -838,25 +679,18 @@ export default function UserProfilePage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         <div className="space-y-4 md:col-span-1">
           <div className="flex flex-col items-center rounded-xl border border-slate-100 bg-white p-5 text-center shadow-sm">
-            {profile.avatarUrl ? (
-              <img
-                src={profile.avatarUrl}
-                alt={`Ảnh đại diện của ${profile.fullName}`}
-                className="h-24 w-24 rounded-full border-4 border-slate-50 object-cover"
-              />
-            ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#244f4d] text-3xl font-bold text-white">
-                {displayInitial}
-              </div>
-            )}
+            <AvatarUploader
+              avatarUrl={profile.avatarUrl}
+              displayName={profile.fullName || profile.username}
+              fallbackInitial={displayInitial}
+              onUpdated={handleAvatarUpdated}
+            />
 
             <h2 className="mt-3 text-lg font-bold text-slate-800">
               {profile.fullName}
             </h2>
 
-            <p className="mb-3 text-sm text-slate-500">
-              @{profile.username}
-            </p>
+            <p className="mb-3 text-sm text-slate-500">@{profile.username}</p>
 
             <div className="mb-4 flex flex-wrap justify-center gap-2">
               <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
@@ -898,55 +732,40 @@ export default function UserProfilePage() {
           <div className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
             <button
               type="button"
-              onClick={() =>
-                handleTabChange("personal")
-              }
+              onClick={() => handleTabChange("personal")}
               className={`flex w-full items-center gap-3 border-l-4 px-5 py-3.5 text-sm font-medium ${
                 activeTab === "personal"
                   ? "border-[#244f4d] bg-slate-50 text-[#244f4d]"
                   : "border-transparent text-slate-600 hover:bg-slate-50"
               }`}
             >
-              <span className="material-symbols-outlined">
-                person
-              </span>
-
+              <span className="material-symbols-outlined">person</span>
               Thông tin cá nhân
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                handleTabChange("kyc")
-              }
+              onClick={() => handleTabChange("kyc")}
               className={`flex w-full items-center gap-3 border-l-4 border-t border-slate-100 px-5 py-3.5 text-sm font-medium ${
                 activeTab === "kyc"
                   ? "border-l-[#244f4d] bg-slate-50 text-[#244f4d]"
                   : "border-l-transparent text-slate-600 hover:bg-slate-50"
               }`}
             >
-              <span className="material-symbols-outlined">
-                badge
-              </span>
-
+              <span className="material-symbols-outlined">badge</span>
               Giấy tờ tùy thân
             </button>
 
             <button
               type="button"
-              onClick={() =>
-                handleTabChange("bank")
-              }
+              onClick={() => handleTabChange("bank")}
               className={`flex w-full items-center gap-3 border-l-4 border-t border-slate-100 px-5 py-3.5 text-sm font-medium ${
                 activeTab === "bank"
                   ? "border-l-[#244f4d] bg-slate-50 text-[#244f4d]"
                   : "border-l-transparent text-slate-600 hover:bg-slate-50"
               }`}
             >
-              <span className="material-symbols-outlined">
-                account_balance
-              </span>
-
+              <span className="material-symbols-outlined">account_balance</span>
               Tài khoản ngân hàng
             </button>
           </div>
@@ -963,9 +782,7 @@ export default function UserProfilePage() {
                 {!isEditingProfile && (
                   <button
                     type="button"
-                    onClick={
-                      handleStartEditingProfile
-                    }
+                    onClick={handleStartEditingProfile}
                     className="rounded-md bg-[#244f4d] px-4 py-2 text-sm font-medium text-white"
                   >
                     Cập nhật
@@ -973,26 +790,17 @@ export default function UserProfilePage() {
                 )}
               </div>
 
-              <form
-                onSubmit={handleUpdateProfile}
-                className="space-y-6"
-              >
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <ProfileField
                     id="profile-username"
                     label="TÊN ĐĂNG NHẬP"
                     name="username"
                     value={
-                      isEditingProfile
-                        ? profileForm.username
-                        : profile.username
+                      isEditingProfile ? profileForm.username : profile.username
                     }
-                    onChange={
-                      handleProfileFormChange
-                    }
-                    readOnly={
-                      !isEditingProfile
-                    }
+                    onChange={handleProfileFormChange}
+                    readOnly={!isEditingProfile}
                   />
 
                   <ProfileField
@@ -1000,16 +808,10 @@ export default function UserProfilePage() {
                     label="HỌ VÀ TÊN"
                     name="fullName"
                     value={
-                      isEditingProfile
-                        ? profileForm.fullName
-                        : profile.fullName
+                      isEditingProfile ? profileForm.fullName : profile.fullName
                     }
-                    onChange={
-                      handleProfileFormChange
-                    }
-                    readOnly={
-                      !isEditingProfile
-                    }
+                    onChange={handleProfileFormChange}
+                    readOnly={!isEditingProfile}
                   />
 
                   <ProfileField
@@ -1021,12 +823,8 @@ export default function UserProfilePage() {
                         ? profileForm.phoneNumber
                         : profile.phoneNumber
                     }
-                    onChange={
-                      handleProfileFormChange
-                    }
-                    readOnly={
-                      !isEditingProfile
-                    }
+                    onChange={handleProfileFormChange}
+                    readOnly={!isEditingProfile}
                     type="tel"
                   />
 
@@ -1054,12 +852,8 @@ export default function UserProfilePage() {
                   <div className="flex justify-end gap-3 border-t pt-5">
                     <button
                       type="button"
-                      onClick={
-                        handleCancelEditingProfile
-                      }
-                      disabled={
-                        isSavingProfile
-                      }
+                      onClick={handleCancelEditingProfile}
+                      disabled={isSavingProfile}
                       className="rounded-md border border-slate-300 px-5 py-2.5 text-sm"
                     >
                       Hủy
@@ -1067,14 +861,10 @@ export default function UserProfilePage() {
 
                     <button
                       type="submit"
-                      disabled={
-                        isSavingProfile
-                      }
+                      disabled={isSavingProfile}
                       className="rounded-md bg-[#244f4d] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
                     >
-                      {isSavingProfile
-                        ? "ĐANG LƯU..."
-                        : "LƯU THAY ĐỔI"}
+                      {isSavingProfile ? "ĐANG LƯU..." : "LƯU THAY ĐỔI"}
                     </button>
                   </div>
                 )}
@@ -1092,9 +882,7 @@ export default function UserProfilePage() {
                 {!isEditingIdentity && (
                   <button
                     type="button"
-                    onClick={
-                      handleStartEditingIdentity
-                    }
+                    onClick={handleStartEditingIdentity}
                     className="rounded-md bg-[#244f4d] px-4 py-2 text-sm font-medium text-white"
                   >
                     Cập nhật giấy tờ
@@ -1112,14 +900,12 @@ export default function UserProfilePage() {
                 }`}
               >
                 <p className="text-sm font-bold">
-                  Trạng thái:{" "}
-                  {profile.verificationStatus}
+                  Trạng thái: {profile.verificationStatus}
                 </p>
 
                 {profile.rejectReason && (
                   <p className="mt-1 text-sm">
-                    Lý do từ chối:{" "}
-                    {profile.rejectReason}
+                    Lý do từ chối: {profile.rejectReason}
                   </p>
                 )}
               </div>
@@ -1131,10 +917,7 @@ export default function UserProfilePage() {
                       id="identity-code-view"
                       label="SỐ CCCD"
                       name="representativeCode"
-                      value={
-                        profile.representativeCode ||
-                        ""
-                      }
+                      value={profile.representativeCode || ""}
                       readOnly
                     />
 
@@ -1142,10 +925,7 @@ export default function UserProfilePage() {
                       id="identity-name-view"
                       label="HỌ TÊN TRÊN CCCD"
                       name="representativeName"
-                      value={
-                        profile.representativeName ||
-                        ""
-                      }
+                      value={profile.representativeName || ""}
                       readOnly
                     />
 
@@ -1153,10 +933,7 @@ export default function UserProfilePage() {
                       id="identity-dob-view"
                       label="NGÀY SINH"
                       name="representativeDob"
-                      value={
-                        profile.representativeDob ||
-                        ""
-                      }
+                      value={profile.representativeDob || ""}
                       readOnly
                       type="date"
                     />
@@ -1165,10 +942,7 @@ export default function UserProfilePage() {
                       id="identity-address-view"
                       label="ĐỊA CHỈ TRÊN CCCD"
                       name="representativeAddress"
-                      value={
-                        profile.representativeAddress ||
-                        ""
-                      }
+                      value={profile.representativeAddress || ""}
                       readOnly
                     />
                   </div>
@@ -1176,39 +950,26 @@ export default function UserProfilePage() {
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <IdentityImage
                       label="ẢNH CCCD MẶT TRƯỚC"
-                      imageUrl={
-                        profile.frontIDCardImage
-                      }
+                      imageUrl={profile.frontIDCardImage}
                       emptyMessage="Chưa có ảnh"
                     />
 
                     <IdentityImage
                       label="ẢNH CCCD MẶT SAU"
-                      imageUrl={
-                        profile.backIDCardImage
-                      }
+                      imageUrl={profile.backIDCardImage}
                       emptyMessage="Chưa có ảnh"
                     />
                   </div>
                 </div>
               ) : (
-                <form
-                  onSubmit={
-                    handleUpdateIdentity
-                  }
-                  className="space-y-6"
-                >
+                <form onSubmit={handleUpdateIdentity} className="space-y-6">
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <ProfileField
                       id="identity-code"
                       label="SỐ CCCD"
                       name="representativeCode"
-                      value={
-                        identityForm.representativeCode
-                      }
-                      onChange={
-                        handleIdentityFormChange
-                      }
+                      value={identityForm.representativeCode}
+                      onChange={handleIdentityFormChange}
                       required
                       placeholder="Nhập số CCCD"
                     />
@@ -1217,12 +978,8 @@ export default function UserProfilePage() {
                       id="identity-name"
                       label="HỌ TÊN TRÊN CCCD"
                       name="representativeName"
-                      value={
-                        identityForm.representativeName
-                      }
-                      onChange={
-                        handleIdentityFormChange
-                      }
+                      value={identityForm.representativeName}
+                      onChange={handleIdentityFormChange}
                       required
                       placeholder="Nhập họ tên"
                     />
@@ -1231,12 +988,8 @@ export default function UserProfilePage() {
                       id="identity-dob"
                       label="NGÀY SINH"
                       name="representativeDob"
-                      value={
-                        identityForm.representativeDob
-                      }
-                      onChange={
-                        handleIdentityFormChange
-                      }
+                      value={identityForm.representativeDob}
+                      onChange={handleIdentityFormChange}
                       required
                       type="date"
                     />
@@ -1245,12 +998,8 @@ export default function UserProfilePage() {
                       id="identity-address"
                       label="ĐỊA CHỈ TRÊN CCCD"
                       name="representativeAddress"
-                      value={
-                        identityForm.representativeAddress
-                      }
-                      onChange={
-                        handleIdentityFormChange
-                      }
+                      value={identityForm.representativeAddress}
+                      onChange={handleIdentityFormChange}
                       required
                       placeholder="Nhập địa chỉ"
                     />
@@ -1261,36 +1010,24 @@ export default function UserProfilePage() {
                       id="identity-front-image"
                       label="ẢNH CCCD MẶT TRƯỚC"
                       name="frontIdCardFile"
-                      onChange={
-                        handleIdentityFileChange
-                      }
-                      previewUrl={
-                        identityPreviews.front
-                      }
+                      onChange={handleIdentityFileChange}
+                      previewUrl={identityPreviews.front}
                     />
 
                     <IdentityFileInput
                       id="identity-back-image"
                       label="ẢNH CCCD MẶT SAU"
                       name="backIdCardFile"
-                      onChange={
-                        handleIdentityFileChange
-                      }
-                      previewUrl={
-                        identityPreviews.back
-                      }
+                      onChange={handleIdentityFileChange}
+                      previewUrl={identityPreviews.back}
                     />
                   </div>
 
                   <div className="flex justify-end gap-3 border-t pt-5">
                     <button
                       type="button"
-                      onClick={
-                        handleCancelEditingIdentity
-                      }
-                      disabled={
-                        isSavingIdentity
-                      }
+                      onClick={handleCancelEditingIdentity}
+                      disabled={isSavingIdentity}
                       className="rounded-md border border-slate-300 px-5 py-2.5 text-sm"
                     >
                       Hủy
@@ -1298,14 +1035,10 @@ export default function UserProfilePage() {
 
                     <button
                       type="submit"
-                      disabled={
-                        isSavingIdentity
-                      }
+                      disabled={isSavingIdentity}
                       className="rounded-md bg-[#244f4d] px-5 py-2.5 text-sm font-medium text-white disabled:opacity-60"
                     >
-                      {isSavingIdentity
-                        ? "ĐANG CẬP NHẬT..."
-                        : "LƯU GIẤY TỜ"}
+                      {isSavingIdentity ? "ĐANG CẬP NHẬT..." : "LƯU GIẤY TỜ"}
                     </button>
                   </div>
                 </form>
