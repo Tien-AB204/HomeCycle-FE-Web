@@ -1,21 +1,42 @@
-// src/routes/RoleRoute.jsx
-import { Navigate, Outlet } from "react-router-dom";
+import {
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import {
+  getHomePathByRole,
+  hasRole,
+} from "../utils/authUtils";
 
 const RoleRoute = ({ allowedRole }) => {
-  const { user, isAuthenticated } = useAuth(); // Lấy thông tin user từ Context
+  const {
+    user,
+    isAuthenticated,
+    isAuthInitializing,
+  } = useAuth();
 
-  // Nếu chưa đăng nhập -> Đẩy về trang Login (Sửa lại đường dẫn cho khớp với AppRouter)
+  if (isAuthInitializing) {
+    return null;
+  }
+
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />;
+    return (
+      <Navigate
+        to="/auth/login"
+        replace
+      />
+    );
   }
 
-  // Nếu đã đăng nhập nhưng sai quyền (VD: user thường cố vào trang Mod) -> Đẩy về trang chủ
-  if (user?.role !== allowedRole) {
-    return <Navigate to="/" replace />;
+  if (!hasRole(user?.role, allowedRole)) {
+    return (
+      <Navigate
+        to={getHomePathByRole(user?.role)}
+        replace
+      />
+    );
   }
 
-  // Nếu đúng quyền -> Cho phép render các component con bên trong
   return <Outlet />;
 };
 
