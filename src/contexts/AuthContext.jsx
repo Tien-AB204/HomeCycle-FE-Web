@@ -7,11 +7,18 @@
 import authApi from "../services/apis/authApi";
 import AuthContext from "./auth-context";
 
+const TOKEN_REFRESH_THRESHOLD_SECONDS = 60;
+
+let sessionBootstrapPromise = null;
+
 const getStoredUser = () => {
   try {
-    const rawUser = localStorage.getItem("user");
+    const rawUser =
+      localStorage.getItem("user");
 
-    return rawUser ? JSON.parse(rawUser) : null;
+    return rawUser
+      ? JSON.parse(rawUser)
+      : null;
   } catch {
     localStorage.removeItem("user");
     return null;
@@ -24,16 +31,211 @@ const clearStoredSession = () => {
   localStorage.removeItem("user");
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(getStoredUser);
+const getAuthResponseData = (
+  authResult,
+) => {
+  return authResult?.data || authResult || {};
+};
 
-  const saveAuth = useCallback(
+const decodeJwtPayload = (token) => {
+  try {
+    const segments = token.split(".");
+
+    if (segments.length !== 3) {
+      return null;
+    }
+
+    const base64Url = segments[1];
+
+    const base64 = base64Url
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(
+        Math.ceil(
+          base64Url.length / 4,
+        ) * 4,
+        "=",
+      );
+
+    const binaryString =
+      window.atob(base64);
+
+    const bytes =
+      Uint8Array.from(
+        binaryString,
+        (character) =>
+          character.charCodeAt(0),
+      );
+
+    const json = new TextDecoder().decode(
+      bytes,
+    );
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+const shouldRefreshAccessToken = (
+  accessToken,
+) => {
+  if (!accessToken) {
+    return true;
+  }
+
+  const payload =
+    decodeJwtPayload(accessToken);
+
+  if (
+    !payload ||
+    typeof payload.exp !== "number"
+  ) {
+    return true;
+  }
+
+  const currentTime =
+    Math.floor(Date.now() / 1000);
+
+  return (
+    payload.exp <=
+    currentTime +
+      TOKEN_REFRESH_THRESHOLD_SECONDS
+  );
+};
+
+const initializeStoredSession = () => {
+  /*
+   * Dùng chung một Promise để tránh gọi refresh hai lần
+   * khi React StrictMode chạy lại effect trong development.
+   */
+  if (!sessionBootstrapPromise) {
+    sessionBootstrapPromise = (async () => {
+      const storedUser =
+        getStoredUser();
+
+      const accessToken =
+        localStorage.getItem(
+          "accessToken",
+        );
+
+      const refreshToken =
+        localStorage.getItem(
+          "refreshToken",
+        );
+
+      if (
+        !storedUser ||
+        !refreshToken
+      ) {
+        clearStoredSession();
+        return null;
+      }
+
+      if (
+        !shouldRefreshAccessToken(
+          accessToken,
+        )
+      ) {
+        return storedUser;
+      }
+
+      try {
+        const refreshResult =
+          await authApi.refreshToken(
+            refreshToken,
+          );
+
+        const responseData =
+          getAuthResponseData(
+            refreshResult,
+          );
+
+        const newAccessToken =
+          responseData?.accessToken;
+
+        const newRefreshToken =
+          responseData?.refreshToken;
+
+        if (
+          !newAccessToken ||
+          !newRefreshToken
+        ) {
+          throw new Error(
+            "Refresh token response không hợp lệ.",
+          );
+        }
+
+        localStorage.setItem(
+          "accessToken",
+          newAccessToken,
+        );
+
+        localStorage.setItem(
+          "refreshToken",
+          newRefreshToken,
+        );
+
+        return storedUser;
+      } catch {
+        clearStoredSession();
+        return null;
+      }
+    })().finally(() => {
+      sessionBootstrapPromise = null;
+    });
+  }
+
+  return sessionBootstrapPromise;
+};
+
+export const AuthProvider = ({
+  children,
+}) => {
+  const [user, setUser] =
+    useState(null);
+
+  const [
+    isAuthInitializing,
+    setIsAuthInitializing,
+  ] = useState(true);
+
+  /**
+   * Kiểm tra và khôi phục session khi mở ứng dụng.
+   */
+  useEffect(() => {
+    let isActive = true;
+
+    initializeStoredSession()
+      .then((storedUser) => {
+        if (isActive) {
+          setUser(storedUser);
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsAuthInitializing(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  /**
+   * Lưu phiên đăng nhập dùng chung.
+   */
+  const saveSession = useCallback(
     ({
       user: userData,
       accessToken,
       refreshToken,
     }) => {
-      if (!userData) {
+      if (
+        !userData ||
+        typeof userData !== "object"
+      ) {
         throw new Error(
           "Không nhận được thông tin người dùng.",
         );
@@ -67,57 +269,61 @@ export const AuthProvider = ({ children }) => {
       );
 
       setUser(userData);
+
+      return userData;
     },
     [],
   );
 
+  /**
+   * Đăng nhập bằng email và mật khẩu.
+   */
   const login = useCallback(
     async (email, password) => {
-      const authResult = await authApi.login({
-        email,
-        password,
-      });
+      const normalizedEmail =
+        email.trim().toLowerCase();
 
-      /*
-       * Hỗ trợ cả hai response format:
-       *
-       * 1. {
-       *      user,
-       *      accessToken,
-       *      refreshToken
-       *    }
-       *
-       * 2. {
-       *      data: {
-       *        user,
-       *        accessToken,
-       *        refreshToken
-       *      }
-       *    }
-       */
+      const authResult =
+        await authApi.login({
+          email: normalizedEmail,
+          password,
+        });
+
       const responseData =
-        authResult?.data || authResult;
-
-      const userInfo =
-        authResult?.user ||
-        responseData?.user ||
-        responseData;
+        getAuthResponseData(
+          authResult,
+        );
 
       const accessToken =
-        authResult?.accessToken ||
         responseData?.accessToken ||
-        authResult?.token ||
+        authResult?.accessToken ||
         responseData?.token ||
+        authResult?.token ||
         "";
 
       const refreshToken =
-        authResult?.refreshToken ||
         responseData?.refreshToken ||
-        authResult?.refresh_token ||
+        authResult?.refreshToken ||
         responseData?.refresh_token ||
+        authResult?.refresh_token ||
         "";
 
-      saveAuth({
+      const userInfo =
+        responseData?.user ||
+        authResult?.user || {
+          userId:
+            responseData?.userId || "",
+          email:
+            responseData?.email ||
+            normalizedEmail,
+          username:
+            responseData?.username ||
+            normalizedEmail,
+          role:
+            responseData?.role || "",
+        };
+
+      saveSession({
         user: userInfo,
         accessToken,
         refreshToken,
@@ -125,7 +331,40 @@ export const AuthProvider = ({ children }) => {
 
       return userInfo;
     },
-    [saveAuth],
+    [saveSession],
+  );
+
+  /**
+   * Đồng bộ user sau khi cập nhật hồ sơ.
+   */
+  const updateUser = useCallback(
+    (updates) => {
+      if (
+        !updates ||
+        typeof updates !== "object"
+      ) {
+        return;
+      }
+
+      setUser((currentUser) => {
+        if (!currentUser) {
+          return currentUser;
+        }
+
+        const updatedUser = {
+          ...currentUser,
+          ...updates,
+        };
+
+        localStorage.setItem(
+          "user",
+          JSON.stringify(updatedUser),
+        );
+
+        return updatedUser;
+      });
+    },
+    [],
   );
 
   const logout = useCallback(() => {
@@ -133,16 +372,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   }, []);
 
+  /**
+   * Nhận sự kiện hết phiên từ axiosClient.
+   */
   useEffect(() => {
-    /*
-     * axiosClient phát sự kiện này khi:
-     * - Không có refresh token.
-     * - Refresh token hết hạn.
-     * - Refresh API thất bại.
-     */
     const handleSessionExpired = () => {
       clearStoredSession();
       setUser(null);
+      setIsAuthInitializing(false);
     };
 
     window.addEventListener(
@@ -158,31 +395,45 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
+  /**
+   * Đồng bộ session giữa nhiều tab.
+   */
   useEffect(() => {
-    /*
-     * Đồng bộ đăng nhập/đăng xuất giữa nhiều tab.
-     */
-    const handleStorageChange = (event) => {
+    const handleStorageChange = (
+      event,
+    ) => {
+      const sessionKeys = [
+        "user",
+        "accessToken",
+        "refreshToken",
+      ];
+
       if (
-        event.key !== "user" &&
-        event.key !== "accessToken" &&
-        event.key !== "refreshToken"
+        event.key &&
+        !sessionKeys.includes(
+          event.key,
+        )
       ) {
         return;
       }
 
+      const storedUser =
+        getStoredUser();
+
       const storedAccessToken =
-        localStorage.getItem("accessToken");
+        localStorage.getItem(
+          "accessToken",
+        );
 
       const storedRefreshToken =
-        localStorage.getItem("refreshToken");
-
-      const storedUser = getStoredUser();
+        localStorage.getItem(
+          "refreshToken",
+        );
 
       if (
+        !storedUser ||
         !storedAccessToken ||
-        !storedRefreshToken ||
-        !storedUser
+        !storedRefreshToken
       ) {
         setUser(null);
         return;
@@ -205,28 +456,60 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const isAuthenticated = Boolean(
-    user &&
-      localStorage.getItem("accessToken") &&
-      localStorage.getItem("refreshToken"),
+    !isAuthInitializing &&
+      user &&
+      localStorage.getItem(
+        "accessToken",
+      ) &&
+      localStorage.getItem(
+        "refreshToken",
+      ),
   );
 
   const contextValue = useMemo(
     () => ({
       user,
       isAuthenticated,
+      isAuthInitializing,
       login,
       logout,
+      saveSession,
+      updateUser,
     }),
     [
       user,
       isAuthenticated,
+      isAuthInitializing,
       login,
       logout,
+      saveSession,
+      updateUser,
     ],
   );
 
+  if (isAuthInitializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div
+          role="status"
+          className="flex items-center gap-3 text-[#244f4d]"
+        >
+          <span className="material-symbols-outlined animate-spin text-3xl">
+            refresh
+          </span>
+
+          <span className="font-medium">
+            Đang khôi phục phiên đăng nhập...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider
+      value={contextValue}
+    >
       {children}
     </AuthContext.Provider>
   );
