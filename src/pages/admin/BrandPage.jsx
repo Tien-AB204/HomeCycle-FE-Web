@@ -1,192 +1,730 @@
-// src/pages/admin/BrandPage.jsx
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+import BrandModal from "../../features/system/brand/BrandModal";
+import brandApi from "../../services/apis/brandApi";
 
-export default function BrandPage() {
-  // 1. MOCK DATA THƯƠNG HIỆU (Trích xuất từ các tên sản phẩm trong mockData)
-  const initialBrands = [
-    {
-      id: "BR_001",
-      name: "Samsung",
-      categories: ["Điện máy", "Gia dụng"],
-      postCount: 124,
-      status: "active",
-      color: "bg-blue-600",
-    },
-    {
-      id: "BR_002",
-      name: "LG",
-      categories: ["Điện máy", "Gia dụng"],
-      postCount: 98,
-      status: "active",
-      color: "bg-red-600",
-    },
-    {
-      id: "BR_003",
-      name: "Sony",
-      categories: ["Điện máy"],
-      postCount: 85,
-      status: "active",
-      color: "bg-black",
-    },
-    {
-      id: "BR_004",
-      name: "Sharp",
-      categories: ["Gia dụng"],
-      postCount: 42,
-      status: "active",
-      color: "bg-red-500",
-    },
-    {
-      id: "BR_005",
-      name: "Panasonic",
-      categories: ["Điện máy", "Gia dụng"],
-      postCount: 110,
-      status: "active",
-      color: "bg-blue-700",
-    },
-    {
-      id: "BR_006",
-      name: "Philips",
-      categories: ["Gia dụng"],
-      postCount: 36,
-      status: "inactive", // Đang tạm ẩn
-      color: "bg-blue-500",
-    },
-  ];
+const PAGE_SIZE = 10;
 
-  const [brands, setBrands] = useState(initialBrands);
-  const [searchTerm, setSearchTerm] = useState("");
+const INITIAL_PAGINATION = {
+  pageNumber: 1,
+  pageSize: PAGE_SIZE,
+  totalCount: 0,
+  totalPages: 0,
+  hasPreviousPage: false,
+  hasNextPage: false,
+};
 
-  // 2. XỬ LÝ TÌM KIẾM
-  const filteredBrands = brands.filter((brand) =>
-    brand.name.toLowerCase().includes(searchTerm.toLowerCase()),
+const formatCreatedAt = (value) => {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat(
+    "vi-VN",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    },
+  ).format(date);
+};
+
+const isCanceledRequest = (error) => {
+  return (
+    error?.name === "CanceledError" ||
+    error?.code === "ERR_CANCELED"
   );
+};
+
+const getValidationMessage = (
+  errors,
+) => {
+  if (!errors) {
+    return "";
+  }
+
+  return Object.values(errors)
+    .flat()
+    .filter(Boolean)
+    .join("\n");
+};
+
+const getErrorMessage = (error) => {
+  const responseData =
+    error?.response?.data;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      {/* --- HEADER CỦA BẢNG --- */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    getValidationMessage(
+      responseData?.errors,
+    ) ||
+    responseData?.error?.message ||
+    responseData?.message ||
+    error?.message ||
+    "Đã xảy ra lỗi. Vui lòng thử lại."
+  );
+};
+
+const getBrandInitial = (
+  brandName,
+) => {
+  return (
+    brandName
+      ?.trim()
+      .charAt(0)
+      .toUpperCase() || "B"
+  );
+};
+
+export default function BrandPage() {
+  const [brands, setBrands] =
+    useState([]);
+
+  const [pagination, setPagination] =
+    useState(INITIAL_PAGINATION);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  const [
+    actionError,
+    setActionError,
+  ] = useState("");
+
+  const [
+    requestVersion,
+    setRequestVersion,
+  ] = useState(0);
+
+  const [
+    isModalOpen,
+    setIsModalOpen,
+  ] = useState(false);
+
+  const [
+    editingBrand,
+    setEditingBrand,
+  ] = useState(null);
+
+  const [isSaving, setIsSaving] =
+    useState(false);
+
+  const [
+    deletingBrandId,
+    setDeletingBrandId,
+  ] = useState(null);
+
+  const [
+    modalError,
+    setModalError,
+  ] = useState("");
+
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    let isActive = true;
+
+    brandApi
+      .getAll({
+        pageNumber:
+          pagination.pageNumber,
+        pageSize: PAGE_SIZE,
+        signal: controller.signal,
+      })
+      .then((result) => {
+        if (!isActive) {
+          return;
+        }
+
+        setBrands(result.items);
+        setPagination(result);
+        setError("");
+      })
+      .catch((requestError) => {
+        if (
+          !isActive ||
+          isCanceledRequest(
+            requestError,
+          )
+        ) {
+          return;
+        }
+
+        setBrands([]);
+
+        setError(
+          getErrorMessage(
+            requestError,
+          ),
+        );
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [
+    pagination.pageNumber,
+    requestVersion,
+  ]);
+
+  const refreshCurrentPage = () => {
+    setLoading(true);
+
+    setRequestVersion(
+      (currentVersion) =>
+        currentVersion + 1,
+    );
+  };
+
+  const refreshFirstPage = () => {
+    setLoading(true);
+
+    if (pagination.pageNumber !== 1) {
+      setPagination(
+        (currentPagination) => ({
+          ...currentPagination,
+          pageNumber: 1,
+        }),
+      );
+
+      return;
+    }
+
+    setRequestVersion(
+      (currentVersion) =>
+        currentVersion + 1,
+    );
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingBrand(null);
+    setModalError("");
+    setActionError("");
+    setSuccessMessage("");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (
+    brand,
+  ) => {
+    setEditingBrand(brand);
+    setModalError("");
+    setActionError("");
+    setSuccessMessage("");
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    if (isSaving) {
+      return;
+    }
+
+    setEditingBrand(null);
+    setModalError("");
+    setIsModalOpen(false);
+  };
+
+  const handleSaveBrand = async (
+    formData,
+  ) => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    setModalError("");
+
+    try {
+      if (editingBrand) {
+        const updatedBrand =
+          await brandApi.update(
+            editingBrand.brandId,
+            formData,
+          );
+
+        setSuccessMessage(
+          `Đã cập nhật thương hiệu "${updatedBrand.brandName}" thành công.`,
+        );
+
+        refreshCurrentPage();
+      } else {
+        const createdBrand =
+          await brandApi.create(
+            formData,
+          );
+
+        setSuccessMessage(
+          `Đã tạo thương hiệu "${createdBrand.brandName}" thành công.`,
+        );
+
+        refreshFirstPage();
+      }
+
+      setEditingBrand(null);
+      setIsModalOpen(false);
+    } catch (requestError) {
+      setModalError(
+        getErrorMessage(
+          requestError,
+        ),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleHideBrand = async (
+    brand,
+  ) => {
+    if (deletingBrandId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn ẩn thương hiệu "${brand.brandName}"?\n\nThương hiệu sẽ không còn xuất hiện trong các danh sách đang hoạt động.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingBrandId(
+      brand.brandId,
+    );
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+      await brandApi.remove(
+        brand.brandId,
+      );
+
+      setSuccessMessage(
+        `Đã ẩn thương hiệu "${brand.brandName}" thành công.`,
+      );
+
+      refreshCurrentPage();
+    } catch (requestError) {
+      setActionError(
+        getErrorMessage(
+          requestError,
+        ),
+      );
+    } finally {
+      setDeletingBrandId(null);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (
+      loading ||
+      !pagination.hasPreviousPage
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setActionError("");
+    setSuccessMessage("");
+
+    setPagination(
+      (currentPagination) => ({
+        ...currentPagination,
+        pageNumber:
+          currentPagination.pageNumber -
+          1,
+      }),
+    );
+  };
+
+  const handleNextPage = () => {
+    if (
+      loading ||
+      !pagination.hasNextPage
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setActionError("");
+    setSuccessMessage("");
+
+    setPagination(
+      (currentPagination) => ({
+        ...currentPagination,
+        pageNumber:
+          currentPagination.pageNumber +
+          1,
+      }),
+    );
+  };
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError("");
+
+    setRequestVersion(
+      (currentVersion) =>
+        currentVersion + 1,
+    );
+  };
+
+  return (
+    <div className="m-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-xl font-bold text-gray-800">
-            Quản lý Thương hiệu
+            Quản lý thương hiệu
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Quản lý {brands.length} thương hiệu sản phẩm trên hệ thống
+
+          <p className="mt-1 text-sm text-gray-500">
+            Quản lý{" "}
+            {pagination.totalCount} thương
+            hiệu sản phẩm trên hệ thống
           </p>
         </div>
 
-        {/* Nút thêm mới */}
-        <button className="bg-[#16a34a] text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-green-700 transition">
-          <span className="material-symbols-outlined text-[20px]">add</span>
+        <button
+          type="button"
+          onClick={
+            handleOpenCreateModal
+          }
+          disabled={Boolean(
+            deletingBrandId,
+          )}
+          className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined text-[20px]">
+            add
+          </span>
+
           Thêm thương hiệu mới
         </button>
       </div>
 
-      {/* --- THANH TÌM KIẾM --- */}
-      <div className="mb-6 relative w-full md:w-1/2">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">
-          search
-        </span>
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo tên thương hiệu..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a] text-sm"
-        />
-      </div>
+      {successMessage && (
+        <div
+          role="status"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 p-4"
+        >
+          <p className="text-sm text-green-700">
+            {successMessage}
+          </p>
 
-      {/* --- BẢNG DỮ LIỆU --- */}
+          <button
+            type="button"
+            onClick={() =>
+              setSuccessMessage("")
+            }
+            aria-label="Đóng thông báo"
+            className="text-green-700 hover:text-green-900"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              close
+            </span>
+          </button>
+        </div>
+      )}
+
+      {actionError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+        >
+          <p className="whitespace-pre-line text-sm text-red-700">
+            {actionError}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              setActionError("")
+            }
+            aria-label="Đóng thông báo lỗi"
+            className="text-red-700 hover:text-red-900"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              close
+            </span>
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div
+          role="alert"
+          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center"
+        >
+          <p className="whitespace-pre-line text-sm text-red-700">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-              <th className="p-4 font-semibold w-16">Logo</th>
-              <th className="p-4 font-semibold">Tên Thương hiệu</th>
-              <th className="p-4 font-semibold">Thuộc Danh mục</th>
-              <th className="p-4 font-semibold text-center">Số bài viết</th>
-              <th className="p-4 font-semibold">Trạng thái</th>
-              <th className="p-4 font-semibold text-right">Thao tác</th>
+            <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+              <th className="w-20 p-4 font-semibold">
+                Logo
+              </th>
+
+              <th className="p-4 font-semibold">
+                Tên thương hiệu
+              </th>
+
+              <th className="p-4 font-semibold">
+                Mô tả
+              </th>
+
+              <th className="p-4 font-semibold">
+                Ngày tạo
+              </th>
+
+              <th className="p-4 font-semibold">
+                Trạng thái
+              </th>
+
+              <th className="p-4 text-right font-semibold">
+                Thao tác
+              </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-100 text-sm">
-            {filteredBrands.length > 0 ? (
-              filteredBrands.map((brand) => (
-                <tr
-                  key={brand.id}
-                  className="hover:bg-gray-50 transition-colors"
+            {loading ? (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="p-10 text-center text-gray-500"
                 >
-                  <td className="p-4">
-                    {/* Tạo Logo giả lập bằng chữ cái đầu */}
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg ${brand.color}`}
-                    >
-                      {brand.name.charAt(0)}
-                    </div>
-                  </td>
-                  <td className="p-4 font-bold text-[#244f4d]">{brand.name}</td>
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-1">
-                      {brand.categories.map((cat, index) => (
-                        <span
-                          key={index}
-                          className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-medium"
-                        >
-                          {cat}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="p-4 text-center font-medium">
-                    {brand.postCount}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        brand.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {brand.status === "active" ? "Hoạt động" : "Đang ẩn"}
+                  <div
+                    role="status"
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined animate-spin">
+                      refresh
                     </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition"
-                      title="Chỉnh sửa"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        edit
+
+                    <span>
+                      Đang tải thương hiệu...
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            ) : brands.length > 0 ? (
+              brands.map((brand) => {
+                const isDeleting =
+                  deletingBrandId ===
+                  brand.brandId;
+
+                return (
+                  <tr
+                    key={brand.brandId}
+                    className="transition-colors hover:bg-gray-50"
+                  >
+                    <td className="p-4">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#244f4d] text-lg font-bold text-white">
+                        {getBrandInitial(
+                          brand.brandName,
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="p-4 font-bold text-[#244f4d]">
+                      {brand.brandName}
+                    </td>
+
+                    <td className="max-w-[420px] p-4 text-gray-600">
+                      <p className="line-clamp-2">
+                        {brand.description ||
+                          "Không có mô tả"}
+                      </p>
+                    </td>
+
+                    <td className="whitespace-nowrap p-4 text-gray-600">
+                      {formatCreatedAt(
+                        brand.createdAt,
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      <span
+                        className={[
+                          "inline-block rounded-full px-3 py-1 text-xs font-semibold",
+                          brand.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600",
+                        ].join(" ")}
+                      >
+                        {brand.isActive
+                          ? "Hoạt động"
+                          : "Đang ẩn"}
                       </span>
-                    </button>
-                    <button
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition"
-                      title="Xóa"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        delete
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-              ))
+                    </td>
+
+                    <td className="space-x-2 p-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleOpenEditModal(
+                            brand,
+                          )
+                        }
+                        disabled={Boolean(
+                          deletingBrandId,
+                        )}
+                        title="Chỉnh sửa"
+                        aria-label={`Chỉnh sửa ${brand.brandName}`}
+                        className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">
+                          edit
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleHideBrand(
+                            brand,
+                          )
+                        }
+                        disabled={
+                          Boolean(
+                            deletingBrandId,
+                          ) ||
+                          !brand.isActive
+                        }
+                        title={
+                          brand.isActive
+                            ? "Ẩn thương hiệu"
+                            : "Thương hiệu đã được ẩn"
+                        }
+                        aria-label={`Ẩn ${brand.brandName}`}
+                        className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50"
+                      >
+                        <span
+                          className={[
+                            "material-symbols-outlined text-[18px]",
+                            isDeleting
+                              ? "animate-spin"
+                              : "",
+                          ].join(" ")}
+                        >
+                          {isDeleting
+                            ? "refresh"
+                            : "visibility_off"}
+                        </span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-gray-500">
-                  {searchTerm ? (
-                    <span>
-                      Không tìm thấy thương hiệu nào khớp với "{searchTerm}"
-                    </span>
-                  ) : (
-                    <span>Chưa có thương hiệu nào.</span>
-                  )}
+                <td
+                  colSpan={6}
+                  className="p-10 text-center text-gray-500"
+                >
+                  Chưa có thương hiệu nào.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {!loading &&
+        !error &&
+        pagination.totalCount > 0 && (
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-4 sm:flex-row">
+            <p className="text-sm text-gray-500">
+              Trang{" "}
+              {pagination.pageNumber} /{" "}
+              {Math.max(
+                pagination.totalPages,
+                1,
+              )}
+            </p>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={
+                  handlePreviousPage
+                }
+                disabled={
+                  loading ||
+                  !pagination.hasPreviousPage
+                }
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Trang trước
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  handleNextPage
+                }
+                disabled={
+                  loading ||
+                  !pagination.hasNextPage
+                }
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Trang sau
+              </button>
+            </div>
+          </div>
+        )}
+
+      {isModalOpen && (
+        <BrandModal
+          key={
+            editingBrand?.brandId ||
+            "create-brand"
+          }
+          editingBrand={editingBrand}
+          onClose={handleCloseModal}
+          onSubmit={handleSaveBrand}
+          submitting={isSaving}
+          serverError={modalError}
+        />
+      )}
     </div>
   );
 }
