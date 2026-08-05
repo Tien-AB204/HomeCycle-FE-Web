@@ -1,17 +1,16 @@
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import AppRouter from './routes/AppRouter';
-
-// import { AuthProvider } from './contexts/AuthContext'; // Tương lai sẽ mở comment dòng này
+import { AuthProvider } from './contexts/AuthContext';
 
 const App = () => {
   return (
     // BrowserRouter bắt buộc phải nằm ngoài cùng để quản lý URL
     <BrowserRouter>
-      {/* Sau khi code xong AuthContext, ta sẽ bọc <AuthProvider> ở đây 
-        để truyền thông tin User xuống toàn bộ AppRouter 
-      */}
-      <AppRouter />
+      {/* Bọc AuthProvider ở đây để toàn bộ các Route và Component đều lấy được thông tin User */}
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
     </BrowserRouter>
   );
 };
