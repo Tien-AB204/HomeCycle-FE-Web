@@ -6,6 +6,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import AttributeModal from "../../features/system/productType/AttributeModal";
 import productTypeApi from "../../services/apis/productTypeApi";
 import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi";
 
@@ -88,6 +89,33 @@ export default function ProductTypeAttributePage() {
     requestVersion,
     setRequestVersion,
   ] = useState(0);
+
+  const [isModalOpen, setIsModalOpen] =
+    useState(false);
+
+  const [
+    editingAttribute,
+    setEditingAttribute,
+  ] = useState(null);
+
+  const [
+    loadingAttributeId,
+    setLoadingAttributeId,
+  ] = useState("");
+
+  const [isSaving, setIsSaving] =
+    useState(false);
+
+  const [modalError, setModalError] =
+    useState("");
+
+  const [actionError, setActionError] =
+    useState("");
+
+  const [
+    successMessage,
+    setSuccessMessage,
+  ] = useState("");
 
   useEffect(() => {
     const controller =
@@ -177,6 +205,127 @@ export default function ProductTypeAttributePage() {
     );
   };
 
+  const handleOpenCreateModal = () => {
+    if (
+      loading ||
+      isSaving ||
+      loadingAttributeId
+    ) {
+      return;
+    }
+
+    setEditingAttribute(null);
+    setModalError("");
+    setActionError("");
+    setSuccessMessage("");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal =
+    async (attribute) => {
+      if (
+        loading ||
+        isSaving ||
+        loadingAttributeId ||
+        !attribute?.attributeId
+      ) {
+        return;
+      }
+
+      setLoadingAttributeId(
+        attribute.attributeId,
+      );
+
+      setModalError("");
+      setActionError("");
+      setSuccessMessage("");
+
+      try {
+        const detailedAttribute =
+          await productTypeAttributeApi.getById(
+            attribute.attributeId,
+          );
+
+        setEditingAttribute(
+          detailedAttribute,
+        );
+
+        setIsModalOpen(true);
+      } catch (requestError) {
+        setEditingAttribute(null);
+
+        setActionError(
+          getErrorMessage(requestError),
+        );
+      } finally {
+        setLoadingAttributeId("");
+      }
+    };
+
+  const handleCloseModal = () => {
+    if (isSaving) {
+      return;
+    }
+
+    setEditingAttribute(null);
+    setModalError("");
+    setIsModalOpen(false);
+  };
+
+  const handleSaveAttribute =
+    async (formData) => {
+      if (isSaving) {
+        return;
+      }
+
+      setIsSaving(true);
+      setModalError("");
+
+      try {
+        if (editingAttribute) {
+          const updatedAttribute =
+            await productTypeAttributeApi.update(
+              editingAttribute.attributeId,
+              formData,
+            );
+
+          setSuccessMessage(
+            'Đã cập nhật thuộc tính "' +
+              updatedAttribute.attributeName +
+              '" thành công.',
+          );
+        } else {
+          const createdAttribute =
+            await productTypeAttributeApi.create(
+              productTypeId,
+              formData,
+            );
+
+          setSuccessMessage(
+            'Đã tạo thuộc tính "' +
+              createdAttribute.attributeName +
+              '" thành công.',
+          );
+        }
+
+        setEditingAttribute(null);
+        setIsModalOpen(false);
+        setActionError("");
+        setLoading(true);
+
+        setRequestVersion(
+          (currentVersion) =>
+            currentVersion + 1,
+        );
+      } catch (requestError) {
+        setModalError(
+          getErrorMessage(requestError),
+        );
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
   const totalOptions =
     attributes.reduce(
       (currentTotal, attribute) => {
@@ -199,6 +348,24 @@ export default function ProductTypeAttributePage() {
       (attribute) =>
         attribute.isFilterable,
     ).length;
+
+  const nextDisplayOrder =
+    attributes.reduce(
+      (currentMaximum, attribute) => {
+        const displayOrder =
+          Number.isInteger(
+            attribute.displayOrder,
+          )
+            ? attribute.displayOrder
+            : 0;
+
+        return Math.max(
+          currentMaximum,
+          displayOrder,
+        );
+      },
+      0,
+    ) + 1;
 
   return (
     <div className="m-6 space-y-6">
@@ -248,9 +415,26 @@ export default function ProductTypeAttributePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
-              Chế độ xem
-            </span>
+            <button
+              type="button"
+              onClick={
+                handleOpenCreateModal
+              }
+              disabled={
+                loading ||
+                isSaving ||
+                Boolean(
+                  loadingAttributeId,
+                )
+              }
+              className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                add
+              </span>
+
+              Thêm thuộc tính
+            </button>
 
             <button
               type="button"
@@ -299,6 +483,54 @@ export default function ProductTypeAttributePage() {
               Thử lại
             </button>
           </div>
+        </section>
+      )}
+
+      {actionError && (
+        <section
+          role="alert"
+          className="flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-5"
+        >
+          <p className="whitespace-pre-line text-sm text-red-700">
+            {actionError}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              setActionError("")
+            }
+            aria-label="Đóng thông báo lỗi"
+            className="text-red-600 hover:text-red-800"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              close
+            </span>
+          </button>
+        </section>
+      )}
+
+      {successMessage && (
+        <section
+          role="status"
+          className="flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-5"
+        >
+          <p className="text-sm text-green-700">
+            {successMessage}
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              setSuccessMessage("")
+            }
+            aria-label="Đóng thông báo thành công"
+            className="text-green-700 hover:text-green-900"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              close
+            </span>
+          </button>
         </section>
       )}
 
@@ -383,7 +615,7 @@ export default function ProductTypeAttributePage() {
                 </p>
 
                 <p className="mt-1 text-sm text-gray-500">
-                  Chức năng tạo thuộc tính sẽ được thêm ở bước tiếp theo.
+                  Bấm “Thêm thuộc tính” để tạo cấu hình đầu tiên.
                 </p>
               </div>
             ) : (
@@ -421,11 +653,55 @@ export default function ProductTypeAttributePage() {
                           </div>
                         </div>
 
-                        <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                          {getInputModeLabel(
-                            attribute.inputMode,
-                          )}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                            {getInputModeLabel(
+                              attribute.inputMode,
+                            )}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleOpenEditModal(
+                                attribute,
+                              )
+                            }
+                            disabled={
+                              loading ||
+                              isSaving ||
+                              Boolean(
+                                loadingAttributeId,
+                              )
+                            }
+                            title={
+                              loadingAttributeId ===
+                              attribute.attributeId
+                                ? "Đang tải chi tiết..."
+                                : "Chỉnh sửa thuộc tính"
+                            }
+                            aria-label={
+                              "Chỉnh sửa thuộc tính " +
+                              attribute.attributeName
+                            }
+                            className="rounded-md p-2 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <span
+                              className={[
+                                "material-symbols-outlined text-[18px]",
+                                loadingAttributeId ===
+                                attribute.attributeId
+                                  ? "animate-spin"
+                                  : "",
+                              ].join(" ")}
+                            >
+                              {loadingAttributeId ===
+                              attribute.attributeId
+                                ? "refresh"
+                                : "edit"}
+                            </span>
+                          </button>
+                        </div>
                       </div>
 
                       <div className="p-5">
@@ -548,6 +824,26 @@ export default function ProductTypeAttributePage() {
           </section>
         </>
       ) : null}
+      {isModalOpen && (
+        <AttributeModal
+          key={
+            editingAttribute?.attributeId ||
+            "create-attribute"
+          }
+          editingAttribute={
+            editingAttribute
+          }
+          defaultDisplayOrder={
+            nextDisplayOrder
+          }
+          onClose={handleCloseModal}
+          onSubmit={
+            handleSaveAttribute
+          }
+          submitting={isSaving}
+          serverError={modalError}
+        />
+      )}
     </div>
   );
 }
