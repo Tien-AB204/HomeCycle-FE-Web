@@ -1,32 +1,29 @@
 import { useState } from "react";
 
 const getInitialFormData = (
-  editingCategory,
+  editingBrand,
 ) => {
   return {
-    categoryName:
-      editingCategory?.categoryName ||
-      "",
+    brandName:
+      editingBrand?.brandName || "",
     description:
-      editingCategory?.description ||
-      "",
+      editingBrand?.description || "",
     isActive:
-      editingCategory?.isActive ??
-      true,
+      editingBrand?.isActive ?? true,
   };
 };
 
-export default function CategoryModal({
+export default function BrandModal({
   onClose,
   onSubmit,
-  editingCategory = null,
+  editingBrand = null,
   submitting = false,
   serverError = "",
 }) {
   const [formData, setFormData] =
     useState(() =>
       getInitialFormData(
-        editingCategory,
+        editingBrand,
       ),
     );
 
@@ -36,7 +33,7 @@ export default function CategoryModal({
   ] = useState("");
 
   const isEditing =
-    Boolean(editingCategory);
+    Boolean(editingBrand);
 
   const handleChange = (event) => {
     const {
@@ -64,22 +61,22 @@ export default function CategoryModal({
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    const categoryName =
-      formData.categoryName.trim();
+    const brandName =
+      formData.brandName.trim();
 
     const description =
       formData.description.trim();
 
-    if (!categoryName) {
+    if (!brandName) {
       setValidationError(
-        "Vui lòng nhập tên danh mục.",
+        "Vui lòng nhập tên thương hiệu.",
       );
 
       return;
     }
 
     onSubmit({
-      categoryName,
+      brandName,
       description,
       isActive:
         formData.isActive,
@@ -91,16 +88,16 @@ export default function CategoryModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="category-modal-title"
+        aria-labelledby="brand-modal-title"
         className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
       >
         <h3
-          id="category-modal-title"
+          id="brand-modal-title"
           className="mb-4 text-lg font-bold text-gray-800"
         >
           {isEditing
-            ? "Chỉnh sửa danh mục"
-            : "Thêm danh mục mới"}
+            ? "Chỉnh sửa thương hiệu"
+            : "Thêm thương hiệu mới"}
         </h3>
 
         {(validationError ||
@@ -120,41 +117,39 @@ export default function CategoryModal({
         >
           <div>
             <label
-              htmlFor="category-name"
+              htmlFor="brand-name"
               className="mb-1 block text-sm font-medium text-gray-700"
             >
-              Tên danh mục{" "}
+              Tên thương hiệu{" "}
               <span className="text-red-500">
                 *
               </span>
             </label>
 
             <input
-              id="category-name"
-              name="categoryName"
+              id="brand-name"
+              name="brandName"
               type="text"
               required
               autoFocus
               disabled={submitting}
-              value={
-                formData.categoryName
-              }
+              value={formData.brandName}
               onChange={handleChange}
-              placeholder="Ví dụ: Đồ điện lạnh"
+              placeholder="Ví dụ: Samsung"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
           </div>
 
           <div>
             <label
-              htmlFor="category-description"
+              htmlFor="brand-description"
               className="mb-1 block text-sm font-medium text-gray-700"
             >
               Mô tả
             </label>
 
             <textarea
-              id="category-description"
+              id="brand-description"
               name="description"
               rows={4}
               disabled={submitting}
@@ -162,7 +157,7 @@ export default function CategoryModal({
                 formData.description
               }
               onChange={handleChange}
-              placeholder="Mô tả ngắn về danh mục..."
+              placeholder="Mô tả ngắn về thương hiệu..."
               className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
           </div>
@@ -170,7 +165,7 @@ export default function CategoryModal({
           {isEditing && (
             <div className="flex items-center gap-2">
               <input
-                id="category-active"
+                id="brand-active"
                 name="isActive"
                 type="checkbox"
                 checked={
@@ -182,10 +177,10 @@ export default function CategoryModal({
               />
 
               <label
-                htmlFor="category-active"
+                htmlFor="brand-active"
                 className="text-sm font-medium text-gray-700"
               >
-                Danh mục đang hoạt động
+                Thương hiệu đang hoạt động
               </label>
             </div>
           )}
