@@ -30,6 +30,7 @@ import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
+import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 
 // User Pages
 import UserProfilePage from "../pages/user/UserProfilePage";
@@ -172,6 +173,13 @@ const AppRouter = () => {
           <Route
             path="product-types"
             element={<ProductTypePage />}
+          />
+
+          <Route
+            path="product-types/:productTypeId/attributes"
+            element={
+              <ProductTypeAttributePage />
+            }
           />
         </Route>
       </Route>
