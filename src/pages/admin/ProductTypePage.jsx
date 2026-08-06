@@ -93,6 +93,9 @@ export default function ProductTypePage() {
 
   const [error, setError] = useState("");
 
+  const [actionError, setActionError] =
+    useState("");
+
   const [categoryError, setCategoryError] =
     useState("");
 
@@ -122,6 +125,11 @@ export default function ProductTypePage() {
     editingProductType,
     setEditingProductType,
   ] = useState(null);
+
+  const [
+    loadingProductTypeId,
+    setLoadingProductTypeId,
+  ] = useState("");
 
   const [isSaving, setIsSaving] =
     useState(false);
@@ -156,6 +164,9 @@ export default function ProductTypePage() {
   const isWaitingForSearch =
     searchTerm.trim() !==
     debouncedSearchTerm;
+
+  const isLoadingProductTypeDetails =
+    Boolean(loadingProductTypeId);
 
   useEffect(() => {
     const controller =
@@ -391,11 +402,13 @@ export default function ProductTypePage() {
   ) => {
     setSearchTerm(event.target.value);
     setSuccessMessage("");
+    setActionError("");
   };
 
   const handleClearKeyword = () => {
     setLoading(true);
     setError("");
+    setActionError("");
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setSuccessMessage("");
@@ -413,6 +426,7 @@ export default function ProductTypePage() {
   ) => {
     setLoading(true);
     setError("");
+    setActionError("");
 
     setSelectedCategoryId(
       event.target.value,
@@ -433,6 +447,7 @@ export default function ProductTypePage() {
   ) => {
     setLoading(true);
     setError("");
+    setActionError("");
     setStatusFilter(event.target.value);
     setSuccessMessage("");
 
@@ -447,6 +462,7 @@ export default function ProductTypePage() {
   const handleResetFilters = () => {
     setLoading(true);
     setError("");
+    setActionError("");
     setSearchTerm("");
     setDebouncedSearchTerm("");
     setSelectedCategoryId("");
@@ -471,6 +487,13 @@ export default function ProductTypePage() {
   };
 
   const handleOpenCreateModal = () => {
+    if (
+      isLoadingProductTypeDetails ||
+      isDeleting
+    ) {
+      return;
+    }
+
     if (categories.length === 0) {
       setCategoryError(
         "Không có dữ liệu danh mục để tạo loại sản phẩm.",
@@ -481,18 +504,53 @@ export default function ProductTypePage() {
 
     setEditingProductType(null);
     setModalError("");
+    setActionError("");
     setSuccessMessage("");
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (
-    productType,
-  ) => {
-    setEditingProductType(productType);
-    setModalError("");
-    setSuccessMessage("");
-    setIsModalOpen(true);
-  };
+  const handleOpenEditModal =
+    async (productType) => {
+      if (
+        isLoadingProductTypeDetails ||
+        isDeleting ||
+        !productType?.productTypeId
+      ) {
+        return;
+      }
+
+      const productTypeId =
+        productType.productTypeId;
+
+      setLoadingProductTypeId(
+        productTypeId,
+      );
+
+      setActionError("");
+      setModalError("");
+      setSuccessMessage("");
+
+      try {
+        const detailedProductType =
+          await productTypeApi.getById(
+            productTypeId,
+          );
+
+        setEditingProductType(
+          detailedProductType,
+        );
+
+        setIsModalOpen(true);
+      } catch (requestError) {
+        setEditingProductType(null);
+
+        setActionError(
+          getErrorMessage(requestError),
+        );
+      } finally {
+        setLoadingProductTypeId("");
+      }
+    };
 
   const handleCloseModal = () => {
     if (isSaving) {
@@ -539,6 +597,7 @@ export default function ProductTypePage() {
           refreshFirstPage();
         }
 
+        setActionError("");
         setEditingProductType(null);
         setIsModalOpen(false);
       } catch (requestError) {
@@ -553,12 +612,16 @@ export default function ProductTypePage() {
   const handleOpenDeleteDialog = (
     productType,
   ) => {
-    if (isDeleting) {
+    if (
+      isDeleting ||
+      isLoadingProductTypeDetails
+    ) {
       return;
     }
 
     setDeletingProductType(productType);
     setDeleteError("");
+    setActionError("");
     setSuccessMessage("");
   };
 
@@ -597,6 +660,7 @@ export default function ProductTypePage() {
         `Đã xóa/ẩn loại sản phẩm "${productTypeName}" thành công.`,
       );
 
+      setActionError("");
       setDeletingProductType(null);
       setLoading(true);
       setError("");
@@ -634,6 +698,7 @@ export default function ProductTypePage() {
   const handlePreviousPage = () => {
     if (
       loading ||
+      isLoadingProductTypeDetails ||
       !pagination.hasPreviousPage
     ) {
       return;
@@ -641,6 +706,7 @@ export default function ProductTypePage() {
 
     setLoading(true);
     setError("");
+    setActionError("");
     setSuccessMessage("");
 
     setPagination(
@@ -656,6 +722,7 @@ export default function ProductTypePage() {
   const handleNextPage = () => {
     if (
       loading ||
+      isLoadingProductTypeDetails ||
       !pagination.hasNextPage
     ) {
       return;
@@ -663,6 +730,7 @@ export default function ProductTypePage() {
 
     setLoading(true);
     setError("");
+    setActionError("");
     setSuccessMessage("");
 
     setPagination(
@@ -678,6 +746,7 @@ export default function ProductTypePage() {
   const handleRetry = () => {
     setLoading(true);
     setError("");
+    setActionError("");
 
     setRequestVersion(
       (currentVersion) =>
@@ -706,7 +775,8 @@ export default function ProductTypePage() {
           disabled={
             loading ||
             categories.length === 0 ||
-            isDeleting
+            isDeleting ||
+            isLoadingProductTypeDetails
           }
           title={
             categories.length === 0
@@ -784,7 +854,10 @@ export default function ProductTypePage() {
               onChange={
                 handleCategoryFilterChange
               }
-              disabled={loading}
+              disabled={
+                loading ||
+                isLoadingProductTypeDetails
+              }
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:cursor-not-allowed disabled:bg-gray-100"
             >
               <option value="">
@@ -820,7 +893,10 @@ export default function ProductTypePage() {
               onChange={
                 handleStatusFilterChange
               }
-              disabled={loading}
+              disabled={
+                loading ||
+                isLoadingProductTypeDetails
+              }
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:cursor-not-allowed disabled:bg-gray-100"
             >
               <option value="all">
@@ -843,6 +919,7 @@ export default function ProductTypePage() {
               onClick={handleResetFilters}
               disabled={
                 loading ||
+                isLoadingProductTypeDetails ||
                 !hasInputFilters
               }
               className="flex w-full items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 lg:w-auto"
@@ -873,6 +950,37 @@ export default function ProductTypePage() {
             }
             aria-label="Đóng thông báo"
             className="text-green-700 hover:text-green-900"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              close
+            </span>
+          </button>
+        </div>
+      )}
+
+      {actionError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+        >
+          <div>
+            <p className="text-sm font-medium text-red-700">
+              Không thể tải chi tiết loại sản
+              phẩm.
+            </p>
+
+            <p className="mt-1 whitespace-pre-line text-xs text-red-600">
+              {actionError}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              setActionError("")
+            }
+            aria-label="Đóng thông báo lỗi"
+            className="text-red-700 hover:text-red-900"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -992,6 +1100,10 @@ export default function ProductTypePage() {
                       productType.categoryId
                     ];
 
+                  const isLoadingThisProductType =
+                    loadingProductTypeId ===
+                    productType.productTypeId;
+
                   return (
                     <tr
                       key={
@@ -1064,13 +1176,29 @@ export default function ProductTypePage() {
                               productType,
                             )
                           }
-                          disabled={isDeleting}
-                          title="Chỉnh sửa loại sản phẩm"
+                          disabled={
+                            isDeleting ||
+                            isLoadingProductTypeDetails
+                          }
+                          title={
+                            isLoadingThisProductType
+                              ? "Đang tải thông tin..."
+                              : "Chỉnh sửa loại sản phẩm"
+                          }
                           aria-label={`Chỉnh sửa ${productType.productTypeName}`}
                           className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          <span className="material-symbols-outlined text-[18px]">
-                            edit
+                          <span
+                            className={[
+                              "material-symbols-outlined text-[18px]",
+                              isLoadingThisProductType
+                                ? "animate-spin"
+                                : "",
+                            ].join(" ")}
+                          >
+                            {isLoadingThisProductType
+                              ? "refresh"
+                              : "edit"}
                           </span>
                         </button>
 
@@ -1081,7 +1209,10 @@ export default function ProductTypePage() {
                               productType,
                             )
                           }
-                          disabled={isDeleting}
+                          disabled={
+                            isDeleting ||
+                            isLoadingProductTypeDetails
+                          }
                           title="Xóa hoặc ẩn loại sản phẩm"
                           aria-label={`Xóa hoặc ẩn ${productType.productTypeName}`}
                           className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1131,6 +1262,7 @@ export default function ProductTypePage() {
                 disabled={
                   loading ||
                   isDeleting ||
+                  isLoadingProductTypeDetails ||
                   !pagination.hasPreviousPage
                 }
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1144,6 +1276,7 @@ export default function ProductTypePage() {
                 disabled={
                   loading ||
                   isDeleting ||
+                  isLoadingProductTypeDetails ||
                   !pagination.hasNextPage
                 }
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
