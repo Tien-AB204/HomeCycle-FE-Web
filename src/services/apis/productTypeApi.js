@@ -55,6 +55,53 @@ const normalizePagination = (
   };
 };
 
+const normalizeOptions = (options) => {
+  return Array.isArray(options)
+    ? options
+    : [];
+};
+
+const normalizeAttribute = (
+  attribute,
+) => {
+  return {
+    ...attribute,
+    options: normalizeOptions(
+      attribute?.options,
+    ),
+  };
+};
+
+const normalizeProductTypeDetails = (
+  productType,
+) => {
+  return {
+    ...productType,
+    attributes: Array.isArray(
+      productType?.attributes,
+    )
+      ? productType.attributes.map(
+          normalizeAttribute,
+        )
+      : [],
+  };
+};
+
+const normalizeProductTypeByCategory = (
+  productType,
+) => {
+  return {
+    ...productType,
+    productAttributes: Array.isArray(
+      productType?.productAttributes,
+    )
+      ? productType.productAttributes.map(
+          normalizeAttribute,
+        )
+      : [],
+  };
+};
+
 const normalizeAttributes = (
   attributes,
 ) => {
@@ -124,6 +171,94 @@ export const productTypeApi = {
       data,
       pageNumber,
       pageSize,
+    );
+  },
+
+  getById: async (
+    productTypeId,
+    { signal } = {},
+  ) => {
+    if (
+      typeof productTypeId !== "string" ||
+      !productTypeId.trim()
+    ) {
+      throw new Error(
+        "Không tìm thấy mã loại sản phẩm.",
+      );
+    }
+
+    const normalizedProductTypeId =
+      productTypeId.trim();
+
+    const response =
+      await axiosClient.get(
+        `/product-types/get-by-id/${encodeURIComponent(
+          normalizedProductTypeId,
+        )}`,
+        {
+          signal,
+        },
+      );
+
+    const productType =
+      ensureSuccessfulResponse(
+        response,
+        "Không thể tải thông tin loại sản phẩm.",
+      );
+
+    if (
+      !productType?.productTypeId
+    ) {
+      throw new Error(
+        "Response chi tiết loại sản phẩm không hợp lệ.",
+      );
+    }
+
+    return normalizeProductTypeDetails(
+      productType,
+    );
+  },
+
+  getByCategory: async (
+    categoryId,
+    { signal } = {},
+  ) => {
+    if (
+      typeof categoryId !== "string" ||
+      !categoryId.trim()
+    ) {
+      throw new Error(
+        "Không tìm thấy mã danh mục.",
+      );
+    }
+
+    const normalizedCategoryId =
+      categoryId.trim();
+
+    const response =
+      await axiosClient.get(
+        `/product-types/category/${encodeURIComponent(
+          normalizedCategoryId,
+        )}`,
+        {
+          signal,
+        },
+      );
+
+    const productTypes =
+      ensureSuccessfulResponse(
+        response,
+        "Không thể tải loại sản phẩm theo danh mục.",
+      );
+
+    if (!Array.isArray(productTypes)) {
+      throw new Error(
+        "Response loại sản phẩm theo danh mục không hợp lệ.",
+      );
+    }
+
+    return productTypes.map(
+      normalizeProductTypeByCategory,
     );
   },
 
@@ -224,7 +359,9 @@ export const productTypeApi = {
       );
     }
 
-    return createdProductType;
+    return normalizeProductTypeDetails(
+      createdProductType,
+    );
   },
 
   update: async (
@@ -275,7 +412,9 @@ export const productTypeApi = {
       );
     }
 
-    return updatedProductType;
+    return normalizeProductTypeDetails(
+      updatedProductType,
+    );
   },
 
   remove: async (productTypeId) => {
