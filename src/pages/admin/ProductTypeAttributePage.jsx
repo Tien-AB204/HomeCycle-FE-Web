@@ -188,6 +188,30 @@ export default function ProductTypeAttributePage() {
     setDeleteOptionError,
   ] = useState("");
 
+  const [
+    deletingAttribute,
+    setDeletingAttribute,
+  ] = useState(null);
+
+  const [
+    isDeletingAttribute,
+    setIsDeletingAttribute,
+  ] = useState(false);
+
+  const [
+    deleteAttributeError,
+    setDeleteAttributeError,
+  ] = useState("");
+
+  const [
+    deleteAttributeProgress,
+    setDeleteAttributeProgress,
+  ] = useState({
+    stage: "idle",
+    deletedOptions: 0,
+    totalOptions: 0,
+  });
+
   useEffect(() => {
     const controller =
       new AbortController();
@@ -683,6 +707,174 @@ export default function ProductTypeAttributePage() {
       }
     };
 
+  const handleRequestDeleteAttribute = (
+    attribute,
+  ) => {
+    if (
+      loading ||
+      isSaving ||
+      isSavingOption ||
+      isDeletingOption ||
+      isDeletingAttribute ||
+      loadingAttributeId ||
+      loadingOptionsAttributeId ||
+      !attribute?.attributeId
+    ) {
+      return;
+    }
+
+    setDeletingAttribute(attribute);
+    setDeleteAttributeError("");
+    setActionError("");
+    setSuccessMessage("");
+
+    setDeleteAttributeProgress({
+      stage: "idle",
+      deletedOptions: 0,
+      totalOptions:
+        attribute.options.length,
+    });
+  };
+
+  const handleCancelDeleteAttribute =
+    () => {
+      if (isDeletingAttribute) {
+        return;
+      }
+
+      setDeletingAttribute(null);
+      setDeleteAttributeError("");
+
+      setDeleteAttributeProgress({
+        stage: "idle",
+        deletedOptions: 0,
+        totalOptions: 0,
+      });
+    };
+
+  const handleConfirmDeleteAttribute =
+    async () => {
+      if (
+        isDeletingAttribute ||
+        !deletingAttribute?.attributeId
+      ) {
+        return;
+      }
+
+      let deletedOptionCount = 0;
+      let totalOptionCount = 0;
+
+      setIsDeletingAttribute(true);
+      setDeleteAttributeError("");
+
+      setDeleteAttributeProgress({
+        stage: "loading-options",
+        deletedOptions: 0,
+        totalOptions: 0,
+      });
+
+      try {
+        const latestOptions =
+          await productTypeOptionApi.getAll(
+            deletingAttribute.attributeId,
+          );
+
+        totalOptionCount =
+          latestOptions.length;
+
+        setDeleteAttributeProgress({
+          stage: "deleting-options",
+          deletedOptions: 0,
+          totalOptions:
+            totalOptionCount,
+        });
+
+        for (
+          let optionIndex = 0;
+          optionIndex <
+          latestOptions.length;
+          optionIndex += 1
+        ) {
+          await productTypeOptionApi.remove(
+            latestOptions[optionIndex]
+              .optionId,
+          );
+
+          deletedOptionCount =
+            optionIndex + 1;
+
+          setDeleteAttributeProgress({
+            stage:
+              "deleting-options",
+            deletedOptions:
+              deletedOptionCount,
+            totalOptions:
+              totalOptionCount,
+          });
+        }
+
+        setDeleteAttributeProgress({
+          stage:
+            "deleting-attribute",
+          deletedOptions:
+            deletedOptionCount,
+          totalOptions:
+            totalOptionCount,
+        });
+
+        await productTypeAttributeApi.remove(
+          deletingAttribute.attributeId,
+        );
+
+        setSuccessMessage(
+          'Đã xóa thuộc tính "' +
+            deletingAttribute.attributeName +
+            '" thành công.',
+        );
+
+        setDeletingAttribute(null);
+        setActionError("");
+
+        setDeleteAttributeProgress({
+          stage: "idle",
+          deletedOptions: 0,
+          totalOptions: 0,
+        });
+
+        setLoading(true);
+
+        setRequestVersion(
+          (currentVersion) =>
+            currentVersion + 1,
+        );
+      } catch (requestError) {
+        const partialDeletionMessage =
+          deletedOptionCount > 0
+            ? "\nĐã xóa " +
+              deletedOptionCount +
+              "/" +
+              totalOptionCount +
+              " tùy chọn. Bạn có thể thử lại để tiếp tục."
+            : "";
+
+        setDeleteAttributeError(
+          getErrorMessage(
+            requestError,
+          ) +
+            partialDeletionMessage,
+        );
+
+        setLoading(true);
+
+        setRequestVersion(
+          (currentVersion) =>
+            currentVersion + 1,
+        );
+      } finally {
+        setIsDeletingAttribute(false);
+      }
+    };
+
   const totalOptions =
     attributes.reduce(
       (currentTotal, attribute) => {
@@ -723,6 +915,48 @@ export default function ProductTypeAttributePage() {
       },
       0,
     ) + 1;
+
+  const attributeDeleteMessage = (() => {
+    if (!deletingAttribute) {
+      return "";
+    }
+
+    if (!isDeletingAttribute) {
+      const optionCount =
+        deletingAttribute.options.length;
+
+      return (
+        'Bạn có chắc muốn xóa thuộc tính "' +
+        deletingAttribute.attributeName +
+        '"? Hệ thống sẽ xóa ' +
+        optionCount +
+        " tùy chọn trước khi xóa thuộc tính. Thao tác này không thể hoàn tác."
+      );
+    }
+
+    if (
+      deleteAttributeProgress.stage ===
+      "loading-options"
+    ) {
+      return "Đang kiểm tra danh sách tùy chọn mới nhất...";
+    }
+
+    if (
+      deleteAttributeProgress.stage ===
+      "deleting-options"
+    ) {
+      return (
+        "Đang xóa tùy chọn " +
+        deleteAttributeProgress.deletedOptions +
+        "/" +
+        deleteAttributeProgress.totalOptions +
+        "..."
+      );
+    }
+
+    return "Đã xóa toàn bộ tùy chọn. Đang xóa thuộc tính...";
+  })();
+
 
   return (
     <div className="m-6 space-y-6">
@@ -1058,6 +1292,38 @@ export default function ProductTypeAttributePage() {
                                 : "edit"}
                             </span>
                           </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRequestDeleteAttribute(
+                                attribute,
+                              )
+                            }
+                            disabled={
+                              loading ||
+                              isSaving ||
+                              isSavingOption ||
+                              isDeletingOption ||
+                              isDeletingAttribute ||
+                              Boolean(
+                                loadingAttributeId,
+                              ) ||
+                              Boolean(
+                                loadingOptionsAttributeId,
+                              )
+                            }
+                            title="Xóa thuộc tính"
+                            aria-label={
+                              "Xóa thuộc tính " +
+                              attribute.attributeName
+                            }
+                            className="rounded-md p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">
+                              delete
+                            </span>
+                          </button>
                         </div>
                       </div>
 
@@ -1350,6 +1616,28 @@ export default function ProductTypeAttributePage() {
           }
           error={
             deleteOptionError
+          }
+        />
+      )}
+
+      {deletingAttribute && (
+        <DeleteConfirmationModal
+          title="Xóa thuộc tính"
+          message={
+            attributeDeleteMessage
+          }
+          confirmText="Xóa thuộc tính"
+          onCancel={
+            handleCancelDeleteAttribute
+          }
+          onConfirm={
+            handleConfirmDeleteAttribute
+          }
+          confirming={
+            isDeletingAttribute
+          }
+          error={
+            deleteAttributeError
           }
         />
       )}
