@@ -6,6 +6,7 @@ import BrandModal from "../../features/system/brand/BrandModal";
 import brandApi from "../../services/apis/brandApi";
 
 const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_TIME = 400;
 
 const INITIAL_PAGINATION = {
   pageNumber: 1,
@@ -134,19 +135,100 @@ export default function BrandPage() {
     setSuccessMessage,
   ] = useState("");
 
+  const [searchTerm, setSearchTerm] =
+    useState("");
+
+  const [
+    debouncedSearchTerm,
+    setDebouncedSearchTerm,
+  ] = useState("");
+
+  const [
+    statusFilter,
+    setStatusFilter,
+  ] = useState("all");
+
+  const hasAppliedFilters =
+    Boolean(debouncedSearchTerm) ||
+    statusFilter !== "all";
+
+  const hasInputFilters =
+    Boolean(searchTerm.trim()) ||
+    statusFilter !== "all";
+
+  const isWaitingForSearch =
+    searchTerm.trim() !==
+    debouncedSearchTerm;
+
+  useEffect(() => {
+    const nextSearchTerm =
+      searchTerm.trim();
+
+    if (
+      nextSearchTerm ===
+      debouncedSearchTerm
+    ) {
+      return undefined;
+    }
+
+    const timeoutId =
+      window.setTimeout(() => {
+        setLoading(true);
+        setError("");
+        setActionError("");
+
+        setDebouncedSearchTerm(
+          nextSearchTerm,
+        );
+
+        setPagination(
+          (currentPagination) => ({
+            ...currentPagination,
+            pageNumber: 1,
+          }),
+        );
+      }, SEARCH_DEBOUNCE_TIME);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    searchTerm,
+    debouncedSearchTerm,
+  ]);
+
   useEffect(() => {
     const controller =
       new AbortController();
 
     let isActive = true;
 
-    brandApi
-      .getAll({
-        pageNumber:
-          pagination.pageNumber,
-        pageSize: PAGE_SIZE,
-        signal: controller.signal,
-      })
+    const isActiveFilter =
+      statusFilter === "active"
+        ? true
+        : statusFilter === "inactive"
+          ? false
+          : undefined;
+
+    const request = hasAppliedFilters
+      ? brandApi.search({
+          keyword:
+            debouncedSearchTerm ||
+            undefined,
+          isActive: isActiveFilter,
+          pageNumber:
+            pagination.pageNumber,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        })
+      : brandApi.getAll({
+          pageNumber:
+            pagination.pageNumber,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        });
+
+    request
       .then((result) => {
         if (!isActive) {
           return;
@@ -185,8 +267,11 @@ export default function BrandPage() {
       controller.abort();
     };
   }, [
+    debouncedSearchTerm,
+    hasAppliedFilters,
     pagination.pageNumber,
     requestVersion,
+    statusFilter,
   ]);
 
   const refreshCurrentPage = () => {
@@ -200,6 +285,9 @@ export default function BrandPage() {
 
   const refreshFirstPage = () => {
     setLoading(true);
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setStatusFilter("all");
 
     if (pagination.pageNumber !== 1) {
       setPagination(
@@ -393,6 +481,51 @@ export default function BrandPage() {
     );
   };
 
+  const handleStatusFilterChange = (
+    event,
+  ) => {
+    setLoading(true);
+    setError("");
+    setActionError("");
+    setSuccessMessage("");
+    setStatusFilter(
+      event.target.value,
+    );
+
+    setPagination(
+      (currentPagination) => ({
+        ...currentPagination,
+        pageNumber: 1,
+      }),
+    );
+  };
+
+  const handleClearFilters = () => {
+    setLoading(true);
+    setError("");
+    setActionError("");
+    setSuccessMessage("");
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setStatusFilter("all");
+
+    if (pagination.pageNumber !== 1) {
+      setPagination(
+        (currentPagination) => ({
+          ...currentPagination,
+          pageNumber: 1,
+        }),
+      );
+
+      return;
+    }
+
+    setRequestVersion(
+      (currentVersion) =>
+        currentVersion + 1,
+    );
+  };
+
   return (
     <div className="m-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -425,6 +558,119 @@ export default function BrandPage() {
           Thêm thương hiệu mới
         </button>
       </div>
+
+      <section className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
+          <div>
+            <label
+              htmlFor="brand-search"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
+            >
+              Tìm kiếm thương hiệu
+            </label>
+
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
+                search
+              </span>
+
+              <input
+                id="brand-search"
+                type="search"
+                value={searchTerm}
+                onChange={(event) => {
+                  setSearchTerm(
+                    event.target.value,
+                  );
+
+                  setSuccessMessage("");
+                }}
+                placeholder="Nhập tên hoặc mô tả thương hiệu..."
+                className="w-full rounded-md border border-gray-300 bg-white py-2.5 pl-10 pr-10 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+              />
+
+              {isWaitingForSearch ? (
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[19px] text-gray-400">
+                  refresh
+                </span>
+              ) : searchTerm ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSearchTerm("")
+                  }
+                  aria-label="Xóa từ khóa tìm kiếm"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                >
+                  <span className="material-symbols-outlined text-[19px]">
+                    close
+                  </span>
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="brand-status-filter"
+              className="mb-1.5 block text-sm font-medium text-gray-700"
+            >
+              Trạng thái
+            </label>
+
+            <select
+              id="brand-status-filter"
+              value={statusFilter}
+              onChange={
+                handleStatusFilterChange
+              }
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+            >
+              <option value="all">
+                Tất cả trạng thái
+              </option>
+
+              <option value="active">
+                Đang hoạt động
+              </option>
+
+              <option value="inactive">
+                Đang ẩn
+              </option>
+            </select>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={
+                handleClearFilters
+              }
+              disabled={
+                !hasInputFilters &&
+                !hasAppliedFilters
+              }
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 lg:w-auto"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                filter_alt_off
+              </span>
+
+              Xóa bộ lọc
+            </button>
+          </div>
+        </div>
+
+        {hasAppliedFilters && (
+          <p className="mt-3 text-xs text-gray-500">
+            Tìm thấy{" "}
+            <span className="font-semibold text-gray-700">
+              {pagination.totalCount}
+            </span>{" "}
+            thương hiệu phù hợp trên toàn hệ thống.
+          </p>
+        )}
+      </section>
 
       {successMessage && (
         <div
@@ -659,7 +905,9 @@ export default function BrandPage() {
                   colSpan={6}
                   className="p-10 text-center text-gray-500"
                 >
-                  Chưa có thương hiệu nào.
+                  {hasAppliedFilters
+                    ? "Không tìm thấy thương hiệu phù hợp."
+                    : "Chưa có thương hiệu nào."}
                 </td>
               </tr>
             )}
