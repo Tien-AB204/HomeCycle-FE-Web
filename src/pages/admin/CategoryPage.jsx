@@ -1,152 +1,685 @@
-// src/pages/admin/CategoryPage.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import CategoryModal from "../../features/system/category/CategoryModal";
+import categoryApi from "../../services/apis/categoryApi";
 
-export default function CategoryPage() {
-  // 1. MOCK DATA DANH MỤC (Dựa trên dữ liệu bài viết của bạn)
-  const initialCategories = [
-    {
-      id: "CAT_001",
-      code: "ELECTRONIC",
-      name: "Điện máy",
-      description: "Tivi, tủ lạnh, máy giặt, máy lạnh...",
-      postCount: 156,
-      status: "active",
-    },
-    {
-      id: "CAT_002",
-      code: "APPLIANCE",
-      name: "Gia dụng",
-      description: "Lò vi sóng, nồi chiên không dầu, quạt máy...",
-      postCount: 89,
-      status: "active",
-    },
-    {
-      id: "CAT_003",
-      code: "FURNITURE",
-      name: "Nội thất",
-      description: "Bàn ghế, giường tủ, sofa...",
-      postCount: 210,
-      status: "active",
-    },
-    
-  ];
+const PAGE_SIZE = 5;
+const SEARCH_DELAY = 400;
 
-  const [categories, setCategories] = useState(initialCategories);
-  const [searchTerm, setSearchTerm] = useState("");
+const INITIAL_PAGINATION = {
+  pageNumber: 1,
+  pageSize: PAGE_SIZE,
+  totalCount: 0,
+  totalPages: 0,
+  hasPreviousPage: false,
+  hasNextPage: false,
+};
 
-  // 2. XỬ LÝ TÌM KIẾM
-  const filteredCategories = categories.filter(
-    (cat) =>
-      cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cat.code.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+const formatCreatedAt = (value) => {
+  if (!value) {
+    return "—";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+};
+
+const isCanceledRequest = (error) => {
+  return error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
+};
+
+const getValidationMessage = (errors) => {
+  if (!errors) {
+    return "";
+  }
+
+  return Object.values(errors).flat().filter(Boolean).join("\n");
+};
+
+const getErrorMessage = (error) => {
+  const responseData = error?.response?.data;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      {/* --- HEADER CỦA BẢNG --- */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    getValidationMessage(responseData?.errors) ||
+    responseData?.error?.message ||
+    responseData?.message ||
+    error?.message ||
+    "Đã xảy ra lỗi. Vui lòng thử lại."
+  );
+};
+
+const getStatusValue = (statusFilter) => {
+  if (statusFilter === "active") {
+    return true;
+  }
+
+  if (statusFilter === "inactive") {
+    return false;
+  }
+
+  return undefined;
+};
+
+export default function CategoryPage() {
+  const [categories, setCategories] = useState([]);
+
+  const [pagination, setPagination] = useState(INITIAL_PAGINATION);
+
+  const [loading, setLoading] = useState(true);
+
+  const [error, setError] = useState("");
+
+  const [actionError, setActionError] = useState("");
+
+  const [requestVersion, setRequestVersion] = useState(0);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [editingCategory, setEditingCategory] = useState(null);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [deletingCategoryId, setDeletingCategoryId] = useState(null);
+
+  const [modalError, setModalError] = useState("");
+
+  const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    const normalizedSearchTerm = searchTerm.trim();
+
+    /*
+     * Không tạo timer khi giá trị tìm kiếm
+     * chưa thực sự thay đổi.
+     *
+     * Điều này ngăn loading bị bật lại
+     * sau lần tải dữ liệu đầu tiên.
+     */
+    if (normalizedSearchTerm === debouncedSearchTerm) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLoading(true);
+      setError("");
+
+      setDebouncedSearchTerm(normalizedSearchTerm);
+
+      setPagination((currentPagination) => ({
+        ...currentPagination,
+        pageNumber: 1,
+      }));
+    }, SEARCH_DELAY);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [searchTerm, debouncedSearchTerm]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    let isActive = true;
+
+    const hasSearchFilter =
+      Boolean(debouncedSearchTerm) || statusFilter !== "all";
+
+    const request = hasSearchFilter
+      ? categoryApi.search({
+          keyword: debouncedSearchTerm,
+          isActive: getStatusValue(statusFilter),
+          pageNumber: pagination.pageNumber,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        })
+      : categoryApi.getAll({
+          pageNumber: pagination.pageNumber,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        });
+
+    request
+      .then((result) => {
+        if (!isActive) {
+          return;
+        }
+
+        setCategories(result.items);
+        setError("");
+
+        setPagination({
+          pageNumber: result.pageNumber,
+          pageSize: result.pageSize,
+          totalCount: result.totalCount,
+          totalPages: result.totalPages,
+          hasPreviousPage: result.hasPreviousPage,
+          hasNextPage: result.hasNextPage,
+        });
+      })
+      .catch((requestError) => {
+        if (!isActive || isCanceledRequest(requestError)) {
+          return;
+        }
+
+        setCategories([]);
+
+        setError(getErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (isActive) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [
+    debouncedSearchTerm,
+    pagination.pageNumber,
+    requestVersion,
+    statusFilter,
+  ]);
+
+  const refreshCurrentPage = () => {
+    setLoading(true);
+
+    setRequestVersion((currentVersion) => currentVersion + 1);
+  };
+
+  const refreshFirstPage = () => {
+    setLoading(true);
+
+    if (pagination.pageNumber !== 1) {
+      setPagination((currentPagination) => ({
+        ...currentPagination,
+        pageNumber: 1,
+      }));
+
+      return;
+    }
+
+    setRequestVersion((currentVersion) => currentVersion + 1);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+    setSuccessMessage("");
+    setActionError("");
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setLoading(true);
+    setError("");
+
+    setPagination((currentPagination) => ({
+      ...currentPagination,
+      pageNumber: 1,
+    }));
+  };
+
+  const handleStatusChange = (event) => {
+    setStatusFilter(event.target.value);
+
+    setLoading(true);
+    setError("");
+    setActionError("");
+    setSuccessMessage("");
+
+    setPagination((currentPagination) => ({
+      ...currentPagination,
+      pageNumber: 1,
+    }));
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingCategory(null);
+    setModalError("");
+    setActionError("");
+    setSuccessMessage("");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (category) => {
+    setEditingCategory(category);
+    setModalError("");
+    setActionError("");
+    setSuccessMessage("");
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    if (isSaving) {
+      return;
+    }
+
+    setModalError("");
+    setEditingCategory(null);
+    setIsModalOpen(false);
+  };
+
+  const handleSaveCategory = async (formData) => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    setModalError("");
+
+    try {
+      if (editingCategory) {
+        const updatedCategory = await categoryApi.update(
+          editingCategory.categoryId,
+          formData,
+        );
+
+        setSuccessMessage(
+          `Đã cập nhật danh mục "${updatedCategory.categoryName}" thành công.`,
+        );
+
+        refreshCurrentPage();
+      } else {
+        const createdCategory = await categoryApi.create(formData);
+
+        setSuccessMessage(
+          `Đã tạo danh mục "${createdCategory.categoryName}" thành công.`,
+        );
+
+        refreshFirstPage();
+      }
+
+      setEditingCategory(null);
+      setIsModalOpen(false);
+    } catch (requestError) {
+      setModalError(getErrorMessage(requestError));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleHideCategory = async (category) => {
+    if (deletingCategoryId) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Bạn có chắc muốn ẩn danh mục "${category.categoryName}"?\n\nDanh mục sẽ không còn được hiển thị cho người dùng.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingCategoryId(category.categoryId);
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+      await categoryApi.remove(category.categoryId);
+
+      setSuccessMessage(
+        `Đã ẩn danh mục "${category.categoryName}" thành công.`,
+      );
+
+      const isLastItemOnPage = categories.length === 1;
+
+      if (isLastItemOnPage && pagination.pageNumber > 1) {
+        setLoading(true);
+
+        setPagination((currentPagination) => ({
+          ...currentPagination,
+          pageNumber: currentPagination.pageNumber - 1,
+        }));
+      } else {
+        refreshCurrentPage();
+      }
+    } catch (requestError) {
+      setActionError(getErrorMessage(requestError));
+    } finally {
+      setDeletingCategoryId(null);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (loading || !pagination.hasPreviousPage) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setActionError("");
+    setSuccessMessage("");
+
+    setPagination((currentPagination) => ({
+      ...currentPagination,
+      pageNumber: currentPagination.pageNumber - 1,
+    }));
+  };
+
+  const handleNextPage = () => {
+    if (loading || !pagination.hasNextPage) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setActionError("");
+    setSuccessMessage("");
+
+    setPagination((currentPagination) => ({
+      ...currentPagination,
+      pageNumber: currentPagination.pageNumber + 1,
+    }));
+  };
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError("");
+
+    setRequestVersion((currentVersion) => currentVersion + 1);
+  };
+
+  const hasFilters = Boolean(debouncedSearchTerm) || statusFilter !== "all";
+
+  return (
+    <div className="m-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-xl font-bold text-gray-800">
-            Danh sách Danh mục
+            Danh sách danh mục
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Quản lý {categories.length} danh mục hiện có trên hệ thống
+
+          <p className="mt-1 text-sm text-gray-500">
+            {hasFilters
+              ? `Tìm thấy ${pagination.totalCount} danh mục`
+              : `Quản lý ${pagination.totalCount} danh mục hiện có trên hệ thống`}
           </p>
         </div>
 
-        {/* Nút thêm mới giống trong ảnh của bạn */}
-        <button className="bg-[#16a34a] text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 hover:bg-green-700 transition">
+        <button
+          type="button"
+          onClick={handleOpenCreateModal}
+          disabled={Boolean(deletingCategoryId)}
+          className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
           <span className="material-symbols-outlined text-[20px]">add</span>
           Thêm danh mục mới
         </button>
       </div>
 
-      {/* --- THANH TÌM KIẾM --- */}
-      <div className="mb-6 relative w-full md:w-1/2">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">
-          search
-        </span>
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo tên hoặc mã danh mục..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#16a34a] focus:border-[#16a34a] text-sm"
-        />
+      <div className="mb-6 flex flex-col gap-3 md:flex-row">
+        <div className="relative flex-1">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
+            search
+          </span>
+
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={handleSearchChange}
+            placeholder="Tìm theo tên hoặc mô tả danh mục..."
+            className="w-full rounded-md border border-gray-300 py-2.5 pl-10 pr-10 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+          />
+
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              aria-label="Xóa từ khóa tìm kiếm"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                close
+              </span>
+            </button>
+          )}
+        </div>
+
+        <select
+          value={statusFilter}
+          onChange={handleStatusChange}
+          className="rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+        >
+          <option value="all">Tất cả trạng thái</option>
+
+          <option value="active">Đang hoạt động</option>
+
+          <option value="inactive">Đang ẩn</option>
+        </select>
       </div>
 
-      {/* --- BẢNG DỮ LIỆU --- */}
+      {successMessage && (
+        <div
+          role="status"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 p-4"
+        >
+          <p className="text-sm text-green-700">{successMessage}</p>
+
+          <button
+            type="button"
+            onClick={() => setSuccessMessage("")}
+            aria-label="Đóng thông báo"
+            className="text-green-700 hover:text-green-900"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+      )}
+
+      {actionError && (
+        <div
+          role="alert"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+        >
+          <p className="whitespace-pre-line text-sm text-red-700">
+            {actionError}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setActionError("")}
+            aria-label="Đóng thông báo lỗi"
+            className="text-red-700 hover:text-red-900"
+          >
+            <span className="material-symbols-outlined text-[20px]">close</span>
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div
+          role="alert"
+          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center"
+        >
+          <p className="whitespace-pre-line text-sm text-red-700">{error}</p>
+
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+          >
+            Thử lại
+          </button>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-              <th className="p-4 font-semibold">Mã DM</th>
-              <th className="p-4 font-semibold">Tên Danh mục</th>
+            <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+              <th className="p-4 font-semibold">Tên danh mục</th>
+
               <th className="p-4 font-semibold">Mô tả</th>
-              <th className="p-4 font-semibold text-center">Số bài viết</th>
+
+              <th className="p-4 font-semibold">Ngày tạo</th>
+
               <th className="p-4 font-semibold">Trạng thái</th>
-              <th className="p-4 font-semibold text-right">Thao tác</th>
+
+              <th className="p-4 text-right font-semibold">Thao tác</th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-100 text-sm">
-            {filteredCategories.length > 0 ? (
-              filteredCategories.map((cat) => (
-                <tr key={cat.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="p-4 font-medium text-gray-900">{cat.code}</td>
-                  <td className="p-4 font-bold text-[#244f4d]">{cat.name}</td>
-                  <td className="p-4 text-gray-600 truncate max-w-[200px]">
-                    {cat.description}
-                  </td>
-                  <td className="p-4 text-center font-medium">
-                    {cat.postCount}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        cat.status === "active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {cat.status === "active" ? "Hoạt động" : "Đang ẩn"}
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="p-10 text-center text-gray-500">
+                  <div
+                    role="status"
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined animate-spin">
+                      refresh
                     </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition"
-                      title="Chỉnh sửa"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        edit
+
+                    <span>Đang tải danh mục...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : categories.length > 0 ? (
+              categories.map((category) => {
+                const isDeleting = deletingCategoryId === category.categoryId;
+
+                return (
+                  <tr
+                    key={category.categoryId}
+                    className="transition-colors hover:bg-gray-50"
+                  >
+                    <td className="p-4 font-bold text-[#244f4d]">
+                      {category.categoryName}
+                    </td>
+
+                    <td className="max-w-[420px] p-4 text-gray-600">
+                      <p className="line-clamp-2">
+                        {category.description || "Không có mô tả"}
+                      </p>
+                    </td>
+
+                    <td className="whitespace-nowrap p-4 text-gray-600">
+                      {formatCreatedAt(category.createdAt)}
+                    </td>
+
+                    <td className="p-4">
+                      <span
+                        className={[
+                          "inline-block rounded-full px-3 py-1 text-xs font-semibold",
+                          category.isActive
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600",
+                        ].join(" ")}
+                      >
+                        {category.isActive ? "Hoạt động" : "Đang ẩn"}
                       </span>
-                    </button>
-                    <button
-                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition"
-                      title="Xóa"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">
-                        delete
-                      </span>
-                    </button>
-                  </td>
-                </tr>
-              ))
+                    </td>
+
+                    <td className="space-x-2 p-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditModal(category)}
+                        disabled={Boolean(deletingCategoryId)}
+                        title="Chỉnh sửa"
+                        aria-label={`Chỉnh sửa ${category.categoryName}`}
+                        className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">
+                          edit
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleHideCategory(category)}
+                        disabled={
+                          Boolean(deletingCategoryId) || !category.isActive
+                        }
+                        title={
+                          category.isActive
+                            ? "Ẩn danh mục"
+                            : "Danh mục đã được ẩn"
+                        }
+                        aria-label={`Ẩn ${category.categoryName}`}
+                        className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50"
+                      >
+                        <span
+                          className={[
+                            "material-symbols-outlined text-[18px]",
+                            isDeleting ? "animate-spin" : "",
+                          ].join(" ")}
+                        >
+                          {isDeleting ? "refresh" : "visibility_off"}
+                        </span>
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
-                <td colSpan="6" className="p-8 text-center text-gray-500">
-                  {searchTerm ? (
-                    <span>
-                      Không tìm thấy danh mục nào khớp với "{searchTerm}"
-                    </span>
-                  ) : (
-                    <span>Chưa có danh mục nào.</span>
-                  )}
+                <td colSpan={5} className="p-10 text-center text-gray-500">
+                  {hasFilters
+                    ? "Không tìm thấy danh mục phù hợp."
+                    : "Chưa có danh mục nào."}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+
+      {!loading && !error && pagination.totalCount > 0 && (
+        <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-4 sm:flex-row">
+          <p className="text-sm text-gray-500">
+            Trang {pagination.pageNumber} / {Math.max(pagination.totalPages, 1)}
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePreviousPage}
+              disabled={loading || !pagination.hasPreviousPage}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Trang trước
+            </button>
+
+            <button
+              type="button"
+              onClick={handleNextPage}
+              disabled={loading || !pagination.hasNextPage}
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Trang sau
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && (
+        <CategoryModal
+          key={editingCategory?.categoryId || "create-category"}
+          editingCategory={editingCategory}
+          onClose={handleCloseModal}
+          onSubmit={handleSaveCategory}
+          submitting={isSaving}
+          serverError={modalError}
+        />
+      )}
     </div>
   );
 }
