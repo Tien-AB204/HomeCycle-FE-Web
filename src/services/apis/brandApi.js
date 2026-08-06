@@ -88,6 +88,51 @@ export const brandApi = {
     );
   },
 
+  search: async ({
+    keyword,
+    isActive,
+    pageNumber = DEFAULT_PAGE_NUMBER,
+    pageSize = DEFAULT_PAGE_SIZE,
+    signal,
+  } = {}) => {
+    const normalizedKeyword =
+      typeof keyword === "string"
+        ? keyword.trim()
+        : "";
+
+    const response =
+      await axiosClient.get(
+        "/brands/search",
+        {
+          params: {
+            Keyword:
+              normalizedKeyword ||
+              undefined,
+            IsActive:
+              typeof isActive ===
+              "boolean"
+                ? isActive
+                : undefined,
+            PageNumber: pageNumber,
+            PageSize: pageSize,
+          },
+          signal,
+        },
+      );
+
+    const data =
+      ensureSuccessfulResponse(
+        response,
+        "Không thể tìm kiếm thương hiệu.",
+      );
+
+    return normalizePagination(
+      data,
+      pageNumber,
+      pageSize,
+    );
+  },
+
   create: async ({
     brandName,
     description,
