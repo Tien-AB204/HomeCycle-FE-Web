@@ -7,8 +7,11 @@ import {
   useParams,
 } from "react-router-dom";
 import AttributeModal from "../../features/system/productType/AttributeModal";
+import DeleteConfirmationModal from "../../features/system/productType/DeleteConfirmationModal";
+import OptionModal from "../../features/system/productType/OptionModal";
 import productTypeApi from "../../services/apis/productTypeApi";
 import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi";
+import productTypeOptionApi from "../../services/apis/productTypeOptionApi";
 
 const INPUT_MODE_LABELS = {
   OptionOnly: "Chỉ chọn tùy chọn",
@@ -64,6 +67,29 @@ const getInputModeLabel = (
   );
 };
 
+const getNextOptionDisplayOrder = (
+  options,
+) => {
+  return (
+    options.reduce(
+      (currentMaximum, option) => {
+        const displayOrder =
+          Number.isInteger(
+            option.displayOrder,
+          )
+            ? option.displayOrder
+            : 0;
+
+        return Math.max(
+          currentMaximum,
+          displayOrder,
+        );
+      },
+      0,
+    ) + 1
+  );
+};
+
 export default function ProductTypeAttributePage() {
   const navigate = useNavigate();
 
@@ -115,6 +141,51 @@ export default function ProductTypeAttributePage() {
   const [
     successMessage,
     setSuccessMessage,
+  ] = useState("");
+
+  const [
+    optionModalAttribute,
+    setOptionModalAttribute,
+  ] = useState(null);
+
+  const [
+    editingOption,
+    setEditingOption,
+  ] = useState(null);
+
+  const [
+    isOptionModalOpen,
+    setIsOptionModalOpen,
+  ] = useState(false);
+
+  const [
+    isSavingOption,
+    setIsSavingOption,
+  ] = useState(false);
+
+  const [
+    optionModalError,
+    setOptionModalError,
+  ] = useState("");
+
+  const [
+    loadingOptionsAttributeId,
+    setLoadingOptionsAttributeId,
+  ] = useState("");
+
+  const [
+    deletingOptionContext,
+    setDeletingOptionContext,
+  ] = useState(null);
+
+  const [
+    isDeletingOption,
+    setIsDeletingOption,
+  ] = useState(false);
+
+  const [
+    deleteOptionError,
+    setDeleteOptionError,
   ] = useState("");
 
   useEffect(() => {
@@ -323,6 +394,292 @@ export default function ProductTypeAttributePage() {
         );
       } finally {
         setIsSaving(false);
+      }
+    };
+
+  const handleOpenCreateOptionModal =
+    async (attribute) => {
+    if (
+      loading ||
+      isSavingOption ||
+      isDeletingOption ||
+      loadingOptionsAttributeId ||
+      !attribute?.attributeId
+    ) {
+      return;
+    }
+
+    setLoadingOptionsAttributeId(
+      attribute.attributeId,
+    );
+
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+      const options =
+        await productTypeOptionApi.getAll(
+          attribute.attributeId,
+        );
+
+      const refreshedAttribute = {
+        ...attribute,
+        options,
+      };
+
+      setAttributes(
+        (currentAttributes) =>
+          currentAttributes.map(
+            (currentAttribute) =>
+              currentAttribute.attributeId ===
+              attribute.attributeId
+                ? refreshedAttribute
+                : currentAttribute,
+          ),
+      );
+
+      setOptionModalAttribute(
+        refreshedAttribute,
+      );
+
+      setEditingOption(null);
+      setOptionModalError("");
+      setIsOptionModalOpen(true);
+    } catch (requestError) {
+      setActionError(
+        getErrorMessage(requestError),
+      );
+    } finally {
+      setLoadingOptionsAttributeId("");
+    }
+  };
+
+  const handleOpenEditOptionModal =
+    async (attribute, option) => {
+    if (
+      loading ||
+      isSavingOption ||
+      isDeletingOption ||
+      loadingOptionsAttributeId ||
+      !attribute?.attributeId ||
+      !option?.optionId
+    ) {
+      return;
+    }
+
+    setLoadingOptionsAttributeId(
+      attribute.attributeId,
+    );
+
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+      const options =
+        await productTypeOptionApi.getAll(
+          attribute.attributeId,
+        );
+
+      const refreshedOption =
+        options.find(
+          (currentOption) =>
+            currentOption.optionId ===
+            option.optionId,
+        );
+
+      if (!refreshedOption) {
+        throw new Error(
+          "Tùy chọn không còn tồn tại. Vui lòng tải lại dữ liệu.",
+        );
+      }
+
+      const refreshedAttribute = {
+        ...attribute,
+        options,
+      };
+
+      setAttributes(
+        (currentAttributes) =>
+          currentAttributes.map(
+            (currentAttribute) =>
+              currentAttribute.attributeId ===
+              attribute.attributeId
+                ? refreshedAttribute
+                : currentAttribute,
+          ),
+      );
+
+      setOptionModalAttribute(
+        refreshedAttribute,
+      );
+
+      setEditingOption(
+        refreshedOption,
+      );
+
+      setOptionModalError("");
+      setIsOptionModalOpen(true);
+    } catch (requestError) {
+      setActionError(
+        getErrorMessage(requestError),
+      );
+    } finally {
+      setLoadingOptionsAttributeId("");
+    }
+  };
+
+  const handleCloseOptionModal = () => {
+    if (isSavingOption) {
+      return;
+    }
+
+    setOptionModalAttribute(null);
+    setEditingOption(null);
+    setOptionModalError("");
+    setIsOptionModalOpen(false);
+  };
+
+  const handleSaveOption =
+    async (formData) => {
+      if (
+        isSavingOption ||
+        !optionModalAttribute
+      ) {
+        return;
+      }
+
+      setIsSavingOption(true);
+      setOptionModalError("");
+
+      try {
+        if (editingOption) {
+          const updatedOption =
+            await productTypeOptionApi.update(
+              editingOption.optionId,
+              formData,
+            );
+
+          setSuccessMessage(
+            'Đã cập nhật tùy chọn "' +
+              updatedOption.optionValue +
+              '" thành công.',
+          );
+        } else {
+          const createdOption =
+            await productTypeOptionApi.create(
+              optionModalAttribute.attributeId,
+              formData,
+            );
+
+          setSuccessMessage(
+            'Đã thêm tùy chọn "' +
+              createdOption.optionValue +
+              '" thành công.',
+          );
+        }
+
+        setOptionModalAttribute(null);
+        setEditingOption(null);
+        setIsOptionModalOpen(false);
+        setActionError("");
+        setLoading(true);
+
+        setRequestVersion(
+          (currentVersion) =>
+            currentVersion + 1,
+        );
+      } catch (requestError) {
+        setOptionModalError(
+          getErrorMessage(requestError),
+        );
+      } finally {
+        setIsSavingOption(false);
+      }
+    };
+
+  const handleRequestDeleteOption = (
+    attribute,
+    option,
+  ) => {
+    if (
+      loading ||
+      isSavingOption ||
+      isDeletingOption ||
+      !attribute?.attributeId ||
+      !option?.optionId
+    ) {
+      return;
+    }
+
+    if (
+      attribute.options.length <= 1
+    ) {
+      setActionError(
+        "Thuộc tính OptionOnly phải giữ lại ít nhất một tùy chọn.",
+      );
+
+      return;
+    }
+
+    setDeletingOptionContext({
+      attribute,
+      option,
+    });
+
+    setDeleteOptionError("");
+    setActionError("");
+    setSuccessMessage("");
+  };
+
+  const handleCancelDeleteOption = () => {
+    if (isDeletingOption) {
+      return;
+    }
+
+    setDeletingOptionContext(null);
+    setDeleteOptionError("");
+  };
+
+  const handleConfirmDeleteOption =
+    async () => {
+      const option =
+        deletingOptionContext?.option;
+
+      if (
+        isDeletingOption ||
+        !option?.optionId
+      ) {
+        return;
+      }
+
+      setIsDeletingOption(true);
+      setDeleteOptionError("");
+
+      try {
+        await productTypeOptionApi.remove(
+          option.optionId,
+        );
+
+        setSuccessMessage(
+          'Đã xóa tùy chọn "' +
+            option.optionValue +
+            '" thành công.',
+        );
+
+        setDeletingOptionContext(null);
+        setActionError("");
+        setLoading(true);
+
+        setRequestVersion(
+          (currentVersion) =>
+            currentVersion + 1,
+        );
+      } catch (requestError) {
+        setDeleteOptionError(
+          getErrorMessage(requestError),
+        );
+      } finally {
+        setIsDeletingOption(false);
       }
     };
 
@@ -768,18 +1125,55 @@ export default function ProductTypeAttributePage() {
                         </div>
 
                         <div className="mt-5 border-t border-gray-100 pt-4">
-                          <div className="mb-3 flex items-center justify-between gap-3">
-                            <h5 className="text-sm font-bold text-gray-700">
-                              Tùy chọn
-                            </h5>
+                          <div className="mb-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                            <div>
+                              <h5 className="text-sm font-bold text-gray-700">
+                                Tùy chọn
+                              </h5>
 
-                            <span className="text-xs text-gray-500">
-                              {
-                                attribute.options
-                                  .length
-                              }{" "}
-                              lựa chọn
-                            </span>
+                              <p className="mt-1 text-xs text-gray-500">
+                                {
+                                  attribute.options
+                                    .length
+                                }{" "}
+                                lựa chọn
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleOpenCreateOptionModal(
+                                  attribute,
+                                )
+                              }
+                              disabled={
+                                loading ||
+                                isSavingOption ||
+                                isDeletingOption ||
+                                Boolean(
+                                  loadingOptionsAttributeId,
+                                )
+                              }
+                              className="flex w-fit items-center gap-1 rounded-md border border-green-600 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              <span
+                                className={[
+                                  "material-symbols-outlined text-[18px]",
+                                  loadingOptionsAttributeId ===
+                                  attribute.attributeId
+                                    ? "animate-spin"
+                                    : "",
+                                ].join(" ")}
+                              >
+                                {loadingOptionsAttributeId ===
+                                attribute.attributeId
+                                  ? "refresh"
+                                  : "add"}
+                              </span>
+
+                              Thêm tùy chọn
+                            </button>
                           </div>
 
                           {attribute.options
@@ -788,28 +1182,100 @@ export default function ProductTypeAttributePage() {
                               Thuộc tính này chưa có tùy chọn.
                             </p>
                           ) : (
-                            <div className="flex flex-wrap gap-2">
+                            <div className="space-y-2">
                               {attribute.options.map(
                                 (
                                   option,
                                   optionIndex,
                                 ) => (
-                                  <span
+                                  <div
                                     key={
                                       option.optionId
                                     }
-                                    title={
-                                      "Thứ tự: " +
-                                      (option.displayOrder ??
-                                        optionIndex +
-                                          1)
-                                    }
-                                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-700"
+                                    className="flex flex-col justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center"
                                   >
-                                    {
-                                      option.optionValue
-                                    }
-                                  </span>
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-500 shadow-sm">
+                                        {option.displayOrder ??
+                                          optionIndex +
+                                            1}
+                                      </span>
+
+                                      <span className="break-words text-sm font-medium text-slate-700">
+                                        {
+                                          option.optionValue
+                                        }
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1 self-end sm:self-auto">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleOpenEditOptionModal(
+                                            attribute,
+                                            option,
+                                          )
+                                        }
+                                        disabled={
+                                          loading ||
+                                          isSavingOption ||
+                                          isDeletingOption ||
+                                          Boolean(
+                                            loadingOptionsAttributeId,
+                                          )
+                                        }
+                                        title="Chỉnh sửa tùy chọn"
+                                        aria-label={
+                                          "Chỉnh sửa tùy chọn " +
+                                          option.optionValue
+                                        }
+                                        className="rounded-md p-2 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                      >
+                                        <span className="material-symbols-outlined text-[18px]">
+                                          edit
+                                        </span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleRequestDeleteOption(
+                                            attribute,
+                                            option,
+                                          )
+                                        }
+                                        disabled={
+                                          loading ||
+                                          isSavingOption ||
+                                          isDeletingOption ||
+                                          Boolean(
+                                            loadingOptionsAttributeId,
+                                          ) ||
+                                          attribute
+                                            .options
+                                            .length <=
+                                            1
+                                        }
+                                        title={
+                                          attribute
+                                            .options
+                                            .length <= 1
+                                            ? "Phải giữ lại ít nhất một tùy chọn"
+                                            : "Xóa tùy chọn"
+                                        }
+                                        aria-label={
+                                          "Xóa tùy chọn " +
+                                          option.optionValue
+                                        }
+                                        className="rounded-md p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                                      >
+                                        <span className="material-symbols-outlined text-[18px]">
+                                          delete
+                                        </span>
+                                      </button>
+                                    </div>
+                                  </div>
                                 ),
                               )}
                             </div>
@@ -824,6 +1290,70 @@ export default function ProductTypeAttributePage() {
           </section>
         </>
       ) : null}
+      {isOptionModalOpen &&
+        optionModalAttribute && (
+          <OptionModal
+            key={
+              editingOption?.optionId ||
+              "create-option"
+            }
+            attributeName={
+              optionModalAttribute.attributeName
+            }
+            editingOption={
+              editingOption
+            }
+            existingOptions={
+              optionModalAttribute.options
+            }
+            defaultDisplayOrder={
+              getNextOptionDisplayOrder(
+                optionModalAttribute.options,
+              )
+            }
+            onClose={
+              handleCloseOptionModal
+            }
+            onSubmit={
+              handleSaveOption
+            }
+            submitting={
+              isSavingOption
+            }
+            serverError={
+              optionModalError
+            }
+          />
+        )}
+
+      {deletingOptionContext && (
+        <DeleteConfirmationModal
+          title="Xóa tùy chọn"
+          message={
+            'Bạn có chắc muốn xóa tùy chọn "' +
+            deletingOptionContext.option
+              .optionValue +
+            '" khỏi thuộc tính "' +
+            deletingOptionContext.attribute
+              .attributeName +
+            '"?'
+          }
+          confirmText="Xóa tùy chọn"
+          onCancel={
+            handleCancelDeleteOption
+          }
+          onConfirm={
+            handleConfirmDeleteOption
+          }
+          confirming={
+            isDeletingOption
+          }
+          error={
+            deleteOptionError
+          }
+        />
+      )}
+
       {isModalOpen && (
         <AttributeModal
           key={
