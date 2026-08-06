@@ -2,6 +2,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useNavigate } from "react-router-dom";
 import ProductTypeModal from "../../features/system/productType/ProductTypeModal";
 import categoryApi from "../../services/apis/categoryApi";
 import productTypeApi from "../../services/apis/productTypeApi";
@@ -76,6 +77,7 @@ const getErrorMessage = (error) => {
 };
 
 export default function ProductTypePage() {
+  const navigate = useNavigate();
   const [productTypes, setProductTypes] =
     useState([]);
 
@@ -507,6 +509,26 @@ export default function ProductTypePage() {
     setActionError("");
     setSuccessMessage("");
     setIsModalOpen(true);
+  };
+
+  const handleOpenAttributePage = (
+    productType,
+  ) => {
+    if (
+      isDeleting ||
+      isLoadingProductTypeDetails ||
+      !productType?.productTypeId
+    ) {
+      return;
+    }
+
+    navigate(
+      "/admin/product-types/" +
+        encodeURIComponent(
+          productType.productTypeId,
+        ) +
+        "/attributes",
+    );
   };
 
   const handleOpenEditModal =
@@ -1159,10 +1181,18 @@ export default function ProductTypePage() {
                       <td className="space-x-2 p-4 text-right">
                         <button
                           type="button"
-                          disabled
-                          title="Sẽ gắn API thuộc tính ở bước sau"
+                          onClick={() =>
+                            handleOpenAttributePage(
+                              productType,
+                            )
+                          }
+                          disabled={
+                            isDeleting ||
+                            isLoadingProductTypeDetails
+                          }
+                          title="Quản lý thuộc tính và tùy chọn"
                           aria-label={`Quản lý thuộc tính ${productType.productTypeName}`}
-                          className="cursor-not-allowed rounded-md p-1.5 text-gray-300"
+                          className="rounded-md p-1.5 text-[#244f4d] transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <span className="material-symbols-outlined text-[18px]">
                             settings
