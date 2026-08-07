@@ -16,6 +16,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import RegisterBusinessPage from "../pages/auth/RegisterBusinessPage";
 import RegisterPersonalPage from "../pages/auth/RegisterPersonalPage";
 import RegisterSelectionPage from "../pages/auth/RegisterSelectionPage";
+import PostDetailPage from "../pages/public/PostDetailPage";
 import SearchPage from "../pages/public/SearchPage";
 
 // Moderator Pages và Security
@@ -48,6 +49,11 @@ const AppRouter = () => {
         <Route
           path="/search"
           element={<SearchPage />}
+        />
+
+        <Route
+          path="/posts/:postId"
+          element={<PostDetailPage />}
         />
 
         <Route

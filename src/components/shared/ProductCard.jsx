@@ -28,6 +28,8 @@ const ProductCard = ({
   data,
   variant = "business-buy",
 }) => {
+  const navigate = useNavigate();
+
   if (!data) {
     return null;
   }
@@ -64,9 +66,54 @@ const ProductCard = ({
     ] ||
     data.city ||
     "Thỏa thuận vận chuyển";
+  const postId = data.postId || "";
+
+  const handleOpenDetail = () => {
+    if (!postId) {
+      return;
+    }
+
+    navigate(
+      `/posts/${encodeURIComponent(postId)}`,
+    );
+  };
+
+  const handleCardKeyDown = (event) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+
+    if (
+      event.key === "Enter" ||
+      event.key === " "
+    ) {
+      event.preventDefault();
+      handleOpenDetail();
+    }
+  };
+
+  const handleActionClick = (event) => {
+    event.stopPropagation();
+    handleOpenDetail();
+  };
 
   return (
-    <article className="group flex h-full flex-col justify-between overflow-hidden rounded-md border border-[#BAC2C1]/30 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+    <article
+      role={postId ? "link" : undefined}
+      tabIndex={postId ? 0 : undefined}
+      aria-label={
+        postId
+          ? `Xem chi tiết ${name}`
+          : undefined
+      }
+      onClick={handleOpenDetail}
+      onKeyDown={handleCardKeyDown}
+      className={`group flex h-full flex-col justify-between overflow-hidden rounded-md border border-[#BAC2C1]/30 bg-white shadow-sm transition-all duration-300 hover:shadow-md ${
+        postId
+          ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2B5659] focus:ring-offset-2"
+          : ""
+      }`}
+    >
       <div className="relative h-48 overflow-hidden bg-[#BAC2C1]/10">
         {image ? (
           <img
@@ -148,6 +195,7 @@ const ProductCard = ({
               </div>
               <button
                 type="button"
+                onClick={handleActionClick}
                 className="rounded bg-[#2B5659] px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#172830]"
               >
                 Gửi bài bán
@@ -156,6 +204,7 @@ const ProductCard = ({
           ) : (
             <button
               type="button"
+              onClick={handleActionClick}
               className="w-full rounded border-2 border-[#BAC2C1] py-2 text-xs font-bold uppercase tracking-wider text-[#2B5659] transition-all hover:border-[#2B5659] hover:bg-[#2B5659] hover:text-white"
             >
               Thương lượng giá
@@ -168,3 +217,4 @@ const ProductCard = ({
 };
 
 export default ProductCard;
+import { useNavigate } from "react-router-dom";
