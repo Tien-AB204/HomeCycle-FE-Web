@@ -1,53 +1,18 @@
-import { useState } from "react";
 import {
   Link,
   NavLink,
   Outlet,
-  useLocation,
   useNavigate,
 } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 
 const MainLayout = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
-
-  // State lưu từ khóa tìm kiếm
-  const [searchKeyword, setSearchKeyword] = useState("");
 
   const handleLogout = () => {
     logout();
     navigate("/");
-  };
-
-  // Hàm xử lý chuyển hướng tìm kiếm sang trang /search
-  const executeSearch = () => {
-    if (searchKeyword.trim()) {
-      navigate(
-        `/search?keyword=${encodeURIComponent(searchKeyword.trim())}&showFilter=0`,
-      );
-    } else {
-      navigate("/search?showFilter=0");
-    }
-  };
-
-  const executeFilter = () => {
-    if (searchKeyword.trim()) {
-      navigate(
-        `/search?showFilter=1&keyword=${encodeURIComponent(
-          searchKeyword.trim(),
-        )}`,
-      );
-    } else {
-      navigate("/search");
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      executeSearch();
-    }
   };
 
   const displayName =
@@ -82,46 +47,6 @@ const MainLayout = () => {
           >
             HomeCycle
           </Link>
-
-          <div className="flex-1 max-w-2xl mx-8 flex items-center gap-3">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Tìm kiếm đồ cũ..."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full bg-[#2B5659] text-white placeholder-[#BAC2C1] rounded-full py-2 px-4 pr-24 focus:outline-none focus:ring-2 focus:ring-[#547B7D]"
-              />
-              <button
-                onClick={executeSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-[#1F4A50] px-4 py-2 text-sm text-white font-semibold hover:bg-[#144043] transition"
-                title="Tìm"
-              >
-                Tìm
-              </button>
-            </div>
-            <button
-              onClick={executeFilter}
-              className="rounded-full border border-[#BAC2C1] bg-transparent p-3 text-[#BAC2C1] hover:bg-[#2B5659] hover:text-white transition"
-              title="Lọc tìm kiếm chi tiết"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L14 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 018 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
-                />
-              </svg>
-            </button>
-          </div>
 
           <div className="flex items-center gap-4 text-sm font-semibold">
             {!isAuthenticated ? (
