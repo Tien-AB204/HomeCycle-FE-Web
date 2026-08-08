@@ -8,7 +8,7 @@ import {
   hasRole,
 } from "../utils/authUtils";
 
-const RoleRoute = ({ allowedRole }) => {
+const RoleRoute = ({ allowedRole, allowedRoles }) => {
   const {
     user,
     isAuthenticated,
@@ -28,7 +28,15 @@ const RoleRoute = ({ allowedRole }) => {
     );
   }
 
-  if (!hasRole(user?.role, allowedRole)) {
+  const roles = Array.isArray(allowedRoles)
+    ? allowedRoles
+    : [allowedRole];
+
+  const isAllowed = roles
+    .filter(Boolean)
+    .some((role) => hasRole(user?.role, role));
+
+  if (!isAllowed) {
     return (
       <Navigate
         to={getHomePathByRole(user?.role)}
