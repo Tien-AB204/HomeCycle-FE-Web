@@ -426,6 +426,32 @@ export const postApi = {
     );
   },
 
+  close: async (postId) => {
+    const normalizedPostId = normalizeRequiredIdentifier(
+      postId,
+      "Không tìm thấy mã bài đăng.",
+    );
+
+    await axiosClient.patch(
+      `/posts/${encodeURIComponent(normalizedPostId)}/close`,
+    );
+
+    return true;
+  },
+
+  reactivate: async (postId) => {
+    const normalizedPostId = normalizeRequiredIdentifier(
+      postId,
+      "Không tìm thấy mã bài đăng.",
+    );
+
+    await axiosClient.patch(
+      `/posts/${encodeURIComponent(normalizedPostId)}/reactivate`,
+    );
+
+    return true;
+  },
+
   getAll: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,
