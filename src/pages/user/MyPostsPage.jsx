@@ -3,6 +3,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
+import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
 import {
   getPostTypeLabel,
   normalizePostType,
@@ -28,6 +29,11 @@ const STATUS_META = {
     label: "Tạm ẩn",
     className:
       "border-gray-200 bg-gray-100 text-gray-600",
+  },
+  closed: {
+    label: "Đã đóng",
+    className:
+      "border-slate-300 bg-slate-100 text-slate-700",
   },
   rejected: {
     label: "Bị từ chối",
@@ -141,6 +147,8 @@ const MyPostsPage = ({ expectedPostType }) => {
   const [pageNumber, setPageNumber] = useState(1);
   const [requestVersion, setRequestVersion] =
     useState(0);
+  const [actionMessage, setActionMessage] =
+    useState("");
   const requestKey = `${userId}:${normalizedExpectedPostType}:${pageNumber}:${requestVersion}`;
   const [listState, setListState] = useState({
     requestKey: "",
@@ -242,6 +250,13 @@ const MyPostsPage = ({ expectedPostType }) => {
     return `/bai-dang/chinh-sua/${encodeURIComponent(postId)}`;
   };
 
+  const handleLifecycleCompleted = (message) => {
+    setActionMessage(message);
+    setRequestVersion(
+      (currentVersion) => currentVersion + 1,
+    );
+  };
+
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6">
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
@@ -270,6 +285,25 @@ const MyPostsPage = ({ expectedPostType }) => {
           </p>
         </div>
       </div>
+
+      {actionMessage && (
+        <div
+          role="status"
+          className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+        >
+          <p className="font-semibold">
+            {actionMessage}
+          </p>
+          <button
+            type="button"
+            onClick={() => setActionMessage("")}
+            aria-label="Đóng thông báo"
+            className="shrink-0 font-black text-green-800"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {isLoading && <MyPostsLoading />}
 
@@ -399,7 +433,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                         {formatDate(post.updatedAt || post.createdAt)}
                       </td>
                       <td className="px-4 py-4 text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex flex-wrap justify-end gap-2">
                           <Link
                             to={detailPath(post.postId)}
                             className="inline-flex rounded-md border border-[#2B5659] px-3 py-2 text-xs font-bold text-[#2B5659] transition hover:bg-[#2B5659] hover:text-white"
@@ -412,6 +446,14 @@ const MyPostsPage = ({ expectedPostType }) => {
                           >
                             Chỉnh sửa
                           </Link>
+                          <PostLifecycleControl
+                            postId={post.postId}
+                            postName={getPostName(post)}
+                            status={post.status}
+                            onCompleted={
+                              handleLifecycleCompleted
+                            }
+                          />
                         </div>
                       </td>
                     </tr>
@@ -461,7 +503,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                     <span>
                       Còn {post.remainingQuantity ?? 0}/{post.quantity ?? 0}
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap justify-end gap-2">
                       <Link
                         to={detailPath(post.postId)}
                         className="rounded-md border border-[#2B5659] px-3 py-2 font-bold text-[#2B5659]"
@@ -474,6 +516,14 @@ const MyPostsPage = ({ expectedPostType }) => {
                       >
                         Chỉnh sửa
                       </Link>
+                      <PostLifecycleControl
+                        postId={post.postId}
+                        postName={getPostName(post)}
+                        status={post.status}
+                        onCompleted={
+                          handleLifecycleCompleted
+                        }
+                      />
                     </div>
                   </div>
                 </article>

@@ -7,6 +7,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
 import { useAuth } from "../../hooks/useAuth";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
@@ -43,6 +44,37 @@ const PRIORITY_LEVELS = {
   Low: "Thấp",
   Medium: "Trung bình",
   High: "Cao",
+};
+
+const POST_STATUS_META = {
+  active: {
+    label: "Đang hoạt động",
+    className: "bg-green-100 text-green-700",
+  },
+  closed: {
+    label: "Đã đóng",
+    className: "bg-slate-100 text-slate-700",
+  },
+  pending: {
+    label: "Chờ duyệt",
+    className: "bg-amber-100 text-amber-700",
+  },
+  suspended: {
+    label: "Tạm ẩn",
+    className: "bg-gray-100 text-gray-600",
+  },
+  rejected: {
+    label: "Bị từ chối",
+    className: "bg-red-100 text-red-700",
+  },
+  expired: {
+    label: "Hết hạn",
+    className: "bg-orange-100 text-orange-700",
+  },
+  completed: {
+    label: "Đã hoàn tất",
+    className: "bg-blue-100 text-blue-700",
+  },
 };
 
 const isCanceledRequest = (error) => {
@@ -114,6 +146,19 @@ const getMappedValue = (
   return (
     mapping[value] ||
     formatFallbackEnum(value)
+  );
+};
+
+const getPostStatusMeta = (status) => {
+  const normalizedStatus = String(status || "")
+    .trim()
+    .toLowerCase();
+
+  return (
+    POST_STATUS_META[normalizedStatus] || {
+      label: status || "Chưa xác định",
+      className: "bg-gray-100 text-gray-600",
+    }
   );
 };
 
@@ -200,6 +245,8 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const [requestVersion, setRequestVersion] =
     useState(0);
   const [selectedMediaId, setSelectedMediaId] =
+    useState("");
+  const [actionMessage, setActionMessage] =
     useState("");
   const requestKey = `${ownerMode ? "owner" : "public"}:${userId}:${postId}:${requestVersion}`;
   const [detailState, setDetailState] =
@@ -311,6 +358,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
   ]
     .filter(Boolean)
     .join(", ");
+  const statusMeta = getPostStatusMeta(
+    post?.status,
+  );
 
   const handlePrimaryAction = () => {
     if (!isAuthenticated) {
@@ -320,6 +370,13 @@ const PostDetailPage = ({ ownerMode = false }) => {
         },
       });
     }
+  };
+
+  const handleLifecycleCompleted = (message) => {
+    setActionMessage(message);
+    setRequestVersion(
+      (currentVersion) => currentVersion + 1,
+    );
   };
 
   return (
@@ -357,6 +414,25 @@ const PostDetailPage = ({ ownerMode = false }) => {
           </>
         )}
       </div>
+
+      {actionMessage && (
+        <div
+          role="status"
+          className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+        >
+          <p className="font-semibold">
+            {actionMessage}
+          </p>
+          <button
+            type="button"
+            onClick={() => setActionMessage("")}
+            aria-label="Đóng thông báo"
+            className="shrink-0 font-black text-green-800"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {isLoading && <PostDetailLoading />}
 
@@ -458,13 +534,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
                     ? "Tin thu mua"
                     : "Tin đăng bán"}
                 </span>
-                <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
-                  {getMappedValue(
-                    {
-                      Active: "Đang hoạt động",
-                    },
-                    post.status,
-                  )}
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.className}`}
+                >
+                  {statusMeta.label}
                 </span>
               </div>
 
@@ -537,14 +610,25 @@ const PostDetailPage = ({ ownerMode = false }) => {
               {ownerMode ? (
                 <div className="mt-6 rounded-lg border border-[#BAC2C1]/45 bg-[#f5f8f8] p-4">
                   <p className="text-sm leading-6 text-[#547B7D]">
-                    Đây là bài đăng của bạn. Bạn có thể chỉnh sửa nội dung và thuộc tính sản phẩm.
+                    Đây là bài đăng của bạn. Bạn có thể chỉnh sửa nội dung hoặc quản lý trạng thái bài đăng.
                   </p>
-                  <Link
-                    to={`/bai-dang/chinh-sua/${encodeURIComponent(postId)}`}
-                    className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-[#2B5659] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830]"
-                  >
-                    Chỉnh sửa bài đăng
-                  </Link>
+                  <div className="mt-3 grid gap-2">
+                    <Link
+                      to={`/bai-dang/chinh-sua/${encodeURIComponent(postId)}`}
+                      className="inline-flex w-full items-center justify-center rounded-md bg-[#2B5659] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830]"
+                    >
+                      Chỉnh sửa bài đăng
+                    </Link>
+                    <PostLifecycleControl
+                      postId={post.postId}
+                      postName={post.productName}
+                      status={post.status}
+                      onCompleted={
+                        handleLifecycleCompleted
+                      }
+                      fullWidth
+                    />
+                  </div>
                 </div>
               ) : (
                 <button
