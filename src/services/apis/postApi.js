@@ -46,6 +46,173 @@ const normalizeAttributeValues = (attributeValues) => {
   return Array.isArray(attributeValues) ? attributeValues : [];
 };
 
+const appendFormValue = (formData, key, value) => {
+  if (value === undefined || value === null || value === "") {
+    return;
+  }
+
+  formData.append(key, String(value));
+};
+
+const appendMedias = (formData, medias) => {
+  if (!Array.isArray(medias)) {
+    return;
+  }
+
+  medias.forEach((media) => {
+    if (media instanceof File) {
+      formData.append("Medias", media, media.name);
+    }
+  });
+};
+
+const appendAttributeValues = (formData, fieldName, attributeValues) => {
+  if (!Array.isArray(attributeValues)) {
+    return;
+  }
+
+  attributeValues.forEach((attributeValue) => {
+    if (!attributeValue?.attributeId) {
+      return;
+    }
+
+    formData.append(
+      fieldName,
+      JSON.stringify({
+        attributeId: attributeValue.attributeId,
+        optionId: attributeValue.optionId || null,
+        valueBoolean:
+          typeof attributeValue.valueBoolean === "boolean"
+            ? attributeValue.valueBoolean
+            : null,
+        valueText: attributeValue.valueText || null,
+        valueNumber:
+          typeof attributeValue.valueNumber === "number" &&
+          Number.isFinite(attributeValue.valueNumber)
+            ? attributeValue.valueNumber
+            : null,
+      }),
+    );
+  });
+};
+
+const appendCommonPostFields = (formData, postData) => {
+  appendFormValue(formData, "PriorityLevel", postData.priorityLevel);
+  appendFormValue(formData, "Quantity", postData.quantity);
+  appendFormValue(formData, "City", postData.city);
+  appendFormValue(formData, "StreetAddress", postData.streetAddress);
+  appendFormValue(formData, "DeliveryMethod", postData.deliveryMethod);
+  appendFormValue(formData, "Ward", postData.ward);
+  appendFormValue(formData, "Description", postData.description);
+  appendMedias(formData, postData.medias);
+};
+
+const createSellFormData = (postData) => {
+  const formData = new FormData();
+
+  appendCommonPostFields(formData, postData);
+  appendFormValue(formData, "BasePrice", postData.price);
+  appendFormValue(formData, "Product.CategoryId", postData.categoryId);
+  appendFormValue(
+    formData,
+    "Product.ProductTypeId",
+    postData.productTypeId,
+  );
+  appendFormValue(formData, "Product.BrandId", postData.brandId);
+  appendFormValue(formData, "Product.ProductName", postData.productName);
+  appendFormValue(formData, "Product.ModelNumber", postData.modelNumber);
+  appendFormValue(formData, "Product.OriginalPrice", postData.originalPrice);
+  appendFormValue(formData, "Product.Length", postData.length);
+  appendFormValue(formData, "Product.Width", postData.width);
+  appendFormValue(formData, "Product.Height", postData.height);
+  appendFormValue(formData, "Product.Weight", postData.weight);
+  appendFormValue(formData, "Product.SpaceUsage", postData.spaceUsage);
+  appendFormValue(
+    formData,
+    "Product.FunctionalityStatus",
+    postData.functionalityStatus,
+  );
+  appendFormValue(
+    formData,
+    "Product.UsageDuration",
+    postData.usageDuration,
+  );
+  appendFormValue(formData, "Product.DamageLevel", postData.damageLevel);
+  appendFormValue(
+    formData,
+    "Product.DetailDescription",
+    postData.detailDescription,
+  );
+  appendAttributeValues(
+    formData,
+    "Product.AttributeValues",
+    postData.attributeValues,
+  );
+
+  return formData;
+};
+
+const createBuyFormData = (postData) => {
+  const formData = new FormData();
+
+  appendCommonPostFields(formData, postData);
+  appendFormValue(formData, "ExpectedPrice", postData.price);
+  appendFormValue(formData, "Requirement.ExpectedPrice", postData.price);
+  appendFormValue(
+    formData,
+    "Requirement.CategoryId",
+    postData.categoryId,
+  );
+  appendFormValue(
+    formData,
+    "Requirement.ProductTypeId",
+    postData.productTypeId,
+  );
+  appendFormValue(formData, "Requirement.BrandId", postData.brandId);
+  appendFormValue(
+    formData,
+    "Requirement.ProductName",
+    postData.productName,
+  );
+  appendFormValue(
+    formData,
+    "Requirement.SpaceUsage",
+    postData.spaceUsage,
+  );
+  appendFormValue(
+    formData,
+    "Requirement.FunctionalityStatus",
+    postData.functionalityStatus,
+  );
+  appendFormValue(
+    formData,
+    "Requirement.UsageDuration",
+    postData.usageDuration,
+  );
+  appendFormValue(
+    formData,
+    "Requirement.DamageLevel",
+    postData.damageLevel,
+  );
+  appendAttributeValues(
+    formData,
+    "Requirement.AttributeValues",
+    postData.attributeValues,
+  );
+
+  return formData;
+};
+
+const ensureCreatedPost = (response, fallbackMessage) => {
+  const post = unwrapResponse(response, fallbackMessage);
+
+  if (!post?.postId) {
+    throw new Error("Response tạo bài đăng không hợp lệ.");
+  }
+
+  return normalizePostListItem(post);
+};
+
 const normalizePostListItem = (post) => {
   return {
     ...post,
@@ -175,6 +342,38 @@ const createSearchPayload = ({
 };
 
 export const postApi = {
+  createSell: async (postData) => {
+    if (!postData || typeof postData !== "object") {
+      throw new Error("Dữ liệu tạo tin đăng bán không hợp lệ.");
+    }
+
+    const response = await axiosClient.post(
+      "/posts/create/sell",
+      createSellFormData(postData),
+    );
+
+    return ensureCreatedPost(
+      response,
+      "Không thể tạo tin đăng bán.",
+    );
+  },
+
+  createBuy: async (postData) => {
+    if (!postData || typeof postData !== "object") {
+      throw new Error("Dữ liệu tạo tin thu mua không hợp lệ.");
+    }
+
+    const response = await axiosClient.post(
+      "/posts/create/buy",
+      createBuyFormData(postData),
+    );
+
+    return ensureCreatedPost(
+      response,
+      "Không thể tạo tin thu mua.",
+    );
+  },
+
   getAll: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,
