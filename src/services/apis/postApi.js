@@ -284,6 +284,79 @@ export const postApi = {
 
     return normalizePostDetail(post);
   },
+
+  getAllByUser: async (
+    userId,
+    {
+      pageNumber = DEFAULT_PAGE_NUMBER,
+      pageSize = DEFAULT_PAGE_SIZE,
+      signal,
+    } = {},
+  ) => {
+    const normalizedUserId = normalizeText(userId);
+
+    if (!normalizedUserId) {
+      throw new Error("Không tìm thấy mã người dùng.");
+    }
+
+    const normalizedPageNumber = normalizePageNumber(pageNumber);
+    const normalizedPageSize = normalizePageSize(pageSize);
+
+    const response = await axiosClient.get(
+      `/posts/get-all/by-user/${encodeURIComponent(normalizedUserId)}`,
+      {
+        params: {
+          PageNumber: normalizedPageNumber,
+          PageSize: normalizedPageSize,
+        },
+        signal,
+      },
+    );
+
+    const data = unwrapResponse(
+      response,
+      "Không thể tải danh sách bài đăng của bạn.",
+    );
+
+    return normalizePagination(
+      data,
+      normalizedPageNumber,
+      normalizedPageSize,
+    );
+  },
+
+  getDetailByUser: async (userId, postId, { signal } = {}) => {
+    const normalizedUserId = normalizeText(userId);
+    const normalizedPostId = normalizeText(postId);
+
+    if (!normalizedUserId) {
+      throw new Error("Không tìm thấy mã người dùng.");
+    }
+
+    if (!normalizedPostId) {
+      throw new Error("Không tìm thấy mã bài đăng.");
+    }
+
+    const response = await axiosClient.get(
+      `/posts/get-detail-by-user/${encodeURIComponent(
+        normalizedUserId,
+      )}/${encodeURIComponent(normalizedPostId)}`,
+      {
+        signal,
+      },
+    );
+
+    const post = unwrapResponse(
+      response,
+      "Không thể tải chi tiết bài đăng của bạn.",
+    );
+
+    if (!post?.postId) {
+      throw new Error("Response chi tiết bài đăng không hợp lệ.");
+    }
+
+    return normalizePostDetail(post);
+  },
 };
 
 export default postApi;

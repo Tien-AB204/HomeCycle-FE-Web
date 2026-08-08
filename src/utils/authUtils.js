@@ -64,3 +64,21 @@ export const hasRole = (userRole, allowedRole) => {
     normalizeRole(allowedRole)
   );
 };
+
+/**
+ * Backend từng trả mã người dùng với nhiều kiểu key khác nhau.
+ * Hàm này giúp các màn hình nghiệp vụ chỉ dùng một nguồn thống nhất.
+ */
+export const getUserId = (user) => {
+  if (!user || typeof user !== "object") {
+    return "";
+  }
+
+  return String(
+    user.userId ||
+      user.UserId ||
+      user.id ||
+      user.Id ||
+      "",
+  ).trim();
+};
