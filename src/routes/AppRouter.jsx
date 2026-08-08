@@ -35,6 +35,8 @@ import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 
 // User Pages
 import UserProfilePage from "../pages/user/UserProfilePage";
+import PostSectionPage from "../pages/user/PostSectionPage";
+import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
   return (
@@ -59,16 +61,38 @@ const AppRouter = () => {
         <Route
           path="/tin-dang-ban"
           element={
-            <SearchPage fixedPostType="SELL" />
+            <PostSectionPage
+              postType={MARKETPLACE_POST_TYPES.SELL}
+            />
           }
         />
 
         <Route
           path="/tin-thu-mua"
           element={
-            <SearchPage fixedPostType="BUY" />
+            <PostSectionPage
+              postType={MARKETPLACE_POST_TYPES.BUY}
+            />
           }
         />
+
+        <Route
+          element={
+            <RoleRoute
+              allowedRoles={[
+                ROLES.PERSONAL,
+                ROLES.BUSINESS,
+              ]}
+            />
+          }
+        >
+          <Route
+            path="/bai-dang-cua-toi/:postId"
+            element={
+              <PostDetailPage ownerMode />
+            }
+          />
+        </Route>
 
         <Route
           path="/ho-so"

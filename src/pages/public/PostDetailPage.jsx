@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import postApi from "../../services/apis/postApi";
+import { getUserId } from "../../utils/authUtils";
 
 const DELIVERY_METHODS = {
   GhnDelivery: "Giao hàng GHN",
@@ -191,15 +192,16 @@ const PostDetailLoading = () => {
   );
 };
 
-const PostDetailPage = () => {
+const PostDetailPage = ({ ownerMode = false }) => {
   const { postId = "" } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const userId = getUserId(user);
   const [requestVersion, setRequestVersion] =
     useState(0);
   const [selectedMediaId, setSelectedMediaId] =
     useState("");
-  const requestKey = `${postId}:${requestVersion}`;
+  const requestKey = `${ownerMode ? "owner" : "public"}:${userId}:${postId}:${requestVersion}`;
   const [detailState, setDetailState] =
     useState({
       requestKey: "",
@@ -208,13 +210,26 @@ const PostDetailPage = () => {
     });
 
   useEffect(() => {
+    if (ownerMode && !userId) {
+      return undefined;
+    }
+
     const controller = new AbortController();
     let isActive = true;
 
-    postApi
-      .getById(postId, {
-        signal: controller.signal,
-      })
+    const detailRequest = ownerMode
+      ? postApi.getDetailByUser(
+          userId,
+          postId,
+          {
+            signal: controller.signal,
+          },
+        )
+      : postApi.getById(postId, {
+          signal: controller.signal,
+        });
+
+    detailRequest
       .then((post) => {
         if (!isActive) {
           return;
@@ -246,18 +261,24 @@ const PostDetailPage = () => {
       isActive = false;
       controller.abort();
     };
-  }, [postId, requestKey]);
+  }, [ownerMode, postId, requestKey, userId]);
 
-  const isLoading =
-    detailState.requestKey !== requestKey;
+  const missingUserIdError =
+    ownerMode && !userId
+      ? "Phiên đăng nhập không có mã người dùng. Vui lòng đăng xuất và đăng nhập lại."
+      : "";
+  const isLoading = Boolean(
+    !missingUserIdError &&
+      detailState.requestKey !== requestKey,
+  );
   const post =
     detailState.requestKey === requestKey
       ? detailState.post
       : null;
-  const error =
-    detailState.requestKey === requestKey
+  const error = missingUserIdError ||
+    (detailState.requestKey === requestKey
       ? detailState.error
-      : "";
+      : "");
 
   const medias = Array.isArray(post?.medias)
     ? post.medias
@@ -278,9 +299,11 @@ const PostDetailPage = () => {
   const isBuyPost =
     String(post?.postType).toLowerCase() ===
     "buy";
-  const listPath = isBuyPost
-    ? "/tin-thu-mua"
-    : "/tin-dang-ban";
+  const listPath = `${
+    isBuyPost
+      ? "/tin-thu-mua"
+      : "/tin-dang-ban"
+  }${ownerMode ? "?view=mine" : ""}`;
   const address = [
     post?.streetAddress,
     post?.ward,
@@ -316,9 +339,11 @@ const PostDetailPage = () => {
           className="font-medium text-[#547B7D] hover:text-[#172830]"
         >
           {post
-            ? isBuyPost
-              ? "Tin thu mua"
-              : "Tin đăng bán"
+            ? ownerMode
+              ? "Bài đăng của tôi"
+              : isBuyPost
+                ? "Tin thu mua"
+                : "Tin đăng bán"
             : "Bài đăng"}
         </Link>
         {post && (
@@ -509,23 +534,29 @@ const PostDetailPage = () => {
                 </div>
               </dl>
 
-              <button
-                type="button"
-                onClick={handlePrimaryAction}
-                disabled={isAuthenticated}
-                title={
-                  isAuthenticated
-                    ? "Chức năng giao dịch sẽ được gắn ở bước sau"
-                    : "Đăng nhập để tiếp tục"
-                }
-                className="mt-6 w-full rounded-lg bg-[#2B5659] px-4 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isAuthenticated
-                  ? isBuyPost
-                    ? "Gửi bài bán (sắp ra mắt)"
-                    : "Thương lượng (sắp ra mắt)"
-                  : "Đăng nhập để tiếp tục"}
-              </button>
+              {ownerMode ? (
+                <div className="mt-6 rounded-lg border border-[#BAC2C1]/45 bg-[#f5f8f8] p-4 text-sm leading-6 text-[#547B7D]">
+                  Đây là bài đăng của bạn. Chức năng cập nhật và thay đổi trạng thái sẽ được kết nối ở bước API tiếp theo.
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handlePrimaryAction}
+                  disabled={isAuthenticated}
+                  title={
+                    isAuthenticated
+                      ? "Chức năng giao dịch sẽ được gắn ở bước sau"
+                      : "Đăng nhập để tiếp tục"
+                  }
+                  className="mt-6 w-full rounded-lg bg-[#2B5659] px-4 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isAuthenticated
+                    ? isBuyPost
+                      ? "Gửi bài bán (sắp ra mắt)"
+                      : "Thương lượng (sắp ra mắt)"
+                    : "Đăng nhập để tiếp tục"}
+                </button>
+              )}
 
               <p className="mt-4 text-xs text-[#547B7D]">
                 Đăng lúc {formatDate(post.createdAt)}
@@ -666,7 +697,7 @@ const PostDetailPage = () => {
               to={listPath}
               className="inline-flex items-center gap-2 rounded-md border border-[#BAC2C1] bg-white px-4 py-2 text-sm font-semibold text-[#172830] transition hover:bg-[#BAC2C1]/20"
             >
-              ← Quay lại danh sách
+              ← Quay lại {ownerMode ? "bài đăng của tôi" : "danh sách"}
             </Link>
           </div>
         </>
