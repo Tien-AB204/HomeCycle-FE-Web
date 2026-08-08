@@ -303,8 +303,14 @@ const MyPostsPage = ({ expectedPostType }) => {
             Bạn chưa có {postTypeLabel} nào
           </h2>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#547B7D]">
-            Chức năng tạo bài sẽ được kết nối ở bước tiếp theo. Khi có bài đăng, bạn có thể theo dõi trạng thái và số lượng ngay tại đây.
+            Hãy tạo bài đăng đầu tiên. Sau đó bạn có thể theo dõi trạng thái và số lượng ngay tại đây.
           </p>
+          <Link
+            to="/bai-dang/tao-moi"
+            className="mt-5 inline-flex rounded-md bg-[#2B5659] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#172830]"
+          >
+            Tạo {postTypeLabel}
+          </Link>
         </div>
       )}
 

@@ -36,6 +36,7 @@ import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 // User Pages
 import UserProfilePage from "../pages/user/UserProfilePage";
 import PostSectionPage from "../pages/user/PostSectionPage";
+import CreatePostPage from "../pages/user/CreatePostPage";
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
@@ -91,6 +92,11 @@ const AppRouter = () => {
             element={
               <PostDetailPage ownerMode />
             }
+          />
+
+          <Route
+            path="/bai-dang/tao-moi"
+            element={<CreatePostPage />}
           />
         </Route>
 
