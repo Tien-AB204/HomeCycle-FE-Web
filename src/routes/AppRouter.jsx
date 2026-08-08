@@ -16,6 +16,7 @@ import LoginPage from "../pages/auth/LoginPage";
 import RegisterBusinessPage from "../pages/auth/RegisterBusinessPage";
 import RegisterPersonalPage from "../pages/auth/RegisterPersonalPage";
 import RegisterSelectionPage from "../pages/auth/RegisterSelectionPage";
+import PostDetailPage from "../pages/public/PostDetailPage";
 import SearchPage from "../pages/public/SearchPage";
 
 // Moderator Pages và Security
@@ -34,6 +35,9 @@ import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 
 // User Pages
 import UserProfilePage from "../pages/user/UserProfilePage";
+import PostSectionPage from "../pages/user/PostSectionPage";
+import CreatePostPage from "../pages/user/CreatePostPage";
+import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
   return (
@@ -51,18 +55,55 @@ const AppRouter = () => {
         />
 
         <Route
+          path="/posts/:postId"
+          element={<PostDetailPage />}
+        />
+
+        <Route
           path="/tin-dang-ban"
           element={
-            <SearchPage fixedPostType="SELL" />
+            <PostSectionPage
+              postType={MARKETPLACE_POST_TYPES.SELL}
+            />
           }
         />
 
         <Route
           path="/tin-thu-mua"
           element={
-            <SearchPage fixedPostType="BUY" />
+            <PostSectionPage
+              postType={MARKETPLACE_POST_TYPES.BUY}
+            />
           }
         />
+
+        <Route
+          element={
+            <RoleRoute
+              allowedRoles={[
+                ROLES.PERSONAL,
+                ROLES.BUSINESS,
+              ]}
+            />
+          }
+        >
+          <Route
+            path="/bai-dang-cua-toi/:postId"
+            element={
+              <PostDetailPage ownerMode />
+            }
+          />
+
+          <Route
+            path="/bai-dang/tao-moi"
+            element={<CreatePostPage />}
+          />
+
+          <Route
+            path="/bai-dang/chinh-sua/:postId"
+            element={<CreatePostPage />}
+          />
+        </Route>
 
         <Route
           path="/ho-so"
