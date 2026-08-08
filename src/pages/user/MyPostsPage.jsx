@@ -238,6 +238,10 @@ const MyPostsPage = ({ expectedPostType }) => {
     return `/bai-dang-cua-toi/${encodeURIComponent(postId)}`;
   };
 
+  const editPath = (postId) => {
+    return `/bai-dang/chinh-sua/${encodeURIComponent(postId)}`;
+  };
+
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6">
       <div className="mb-5 grid gap-3 sm:grid-cols-3">
@@ -395,12 +399,20 @@ const MyPostsPage = ({ expectedPostType }) => {
                         {formatDate(post.updatedAt || post.createdAt)}
                       </td>
                       <td className="px-4 py-4 text-right">
-                        <Link
-                          to={detailPath(post.postId)}
-                          className="inline-flex rounded-md border border-[#2B5659] px-3 py-2 text-xs font-bold text-[#2B5659] transition hover:bg-[#2B5659] hover:text-white"
-                        >
-                          Xem chi tiết
-                        </Link>
+                        <div className="flex justify-end gap-2">
+                          <Link
+                            to={detailPath(post.postId)}
+                            className="inline-flex rounded-md border border-[#2B5659] px-3 py-2 text-xs font-bold text-[#2B5659] transition hover:bg-[#2B5659] hover:text-white"
+                          >
+                            Chi tiết
+                          </Link>
+                          <Link
+                            to={editPath(post.postId)}
+                            className="inline-flex rounded-md bg-[#2B5659] px-3 py-2 text-xs font-bold text-white transition hover:bg-[#172830]"
+                          >
+                            Chỉnh sửa
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -445,16 +457,24 @@ const MyPostsPage = ({ expectedPostType }) => {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 text-xs text-[#547B7D]">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 pt-3 text-xs text-[#547B7D]">
                     <span>
                       Còn {post.remainingQuantity ?? 0}/{post.quantity ?? 0}
                     </span>
-                    <Link
-                      to={detailPath(post.postId)}
-                      className="rounded-md bg-[#2B5659] px-3 py-2 font-bold text-white"
-                    >
-                      Xem chi tiết
-                    </Link>
+                    <div className="flex gap-2">
+                      <Link
+                        to={detailPath(post.postId)}
+                        className="rounded-md border border-[#2B5659] px-3 py-2 font-bold text-[#2B5659]"
+                      >
+                        Chi tiết
+                      </Link>
+                      <Link
+                        to={editPath(post.postId)}
+                        className="rounded-md bg-[#2B5659] px-3 py-2 font-bold text-white"
+                      >
+                        Chỉnh sửa
+                      </Link>
+                    </div>
                   </div>
                 </article>
               );

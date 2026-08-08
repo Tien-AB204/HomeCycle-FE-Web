@@ -6,6 +6,7 @@ import {
   Link,
   Navigate,
   useNavigate,
+  useParams,
 } from "react-router-dom";
 import DynamicAttributeFields from "../../features/posts/DynamicAttributeFields";
 import MediaUploadField from "../../features/posts/MediaUploadField";
@@ -19,6 +20,7 @@ import {
 import {
   getManagedPostTypeByRole,
   MARKETPLACE_POST_TYPES,
+  normalizePostType,
 } from "../../constants/marketplace";
 import { useAuth } from "../../hooks/useAuth";
 import brandApi from "../../services/apis/brandApi";
@@ -26,6 +28,7 @@ import categoryApi from "../../services/apis/categoryApi";
 import postApi from "../../services/apis/postApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi";
+import { getUserId } from "../../utils/authUtils";
 
 const REFERENCE_PAGE_SIZE = 100;
 
@@ -56,6 +59,71 @@ const createInitialForm = () => ({
   medias: [],
 });
 
+const toFormString = (value, fallbackValue = "") => {
+  if (value === undefined || value === null) {
+    return fallbackValue;
+  }
+
+  return String(value);
+};
+
+const createFormFromPost = (post) => {
+  const product = post?.product || {};
+
+  return {
+    ...createInitialForm(),
+    categoryId: product.categoryId || "",
+    productTypeId: product.productTypeId || "",
+    brandId: product.brandId || "",
+    productName: product.productName || post?.productName || "",
+    modelNumber: product.modelNumber || "",
+    price: toFormString(post?.basePrice),
+    originalPrice: toFormString(product.originalPrice),
+    quantity: toFormString(post?.quantity, "1"),
+    description: post?.description || "",
+    detailDescription: product.detailDescription || "",
+    priorityLevel: post?.priorityLevel || "Low",
+    deliveryMethod: post?.deliveryMethod || "Unknown",
+    city: post?.city || "",
+    ward: post?.ward || "",
+    streetAddress: post?.streetAddress || "",
+    spaceUsage: product.spaceUsage || "Living_room",
+    functionalityStatus:
+      product.functionalityStatus || "FullyFunctional",
+    usageDuration: toFormString(product.usageDuration, "0"),
+    damageLevel: product.damageLevel || "None",
+    length: toFormString(product.length),
+    width: toFormString(product.width),
+    height: toFormString(product.height),
+    weight: toFormString(product.weight),
+    medias: [],
+  };
+};
+
+const createAttributeValuesFromPost = (post) => {
+  const attributeValues = Array.isArray(post?.product?.attributeValues)
+    ? post.product.attributeValues
+    : [];
+
+  return attributeValues.reduce((result, attributeValue) => {
+    if (!attributeValue?.attributeId) {
+      return result;
+    }
+
+    result[attributeValue.attributeId] = {
+      optionId: attributeValue.optionId || "",
+      valueBoolean:
+        typeof attributeValue.valueBoolean === "boolean"
+          ? String(attributeValue.valueBoolean)
+          : "",
+      valueText: toFormString(attributeValue.valueText),
+      valueNumber: toFormString(attributeValue.valueNumber),
+    };
+
+    return result;
+  }, {});
+};
+
 const isCanceledRequest = (error) => {
   return (
     error?.name === "CanceledError" ||
@@ -82,7 +150,7 @@ const getErrorMessage = (error) => {
     responseData?.error?.message ||
     responseData?.message ||
     error?.message ||
-    "Không thể tạo bài đăng. Vui lòng thử lại."
+    "Không thể xử lý bài đăng. Vui lòng thử lại."
   );
 };
 
@@ -197,13 +265,17 @@ const SectionHeading = ({ number, title, description }) => {
 
 const CreatePostPage = () => {
   const navigate = useNavigate();
+  const { postId = "" } = useParams();
   const { user } = useAuth();
+  const userId = getUserId(user);
+  const isEditing = Boolean(postId);
   const postType = getManagedPostTypeByRole(user?.role);
   const isBuyPost = postType === MARKETPLACE_POST_TYPES.BUY;
   const listPath = isBuyPost ? "/tin-thu-mua" : "/tin-dang-ban";
   const postTypeLabel = isBuyPost ? "tin thu mua" : "tin đăng bán";
 
   const [form, setForm] = useState(createInitialForm);
+  const [existingMedias, setExistingMedias] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [productTypes, setProductTypes] = useState([]);
@@ -214,10 +286,66 @@ const CreatePostPage = () => {
   const [referenceError, setReferenceError] = useState("");
   const [attributeLoadError, setAttributeLoadError] = useState("");
   const [serverError, setServerError] = useState("");
+  const [detailError, setDetailError] = useState("");
+  const [detailRequestVersion, setDetailRequestVersion] = useState(0);
   const [isLoadingReferences, setIsLoadingReferences] = useState(true);
   const [isLoadingProductTypes, setIsLoadingProductTypes] = useState(false);
   const [isLoadingAttributes, setIsLoadingAttributes] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(isEditing);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isEditing || !userId) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+
+    postApi
+      .getDetailByUser(userId, postId, {
+        signal: controller.signal,
+      })
+      .then((post) => {
+        if (!isActive) {
+          return;
+        }
+
+        if (normalizePostType(post.postType) !== postType) {
+          throw new Error(
+            "Bài đăng không phù hợp với quyền quản lý của tài khoản này.",
+          );
+        }
+
+        const nextForm = createFormFromPost(post);
+
+        setForm(nextForm);
+        setExistingMedias(
+          Array.isArray(post.medias) ? post.medias : [],
+        );
+        setAttributeValues(createAttributeValuesFromPost(post));
+        setIsLoadingProductTypes(Boolean(nextForm.categoryId));
+        setIsLoadingAttributes(Boolean(nextForm.productTypeId));
+        setDetailError("");
+      })
+      .catch((requestError) => {
+        if (!isActive || isCanceledRequest(requestError)) {
+          return;
+        }
+
+        setDetailError(getErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoadingDetail(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [detailRequestVersion, isEditing, postId, postType, userId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -460,7 +588,10 @@ const CreatePostPage = () => {
       nextErrors.streetAddress = "Vui lòng nhập địa chỉ chi tiết.";
     }
 
-    if (form.medias.length === 0) {
+    if (
+      form.medias.length === 0 &&
+      existingMedias.length === 0
+    ) {
       nextErrors.medias = "Vui lòng chọn ít nhất một ảnh sản phẩm.";
     }
 
@@ -532,15 +663,21 @@ const CreatePostPage = () => {
     };
 
     try {
-      const createdPost = isBuyPost
-        ? await postApi.createBuy(payload)
-        : await postApi.createSell(payload);
+      const savedPost = isEditing
+        ? isBuyPost
+          ? await postApi.updateBuy(postId, payload)
+          : await postApi.updateSell(postId, payload)
+        : isBuyPost
+          ? await postApi.createBuy(payload)
+          : await postApi.createSell(payload);
 
       navigate(`${listPath}?view=mine`, {
         replace: true,
         state: {
-          postCreatedMessage: `Đã tạo ${postTypeLabel} “${
-            createdPost.productName || payload.productName
+          postSuccessMessage: `Đã ${
+            isEditing ? "cập nhật" : "tạo"
+          } ${postTypeLabel} “${
+            savedPost.productName || payload.productName
           }” thành công.`,
         },
       });
@@ -554,6 +691,71 @@ const CreatePostPage = () => {
 
   if (!postType) {
     return <Navigate to="/" replace />;
+  }
+
+  const missingUserIdError =
+    isEditing && !userId
+      ? "Phiên đăng nhập không có mã người dùng. Vui lòng đăng xuất và đăng nhập lại."
+      : "";
+  const resolvedDetailError = missingUserIdError || detailError;
+
+  if (isEditing && isLoadingDetail && !resolvedDetailError) {
+    return (
+      <div className="mx-auto w-full max-w-6xl px-4 py-16 text-center sm:px-6">
+        <div
+          role="status"
+          className="rounded-xl border border-[#BAC2C1]/40 bg-white p-10 text-[#547B7D] shadow-sm"
+        >
+          <span className="material-symbols-outlined animate-spin text-4xl">
+            refresh
+          </span>
+          <p className="mt-3 font-semibold">
+            Đang tải dữ liệu bài đăng...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isEditing && resolvedDetailError) {
+    return (
+      <div className="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6">
+        <div
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 p-8 text-center"
+        >
+          <h1 className="text-xl font-black text-red-800">
+            Không thể mở bài đăng để chỉnh sửa
+          </h1>
+          <p className="mt-2 text-sm text-red-700">
+            {resolvedDetailError}
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            {!missingUserIdError && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailError("");
+                  setIsLoadingDetail(true);
+                  setDetailRequestVersion(
+                    (currentVersion) => currentVersion + 1,
+                  );
+                }}
+                className="rounded-md bg-[#7A1012] px-4 py-2 text-sm font-bold text-white"
+              >
+                Thử lại
+              </button>
+            )}
+            <Link
+              to={`${listPath}?view=mine`}
+              className="rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-bold text-red-800"
+            >
+              Về bài đăng của tôi
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const inputClassName =
@@ -570,7 +772,7 @@ const CreatePostPage = () => {
         </Link>
         <span className="text-[#BAC2C1]">/</span>
         <span className="font-bold text-[#172830]">
-          Tạo {postTypeLabel}
+          {isEditing ? "Chỉnh sửa" : "Tạo"} {postTypeLabel}
         </span>
       </div>
 
@@ -581,12 +783,14 @@ const CreatePostPage = () => {
             : "Dành cho tài khoản cá nhân"}
         </p>
         <h1 className="mt-2 text-2xl font-black sm:text-3xl">
-          Tạo {postTypeLabel} mới
+          {isEditing ? "Chỉnh sửa" : "Tạo"} {postTypeLabel}
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[#B7C9D4]">
-          {isBuyPost
-            ? "Mô tả chính xác nhu cầu thu mua để tiếp cận đúng người đang có sản phẩm phù hợp."
-            : "Cung cấp đầy đủ thông tin và hình ảnh để sản phẩm dễ được tìm thấy và tạo sự tin cậy."}
+          {isEditing
+            ? "Kiểm tra lại thông tin trước khi lưu. Dữ liệu sau cập nhật sẽ được tải lại từ hệ thống."
+            : isBuyPost
+              ? "Mô tả chính xác nhu cầu thu mua để tiếp cận đúng người đang có sản phẩm phù hợp."
+              : "Cung cấp đầy đủ thông tin và hình ảnh để sản phẩm dễ được tìm thấy và tạo sự tin cậy."}
         </p>
       </header>
 
@@ -1056,6 +1260,37 @@ const CreatePostPage = () => {
               disabled={isSubmitting}
               onChange={(files) => updateField("medias", files)}
             />
+
+            {isEditing && existingMedias.length > 0 && (
+              <div className="mt-4 rounded-lg border border-[#BAC2C1]/40 bg-[#f8fafa] p-4">
+                <p className="text-sm font-bold text-[#172830]">
+                  Ảnh hiện có ({existingMedias.length})
+                </p>
+                <div className="mt-3 flex gap-3 overflow-x-auto">
+                  {existingMedias.map((media, index) => (
+                    <div
+                      key={media.mediaId || media.url}
+                      className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-[#BAC2C1] bg-white"
+                    >
+                      {media.url ? (
+                        <img
+                          src={media.url}
+                          alt={`Ảnh hiện có ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-[#547B7D]">
+                          ♻
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs leading-5 text-[#547B7D]">
+                  Nếu không chọn ảnh mới, frontend sẽ không gửi trường Medias và giữ nguyên dữ liệu ảnh hiện có theo cơ chế của Backend.
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -1073,6 +1308,7 @@ const CreatePostPage = () => {
               isLoadingReferences ||
               isLoadingProductTypes ||
               isLoadingAttributes ||
+              isLoadingDetail ||
               Boolean(referenceError)
             }
             className="flex items-center justify-center gap-2 rounded-md bg-[#2B5659] px-6 py-3 text-sm font-black text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-50"
@@ -1082,7 +1318,13 @@ const CreatePostPage = () => {
                 refresh
               </span>
             )}
-            {isSubmitting ? "Đang tạo bài..." : `Tạo ${postTypeLabel}`}
+            {isSubmitting
+              ? isEditing
+                ? "Đang lưu thay đổi..."
+                : "Đang tạo bài..."
+              : isEditing
+                ? "Lưu thay đổi"
+                : `Tạo ${postTypeLabel}`}
           </button>
         </div>
       </form>
