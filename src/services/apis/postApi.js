@@ -213,6 +213,16 @@ const ensureCreatedPost = (response, fallbackMessage) => {
   return normalizePostListItem(post);
 };
 
+const normalizeRequiredIdentifier = (value, errorMessage) => {
+  const normalizedValue = normalizeText(value);
+
+  if (!normalizedValue) {
+    throw new Error(errorMessage);
+  }
+
+  return normalizedValue;
+};
+
 const normalizePostListItem = (post) => {
   return {
     ...post,
@@ -371,6 +381,48 @@ export const postApi = {
     return ensureCreatedPost(
       response,
       "Không thể tạo tin thu mua.",
+    );
+  },
+
+  updateSell: async (postId, postData) => {
+    const normalizedPostId = normalizeRequiredIdentifier(
+      postId,
+      "Không tìm thấy mã tin đăng bán.",
+    );
+
+    if (!postData || typeof postData !== "object") {
+      throw new Error("Dữ liệu cập nhật tin đăng bán không hợp lệ.");
+    }
+
+    const response = await axiosClient.put(
+      `/posts/update/sell/${encodeURIComponent(normalizedPostId)}`,
+      createSellFormData(postData),
+    );
+
+    return ensureCreatedPost(
+      response,
+      "Không thể cập nhật tin đăng bán.",
+    );
+  },
+
+  updateBuy: async (postId, postData) => {
+    const normalizedPostId = normalizeRequiredIdentifier(
+      postId,
+      "Không tìm thấy mã tin thu mua.",
+    );
+
+    if (!postData || typeof postData !== "object") {
+      throw new Error("Dữ liệu cập nhật tin thu mua không hợp lệ.");
+    }
+
+    const response = await axiosClient.put(
+      `/posts/update/buy/${encodeURIComponent(normalizedPostId)}`,
+      createBuyFormData(postData),
+    );
+
+    return ensureCreatedPost(
+      response,
+      "Không thể cập nhật tin thu mua.",
     );
   },
 

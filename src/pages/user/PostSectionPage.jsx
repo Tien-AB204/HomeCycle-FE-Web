@@ -52,7 +52,9 @@ const PostSectionPage = ({ postType }) => {
     normalizedPostType,
   );
   const successMessage =
-    location.state?.postCreatedMessage || "";
+    location.state?.postSuccessMessage ||
+    location.state?.postCreatedMessage ||
+    "";
 
   const changeView = (nextView) => {
     const nextSearchParams = new URLSearchParams(

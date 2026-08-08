@@ -98,6 +98,11 @@ const AppRouter = () => {
             path="/bai-dang/tao-moi"
             element={<CreatePostPage />}
           />
+
+          <Route
+            path="/bai-dang/chinh-sua/:postId"
+            element={<CreatePostPage />}
+          />
         </Route>
 
         <Route

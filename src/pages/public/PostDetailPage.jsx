@@ -535,8 +535,16 @@ const PostDetailPage = ({ ownerMode = false }) => {
               </dl>
 
               {ownerMode ? (
-                <div className="mt-6 rounded-lg border border-[#BAC2C1]/45 bg-[#f5f8f8] p-4 text-sm leading-6 text-[#547B7D]">
-                  Đây là bài đăng của bạn. Chức năng cập nhật và thay đổi trạng thái sẽ được kết nối ở bước API tiếp theo.
+                <div className="mt-6 rounded-lg border border-[#BAC2C1]/45 bg-[#f5f8f8] p-4">
+                  <p className="text-sm leading-6 text-[#547B7D]">
+                    Đây là bài đăng của bạn. Bạn có thể chỉnh sửa nội dung và thuộc tính sản phẩm.
+                  </p>
+                  <Link
+                    to={`/bai-dang/chinh-sua/${encodeURIComponent(postId)}`}
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-[#2B5659] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830]"
+                  >
+                    Chỉnh sửa bài đăng
+                  </Link>
                 </div>
               ) : (
                 <button
@@ -626,12 +634,14 @@ const PostDetailPage = ({ ownerMode = false }) => {
                       : "—"
                   }
                 />
-                <DetailItem
-                  label="Giá mua ban đầu"
-                  value={formatCurrency(
-                    product.originalPrice,
-                  )}
-                />
+                {!isBuyPost && (
+                  <DetailItem
+                    label="Giá mua ban đầu"
+                    value={formatCurrency(
+                      product.originalPrice,
+                    )}
+                  />
+                )}
                 <DetailItem
                   label="Kích thước (D × R × C)"
                   value={
