@@ -62,6 +62,7 @@ const OfferDetailModal = ({
   onRetry,
   onEdit,
   onCancelOffer,
+  onCounter,
   onReject,
   onAccept,
 }) => {
@@ -210,6 +211,17 @@ const OfferDetailModal = ({
                   </button>
                 )}
 
+                {(offer.canCounter ?? offer.canAccept) && (
+                  <button
+                    type="button"
+                    onClick={onCounter}
+                    disabled={actionBusy}
+                    className="rounded-lg bg-[#2B5659] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830] disabled:opacity-50"
+                  >
+                    Phản đề và mở phòng
+                  </button>
+                )}
+
                 {offer.canAccept && (
                   <button
                     type="button"
@@ -217,15 +229,24 @@ const OfferDetailModal = ({
                     disabled={actionBusy}
                     className="rounded-lg bg-green-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-800 disabled:opacity-50"
                   >
-                    {actionBusy ? "Đang xử lý..." : "Chấp nhận"}
+                    {actionBusy ? "Đang xử lý..." : "Đồng ý mức giá"}
                   </button>
                 )}
               </div>
 
               {offer.negotiationId && (
-                <p className="mt-5 break-all rounded-lg bg-green-50 p-3 text-xs font-medium text-green-700">
-                  Phiên thương lượng: {offer.negotiationId}
-                </p>
+                <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4">
+                  <p className="break-all text-xs font-medium text-green-700">
+                    Phiên thương lượng: {offer.negotiationId}
+                  </p>
+                  <Link
+                    to={`/thuong-luong/${encodeURIComponent(offer.negotiationId)}`}
+                    onClick={onClose}
+                    className="mt-3 inline-flex rounded-lg bg-green-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-800"
+                  >
+                    Mở phòng thương lượng
+                  </Link>
+                </div>
               )}
             </>
           )}

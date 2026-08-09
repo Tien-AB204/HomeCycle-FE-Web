@@ -4,6 +4,7 @@ import {
 } from "react";
 import {
   Link,
+  useNavigate,
   useSearchParams,
 } from "react-router-dom";
 import { getOfferStatusMeta } from "../../constants/offers";
@@ -64,6 +65,7 @@ const getShortId = (value) => {
 };
 
 const OfferManagementPage = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab =
     searchParams.get("tab") === "received"
@@ -78,6 +80,9 @@ const OfferManagementPage = () => {
   const [editingOffer, setEditingOffer] = useState(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState("");
+  const [counteringOffer, setCounteringOffer] = useState(null);
+  const [counterSubmitting, setCounterSubmitting] = useState(false);
+  const [counterError, setCounterError] = useState("");
   const listRequestKey = `${activeTab}:${pageNumber}:${requestVersion}`;
   const detailRequestKey = `${selectedOfferId}:${detailVersion}`;
   const [listState, setListState] = useState({
@@ -233,7 +238,7 @@ const OfferManagementPage = () => {
       cancel: "Bạn có chắc muốn hủy đề nghị này?",
       reject: "Bạn có chắc muốn từ chối đề nghị này?",
       accept:
-        "Chấp nhận đề nghị này và mở phiên thương lượng?",
+        "Đồng ý mức giá và số lượng này? Hai bên sẽ được xem là đã thống nhất đề xuất.",
     }[action];
 
     if (!window.confirm(confirmationMessage)) {
@@ -255,7 +260,7 @@ const OfferManagementPage = () => {
         const acceptedOffer = await offerApi.accept(
           selectedOffer.offerId,
         );
-        message = `Đã chấp nhận đề nghị. Mã phiên thương lượng: ${acceptedOffer.negotiationId}`;
+        message = `Đã đồng ý mức giá. Mã phiên: ${acceptedOffer.negotiationId}`;
       }
 
       setSuccessMessage(message);
@@ -281,6 +286,51 @@ const OfferManagementPage = () => {
     setEditingOffer(selectedOffer);
     setEditError("");
     setSelectedOfferId("");
+  };
+
+  const openCounterModal = () => {
+    setCounteringOffer(selectedOffer);
+    setCounterError("");
+    setSelectedOfferId("");
+  };
+
+  const handleCounterOffer = async (terms) => {
+    if (!counteringOffer || counterSubmitting) {
+      return;
+    }
+
+    setCounterSubmitting(true);
+    setCounterError("");
+
+    try {
+      const result = await offerApi.counter(counteringOffer.offerId, terms);
+      setCounteringOffer(null);
+      refreshList();
+      navigate(
+        `/thuong-luong/${encodeURIComponent(result.negotiationId)}`,
+        {
+          state: {
+            negotiationSummary: {
+              negotiationId: result.negotiationId,
+              offerId: counteringOffer.offerId,
+              postId: counteringOffer.postId,
+              otherPartyId: counteringOffer.sender?.userId,
+              otherPartyName: counteringOffer.sender?.displayName,
+              otherPartyAvatarUrl: counteringOffer.sender?.avatarUrl,
+              currentOfferPrice: result.currentOfferPrice,
+              currentOfferQuantity: result.currentOfferQuantity,
+              negotiationStatus: "Open",
+            },
+          },
+        },
+      );
+    } catch (requestError) {
+      setCounterError(
+        getErrorMessage(requestError, "Không thể gửi phản đề."),
+      );
+    } finally {
+      setCounterSubmitting(false);
+    }
   };
 
   const handleUpdateOffer = async (terms) => {
@@ -320,16 +370,24 @@ const OfferManagementPage = () => {
               Yêu cầu thương lượng
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[#B7C9D4]">
-              Theo dõi các đề nghị giá đã gửi, phản hồi đề nghị nhận được và mở phiên thương lượng khi hai bên thống nhất.
+              Theo dõi các đề nghị giá đã gửi, phản hồi đề nghị nhận được và mở phòng để hai bên tiếp tục thương lượng.
             </p>
           </div>
-          <div className="mt-4 rounded-xl bg-white/10 px-5 py-3 sm:mt-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-[#C1EAEC]">
-              Tổng trong mục
-            </p>
-            <p className="mt-1 text-2xl font-black">
-              {result?.totalCount ?? 0}
-            </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3 sm:mt-0 sm:justify-end">
+            <Link
+              to="/thuong-luong/phien"
+              className="rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/20"
+            >
+              Xem phiên thương lượng
+            </Link>
+            <div className="rounded-xl bg-white/10 px-5 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#C1EAEC]">
+                Tổng trong mục
+              </p>
+              <p className="mt-1 text-2xl font-black">
+                {result?.totalCount ?? 0}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -551,6 +609,7 @@ const OfferManagementPage = () => {
           }
           onEdit={openEditModal}
           onCancelOffer={() => runOfferAction("cancel")}
+          onCounter={openCounterModal}
           onReject={() => runOfferAction("reject")}
           onAccept={() => runOfferAction("accept")}
         />
@@ -569,6 +628,22 @@ const OfferManagementPage = () => {
             }
           }}
           onSubmit={handleUpdateOffer}
+        />
+      )}
+
+      {counteringOffer && (
+        <OfferFormModal
+          mode="counter"
+          offer={counteringOffer}
+          submitting={counterSubmitting}
+          serverError={counterError}
+          onClose={() => {
+            if (!counterSubmitting) {
+              setCounteringOffer(null);
+              setCounterError("");
+            }
+          }}
+          onSubmit={handleCounterOffer}
         />
       )}
     </section>
