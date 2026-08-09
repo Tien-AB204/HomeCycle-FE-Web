@@ -20,16 +20,18 @@ const OfferFormModal = ({
   onSubmit,
 }) => {
   const isEditing = mode === "edit";
+  const isCountering = mode === "counter";
+  const usesExistingOffer = isEditing || isCountering;
   const [offerPrice, setOfferPrice] = useState(() =>
     String(
-      isEditing
+      usesExistingOffer
         ? offer?.offerPrice ?? ""
         : post?.basePrice ?? "",
     ),
   );
   const [offerQuantity, setOfferQuantity] = useState(() =>
     String(
-      isEditing
+      usesExistingOffer
         ? offer?.offerQuantity ?? 1
         : 1,
     ),
@@ -107,6 +109,8 @@ const OfferFormModal = ({
             >
               {isEditing
                 ? "Cập nhật đề nghị"
+                : isCountering
+                  ? "Phản đề và mở phòng"
                 : "Gửi đề nghị mua"}
             </h2>
           </div>
@@ -123,7 +127,7 @@ const OfferFormModal = ({
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-5 px-6 py-5">
-            {!isEditing && post && (
+            {!usesExistingOffer && post && (
               <div className="rounded-xl border border-[#BAC2C1]/40 bg-[#f5f8f8] p-4">
                 <p className="line-clamp-2 font-bold text-[#172830]">
                   {post.productName || "Tin đăng bán"}
@@ -135,6 +139,18 @@ const OfferFormModal = ({
                   <span>
                     Còn lại: {post.remainingQuantity ?? "—"}
                   </span>
+                </div>
+              </div>
+            )}
+
+            {isCountering && offer && (
+              <div className="rounded-xl border border-[#BAC2C1]/40 bg-[#f5f8f8] p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                  Đề nghị hiện tại
+                </p>
+                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm font-bold text-[#172830]">
+                  <span>{formatCurrency(offer.offerPrice)}</span>
+                  <span>Số lượng: {offer.offerQuantity}</span>
                 </div>
               </div>
             )}
@@ -204,7 +220,9 @@ const OfferFormModal = ({
             </div>
 
             <p className="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-800">
-              Đề nghị sẽ được gửi đến chủ bài đăng. Bạn chỉ có thể chỉnh sửa hoặc hủy khi đề nghị còn ở trạng thái đang chờ.
+              {isCountering
+                ? "Phản đề sẽ mở một phiên thương lượng ở trạng thái đang thương lượng. Hai bên có thể tiếp tục gửi đề xuất cho đến khi một mức giá được chốt."
+                : "Đề nghị sẽ được gửi đến chủ bài đăng. Bạn chỉ có thể chỉnh sửa hoặc hủy khi đề nghị còn ở trạng thái đang chờ."}
             </p>
           </div>
 
@@ -226,6 +244,8 @@ const OfferFormModal = ({
                 ? "Đang xử lý..."
                 : isEditing
                   ? "Lưu thay đổi"
+                  : isCountering
+                    ? "Gửi phản đề và mở phòng"
                   : "Gửi đề nghị"}
             </button>
           </div>
