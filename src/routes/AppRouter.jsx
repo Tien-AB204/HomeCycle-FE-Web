@@ -37,6 +37,9 @@ import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import UserProfilePage from "../pages/user/UserProfilePage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import CreatePostPage from "../pages/user/CreatePostPage";
+import NegotiationListPage from "../pages/user/NegotiationListPage";
+import NegotiationRoomPage from "../pages/user/NegotiationRoomPage";
+import OfferManagementPage from "../pages/user/OfferManagementPage";
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
@@ -102,6 +105,21 @@ const AppRouter = () => {
           <Route
             path="/bai-dang/chinh-sua/:postId"
             element={<CreatePostPage />}
+          />
+
+          <Route
+            path="/thuong-luong"
+            element={<OfferManagementPage />}
+          />
+
+          <Route
+            path="/thuong-luong/phien"
+            element={<NegotiationListPage />}
+          />
+
+          <Route
+            path="/thuong-luong/:negotiationId"
+            element={<NegotiationRoomPage />}
           />
         </Route>
 
