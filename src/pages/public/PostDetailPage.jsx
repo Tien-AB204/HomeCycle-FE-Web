@@ -8,7 +8,9 @@ import {
   useParams,
 } from "react-router-dom";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
+import OfferFormModal from "../../features/offers/OfferFormModal";
 import { useAuth } from "../../hooks/useAuth";
+import offerApi from "../../services/apis/offerApi";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
 
@@ -84,7 +86,10 @@ const isCanceledRequest = (error) => {
   );
 };
 
-const getErrorMessage = (error) => {
+const getErrorMessage = (
+  error,
+  fallbackMessage = "Không thể tải chi tiết bài đăng.",
+) => {
   const responseData =
     error?.response?.data;
 
@@ -92,7 +97,7 @@ const getErrorMessage = (error) => {
     responseData?.error?.message ||
     responseData?.message ||
     error?.message ||
-    "Không thể tải chi tiết bài đăng."
+    fallbackMessage
   );
 };
 
@@ -248,6 +253,12 @@ const PostDetailPage = ({ ownerMode = false }) => {
     useState("");
   const [actionMessage, setActionMessage] =
     useState("");
+  const [isOfferModalOpen, setIsOfferModalOpen] =
+    useState(false);
+  const [isOfferSubmitting, setIsOfferSubmitting] =
+    useState(false);
+  const [offerError, setOfferError] =
+    useState("");
   const requestKey = `${ownerMode ? "owner" : "public"}:${userId}:${postId}:${requestVersion}`;
   const [detailState, setDetailState] =
     useState({
@@ -361,6 +372,19 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const statusMeta = getPostStatusMeta(
     post?.status,
   );
+  const isOwnPost = Boolean(
+    userId &&
+      String(post?.ownerId || "") === userId,
+  );
+  const isActivePost =
+    String(post?.status || "").toLowerCase() ===
+    "active";
+  const remainingQuantity = Number(
+    post?.remainingQuantity,
+  );
+  const hasAvailableQuantity =
+    Number.isFinite(remainingQuantity) &&
+    remainingQuantity > 0;
 
   const handlePrimaryAction = () => {
     if (!isAuthenticated) {
@@ -369,6 +393,47 @@ const PostDetailPage = ({ ownerMode = false }) => {
           from: `/posts/${postId}`,
         },
       });
+
+      return;
+    }
+
+    if (
+      !isBuyPost &&
+      !isOwnPost &&
+      isActivePost &&
+      hasAvailableQuantity
+    ) {
+      setOfferError("");
+      setIsOfferModalOpen(true);
+    }
+  };
+
+  const handleCreateOffer = async (terms) => {
+    if (isOfferSubmitting) {
+      return;
+    }
+
+    setIsOfferSubmitting(true);
+    setOfferError("");
+
+    try {
+      await offerApi.create({
+        postId: post.postId,
+        ...terms,
+      });
+      setIsOfferModalOpen(false);
+      setActionMessage(
+        "Đã gửi đề nghị thương lượng. Bạn có thể theo dõi tại mục Thương lượng.",
+      );
+    } catch (requestError) {
+      setOfferError(
+        getErrorMessage(
+          requestError,
+          "Không thể gửi đề nghị thương lượng.",
+        ),
+      );
+    } finally {
+      setIsOfferSubmitting(false);
     }
   };
 
@@ -634,19 +699,37 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 <button
                   type="button"
                   onClick={handlePrimaryAction}
-                  disabled={isAuthenticated}
+                  disabled={
+                    isAuthenticated &&
+                    (isBuyPost ||
+                      isOwnPost ||
+                      !isActivePost ||
+                      !hasAvailableQuantity)
+                  }
                   title={
-                    isAuthenticated
-                      ? "Chức năng giao dịch sẽ được gắn ở bước sau"
-                      : "Đăng nhập để tiếp tục"
+                    !isAuthenticated
+                      ? "Đăng nhập để tiếp tục"
+                      : isBuyPost
+                        ? "Luồng gửi bài bán sẽ được thực hiện ở bước riêng"
+                        : isOwnPost
+                          ? "Bạn không thể gửi đề nghị cho bài đăng của mình"
+                          : !isActivePost ||
+                              !hasAvailableQuantity
+                            ? "Bài đăng hiện không nhận thêm đề nghị"
+                            : "Gửi đề nghị giá cho người bán"
                   }
                   className="mt-6 w-full rounded-lg bg-[#2B5659] px-4 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isAuthenticated
-                    ? isBuyPost
+                  {!isAuthenticated
+                    ? "Đăng nhập để tiếp tục"
+                    : isBuyPost
                       ? "Gửi bài bán (sắp ra mắt)"
-                      : "Thương lượng (sắp ra mắt)"
-                    : "Đăng nhập để tiếp tục"}
+                      : isOwnPost
+                        ? "Đây là bài đăng của bạn"
+                        : !isActivePost ||
+                            !hasAvailableQuantity
+                          ? "Không thể thương lượng"
+                          : "Gửi đề nghị thương lượng"}
                 </button>
               )}
 
@@ -794,6 +877,21 @@ const PostDetailPage = ({ ownerMode = false }) => {
               ← Quay lại {ownerMode ? "bài đăng của tôi" : "danh sách"}
             </Link>
           </div>
+
+          {isOfferModalOpen && (
+            <OfferFormModal
+              post={post}
+              submitting={isOfferSubmitting}
+              serverError={offerError}
+              onClose={() => {
+                if (!isOfferSubmitting) {
+                  setIsOfferModalOpen(false);
+                  setOfferError("");
+                }
+              }}
+              onSubmit={handleCreateOffer}
+            />
+          )}
         </>
       )}
     </div>
