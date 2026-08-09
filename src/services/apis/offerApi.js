@@ -220,6 +220,30 @@ export const offerApi = {
     );
   },
 
+  counter: async (offerId, terms) => {
+    const normalizedOfferId = normalizeIdentifier(
+      offerId,
+      "Không tìm thấy mã đề nghị.",
+    );
+    const response = await axiosClient.patch(
+      `/offers/${encodeURIComponent(normalizedOfferId)}/counter`,
+      normalizeTerms(terms),
+    );
+    const result = unwrapResponse(
+      response,
+      "Không thể gửi phản đề.",
+    );
+
+    if (!result?.offerId || !result?.negotiationId) {
+      throw new Error("Response phản đề không hợp lệ.");
+    }
+
+    return {
+      ...result,
+      offerStatus: normalizeOfferStatus(result.offerStatus),
+    };
+  },
+
   cancel: async (offerId) => {
     const normalizedOfferId = normalizeIdentifier(
       offerId,
