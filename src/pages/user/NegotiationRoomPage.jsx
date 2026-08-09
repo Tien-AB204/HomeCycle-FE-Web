@@ -1,4 +1,9 @@
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Link,
   useLocation,
@@ -11,8 +16,17 @@ import {
   NEGOTIATION_STATUS,
 } from "../../constants/negotiations";
 import { useAuth } from "../../hooks/useAuth";
+import messageApi, {
+  normalizeMessage,
+} from "../../services/apis/messageApi";
 import negotiationApi from "../../services/apis/negotiationApi";
+import chatRealtimeService, {
+  CHAT_REALTIME_STATUS,
+} from "../../services/realtime/chatRealtimeService";
 import { getUserId } from "../../utils/authUtils";
+
+const MESSAGE_PAGE_SIZE = 50;
+const FALLBACK_POLL_INTERVAL_MS = 10000;
 
 const isCanceledRequest = (error) => {
   return error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
@@ -50,6 +64,106 @@ const formatDate = (value) => {
     minute: "2-digit",
   }).format(date);
 };
+
+const createClientMessageId = () => {
+  if (typeof crypto?.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+};
+
+const sortMessages = (messages) => {
+  return [...messages].sort((firstMessage, secondMessage) => {
+    const createdAtDifference =
+      new Date(firstMessage.createdAt).getTime() -
+      new Date(secondMessage.createdAt).getTime();
+
+    if (createdAtDifference !== 0) {
+      return createdAtDifference;
+    }
+
+    if (
+      firstMessage.messageType === "Offer" &&
+      secondMessage.messageType !== "Offer"
+    ) {
+      return -1;
+    }
+
+    if (
+      secondMessage.messageType === "Offer" &&
+      firstMessage.messageType !== "Offer"
+    ) {
+      return 1;
+    }
+
+    return String(firstMessage.messageId).localeCompare(
+      String(secondMessage.messageId),
+    );
+  });
+};
+
+const mergeMessages = (...messageGroups) => {
+  const messagesById = new Map();
+  const messageIdByClientId = new Map();
+
+  messageGroups.flat().forEach((rawMessage) => {
+    const message = normalizeMessage(rawMessage);
+
+    if (!message) {
+      return;
+    }
+
+    const clientMessageId = message.clientMessageId;
+    const existingMessageId = clientMessageId
+      ? messageIdByClientId.get(clientMessageId)
+      : "";
+    const key = existingMessageId || message.messageId;
+    const existingMessage = messagesById.get(key);
+
+    if (existingMessageId && existingMessageId !== message.messageId) {
+      messagesById.delete(existingMessageId);
+    }
+
+    messagesById.set(message.messageId, {
+      ...(existingMessage || {}),
+      ...message,
+    });
+
+    if (clientMessageId) {
+      messageIdByClientId.set(clientMessageId, message.messageId);
+    }
+  });
+
+  return sortMessages(Array.from(messagesById.values()));
+};
+
+const REALTIME_STATUS_META = Object.freeze({
+  [CHAT_REALTIME_STATUS.CONNECTED]: {
+    label: "Realtime đã kết nối",
+    dotClassName: "bg-emerald-400",
+  },
+  [CHAT_REALTIME_STATUS.CONNECTING]: {
+    label: "Đang kết nối",
+    dotClassName: "animate-pulse bg-amber-300",
+  },
+  [CHAT_REALTIME_STATUS.RECONNECTING]: {
+    label: "Đang kết nối lại",
+    dotClassName: "animate-pulse bg-amber-300",
+  },
+  [CHAT_REALTIME_STATUS.DISCONNECTED]: {
+    label: "Đồng bộ dự phòng",
+    dotClassName: "bg-slate-300",
+  },
+});
 
 const ProposalMessage = ({
   message,
@@ -156,6 +270,7 @@ const TextMessage = ({ message, isMine }) => {
       )}
       <p className={`mt-1 text-right text-[10px] ${isMine ? "text-white/65" : "text-[#789092]"}`}>
         {formatDate(message.createdAt)}
+        {isMine ? ` · ${message.isRead ? "Đã đọc" : "Đã gửi"}` : ""}
       </p>
     </article>
   );
@@ -181,23 +296,151 @@ const NegotiationRoomPage = () => {
     offerPrice: "",
     offerQuantity: "1",
   });
+  const [messageText, setMessageText] = useState("");
+  const [messageError, setMessageError] = useState("");
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
+  const [messagePagination, setMessagePagination] = useState({
+    pageNumber: 0,
+    totalPages: 0,
+    totalCount: 0,
+    hasNextPage: false,
+  });
+  const [realtimeStatus, setRealtimeStatus] = useState(
+    CHAT_REALTIME_STATUS.CONNECTING,
+  );
+  const messagesEndRef = useRef(null);
+  const shouldScrollToBottomRef = useRef(true);
+
+  const refreshRoom = useCallback(() => {
+    shouldScrollToBottomRef.current = true;
+    setRequestVersion((currentVersion) => currentVersion + 1);
+  }, []);
+
+  const updateMessages = useCallback((incomingMessages) => {
+    setRequestState((currentState) => {
+      if (!currentState.negotiation) {
+        return currentState;
+      }
+
+      const currentMessages = currentState.negotiation.messages || [];
+      const nextIncomingMessages =
+        typeof incomingMessages === "function"
+          ? incomingMessages(currentMessages)
+          : incomingMessages;
+
+      return {
+        ...currentState,
+        negotiation: {
+          ...currentState.negotiation,
+          messages: mergeMessages(
+            currentMessages,
+            nextIncomingMessages || [],
+          ),
+        },
+      };
+    });
+  }, []);
+
+  const markRoomAsRead = useCallback(async () => {
+    if (
+      !negotiationId ||
+      !currentUserId ||
+      document.visibilityState === "hidden"
+    ) {
+      return;
+    }
+
+    try {
+      await messageApi.markAsRead(negotiationId);
+
+      updateMessages((currentMessages) =>
+        currentMessages.map((message) =>
+          String(message.senderId) !== currentUserId
+            ? { ...message, isRead: true }
+            : message,
+        ),
+      );
+    } catch {
+      // Tin nhắn vẫn hiển thị được nếu thao tác read receipt tạm thời thất bại.
+    }
+  }, [currentUserId, negotiationId, updateMessages]);
+
+  const syncLatestMessages = useCallback(async () => {
+    if (!negotiationId) {
+      return;
+    }
+
+    try {
+      const history = await messageApi.getHistory(negotiationId, {
+        pageNumber: 1,
+        pageSize: MESSAGE_PAGE_SIZE,
+      });
+
+      updateMessages(history.items);
+      setMessagePagination((currentPagination) => {
+        const loadedPageNumber = Math.max(
+          currentPagination.pageNumber,
+          history.pageNumber,
+        );
+
+        return {
+          pageNumber: loadedPageNumber,
+          totalPages: history.totalPages,
+          totalCount: history.totalCount,
+          hasNextPage: loadedPageNumber < history.totalPages,
+        };
+      });
+
+      await markRoomAsRead();
+    } catch {
+      // SignalR có polling dự phòng; lỗi đồng bộ nền không che nội dung hiện tại.
+    }
+  }, [markRoomAsRead, negotiationId, updateMessages]);
 
   useEffect(() => {
     const controller = new AbortController();
     let isActive = true;
 
-    negotiationApi
-      .getById(negotiationId, { signal: controller.signal })
-      .then((negotiation) => {
+    Promise.all([
+      negotiationApi.getById(negotiationId, {
+        signal: controller.signal,
+      }),
+      messageApi.getHistory(negotiationId, {
+        pageNumber: 1,
+        pageSize: MESSAGE_PAGE_SIZE,
+        signal: controller.signal,
+      }),
+    ])
+      .then(([negotiation, history]) => {
         if (!isActive) {
           return;
         }
 
-        setRequestState({ requestKey, negotiation, error: "" });
+        shouldScrollToBottomRef.current = true;
+        setRequestState({
+          requestKey,
+          negotiation: {
+            ...negotiation,
+            messages: mergeMessages(
+              negotiation.messages || [],
+              history.items,
+            ),
+          },
+          error: "",
+        });
+        setMessagePagination({
+          pageNumber: history.pageNumber,
+          totalPages: history.totalPages,
+          totalCount: history.totalCount,
+          hasNextPage: history.hasNextPage,
+        });
         setCounterForm({
           offerPrice: String(negotiation.currentOfferPrice ?? ""),
           offerQuantity: String(negotiation.currentOfferQuantity ?? 1),
         });
+
+        void markRoomAsRead();
       })
       .catch((requestError) => {
         if (!isActive || isCanceledRequest(requestError)) {
@@ -218,7 +461,200 @@ const NegotiationRoomPage = () => {
       isActive = false;
       controller.abort();
     };
-  }, [negotiationId, requestKey]);
+  }, [markRoomAsRead, negotiationId, requestKey]);
+
+  useEffect(() => {
+    if (!negotiationId || !currentUserId) {
+      return undefined;
+    }
+
+    const connection = chatRealtimeService.createConnection();
+    let isActive = true;
+    let retryTimer = null;
+
+    const scheduleRetry = () => {
+      if (!isActive || retryTimer) {
+        return;
+      }
+
+      retryTimer = window.setTimeout(() => {
+        retryTimer = null;
+        void startConnection();
+      }, 5000);
+    };
+
+    const startConnection = async () => {
+      if (!isActive || connection.state !== "Disconnected") {
+        return;
+      }
+
+      setRealtimeStatus(CHAT_REALTIME_STATUS.CONNECTING);
+
+      try {
+        await connection.start();
+
+        if (!isActive) {
+          await connection.stop();
+          return;
+        }
+
+        await chatRealtimeService.joinNegotiation(
+          connection,
+          negotiationId,
+        );
+        setRealtimeStatus(CHAT_REALTIME_STATUS.CONNECTED);
+        await syncLatestMessages();
+      } catch {
+        if (isActive) {
+          setRealtimeStatus(CHAT_REALTIME_STATUS.DISCONNECTED);
+          scheduleRetry();
+        }
+      }
+    };
+
+    connection.on("MessageCreated", (rawMessage) => {
+      const message = normalizeMessage(rawMessage);
+
+      if (!message || message.negotiationId !== negotiationId) {
+        return;
+      }
+
+      shouldScrollToBottomRef.current = true;
+      updateMessages([message]);
+
+      if (message.senderId !== currentUserId) {
+        void markRoomAsRead();
+      }
+    });
+
+    connection.on("MessageUpdated", (rawMessage) => {
+      const message = normalizeMessage(rawMessage);
+
+      if (!message || message.negotiationId !== negotiationId) {
+        return;
+      }
+
+      updateMessages([message]);
+
+      if (
+        ["accepted", "rejected"].includes(
+          String(message.offerStatus).toLowerCase(),
+        )
+      ) {
+        refreshRoom();
+      }
+    });
+
+    connection.on("MessagesRead", (readReceipt) => {
+      if (String(readReceipt?.negotiationId || "") !== negotiationId) {
+        return;
+      }
+
+      const readerId = String(readReceipt?.readerId || "");
+      const readAt = new Date(readReceipt?.readAt).getTime();
+
+      updateMessages((currentMessages) =>
+        currentMessages.map((message) => {
+          const messageTime = new Date(message.createdAt).getTime();
+          const wasReadByReader =
+            String(message.senderId) !== readerId &&
+            Number.isFinite(readAt) &&
+            messageTime <= readAt;
+
+          return wasReadByReader
+            ? { ...message, isRead: true }
+            : message;
+        }),
+      );
+    });
+
+    connection.onreconnecting(() => {
+      if (isActive) {
+        setRealtimeStatus(CHAT_REALTIME_STATUS.RECONNECTING);
+      }
+    });
+
+    connection.onreconnected(async () => {
+      if (!isActive) {
+        return;
+      }
+
+      try {
+        await chatRealtimeService.joinNegotiation(
+          connection,
+          negotiationId,
+        );
+        setRealtimeStatus(CHAT_REALTIME_STATUS.CONNECTED);
+        await syncLatestMessages();
+      } catch {
+        setRealtimeStatus(CHAT_REALTIME_STATUS.DISCONNECTED);
+      }
+    });
+
+    connection.onclose(() => {
+      if (isActive) {
+        setRealtimeStatus(CHAT_REALTIME_STATUS.DISCONNECTED);
+        scheduleRetry();
+      }
+    });
+
+    void startConnection();
+
+    return () => {
+      isActive = false;
+
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+      }
+
+      connection.off("MessageCreated");
+      connection.off("MessageUpdated");
+      connection.off("MessagesRead");
+
+      void chatRealtimeService
+        .leaveNegotiation(connection, negotiationId)
+        .catch(() => undefined)
+        .finally(() => connection.stop().catch(() => undefined));
+    };
+  }, [
+    currentUserId,
+    markRoomAsRead,
+    negotiationId,
+    refreshRoom,
+    syncLatestMessages,
+    updateMessages,
+  ]);
+
+  useEffect(() => {
+    if (realtimeStatus === CHAT_REALTIME_STATUS.CONNECTED) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void syncLatestMessages();
+      }
+    }, FALLBACK_POLL_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [realtimeStatus, syncLatestMessages]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void syncLatestMessages();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange,
+      );
+    };
+  }, [syncLatestMessages]);
 
   const loading = requestState.requestKey !== requestKey;
   const negotiation = loading ? null : requestState.negotiation;
@@ -228,37 +664,92 @@ const NegotiationRoomPage = () => {
   );
   const isOpen =
     negotiation?.negotiationStatus === NEGOTIATION_STATUS.OPEN;
+  const canSendText = [
+    NEGOTIATION_STATUS.OPEN,
+    NEGOTIATION_STATUS.AGREED,
+  ].includes(negotiation?.negotiationStatus);
   const isSeller = currentUserId === String(negotiation?.sellerId || "");
-  const messages = [...(negotiation?.messages || [])].sort(
-    (firstMessage, secondMessage) => {
-      const createdAtDifference =
-        new Date(firstMessage.createdAt).getTime() -
-        new Date(secondMessage.createdAt).getTime();
+  const messages = sortMessages(negotiation?.messages || []);
+  const realtimeStatusMeta =
+    REALTIME_STATUS_META[realtimeStatus] ||
+    REALTIME_STATUS_META[CHAT_REALTIME_STATUS.DISCONNECTED];
 
-      if (createdAtDifference !== 0) {
-        return createdAtDifference;
-      }
+  useEffect(() => {
+    if (!shouldScrollToBottomRef.current) {
+      return;
+    }
 
-      if (
-        firstMessage.messageType === "Offer" &&
-        secondMessage.messageType !== "Offer"
-      ) {
-        return -1;
-      }
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+    shouldScrollToBottomRef.current = false;
+  }, [messages]);
 
-      if (
-        secondMessage.messageType === "Offer" &&
-        firstMessage.messageType !== "Offer"
-      ) {
-        return 1;
-      }
+  const loadOlderMessages = async () => {
+    if (
+      !negotiationId ||
+      isLoadingOlder ||
+      !messagePagination.hasNextPage
+    ) {
+      return;
+    }
 
-      return 0;
-    },
-  );
+    setIsLoadingOlder(true);
+    setMessageError("");
+    shouldScrollToBottomRef.current = false;
 
-  const refreshRoom = () => {
-    setRequestVersion((currentVersion) => currentVersion + 1);
+    try {
+      const nextPageNumber = messagePagination.pageNumber + 1;
+      const history = await messageApi.getHistory(negotiationId, {
+        pageNumber: nextPageNumber,
+        pageSize: MESSAGE_PAGE_SIZE,
+      });
+
+      updateMessages(history.items);
+      setMessagePagination({
+        pageNumber: history.pageNumber,
+        totalPages: history.totalPages,
+        totalCount: history.totalCount,
+        hasNextPage: history.hasNextPage,
+      });
+    } catch (requestError) {
+      setMessageError(
+        getErrorMessage(requestError, "Không thể tải tin nhắn cũ hơn."),
+      );
+    } finally {
+      setIsLoadingOlder(false);
+    }
+  };
+
+  const handleMessageSubmit = async (event) => {
+    event.preventDefault();
+
+    const normalizedContent = messageText.trim();
+
+    if (!normalizedContent || !canSendText || isSendingMessage) {
+      return;
+    }
+
+    setIsSendingMessage(true);
+    setMessageError("");
+
+    try {
+      const message = await messageApi.sendText(negotiationId, {
+        messageContent: normalizedContent,
+        clientMessageId: createClientMessageId(),
+      });
+
+      shouldScrollToBottomRef.current = true;
+      updateMessages([message]);
+      setMessageText("");
+    } catch (requestError) {
+      setMessageError(
+        getErrorMessage(requestError, "Không thể gửi tin nhắn."),
+      );
+    } finally {
+      setIsSendingMessage(false);
+    }
   };
 
   const runProposalAction = async (action, messageId) => {
@@ -404,11 +895,18 @@ const NegotiationRoomPage = () => {
               )}
               <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#C1EAEC]">
-                  {isSeller ? "Bạn là người bán" : "Bạn là người mua"}
+                  {isSeller ? "người bán" : "người mua"}
                 </p>
                 <h1 className="mt-1 truncate text-xl font-black">
                   {summary?.otherPartyName || "Phòng thương lượng"}
                 </h1>
+                <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/70">
+                  <span
+                    aria-hidden="true"
+                    className={`h-2 w-2 rounded-full ${realtimeStatusMeta.dotClassName}`}
+                  />
+                  {realtimeStatusMeta.label}
+                </p>
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-0">
@@ -440,6 +938,21 @@ const NegotiationRoomPage = () => {
               )}
 
               <div className="max-h-[620px] min-h-[420px] space-y-4 overflow-y-auto p-4 sm:p-6">
+                {messagePagination.hasNextPage && (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={loadOlderMessages}
+                      disabled={isLoadingOlder}
+                      className="rounded-full border border-[#BAC2C1] bg-white px-4 py-2 text-xs font-bold text-[#2B5659] shadow-sm transition hover:bg-[#edf5f5] disabled:opacity-50"
+                    >
+                      {isLoadingOlder
+                        ? "Đang tải..."
+                        : "Xem tin nhắn cũ hơn"}
+                    </button>
+                  </div>
+                )}
+
                 {messages.length === 0 ? (
                   <div className="py-20 text-center text-sm font-semibold text-[#547B7D]">
                     Chưa có nội dung trao đổi.
@@ -476,20 +989,66 @@ const NegotiationRoomPage = () => {
                     );
                   })
                 )}
+                <div ref={messagesEndRef} aria-hidden="true" />
               </div>
 
               <div className="border-t border-[#BAC2C1]/40 bg-white p-4 sm:p-5">
-                {isOpen ? (
-                  <form onSubmit={handleCounterSubmit}>
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-sm font-black text-[#172830]">Gửi đề xuất mới</h2>
-                        <p className="mt-1 text-xs text-[#547B7D]">
-                          Tin nhắn văn bản sẽ được bổ sung sau khi xác nhận contract Messages.
-                        </p>
-                      </div>
+                {messageError && (
+                  <p
+                    role="alert"
+                    className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+                  >
+                    {messageError}
+                  </p>
+                )}
+
+                {canSendText ? (
+                  <form onSubmit={handleMessageSubmit}>
+                    <label
+                      htmlFor="negotiation-message"
+                      className="text-sm font-black text-[#172830]"
+                    >
+                      Nhắn tin với đối tác
+                    </label>
+                    <div className="mt-2 flex items-end gap-2">
+                      <textarea
+                        id="negotiation-message"
+                        rows="2"
+                        maxLength="2000"
+                        value={messageText}
+                        onChange={(event) => setMessageText(event.target.value)}
+                        placeholder="Nhập nội dung trao đổi..."
+                        className="min-h-12 flex-1 resize-y rounded-xl border border-[#BAC2C1] px-3 py-2.5 text-sm text-[#172830] outline-none transition focus:border-[#2B5659] focus:ring-2 focus:ring-[#2B5659]/10"
+                      />
+                      <button
+                        type="submit"
+                        disabled={
+                          isSendingMessage || !messageText.trim()
+                        }
+                        className="h-12 rounded-xl bg-[#2B5659] px-5 text-sm font-bold text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSendingMessage ? "Đang gửi..." : "Gửi"}
+                      </button>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_130px_auto] sm:items-end">
+                    <p className="mt-1 text-right text-[11px] text-[#789092]">
+                      {messageText.length}/2000
+                    </p>
+                  </form>
+                ) : (
+                  <p className="rounded-xl bg-[#f4f7f7] p-4 text-center text-sm font-semibold text-[#547B7D]">
+                    Phiên hiện ở chế độ chỉ đọc.
+                  </p>
+                )}
+
+                {isOpen && (
+                  <details className="mt-4 border-t border-[#BAC2C1]/40 pt-4">
+                    <summary className="cursor-pointer text-sm font-black text-[#2B5659]">
+                      Gửi phản đề về giá và số lượng
+                    </summary>
+                    <form
+                      onSubmit={handleCounterSubmit}
+                      className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_130px_auto] sm:items-end"
+                    >
                       <label className="text-xs font-bold text-[#334b50]">
                         Mức giá
                         <input
@@ -527,16 +1086,14 @@ const NegotiationRoomPage = () => {
                       <button
                         type="submit"
                         disabled={Boolean(actionBusy)}
-                        className="rounded-lg bg-[#2B5659] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-lg bg-[#7A1012] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#5f0d0f] disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {actionBusy === "counter" ? "Đang gửi..." : "Gửi đề xuất"}
+                        {actionBusy === "counter"
+                          ? "Đang gửi..."
+                          : "Gửi phản đề"}
                       </button>
-                    </div>
-                  </form>
-                ) : (
-                  <p className="rounded-xl bg-[#f4f7f7] p-4 text-center text-sm font-semibold text-[#547B7D]">
-                    Phiên không còn ở trạng thái mở nên không thể gửi đề xuất mới.
-                  </p>
+                    </form>
+                  </details>
                 )}
               </div>
             </div>
@@ -577,7 +1134,7 @@ const NegotiationRoomPage = () => {
 
               {negotiation.negotiationStatus === NEGOTIATION_STATUS.AGREED && (
                 <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm leading-6 text-green-800">
-                  Hai bên đã thống nhất đề xuất. Agreement Form sẽ được bổ sung sau khi xác nhận đầy đủ contract.
+                  Hai bên đã thống nhất đề xuất. Agreement Form sẽ sớm được tạo.
                 </div>
               )}
 
