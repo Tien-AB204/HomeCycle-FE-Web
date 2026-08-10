@@ -32,6 +32,16 @@ const ADMIN_NAV_GROUPS = [
       },
     ],
   },
+  {
+    group: "QUẢN TRỊ HỆ THỐNG",
+    items: [
+      {
+        label: "Quản lý người dùng",
+        path: "/admin/users",
+        icon: "👥",
+      },
+    ],
+  },
 ];
 
 const getDisplayName = (user) => {
