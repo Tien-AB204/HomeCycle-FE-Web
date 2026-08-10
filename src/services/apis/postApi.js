@@ -113,11 +113,7 @@ const createSellFormData = (postData) => {
   appendCommonPostFields(formData, postData);
   appendFormValue(formData, "BasePrice", postData.price);
   appendFormValue(formData, "Product.CategoryId", postData.categoryId);
-  appendFormValue(
-    formData,
-    "Product.ProductTypeId",
-    postData.productTypeId,
-  );
+  appendFormValue(formData, "Product.ProductTypeId", postData.productTypeId);
   appendFormValue(formData, "Product.BrandId", postData.brandId);
   appendFormValue(formData, "Product.ProductName", postData.productName);
   appendFormValue(formData, "Product.ModelNumber", postData.modelNumber);
@@ -132,11 +128,7 @@ const createSellFormData = (postData) => {
     "Product.FunctionalityStatus",
     postData.functionalityStatus,
   );
-  appendFormValue(
-    formData,
-    "Product.UsageDuration",
-    postData.usageDuration,
-  );
+  appendFormValue(formData, "Product.UsageDuration", postData.usageDuration);
   appendFormValue(formData, "Product.DamageLevel", postData.damageLevel);
   appendFormValue(
     formData,
@@ -158,27 +150,15 @@ const createBuyFormData = (postData) => {
   appendCommonPostFields(formData, postData);
   appendFormValue(formData, "ExpectedPrice", postData.price);
   appendFormValue(formData, "Requirement.ExpectedPrice", postData.price);
-  appendFormValue(
-    formData,
-    "Requirement.CategoryId",
-    postData.categoryId,
-  );
+  appendFormValue(formData, "Requirement.CategoryId", postData.categoryId);
   appendFormValue(
     formData,
     "Requirement.ProductTypeId",
     postData.productTypeId,
   );
   appendFormValue(formData, "Requirement.BrandId", postData.brandId);
-  appendFormValue(
-    formData,
-    "Requirement.ProductName",
-    postData.productName,
-  );
-  appendFormValue(
-    formData,
-    "Requirement.SpaceUsage",
-    postData.spaceUsage,
-  );
+  appendFormValue(formData, "Requirement.ProductName", postData.productName);
+  appendFormValue(formData, "Requirement.SpaceUsage", postData.spaceUsage);
   appendFormValue(
     formData,
     "Requirement.FunctionalityStatus",
@@ -189,11 +169,7 @@ const createBuyFormData = (postData) => {
     "Requirement.UsageDuration",
     postData.usageDuration,
   );
-  appendFormValue(
-    formData,
-    "Requirement.DamageLevel",
-    postData.damageLevel,
-  );
+  appendFormValue(formData, "Requirement.DamageLevel", postData.damageLevel);
   appendAttributeValues(
     formData,
     "Requirement.AttributeValues",
@@ -362,10 +338,7 @@ export const postApi = {
       createSellFormData(postData),
     );
 
-    return ensureCreatedPost(
-      response,
-      "Không thể tạo tin đăng bán.",
-    );
+    return ensureCreatedPost(response, "Không thể tạo tin đăng bán.");
   },
 
   createBuy: async (postData) => {
@@ -378,10 +351,7 @@ export const postApi = {
       createBuyFormData(postData),
     );
 
-    return ensureCreatedPost(
-      response,
-      "Không thể tạo tin thu mua.",
-    );
+    return ensureCreatedPost(response, "Không thể tạo tin thu mua.");
   },
 
   updateSell: async (postId, postData) => {
@@ -394,15 +364,12 @@ export const postApi = {
       throw new Error("Dữ liệu cập nhật tin đăng bán không hợp lệ.");
     }
 
-    const response = await axiosClient.put(
+    const response = await axiosClient.patch(
       `/posts/update/sell/${encodeURIComponent(normalizedPostId)}`,
       createSellFormData(postData),
     );
 
-    return ensureCreatedPost(
-      response,
-      "Không thể cập nhật tin đăng bán.",
-    );
+    return ensureCreatedPost(response, "Không thể cập nhật tin đăng bán.");
   },
 
   updateBuy: async (postId, postData) => {
@@ -415,15 +382,12 @@ export const postApi = {
       throw new Error("Dữ liệu cập nhật tin thu mua không hợp lệ.");
     }
 
-    const response = await axiosClient.put(
+    const response = await axiosClient.patch(
       `/posts/update/buy/${encodeURIComponent(normalizedPostId)}`,
       createBuyFormData(postData),
     );
 
-    return ensureCreatedPost(
-      response,
-      "Không thể cập nhật tin thu mua.",
-    );
+    return ensureCreatedPost(response, "Không thể cập nhật tin thu mua.");
   },
 
   close: async (postId) => {
@@ -595,11 +559,7 @@ export const postApi = {
       "Không thể tải danh sách bài đăng của bạn.",
     );
 
-    return normalizePagination(
-      data,
-      normalizedPageNumber,
-      normalizedPageSize,
-    );
+    return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
   },
 
   getDetailByUser: async (userId, postId, { signal } = {}) => {
