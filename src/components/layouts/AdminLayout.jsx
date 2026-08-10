@@ -40,6 +40,11 @@ const ADMIN_NAV_GROUPS = [
         path: "/admin/users",
         icon: "👥",
       },
+      {
+        label: "Quản lý bài đăng",
+        path: "/admin/posts",
+        icon: "🗂️",
+      },
     ],
   },
 ];
