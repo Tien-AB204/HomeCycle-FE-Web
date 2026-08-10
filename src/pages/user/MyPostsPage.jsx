@@ -355,7 +355,15 @@ const MyPostsPage = ({ expectedPostType }) => {
       {!isLoading && !error && posts.length > 0 && (
         <>
           <div className="hidden overflow-x-auto rounded-xl border border-[#BAC2C1]/40 bg-white shadow-sm md:block">
-            <table className="w-full border-collapse text-left text-sm">
+            <table className="w-full min-w-[1100px] table-fixed border-collapse text-left text-sm">
+              <colgroup>
+                <col className="w-[28%]" />
+                <col className="w-[12%]" />
+                <col className="w-[10%]" />
+                <col className="w-[13%]" />
+                <col className="w-[12%]" />
+                <col className="w-[25%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-[#BAC2C1]/35 bg-[#f5f8f8] text-xs uppercase tracking-wide text-[#547B7D]">
                   <th className="px-4 py-3 font-semibold">
@@ -389,7 +397,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                       className="transition hover:bg-[#f8fafa]"
                     >
                       <td className="px-4 py-4">
-                        <div className="flex min-w-[260px] items-center gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
                           <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#e8eeee] text-xl text-[#547B7D]">
                             {image ? (
                               <img
@@ -401,7 +409,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                               "♻"
                             )}
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <p className="line-clamp-2 font-bold text-[#172830]">
                               {getPostName(post)}
                             </p>
@@ -432,8 +440,8 @@ const MyPostsPage = ({ expectedPostType }) => {
                       <td className="whitespace-nowrap px-4 py-4 text-[#547B7D]">
                         {formatDate(post.updatedAt || post.createdAt)}
                       </td>
-                      <td className="px-4 py-4 text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
+                      <td className="whitespace-nowrap px-4 py-4 text-right">
+                        <div className="flex flex-nowrap items-center justify-end gap-2">
                           <Link
                             to={detailPath(post.postId)}
                             className="inline-flex rounded-md border border-[#2B5659] px-3 py-2 text-xs font-bold text-[#2B5659] transition hover:bg-[#2B5659] hover:text-white"
