@@ -33,6 +33,7 @@ import CategoryPage from "../pages/admin/CategoryPage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import UserManagementPage from "../pages/admin/UserManagementPage";
+import PostManagementPage from "../pages/admin/PostManagementPage";
 
 // User Pages
 import UserProfilePage from "../pages/user/UserProfilePage";
@@ -245,6 +246,11 @@ const AppRouter = () => {
           <Route
             path="users"
             element={<UserManagementPage />}
+          />
+
+          <Route
+            path="posts"
+            element={<PostManagementPage />}
           />
         </Route>
       </Route>
