@@ -21,6 +21,7 @@ import SearchPage from "../pages/public/SearchPage";
 
 // Moderator Pages và Security
 import { ROLES } from "../constants/roles";
+import ModDashboardPage from "../pages/mod/ModDashboardPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
 import HomeRoute from "./HomeRoute";
@@ -177,14 +178,21 @@ const AppRouter = () => {
           path="/mod"
           element={<ModLayout />}
         >
+          {/* Đổi redirect mặc định về dashboard */}
           <Route
             index
             element={
               <Navigate
-                to="verification"
+                to="dashboard"
                 replace
               />
             }
+          />
+
+          {/* Thêm Route cho Dashboard mới */}
+          <Route
+            path="dashboard"
+            element={<ModDashboardPage />}
           />
 
           <Route
