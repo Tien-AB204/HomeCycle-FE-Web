@@ -46,5 +46,12 @@ export const modApi = {
   // (Lưu ý: Viết đúng 100% theo url trên hình Swagger, nếu backend yêu cầu truyền ID vào body thì bạn truyền ở biến payload này)
   reviewBusinessProfile: (payload) => {
     return axiosClient.post("/moderator/business-profiles/review", payload);
+  },
+
+  // ==========================================
+  // 3. BÀI ĐĂNG (POSTS)
+  // ==========================================
+  suspendPost: (postId, payload) => {
+    return axiosClient.patch(`/moderator/posts/${postId}/suspend`, payload);
   }
 };
