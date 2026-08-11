@@ -217,22 +217,33 @@ const VerificationPage = () => {
             <div className="p-8 text-center text-gray-400 text-sm">Không có hồ sơ nào chờ duyệt.</div>
           ) : (
             requests.map(req => {
-              const reqId = activeTab === 'PERSONAL' ? req.personalProfileId : req.id; 
-              const reqName = req.representativeName || "Chưa cập nhật tên"; 
+              // 1. Map đúng key ID cho từng tab
+              const reqId = activeTab === 'PERSONAL' 
+                ? req.personalProfileId 
+                : req.businessProfileId; 
+
+              // 2. Map đúng key Tên cho từng tab
+              const reqName = activeTab === 'PERSONAL' 
+                ? req.representativeName 
+                : req.businessName;
+                
+              const displayReqName = reqName || "Chưa cập nhật tên"; 
+
+              // 3. Highlight đúng đối tượng đang được chọn
               const isSelected = selectedReqDetail && (
                 (activeTab === 'PERSONAL' && selectedReqDetail.personalProfileId === reqId) ||
-                (activeTab === 'BUSINESS' && selectedReqDetail.id === reqId)
+                (activeTab === 'BUSINESS' && selectedReqDetail.businessProfileId === reqId)
               );
 
               return (
                 <div 
-                  key={reqId} 
-                  onClick={() => handleSelectProfile(reqId)}
+                  key={reqId} // Fix triệt để lỗi báo đỏ trong Console
+                  onClick={() => handleSelectProfile(reqId)} // reqId giờ đã có giá trị thực, sẽ gọi API thành công!
                   className={`p-4 border-b border-gray-100 cursor-pointer transition-all ${isSelected ? 'bg-[#0aa679]/5 border-l-4 border-l-[#0aa679]' : 'hover:bg-gray-100 border-l-4 border-l-transparent'}`}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <h3 className={`font-semibold text-sm truncate ${isSelected ? 'text-[#0aa679]' : 'text-gray-800'}`}>
-                      {reqName}
+                      {displayReqName}
                     </h3>
                   </div>
                   <div className="flex justify-between items-center text-xs text-gray-500 mt-1.5">
