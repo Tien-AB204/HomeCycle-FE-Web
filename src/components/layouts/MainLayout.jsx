@@ -33,6 +33,7 @@ const MainLayout = () => {
     { name: "Tin thu mua", icon: "🤝", path: "/tin-thu-mua" },
     { name: "Thương lượng", icon: "💬", path: "/thuong-luong" },
     { name: "Lịch hẹn", icon: "📅", path: "/lich-hen" },
+    { name: "Thanh toán", icon: "💳", path: "/thanh-toan" },
     { name: "Đơn hàng", icon: "📋", path: "/don-hang" },
     { name: "Thông báo", icon: "🔔", path: "/thong-bao" },
     { name: "Hồ sơ", icon: "👤", path: "/ho-so" },
