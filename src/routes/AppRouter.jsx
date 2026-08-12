@@ -21,6 +21,7 @@ import SearchPage from "../pages/public/SearchPage";
 
 // Moderator Pages và Security
 import { ROLES } from "../constants/roles";
+import ModDashboardPage from "../pages/mod/ModDashboardPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
 import HomeRoute from "./HomeRoute";
@@ -46,6 +47,8 @@ import AgreementPage from "../pages/user/AgreementPage";
 import AppointmentPage from "../pages/user/AppointmentPage";
 import PendingPaymentsPage from "../pages/user/PendingPaymentsPage";
 import PaymentResultPage from "../pages/user/PaymentResultPage";
+import OrderListPage from "../pages/user/OrderListPage";
+import OrderDetailPage from "../pages/user/OrderDetailPage";
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
@@ -154,6 +157,16 @@ const AppRouter = () => {
           />
 
           <Route
+            path="/don-hang"
+            element={<OrderListPage />}
+          />
+
+          <Route
+            path="/don-hang/:orderId"
+            element={<OrderDetailPage />}
+          />
+
+          <Route
             path="/thuong-luong/:negotiationId"
             element={<NegotiationRoomPage />}
           />
@@ -211,14 +224,21 @@ const AppRouter = () => {
           path="/mod"
           element={<ModLayout />}
         >
+          {/* Đổi redirect mặc định về dashboard */}
           <Route
             index
             element={
               <Navigate
-                to="verification"
+                to="dashboard"
                 replace
               />
             }
+          />
+
+          {/* Thêm Route cho Dashboard mới */}
+          <Route
+            path="dashboard"
+            element={<ModDashboardPage />}
           />
 
           <Route
