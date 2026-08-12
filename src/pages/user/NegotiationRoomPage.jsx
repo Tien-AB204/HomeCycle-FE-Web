@@ -13,12 +13,14 @@ import {
   getNegotiationStatusMeta,
   getProposalStatusMeta,
   isProposalMessage,
+  MESSAGE_TYPE,
   NEGOTIATION_STATUS,
 } from "../../constants/negotiations";
 import { useAuth } from "../../hooks/useAuth";
 import messageApi, {
   normalizeMessage,
 } from "../../services/apis/messageApi";
+import agreementApi from "../../services/apis/agreementApi";
 import negotiationApi from "../../services/apis/negotiationApi";
 import chatRealtimeService, {
   CHAT_REALTIME_STATUS,
@@ -276,6 +278,15 @@ const TextMessage = ({ message, isMine }) => {
   );
 };
 
+const AgreementMessage = ({ message, negotiationId, isMine }) => (
+  <article className={`w-full max-w-md rounded-2xl border border-green-200 bg-green-50 p-4 shadow-sm ${isMine ? "ml-auto" : "mr-auto"}`}>
+    <p className="text-xs font-black uppercase tracking-[0.16em] text-green-700">Thỏa thuận giao dịch</p>
+    <p className="mt-2 text-sm leading-6 text-green-900">{message.messageContent || "Thỏa thuận đã được tạo. Vui lòng kiểm tra và xác nhận."}</p>
+    <Link to={`/thuong-luong/${negotiationId}/thoa-thuan`} className="mt-3 inline-flex rounded-lg bg-green-700 px-4 py-2 text-xs font-black text-white hover:bg-green-800">Mở Agreement Form</Link>
+    <p className="mt-3 text-right text-[10px] text-green-700/70">{formatDate(message.createdAt)}</p>
+  </article>
+);
+
 const NegotiationRoomPage = () => {
   const { negotiationId = "" } = useParams();
   const location = useLocation();
@@ -292,6 +303,7 @@ const NegotiationRoomPage = () => {
   const [actionBusy, setActionBusy] = useState("");
   const [actionError, setActionError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [agreementPreview, setAgreementPreview] = useState(null);
   const [counterForm, setCounterForm] = useState({
     offerPrice: "",
     offerQuantity: "1",
@@ -664,6 +676,7 @@ const NegotiationRoomPage = () => {
   );
   const isOpen =
     negotiation?.negotiationStatus === NEGOTIATION_STATUS.OPEN;
+  const negotiationStatus = negotiation?.negotiationStatus;
   const canSendText = [
     NEGOTIATION_STATUS.OPEN,
     NEGOTIATION_STATUS.AGREED,
@@ -673,6 +686,22 @@ const NegotiationRoomPage = () => {
   const realtimeStatusMeta =
     REALTIME_STATUS_META[realtimeStatus] ||
     REALTIME_STATUS_META[CHAT_REALTIME_STATUS.DISCONNECTED];
+
+  useEffect(() => {
+    if (!negotiationId || !negotiationStatus || negotiationStatus === NEGOTIATION_STATUS.OPEN) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    agreementApi
+      .getPreview(negotiationId, { signal: controller.signal })
+      .then(setAgreementPreview)
+      .catch((previewError) => {
+        if (!isCanceledRequest(previewError)) setAgreementPreview(null);
+      });
+
+    return () => controller.abort();
+  }, [negotiationId, negotiationStatus, requestVersion]);
 
   useEffect(() => {
     if (!shouldScrollToBottomRef.current) {
@@ -966,7 +995,14 @@ const NegotiationRoomPage = () => {
                         String(message.offerStatus).toLowerCase() === "pending",
                     );
 
-                    return isProposalMessage(message.messageType) ? (
+                    return message.messageType === MESSAGE_TYPE.AGREEMENT ? (
+                      <AgreementMessage
+                        key={message.messageId}
+                        message={message}
+                        negotiationId={negotiationId}
+                        isMine={isMine}
+                      />
+                    ) : isProposalMessage(message.messageType) ? (
                       <ProposalMessage
                         key={message.messageId}
                         message={message}
@@ -1134,7 +1170,30 @@ const NegotiationRoomPage = () => {
 
               {negotiation.negotiationStatus === NEGOTIATION_STATUS.AGREED && (
                 <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm leading-6 text-green-800">
-                  Hai bên đã thống nhất đề xuất. Agreement Form sẽ sớm được tạo.
+                  <p className="font-black">Hai bên đã thống nhất giá và số lượng.</p>
+                  {agreementPreview?.hasAgreement ? (
+                    <>
+                      <p className="mt-1">Thỏa thuận đã được tạo. Hãy kiểm tra lịch hẹn, giao nhận và trạng thái xác nhận.</p>
+                      <Link
+                        to={`/thuong-luong/${negotiationId}/thoa-thuan`}
+                        className="mt-3 inline-flex rounded-lg bg-green-700 px-4 py-2 text-xs font-black text-white hover:bg-green-800"
+                      >
+                        Xem thỏa thuận
+                      </Link>
+                    </>
+                  ) : agreementPreview?.canCreate ? (
+                    <>
+                      <p className="mt-1">Bạn là người bán. Hãy tạo Agreement Form theo nội dung hai bên đã trao đổi.</p>
+                      <Link
+                        to={`/thuong-luong/${negotiationId}/thoa-thuan`}
+                        className="mt-3 inline-flex rounded-lg bg-green-700 px-4 py-2 text-xs font-black text-white hover:bg-green-800"
+                      >
+                        Tạo thỏa thuận
+                      </Link>
+                    </>
+                  ) : (
+                    <p className="mt-1">Đang chờ người bán tạo và gửi Agreement Form.</p>
+                  )}
                 </div>
               )}
 

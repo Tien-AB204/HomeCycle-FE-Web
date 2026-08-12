@@ -55,6 +55,7 @@ export const MESSAGE_TYPE = Object.freeze({
   TEXT: "Text",
   OFFER: "Offer",
   COUNTER_OFFER: "CounterOffer",
+  AGREEMENT: "Agreement",
 });
 
 const OFFER_STATUS_META = Object.freeze({
