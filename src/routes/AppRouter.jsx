@@ -43,6 +43,10 @@ import CreatePostPage from "../pages/user/CreatePostPage";
 import NegotiationListPage from "../pages/user/NegotiationListPage";
 import NegotiationRoomPage from "../pages/user/NegotiationRoomPage";
 import OfferManagementPage from "../pages/user/OfferManagementPage";
+import AgreementPage from "../pages/user/AgreementPage";
+import AppointmentPage from "../pages/user/AppointmentPage";
+import PendingPaymentsPage from "../pages/user/PendingPaymentsPage";
+import PaymentResultPage from "../pages/user/PaymentResultPage";
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
@@ -118,6 +122,36 @@ const AppRouter = () => {
           <Route
             path="/thuong-luong/phien"
             element={<NegotiationListPage />}
+          />
+
+          <Route
+            path="/thuong-luong/:negotiationId/thoa-thuan"
+            element={<AgreementPage />}
+          />
+
+          <Route
+            path="/thoa-thuan/:agreementId"
+            element={<AgreementPage />}
+          />
+
+          <Route
+            path="/thanh-toan"
+            element={<PendingPaymentsPage />}
+          />
+
+          <Route
+            path="/payments/success"
+            element={<PaymentResultPage />}
+          />
+
+          <Route
+            path="/payments/cancel"
+            element={<PaymentResultPage />}
+          />
+
+          <Route
+            path="/lich-hen"
+            element={<AppointmentPage />}
           />
 
           <Route
