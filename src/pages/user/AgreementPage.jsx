@@ -253,6 +253,12 @@ const AgreementPage = () => {
               <p>Còn lại: <strong>{formatCurrency(order.amountRemaining)}</strong></p>
               <p>Số lượng: <strong>{order.quantity}</strong></p>
             </div>
+            <Link
+              to={`/don-hang/${order.orderId}`}
+              className="mt-5 inline-flex rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-800"
+            >
+              Xem chi tiết đơn hàng
+            </Link>
           </section>
         )}
       </>}
