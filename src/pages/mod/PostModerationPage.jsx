@@ -11,7 +11,7 @@ import {
   EnvironmentOutlined
 } from '@ant-design/icons';
 import { postApi } from '../../services/apis/postApi';
-import { modApi } from '../../services/apis/modApi';
+import axiosClient from '../../services/apis/axiosClient'; // Import trực tiếp axiosClient
 import useDebounce from '../../hooks/useDebounce';
 
 const PostModerationPage = () => {
@@ -72,7 +72,7 @@ const PostModerationPage = () => {
     }
   };
 
-  // --- API: ĐÌNH CHỈ BÀI ĐĂNG (REAL) ---
+  // --- API: ĐÌNH CHỈ BÀI ĐĂNG (INLINE API) ---
   const handleSuspendPost = async () => {
     if (!suspendReason.trim()) {
       alert("Vui lòng nhập lý do đình chỉ bài đăng!");
@@ -82,7 +82,9 @@ const PostModerationPage = () => {
     setIsProcessing(true);
     try {
       const currentId = selectedPost.postId || selectedPost.id;
-      await modApi.suspendPost(currentId, { reason: suspendReason });
+      
+      // Gọi API trực tiếp bằng axiosClient thay vì thông qua modApi
+      await axiosClient.patch(`/moderator/posts/${currentId}/suspend`, { reason: suspendReason });
       
       alert("Đã đình chỉ bài đăng thành công!");
       setShowSuspendModal(false);
