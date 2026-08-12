@@ -115,6 +115,14 @@ const PaymentResultPage = () => {
         )}
 
         <div className="mt-7 flex flex-wrap justify-center gap-3">
+          {state.order?.orderId && (
+            <Link
+              to={`/don-hang/${state.order.orderId}`}
+              className="rounded-xl bg-[#0AA679] px-5 py-3 text-sm font-black text-white hover:bg-[#088c66]"
+            >
+              Xem đơn hàng
+            </Link>
+          )}
           {agreementId && (
             <Link
               to={`/thoa-thuan/${agreementId}`}
