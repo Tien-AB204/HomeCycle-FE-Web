@@ -2,6 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import Homepage from "../pages/public/Homepage";
 import { getHomePathByRole } from "../utils/authUtils";
+import { ROLES } from "../constants/roles"; // Bổ sung import ROLES
 
 const HomeRoute = () => {
   const {
@@ -22,7 +23,10 @@ const HomeRoute = () => {
     user?.role,
   );
 
-  if (homePath !== "/") {
+  // THAY ĐỔI Ở ĐÂY:
+  // Nếu path khác "/" VÀ người dùng KHÔNG PHẢI là MODERATOR thì mới bắt buộc chuyển hướng.
+  // Nhờ đó, Admin vẫn bị đá về /admin, nhưng Mod thì được phép ở lại trang chủ (/).
+  if (homePath !== "/" && user?.role !== ROLES.MODERATOR) {
     return (
       <Navigate
         to={homePath}
