@@ -5,6 +5,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../constants/roles"; // Thêm dòng này để lấy quyền
 
 const MainLayout = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const MainLayout = () => {
     { name: "Tin thu mua", icon: "🤝", path: "/tin-thu-mua" },
     { name: "Thương lượng", icon: "💬", path: "/thuong-luong" },
     { name: "Lịch hẹn", icon: "📅", path: "/lich-hen" },
+    { name: "Thanh toán", icon: "💳", path: "/thanh-toan" },
     { name: "Đơn hàng", icon: "📋", path: "/don-hang" },
     { name: "Thông báo", icon: "🔔", path: "/thong-bao" },
     { name: "Hồ sơ", icon: "👤", path: "/ho-so" },
@@ -66,18 +68,33 @@ const MainLayout = () => {
               </>
             ) : (
               <>
+                {/* NÚT ĐẶC QUYỀN DÀNH RIÊNG CHO MODERATOR HOẶC ADMIN */}
+                {(user?.role === ROLES.MODERATOR || user?.role === ROLES.ADMIN) && (
+                  <Link
+                    to={user?.role === ROLES.MODERATOR ? "/mod/dashboard" : "/admin/dashboard"}
+                    className="bg-[#0aa679] text-white px-4 py-2 rounded-md hover:bg-[#088c66] transition flex items-center gap-2 shadow-sm"
+                  >
+                    <span>Quay lại {user?.role === ROLES.MODERATOR ? "Mod" : "Admin"} Dashboard</span>
+                  </Link>
+                )}
+
                 <Link
-                  to="/user/dashboard"
+                  to={
+                    user?.role === ROLES.MODERATOR ? "/mod/dashboard" : 
+                    user?.role === ROLES.ADMIN ? "/admin/dashboard" : 
+                    "/ho-so" // Hoặc trang đích mặc định của User thường
+                  }
                   className="text-white hover:underline transition flex items-center gap-2"
                 >
-                  <div className="w-8 h-8 rounded-full bg-[#547B7D] flex items-center justify-center text-white font-bold">
+                  <div className="w-8 h-8 rounded-full bg-[#547B7D] flex items-center justify-center text-white font-bold shadow-sm border border-[#BAC2C1]/30">
                     {displayInitial}
                   </div>
-                  {displayName}
+                  <span className="max-w-[150px] truncate">{displayName}</span>
                 </Link>
+
                 <button
                   onClick={handleLogout}
-                  className="bg-[#7A1012] text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
+                  className="bg-[#7A1012] text-white px-4 py-2 rounded-md hover:bg-red-700 transition shadow-sm"
                 >
                   Đăng xuất
                 </button>
