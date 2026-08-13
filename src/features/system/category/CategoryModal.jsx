@@ -39,20 +39,12 @@ export default function CategoryModal({
     Boolean(editingCategory);
 
   const handleChange = (event) => {
-    const {
-      name,
-      value,
-      type,
-      checked,
-    } = event.target;
+    const { name, value } = event.target;
 
     setFormData(
       (currentFormData) => ({
         ...currentFormData,
-        [name]:
-          type === "checkbox"
-            ? checked
-            : value,
+        [name]: value,
       }),
     );
 
@@ -166,29 +158,6 @@ export default function CategoryModal({
               className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:bg-gray-100"
             />
           </div>
-
-          {isEditing && (
-            <div className="flex items-center gap-2">
-              <input
-                id="category-active"
-                name="isActive"
-                type="checkbox"
-                checked={
-                  formData.isActive
-                }
-                disabled={submitting}
-                onChange={handleChange}
-                className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500"
-              />
-
-              <label
-                htmlFor="category-active"
-                className="text-sm font-medium text-gray-700"
-              >
-                Danh mục đang hoạt động
-              </label>
-            </div>
-          )}
 
           <div className="flex justify-end gap-3 border-t pt-4">
             <button
