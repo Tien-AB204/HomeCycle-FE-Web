@@ -19,7 +19,7 @@ const formatDate = (value) => {
 const Detail = ({ label, value, wide }) => (
   <div className={wide ? "md:col-span-2" : ""}>
     <dt className="text-xs font-bold uppercase tracking-wide text-[#789092]">{label}</dt>
-    <dd className="mt-1 whitespace-pre-line text-sm font-semibold leading-6 text-[#172830]">{value || "—"}</dd>
+    <dd className="mt-1 whitespace-pre-line text-sm font-semibold leading-6 text-[#183F41]">{value || "—"}</dd>
   </div>
 );
 
@@ -28,11 +28,11 @@ const AgreementSummary = ({ agreement }) => {
   const statusMeta = getAgreementStatusMeta(agreement.agreementStatus);
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
+      <section className="rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#547B7D]">Thỏa thuận giao dịch</p>
-            <h2 className="mt-2 text-xl font-black text-[#172830]">{getAgreementTypeLabel(agreement.agreementType)}</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#4F8588]">Thỏa thuận giao dịch</p>
+            <h2 className="mt-2 text-xl font-black text-[#183F41]">{getAgreementTypeLabel(agreement.agreementType)}</h2>
           </div>
           <span className={`rounded-full border px-3 py-1.5 text-xs font-black ${statusMeta.className}`}>{statusMeta.label}</span>
         </div>
@@ -46,8 +46,8 @@ const AgreementSummary = ({ agreement }) => {
         </dl>
       </section>
 
-      <section className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="font-black text-[#172830]">Lịch hẹn và giao nhận</h3>
+      <section className="rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
+        <h3 className="font-black text-[#183F41]">Lịch hẹn và giao nhận</h3>
         <dl className="mt-5 grid gap-5 md:grid-cols-2">
           {agreement.agreementType === "Inspection" && <>
             <Detail label="Thời gian kiểm định" value={formatDate(details.inspectionDate)} />
@@ -62,16 +62,16 @@ const AgreementSummary = ({ agreement }) => {
         </dl>
       </section>
 
-      <section className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
-        <h3 className="font-black text-[#172830]">Xác nhận của hai bên</h3>
+      <section className="rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
+        <h3 className="font-black text-[#183F41]">Xác nhận của hai bên</h3>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <div className={`rounded-xl border p-4 ${agreement.sellerConfirmedAt ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
-            <p className="font-bold text-[#172830]">Người bán</p>
-            <p className="mt-1 text-sm text-[#547B7D]">{agreement.sellerConfirmedAt ? `Đã xác nhận lúc ${formatDate(agreement.sellerConfirmedAt)}` : "Chưa xác nhận"}</p>
+            <p className="font-bold text-[#183F41]">Người bán</p>
+            <p className="mt-1 text-sm text-[#68807F]">{agreement.sellerConfirmedAt ? `Đã xác nhận lúc ${formatDate(agreement.sellerConfirmedAt)}` : "Chưa xác nhận"}</p>
           </div>
           <div className={`rounded-xl border p-4 ${agreement.buyerConfirmedAt ? "border-green-200 bg-green-50" : "border-amber-200 bg-amber-50"}`}>
-            <p className="font-bold text-[#172830]">Người mua</p>
-            <p className="mt-1 text-sm text-[#547B7D]">{agreement.buyerConfirmedAt ? `Đã xác nhận lúc ${formatDate(agreement.buyerConfirmedAt)}` : "Chưa xác nhận"}</p>
+            <p className="font-bold text-[#183F41]">Người mua</p>
+            <p className="mt-1 text-sm text-[#68807F]">{agreement.buyerConfirmedAt ? `Đã xác nhận lúc ${formatDate(agreement.buyerConfirmedAt)}` : "Chưa xác nhận"}</p>
           </div>
         </div>
       </section>
