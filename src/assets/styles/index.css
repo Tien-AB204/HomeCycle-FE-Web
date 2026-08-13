@@ -34,3 +34,36 @@ button {
   display: flex;
   flex-direction: column;
 }
+
+/* Đồng bộ các màn hình quản trị cũ với nhận diện HomeCycle. */
+.admin-portal .text-green-700 {
+  color: #36777a !important;
+}
+
+.admin-portal .bg-green-700,
+.admin-portal .bg-green-600 {
+  background-color: #4f8588 !important;
+}
+
+.admin-portal .border-green-700,
+.admin-portal .border-green-600 {
+  border-color: #4f8588 !important;
+}
+
+.admin-portal .bg-green-50 {
+  background-color: #eef6f4 !important;
+}
+
+.admin-portal .border-green-200,
+.admin-portal .border-green-100 {
+  border-color: #cfe1dd !important;
+}
+
+.admin-portal .hover\:bg-green-700:hover,
+.admin-portal .hover\:bg-green-600:hover {
+  background-color: #2f6f9f !important;
+}
+
+.admin-portal .hover\:text-green-700:hover {
+  color: #2f6f9f !important;
+}
