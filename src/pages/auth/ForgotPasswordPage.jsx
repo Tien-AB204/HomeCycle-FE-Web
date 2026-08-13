@@ -1,38 +1,41 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const ForgotPasswordPage = () => {
-  const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [feedback, setFeedback] = useState(null);
 
   // Mock data/Hàm giả lập gọi API
   const handleSendOTP = (e) => {
     e.preventDefault();
     if (email) {
+      setFeedback(null);
       setStep(2); // Chuyển sang Hình 2 (OTP)
     }
   };
 
   const handleVerifyOTP = (e) => {
     e.preventDefault();
+    setFeedback(null);
     setStep(3); // Chuyển sang Hình 3 (New Password)
   };
 
   const handleResetPassword = (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      alert("Mật khẩu không khớp!");
+      setFeedback({ tone: "error", message: "Mật khẩu xác nhận không khớp." });
       return;
     }
     // Chỗ này sau này gọi API thật để reset password
-    console.log("Reset mật khẩu cho:", email);
-    alert("Đặt lại mật khẩu thành công!");
-    navigate("/auth/login"); // Quay lại login
+    setFeedback({
+      tone: "success",
+      message: "Đặt lại mật khẩu thành công. Bạn có thể quay lại đăng nhập.",
+    });
   };
 
   return (
@@ -52,6 +55,34 @@ const ForgotPasswordPage = () => {
           {step === 3 && "Tạo mật khẩu mới an toàn cho tài khoản HomeCycle."}
         </p>
       </div>
+
+      {feedback && (
+        <div
+          role={feedback.tone === "error" ? "alert" : "status"}
+          className={`mb-5 rounded-xl border px-4 py-3 text-sm font-semibold ${
+            feedback.tone === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <span className="material-symbols-outlined text-xl" aria-hidden="true">
+              {feedback.tone === "error" ? "error" : "check_circle"}
+            </span>
+            <div>
+              <p>{feedback.message}</p>
+              {feedback.tone === "success" && (
+                <Link
+                  to="/auth/login"
+                  className="mt-2 inline-flex font-black text-[#285E62] underline underline-offset-2"
+                >
+                  Quay lại đăng nhập
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- BƯỚC 1: NHẬP EMAIL (HÌNH 1) --- */}
       {step === 1 && (
@@ -148,7 +179,10 @@ const ForgotPasswordPage = () => {
 
           <button
             type="button"
-            onClick={() => setStep(1)}
+            onClick={() => {
+              setFeedback(null);
+              setStep(1);
+            }}
             className="flex w-full items-center justify-center gap-2 text-sm font-bold text-[#2F6F9F] hover:underline"
           >
             <span className="material-symbols-outlined text-[18px]">
@@ -221,14 +255,18 @@ const ForgotPasswordPage = () => {
 
           <button
             type="submit"
-            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70]"
+            disabled={feedback?.tone === "success"}
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             ĐẶT LẠI MẬT KHẨU
           </button>
 
           <button
             type="button"
-            onClick={() => setStep(2)}
+            onClick={() => {
+              setFeedback(null);
+              setStep(2);
+            }}
             className="flex w-full items-center justify-center gap-2 text-sm font-bold text-[#2F6F9F] hover:underline"
           >
             <span className="material-symbols-outlined text-[18px]">

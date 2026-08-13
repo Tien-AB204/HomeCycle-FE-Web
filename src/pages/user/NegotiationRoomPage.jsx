@@ -16,6 +16,7 @@ import {
   MESSAGE_TYPE,
   NEGOTIATION_STATUS,
 } from "../../constants/negotiations";
+import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import { useAuth } from "../../hooks/useAuth";
 import messageApi, {
   normalizeMessage,
@@ -280,8 +281,12 @@ const TextMessage = ({ message, isMine }) => {
 const AgreementMessage = ({ message, negotiationId, isMine }) => (
   <article className={`w-full max-w-sm rounded-xl border border-green-200 bg-green-50 px-4 py-3 shadow-sm ${isMine ? "ml-auto" : "mr-auto"}`}>
     <p className="text-xs font-black uppercase tracking-[0.16em] text-green-700">Thỏa thuận giao dịch</p>
-    <p className="mt-1.5 text-sm leading-5 text-green-900">{message.messageContent || "Thỏa thuận đã được tạo. Vui lòng kiểm tra và xác nhận."}</p>
-    <Link to={`/thuong-luong/${negotiationId}/thoa-thuan`} className="mt-2.5 inline-flex rounded-lg bg-green-700 px-3.5 py-2 text-xs font-black text-white hover:bg-green-800">Mở Agreement Form</Link>
+    <p className="mt-1.5 text-sm leading-5 text-green-900">
+      {isMine
+        ? "Đã gửi biểu mẫu thỏa thuận đến đối tác."
+        : "Đã nhận được biểu mẫu thỏa thuận từ đối tác."}
+    </p>
+    <Link to={`/thuong-luong/${negotiationId}/thoa-thuan`} className="mt-2.5 inline-flex rounded-lg bg-green-700 px-3.5 py-2 text-xs font-black text-white hover:bg-green-800">Mở biểu mẫu thỏa thuận</Link>
     <p className="mt-2 text-right text-[10px] text-green-700/70">{formatDate(message.createdAt)}</p>
   </article>
 );
@@ -302,6 +307,7 @@ const NegotiationRoomPage = () => {
   const [actionBusy, setActionBusy] = useState("");
   const [actionError, setActionError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [pendingConfirmation, setPendingConfirmation] = useState(null);
   const [agreementPreview, setAgreementPreview] = useState(null);
   const [counterForm, setCounterForm] = useState({
     offerPrice: "",
@@ -680,7 +686,6 @@ const NegotiationRoomPage = () => {
     NEGOTIATION_STATUS.OPEN,
     NEGOTIATION_STATUS.AGREED,
   ].includes(negotiation?.negotiationStatus);
-  const isSeller = currentUserId === String(negotiation?.sellerId || "");
   const messages = sortMessages(negotiation?.messages || []);
   const realtimeStatusMeta =
     REALTIME_STATUS_META[realtimeStatus] ||
@@ -780,19 +785,16 @@ const NegotiationRoomPage = () => {
     }
   };
 
-  const runProposalAction = async (action, messageId) => {
+  const runProposalAction = (action, messageId) => {
     if (!negotiation || actionBusy) {
       return;
     }
 
-    const message =
-      action === "accept"
-        ? "Chốt mức giá và số lượng này? Sau khi xác nhận, phiên sẽ chuyển sang trạng thái đã thống nhất."
-        : "Bạn có chắc muốn từ chối đề xuất này?";
+    setPendingConfirmation({ type: "proposal", action, messageId });
+  };
 
-    if (!window.confirm(message)) {
-      return;
-    }
+  const confirmProposalAction = async ({ action, messageId }) => {
+    if (!negotiation || actionBusy) return;
 
     setActionBusy(`${action}:${messageId}`);
     setActionError("");
@@ -807,6 +809,7 @@ const NegotiationRoomPage = () => {
         setSuccessMessage("Đã từ chối đề xuất.");
       }
 
+      setPendingConfirmation(null);
       refreshRoom();
     } catch (requestError) {
       setActionError(
@@ -841,14 +844,16 @@ const NegotiationRoomPage = () => {
     }
   };
 
-  const handleCancel = async () => {
+  const handleCancel = () => {
     if (!negotiation || actionBusy) {
       return;
     }
 
-    if (!window.confirm("Bạn có chắc muốn hủy phiên thương lượng này?")) {
-      return;
-    }
+    setPendingConfirmation({ type: "cancel" });
+  };
+
+  const confirmCancel = async () => {
+    if (!negotiation || actionBusy) return;
 
     setActionBusy("cancel");
     setActionError("");
@@ -857,6 +862,7 @@ const NegotiationRoomPage = () => {
     try {
       await negotiationApi.cancel(negotiationId);
       setSuccessMessage("Đã hủy phiên thương lượng.");
+      setPendingConfirmation(null);
       refreshRoom();
     } catch (requestError) {
       setActionError(
@@ -925,10 +931,7 @@ const NegotiationRoomPage = () => {
                 </span>
               )}
               <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#68807F]">
-                  {isSeller ? "người bán" : "người mua"}
-                </p>
-                <h1 className="mt-0.5 truncate text-base font-black text-[#183F41]">
+                <h1 className="truncate text-base font-black text-[#183F41]">
                   {summary?.otherPartyName || "Phòng thương lượng"}
                 </h1>
                 {realtimeStatusMeta.label && (
@@ -1216,6 +1219,50 @@ const NegotiationRoomPage = () => {
           </div>
         </div>
       )}
+
+      <ConfirmActionModal
+        open={Boolean(pendingConfirmation)}
+        title={
+          pendingConfirmation?.type === "cancel"
+            ? "Hủy phiên thương lượng?"
+            : pendingConfirmation?.action === "accept"
+              ? "Chấp nhận đề xuất?"
+              : "Từ chối đề xuất?"
+        }
+        description={
+          pendingConfirmation?.type === "cancel"
+            ? "Phiên thương lượng sẽ kết thúc và hai bên không thể tiếp tục gửi đề xuất trong phiên này."
+            : pendingConfirmation?.action === "accept"
+              ? "Mức giá và số lượng này sẽ được chốt, sau đó phiên chuyển sang trạng thái đã thống nhất."
+              : "Đề xuất này sẽ bị từ chối. Đối tác có thể gửi một đề xuất khác nếu phiên vẫn còn mở."
+        }
+        confirmLabel={
+          pendingConfirmation?.type === "cancel"
+            ? "Hủy phiên"
+            : pendingConfirmation?.action === "accept"
+              ? "Chấp nhận"
+              : "Từ chối"
+        }
+        tone={pendingConfirmation?.action === "accept" ? "success" : "danger"}
+        icon={
+          pendingConfirmation?.type === "cancel"
+            ? "cancel"
+            : pendingConfirmation?.action === "accept"
+              ? "handshake"
+              : "thumb_down"
+        }
+        busy={Boolean(actionBusy)}
+        onCancel={() => {
+          if (!actionBusy) setPendingConfirmation(null);
+        }}
+        onConfirm={() => {
+          if (pendingConfirmation?.type === "cancel") {
+            void confirmCancel();
+          } else if (pendingConfirmation?.type === "proposal") {
+            void confirmProposalAction(pendingConfirmation);
+          }
+        }}
+      />
     </section>
   );
 };
