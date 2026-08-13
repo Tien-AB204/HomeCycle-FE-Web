@@ -1,14 +1,37 @@
 ﻿import { useState } from "react";
 import {
   Link,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { getHomePathByRole } from "../../utils/authUtils";
 
+const getSafeReturnPath = (from) => {
+  let returnPath = "";
+
+  if (typeof from === "string") {
+    returnPath = from;
+  } else if (from && typeof from === "object") {
+    returnPath = `${from.pathname || ""}${from.search || ""}${from.hash || ""}`;
+  }
+
+  if (
+    !returnPath.startsWith("/") ||
+    returnPath.startsWith("//") ||
+    returnPath.startsWith("/auth/")
+  ) {
+    return "";
+  }
+
+  return returnPath;
+};
+
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const returnPath = getSafeReturnPath(location.state?.from);
 
   const [email, setEmail] =
     useState("");
@@ -35,9 +58,10 @@ const LoginPage = () => {
         await login(email, password);
 
       navigate(
-        getHomePathByRole(
-          loggedInUser?.role,
-        ),
+        returnPath ||
+          getHomePathByRole(
+            loggedInUser?.role,
+          ),
         {
           replace: true,
         },
@@ -63,20 +87,22 @@ const LoginPage = () => {
 
   return (
     <div className="w-full animate-fade-in">
-      <div className="mb-8 flex flex-col items-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-[#244f4d] text-white">
-          <span className="material-symbols-outlined">
-            autorenew
-          </span>
-        </div>
-
-        <h2 className="text-2xl font-bold text-slate-800">
-          HomeCycle
-        </h2>
-
-        <p className="mt-2 text-xl font-bold text-slate-800">
-          Đăng nhập vào tài khoản của bạn
+      <div className="mb-7">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">
+          Chào mừng trở lại
         </p>
+        <h2 className="mt-2 text-3xl font-black text-[#183F41]">
+          Đăng nhập vào tài khoản của bạn
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[#68807F]">
+          Tiếp tục quản lý tin đăng, thương lượng và các giao dịch của bạn.
+        </p>
+
+        {returnPath && (
+          <p className="mt-4 rounded-xl border border-[#B9D3CF] bg-[#EEF6F4] px-4 py-3 text-sm font-medium text-[#315F63]">
+            Vui lòng đăng nhập để tiếp tục thao tác bạn vừa chọn.
+          </p>
+        )}
       </div>
 
       <form
@@ -86,7 +112,7 @@ const LoginPage = () => {
         <div>
           <label
             htmlFor="login-email"
-            className="mb-1 block text-xs font-bold tracking-wide text-slate-500"
+            className="mb-1.5 block text-xs font-black tracking-wide text-[#526E6D]"
           >
             ĐỊA CHỈ EMAIL
           </label>
@@ -108,7 +134,7 @@ const LoginPage = () => {
                 )
               }
               placeholder="Nhập địa chỉ email của bạn..."
-              className="w-full rounded-md border border-slate-300 py-2.5 pl-10 pr-3 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-10 pr-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
             />
           </div>
         </div>
@@ -116,7 +142,7 @@ const LoginPage = () => {
         <div>
           <label
             htmlFor="login-password"
-            className="mb-1 block text-xs font-bold tracking-wide text-slate-500"
+            className="mb-1.5 block text-xs font-black tracking-wide text-[#526E6D]"
           >
             MẬT KHẨU
           </label>
@@ -138,7 +164,7 @@ const LoginPage = () => {
                 )
               }
               placeholder="Nhập mật khẩu của bạn..."
-              className="w-full rounded-md border border-slate-300 px-3 py-2.5 pr-10 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 pr-10 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
             />
 
             <button
@@ -167,7 +193,7 @@ const LoginPage = () => {
           <div className="mt-2 flex justify-end">
             <Link
               to="/auth/forgot-password"
-              className="text-xs font-bold text-[#244f4d] hover:underline"
+              className="text-xs font-bold text-[#2F6F9F] hover:underline"
             >
               Quên mật khẩu?
             </Link>
@@ -177,7 +203,7 @@ const LoginPage = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading
             ? "ĐANG ĐĂNG NHẬP..."
@@ -194,7 +220,7 @@ const LoginPage = () => {
 
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-md border border-slate-300 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#9FBFBA] bg-white py-3 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
         >
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -205,11 +231,11 @@ const LoginPage = () => {
         </button>
       </form>
 
-      <div className="mt-8 text-center text-sm text-slate-600">
+      <div className="mt-7 border-t border-[#E2ECE9] pt-5 text-center text-sm text-[#68807F]">
         Bạn chưa có tài khoản?{" "}
         <Link
           to="/auth/register"
-          className="font-bold text-[#244f4d] hover:underline"
+          className="font-bold text-[#2F6F9F] hover:underline"
         >
           Đăng ký tài khoản
         </Link>

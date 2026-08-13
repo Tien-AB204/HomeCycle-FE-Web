@@ -37,38 +37,31 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className="w-full animate-fade-in">
-      <div className="flex flex-col items-center mb-8">
-        <div className="w-12 h-12 bg-[#244f4d] rounded-md flex items-center justify-center mb-4 text-white">
-          <span className="material-symbols-outlined">autorenew</span>
-        </div>
-        <h2 className="text-2xl font-bold text-slate-800">HomeCycle</h2>
-
-        {step === 1 && (
-          <p className="text-xl font-bold text-slate-800 mt-2">
-            Khôi phục mật khẩu
-          </p>
-        )}
-        {step === 2 && (
-          <p className="text-xl font-bold text-slate-800 mt-2">
-            Xác thực Email
-          </p>
-        )}
-        {step === 3 && (
-          <p className="text-xl font-bold text-slate-800 mt-2">
-            Đặt lại mật khẩu
-          </p>
-        )}
+      <div className="mb-7">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">
+          Bảo mật tài khoản
+        </p>
+        <h2 className="mt-2 text-3xl font-black text-[#183F41]">
+          {step === 1 && "Khôi phục mật khẩu"}
+          {step === 2 && "Xác thực email"}
+          {step === 3 && "Đặt lại mật khẩu"}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-[#68807F]">
+          {step === 1 && "Nhập email để bắt đầu quy trình khôi phục tài khoản."}
+          {step === 2 && "Nhập mã xác thực đã được gửi đến email của bạn."}
+          {step === 3 && "Tạo mật khẩu mới an toàn cho tài khoản HomeCycle."}
+        </p>
       </div>
 
       {/* --- BƯỚC 1: NHẬP EMAIL (HÌNH 1) --- */}
       {step === 1 && (
         <form onSubmit={handleSendOTP} className="space-y-5">
-          <p className="text-sm text-slate-600 text-center px-4">
+          <p className="rounded-xl border border-[#DCE8E5] bg-[#F5F9F8] px-4 py-3 text-sm leading-6 text-[#526E6D]">
             Nhập email của bạn để nhận mã OTP xác thực khôi phục tài khoản.
           </p>
 
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1 tracking-wide">
+            <label className="mb-1.5 block text-xs font-black tracking-wide text-[#526E6D]">
               ĐỊA CHỈ EMAIL
             </label>
             <div className="relative">
@@ -81,14 +74,14 @@ const ForgotPasswordPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nhập địa chỉ email của bạn..."
-                className="w-full border border-slate-300 rounded-md py-2.5 pl-10 pr-3 focus:outline-none focus:border-[#244f4d] focus:ring-1 focus:ring-[#244f4d] text-sm"
+                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-10 pr-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[#244f4d] text-white py-3 rounded-md font-medium hover:bg-[#1a3a38] transition"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70]"
           >
             GỬI MÃ KHÔI PHỤC
           </button>
@@ -96,7 +89,7 @@ const ForgotPasswordPage = () => {
           <div className="text-center">
             <Link
               to="/auth/login"
-              className="flex items-center justify-center gap-2 text-sm font-bold text-[#244f4d] hover:underline"
+              className="flex items-center justify-center gap-2 text-sm font-bold text-[#2F6F9F] hover:underline"
             >
               <span className="material-symbols-outlined text-[18px]">
                 arrow_back
@@ -110,7 +103,7 @@ const ForgotPasswordPage = () => {
       {/* --- BƯỚC 2: XÁC THỰC OTP (HÌNH 2) --- */}
       {step === 2 && (
         <form onSubmit={handleVerifyOTP} className="space-y-6">
-          <p className="text-sm text-slate-500 text-center px-4">
+          <p className="rounded-xl border border-[#DCE8E5] bg-[#F5F9F8] px-4 py-3 text-sm leading-6 text-[#526E6D]">
             Hệ thống đã gửi mã OTP gồm 6 chữ số đến email của bạn. Vui lòng kiểm
             tra và gõ vào ô bên dưới.
           </p>
@@ -121,7 +114,7 @@ const ForgotPasswordPage = () => {
                 key={i}
                 type="text"
                 maxLength="1"
-                className="w-10 h-12 border border-slate-300 rounded-md text-center text-lg font-semibold focus:border-[#244f4d] focus:ring-1 focus:ring-[#244f4d] outline-none"
+                className="h-12 w-10 rounded-xl border border-[#CDDED9] bg-[#FBFDFC] text-center text-lg font-bold text-[#183F41] outline-none transition focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10 sm:w-12"
               />
             ))}
           </div>
@@ -148,7 +141,7 @@ const ForgotPasswordPage = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#244f4d] text-white py-3 rounded-md font-medium hover:bg-[#1a3a38] transition"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70]"
           >
             XÁC NHẬN
           </button>
@@ -156,7 +149,7 @@ const ForgotPasswordPage = () => {
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="w-full flex items-center justify-center gap-2 text-sm font-bold text-[#244f4d] hover:underline"
+            className="flex w-full items-center justify-center gap-2 text-sm font-bold text-[#2F6F9F] hover:underline"
           >
             <span className="material-symbols-outlined text-[18px]">
               arrow_back
@@ -169,15 +162,15 @@ const ForgotPasswordPage = () => {
       {/* --- BƯỚC 3: ĐẶT LẠI MẬT KHẨU (HÌNH 3) --- */}
       {step === 3 && (
         <form onSubmit={handleResetPassword} className="space-y-5">
-          <div className="bg-slate-50 border border-slate-200 rounded-md p-3 flex justify-between items-center">
+          <div className="flex items-center justify-between rounded-xl border border-[#DCE8E5] bg-[#F5F9F8] p-4">
             <div>
-              <p className="text-xs text-slate-500 font-medium">Tài khoản</p>
-              <p className="text-sm font-bold text-slate-800">{email}</p>
+              <p className="text-xs font-bold text-[#68807F]">Tài khoản</p>
+              <p className="text-sm font-black text-[#183F41]">{email}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1">
+            <label className="mb-1.5 block text-xs font-black text-[#526E6D]">
               Mật khẩu mới
             </label>
             <div className="relative">
@@ -187,7 +180,7 @@ const ForgotPasswordPage = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Nhập mật khẩu mới..."
-                className="w-full border border-slate-300 rounded-md py-2.5 px-3 pr-10 focus:outline-none focus:border-[#244f4d] focus:ring-1 focus:ring-[#244f4d] text-sm"
+                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 pr-10 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
               />
               <button
                 type="button"
@@ -202,7 +195,7 @@ const ForgotPasswordPage = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-800 mb-1">
+            <label className="mb-1.5 block text-xs font-black text-[#526E6D]">
               Xác nhận mật khẩu
             </label>
             <div className="relative">
@@ -212,7 +205,7 @@ const ForgotPasswordPage = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu..."
-                className="w-full border border-slate-300 rounded-md py-2.5 px-3 pr-10 focus:outline-none focus:border-[#244f4d] focus:ring-1 focus:ring-[#244f4d] text-sm"
+                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 pr-10 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
               />
               <button
                 type="button"
@@ -228,7 +221,7 @@ const ForgotPasswordPage = () => {
 
           <button
             type="submit"
-            className="w-full bg-[#244f4d] text-white py-3 rounded-md font-medium hover:bg-[#1a3a38] transition"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70]"
           >
             ĐẶT LẠI MẬT KHẨU
           </button>
@@ -236,7 +229,7 @@ const ForgotPasswordPage = () => {
           <button
             type="button"
             onClick={() => setStep(2)}
-            className="w-full flex items-center justify-center gap-2 text-sm font-bold text-[#244f4d] hover:underline"
+            className="flex w-full items-center justify-center gap-2 text-sm font-bold text-[#2F6F9F] hover:underline"
           >
             <span className="material-symbols-outlined text-[18px]">
               arrow_back
