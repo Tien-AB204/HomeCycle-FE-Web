@@ -56,14 +56,6 @@ const formatDate = (value) => {
   }).format(date);
 };
 
-const getShortId = (value) => {
-  const normalizedValue = String(value || "");
-
-  return normalizedValue
-    ? `${normalizedValue.slice(0, 8)}…`
-    : "—";
-};
-
 const OfferManagementPage = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -257,10 +249,8 @@ const OfferManagementPage = () => {
         await offerApi.reject(selectedOffer.offerId);
         message = "Đã từ chối đề nghị thành công.";
       } else {
-        const acceptedOffer = await offerApi.accept(
-          selectedOffer.offerId,
-        );
-        message = `Đã đồng ý mức giá. Mã phiên: ${acceptedOffer.negotiationId}`;
+        await offerApi.accept(selectedOffer.offerId);
+        message = "Đã đồng ý mức giá và mở phiên thương lượng.";
       }
 
       setSuccessMessage(message);
@@ -359,52 +349,41 @@ const OfferManagementPage = () => {
   };
 
   return (
-    <section className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
-      <div className="overflow-hidden rounded-2xl border border-[#BAC2C1]/40 bg-white shadow-sm">
-        <div className="bg-[#172830] px-6 py-6 text-white sm:flex sm:items-end sm:justify-between sm:gap-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C1EAEC]">
-              Trung tâm giao dịch
-            </p>
-            <h1 className="mt-2 text-2xl font-black">
-              Yêu cầu thương lượng
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-[#B7C9D4]">
-              Theo dõi các đề nghị giá đã gửi, phản hồi đề nghị nhận được và mở phòng để hai bên tiếp tục thương lượng.
-            </p>
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3 sm:mt-0 sm:justify-end">
-            <Link
-              to="/thuong-luong/phien"
-              className="rounded-xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/20"
-            >
-              Xem phiên thương lượng
-            </Link>
-            <div className="rounded-xl bg-white/10 px-5 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-[#C1EAEC]">
-                Tổng trong mục
-              </p>
-              <p className="mt-1 text-2xl font-black">
-                {result?.totalCount ?? 0}
-              </p>
-            </div>
-          </div>
+    <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-7xl px-4 pb-14 pt-7 sm:px-6">
+      <header className="flex flex-col gap-4 border-b border-[#DCE8E5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#2F6F9F]">
+            Trung tâm giao dịch
+          </p>
+          <h1 className="mt-1 text-2xl font-black text-[#183F41] sm:text-3xl">
+            Đề nghị giá
+          </h1>
+          <p className="mt-1.5 max-w-2xl text-sm text-[#68807F]">
+            Quản lý đề nghị đã gửi và phản hồi đề nghị nhận được. Các cuộc trò chuyện đang diễn ra được đặt riêng tại Phòng thương lượng.
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-[#EAF3F8] px-3 py-1.5 text-xs font-black text-[#2F6F9F]">
+            {result?.totalCount ?? 0} đề nghị
+          </span>
+        </div>
+      </header>
 
+      <div className="mt-4 rounded-xl border border-[#DCE8E5] bg-white p-1.5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
         <div
           role="tablist"
-          aria-label="Danh sách đề nghị"
-          className="grid grid-cols-2 gap-2 bg-[#f8fafa] p-2"
+          aria-label="Phân loại đề nghị giá"
+          className="grid grid-cols-2 gap-1.5 sm:max-w-lg"
         >
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === "sent"}
             onClick={() => changeTab("sent")}
-            className={`rounded-xl px-4 py-3 text-sm font-bold transition ${
+            className={`rounded-lg px-4 py-2.5 text-sm font-black transition ${
               activeTab === "sent"
-                ? "bg-[#2B5659] text-white shadow-sm"
-                : "text-[#547B7D] hover:bg-[#BAC2C1]/20"
+                ? "bg-[#EAF3F3] text-[#285E62]"
+                : "text-[#68807F] hover:bg-[#F6F9F8] hover:text-[#183F41]"
             }`}
           >
             Đề nghị đã gửi
@@ -414,10 +393,10 @@ const OfferManagementPage = () => {
             role="tab"
             aria-selected={activeTab === "received"}
             onClick={() => changeTab("received")}
-            className={`rounded-xl px-4 py-3 text-sm font-bold transition ${
+            className={`rounded-lg px-4 py-2.5 text-sm font-black transition ${
               activeTab === "received"
-                ? "bg-[#2B5659] text-white shadow-sm"
-                : "text-[#547B7D] hover:bg-[#BAC2C1]/20"
+                ? "bg-[#EAF3F3] text-[#285E62]"
+                : "text-[#68807F] hover:bg-[#F6F9F8] hover:text-[#183F41]"
             }`}
           >
             Đề nghị đã nhận
@@ -443,7 +422,7 @@ const OfferManagementPage = () => {
       )}
 
       {isLoading && (
-        <div role="status" className="mt-5 rounded-xl border border-[#BAC2C1]/40 bg-white p-12 text-center text-[#547B7D] shadow-sm">
+        <div role="status" className="mt-5 rounded-2xl border border-[#DCE8E5] bg-white p-12 text-center text-[#68807F] shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
           <span className="material-symbols-outlined animate-spin text-3xl">
             refresh
           </span>
@@ -459,7 +438,7 @@ const OfferManagementPage = () => {
           <button
             type="button"
             onClick={refreshList}
-            className="mt-4 rounded-lg bg-[#7A1012] px-4 py-2 text-sm font-bold text-white"
+            className="mt-4 rounded-lg bg-[#B33A32] px-4 py-2 text-sm font-bold text-white"
           >
             Thử lại
           </button>
@@ -467,14 +446,14 @@ const OfferManagementPage = () => {
       )}
 
       {!isLoading && !listError && offers.length === 0 && (
-        <div className="mt-5 rounded-xl border border-dashed border-[#BAC2C1] bg-white px-6 py-14 text-center shadow-sm">
-          <span className="text-5xl" aria-hidden="true">🤝</span>
-          <h2 className="mt-4 text-lg font-bold text-[#172830]">
+        <div className="mt-5 rounded-2xl border border-dashed border-[#9FBFBA] bg-white px-6 py-14 text-center shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
+          <span className="material-symbols-outlined text-5xl text-[#4F8588]" aria-hidden="true">handshake</span>
+          <h2 className="mt-4 text-lg font-bold text-[#183F41]">
             {activeTab === "sent"
               ? "Bạn chưa gửi đề nghị nào"
               : "Bạn chưa nhận được đề nghị nào"}
           </h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#547B7D]">
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#68807F]">
             {activeTab === "sent"
               ? "Khám phá các tin đăng bán và gửi mức giá phù hợp cho người bán."
               : "Các đề nghị từ người quan tâm đến bài đăng của bạn sẽ xuất hiện tại đây."}
@@ -482,7 +461,7 @@ const OfferManagementPage = () => {
           {activeTab === "sent" && (
             <Link
               to="/tin-dang-ban"
-              className="mt-5 inline-flex rounded-lg bg-[#2B5659] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#172830]"
+              className="mt-5 inline-flex rounded-xl bg-[#4F8588] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#356A70]"
             >
               Khám phá tin đăng bán
             </Link>
@@ -492,7 +471,16 @@ const OfferManagementPage = () => {
 
       {!isLoading && !listError && offers.length > 0 && (
         <>
-          <div className="mt-5 grid gap-4 xl:grid-cols-2">
+          <div className="mt-5 overflow-hidden rounded-2xl border border-[#DCE8E5] bg-white shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
+            <div className="hidden grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] items-center gap-4 bg-[#F3F7F6] px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#68807F] md:grid">
+              <span>Đối tác</span>
+              <span>Giá đề nghị</span>
+              <span>Số lượng</span>
+              <span>Trạng thái</span>
+              <span>Thời gian</span>
+              <span className="sr-only">Thao tác</span>
+            </div>
+            <div className="divide-y divide-[#E3ECE9]">
             {offers.map((offer) => {
               const statusMeta = getOfferStatusMeta(offer.offerStatus);
               const otherPartyName =
@@ -507,59 +495,51 @@ const OfferManagementPage = () => {
               return (
                 <article
                   key={offer.offerId}
-                  className="rounded-xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="grid gap-4 px-5 py-4 transition hover:bg-[#F8FBFA] md:grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] md:items-center"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                       {otherPartyAvatar ? (
                         <img
                           src={otherPartyAvatar}
                           alt=""
-                          className="h-11 w-11 shrink-0 rounded-full object-cover"
+                          className="h-10 w-10 shrink-0 rounded-full object-cover"
                         />
                       ) : (
-                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2B5659] font-black text-white">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#4F8588] font-black text-white">
                           {otherPartyName?.charAt(0).toUpperCase() || "H"}
                         </span>
                       )}
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-[#68807F]">
                           {activeTab === "sent" ? "Gửi đến" : "Nhận từ"}
                         </p>
-                        <p className="truncate font-bold text-[#172830]">
+                        <p className="truncate font-bold text-[#183F41]">
                           {otherPartyName}
                         </p>
                       </div>
-                    </div>
-                    <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-bold ${statusMeta.className}`}>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#789092] md:hidden">Giá đề nghị</p>
+                    <p className="mt-0.5 text-base font-black text-[#B33A32]">{formatCurrency(offer.offerPrice)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#789092] md:hidden">Số lượng</p>
+                    <p className="mt-0.5 font-black text-[#183F41]">{offer.offerQuantity}</p>
+                  </div>
+                  <div>
+                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusMeta.className}`}>
                       {statusMeta.label}
                     </span>
                   </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg bg-[#7A1012]/8 p-3">
-                      <p className="text-xs font-semibold text-[#7A1012]">Giá đề nghị</p>
-                      <p className="mt-1 text-lg font-black text-[#7A1012]">
-                        {formatCurrency(offer.offerPrice)}
-                      </p>
-                    </div>
-                    <div className="rounded-lg bg-[#f5f8f8] p-3">
-                      <p className="text-xs font-semibold text-[#547B7D]">Số lượng</p>
-                      <p className="mt-1 text-lg font-black text-[#172830]">
-                        {offer.offerQuantity}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#789092] md:hidden">Thời gian</p>
+                    <p className="mt-0.5 text-xs font-medium text-[#68807F]">{formatDate(offer.createdAt)}</p>
                   </div>
-
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#BAC2C1]/25 pt-4">
-                    <div className="text-xs text-[#547B7D]">
-                      <p title={offer.postId}>Bài đăng {getShortId(offer.postId)}</p>
-                      <p className="mt-1">{formatDate(offer.createdAt)}</p>
-                    </div>
+                  <div className="flex md:justify-end">
                     <button
                       type="button"
                       onClick={() => setSelectedOfferId(offer.offerId)}
-                      className="rounded-lg bg-[#2B5659] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#172830]"
+                      className="rounded-lg border border-[#4F8588] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#4F8588] hover:text-white"
                     >
                       Xem chi tiết
                     </button>
@@ -567,10 +547,11 @@ const OfferManagementPage = () => {
                 </article>
               );
             })}
+            </div>
           </div>
 
-          <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-xl border border-[#BAC2C1]/35 bg-white p-4 sm:flex-row">
-            <p className="text-sm font-medium text-[#547B7D]">
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-2xl border border-[#DCE8E5] bg-white p-4 sm:flex-row">
+            <p className="text-sm font-medium text-[#68807F]">
               Trang {result?.pageNumber ?? pageNumber} / {Math.max(result?.totalPages ?? 1, 1)}
             </p>
             <div className="flex gap-2">
@@ -578,7 +559,7 @@ const OfferManagementPage = () => {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage - 1)}
                 disabled={!result?.hasPreviousPage}
-                className="rounded-lg border border-[#BAC2C1] bg-white px-4 py-2 text-sm font-bold text-[#172830] disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang trước
               </button>
@@ -586,7 +567,7 @@ const OfferManagementPage = () => {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage + 1)}
                 disabled={!result?.hasNextPage}
-                className="rounded-lg border border-[#BAC2C1] bg-white px-4 py-2 text-sm font-bold text-[#172830] disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang sau
               </button>

@@ -66,8 +66,8 @@ const StepIndicator = ({ step }) => {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                 item <= currentStep
-                  ? "bg-[#244f4d] text-white"
-                  : "bg-slate-200 text-slate-500"
+                  ? "bg-[#4F8588] text-white"
+                  : "bg-[#E5ECEA] text-[#78908F]"
               }`}
             >
               {item}
@@ -77,8 +77,8 @@ const StepIndicator = ({ step }) => {
               <div
                 className={`mx-2 h-0.5 w-12 ${
                   item < currentStep
-                    ? "bg-[#244f4d]"
-                    : "bg-slate-200"
+                    ? "bg-[#4F8588]"
+                    : "bg-[#E5ECEA]"
                 }`}
               />
             )}
@@ -86,7 +86,7 @@ const StepIndicator = ({ step }) => {
         ))}
       </div>
 
-      <div className="mt-2 grid grid-cols-3 text-center text-xs text-slate-500">
+      <div className="mt-2 grid grid-cols-3 text-center text-xs font-bold text-[#68807F]">
         {labels.map((label) => (
           <span key={label}>
             {label}
@@ -466,18 +466,13 @@ const RegisterBusinessPage = () => {
 
   return (
     <div className="mx-auto w-full max-w-xl animate-fade-in">
-      <div className="mb-6 flex flex-col items-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-[#244f4d] text-white">
-          <span className="material-symbols-outlined">
-            domain
-          </span>
-        </div>
-
-        <h1 className="text-center text-2xl font-bold text-slate-800">
+      <div className="mb-6">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">Tài khoản doanh nghiệp</p>
+        <h1 className="mt-2 text-3xl font-black text-[#183F41]">
           Đăng ký tài khoản doanh nghiệp
         </h1>
 
-        <p className="mt-2 text-center text-sm text-slate-500">
+        <p className="mt-2 text-sm leading-6 text-[#68807F]">
           Tạo tài khoản để tìm kiếm và
           khám phá các tin đăng trên
           HomeCycle.
@@ -507,12 +502,12 @@ const RegisterBusinessPage = () => {
       {step === STEPS.EMAIL && (
         <form
           onSubmit={handleSendOtp}
-          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
         >
           <div>
             <label
               htmlFor="business-email"
-              className="mb-1 block text-xs font-bold text-slate-800"
+              className="mb-1.5 block text-xs font-black text-[#526E6D]"
             >
               Email doanh nghiệp
               <span className="text-red-500">
@@ -538,7 +533,7 @@ const RegisterBusinessPage = () => {
                 required
                 autoComplete="email"
                 placeholder="Nhập email doanh nghiệp"
-                className="w-full rounded-md border border-slate-300 py-2.5 pl-10 pr-3 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-10 pr-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
               />
             </div>
           </div>
@@ -546,7 +541,7 @@ const RegisterBusinessPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction ===
             "SEND_OTP"
@@ -558,7 +553,7 @@ const RegisterBusinessPage = () => {
             Bạn đã có tài khoản?{" "}
             <Link
               to="/auth/login"
-              className="font-bold text-[#244f4d] hover:underline"
+              className="font-bold text-[#2F6F9F] hover:underline"
             >
               Đăng nhập ngay
             </Link>
@@ -569,10 +564,10 @@ const RegisterBusinessPage = () => {
       {step === STEPS.OTP && (
         <form
           onSubmit={handleVerifyOtp}
-          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
         >
           <div className="text-center">
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="text-lg font-black text-[#183F41]">
               Xác thực email
             </h2>
 
@@ -581,7 +576,7 @@ const RegisterBusinessPage = () => {
               được gửi đến:
             </p>
 
-            <p className="mt-1 break-all text-sm font-bold text-[#244f4d]">
+            <p className="mt-1 break-all text-sm font-black text-[#2F6F9F]">
               {email}
             </p>
           </div>
@@ -589,7 +584,7 @@ const RegisterBusinessPage = () => {
           <div>
             <label
               htmlFor="business-otp"
-              className="mb-1 block text-xs font-bold text-slate-800"
+              className="mb-1.5 block text-xs font-black text-[#526E6D]"
             >
               Mã OTP
               <span className="text-red-500">
@@ -614,7 +609,7 @@ const RegisterBusinessPage = () => {
               }
               required
               placeholder="Nhập 6 chữ số"
-              className="w-full rounded-md border border-slate-300 px-3 py-3 text-center text-xl font-bold tracking-[0.5em] focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 text-center text-xl font-black tracking-[0.5em] text-[#183F41] outline-none transition focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
             />
           </div>
 
@@ -624,7 +619,7 @@ const RegisterBusinessPage = () => {
               isLoading ||
               otp.length !== 6
             }
-            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction ===
             "VERIFY_OTP"
@@ -642,7 +637,7 @@ const RegisterBusinessPage = () => {
                 isLoading ||
                 resendCooldown > 0
               }
-              className="font-medium text-[#244f4d] disabled:cursor-not-allowed disabled:text-slate-400"
+              className="font-bold text-[#2F6F9F] disabled:cursor-not-allowed disabled:text-slate-400"
             >
               {resendCooldown > 0
                 ? `Gửi lại OTP sau ${resendCooldown}s`
@@ -655,7 +650,7 @@ const RegisterBusinessPage = () => {
                 handleChangeEmail
               }
               disabled={isLoading}
-              className="text-slate-500 hover:text-[#244f4d]"
+              className="text-[#68807F] hover:text-[#2F6F9F]"
             >
               Thay đổi email
             </button>
@@ -667,16 +662,16 @@ const RegisterBusinessPage = () => {
         STEPS.PASSWORD && (
         <form
           onSubmit={handleRegister}
-          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
         >
           <div>
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="text-lg font-black text-[#183F41]">
               Tạo mật khẩu
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
               Email{" "}
-              <span className="font-semibold text-[#244f4d]">
+              <span className="font-bold text-[#2F6F9F]">
                 {email}
               </span>{" "}
               đã được xác thực.
@@ -686,7 +681,7 @@ const RegisterBusinessPage = () => {
           <div>
             <label
               htmlFor="business-password"
-              className="mb-1 block text-xs font-bold text-slate-800"
+              className="mb-1.5 block text-xs font-black text-[#526E6D]"
             >
               Mật khẩu
               <span className="text-red-500">
@@ -713,7 +708,7 @@ const RegisterBusinessPage = () => {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="Tối thiểu 6 ký tự"
-                className="w-full rounded-md border border-slate-300 py-2.5 pl-3 pr-11 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-3 pr-11 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
               />
 
               <button
@@ -743,7 +738,7 @@ const RegisterBusinessPage = () => {
           <div>
             <label
               htmlFor="business-confirm-password"
-              className="mb-1 block text-xs font-bold text-slate-800"
+              className="mb-1.5 block text-xs font-black text-[#526E6D]"
             >
               Xác nhận mật khẩu
               <span className="text-red-500">
@@ -769,11 +764,11 @@ const RegisterBusinessPage = () => {
               minLength={6}
               autoComplete="new-password"
               placeholder="Nhập lại mật khẩu"
-              className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
             />
           </div>
 
-          <div className="rounded-md border border-blue-100 bg-blue-50 p-3 text-xs leading-relaxed text-blue-700">
+          <div className="rounded-xl border border-[#C8DFF0] bg-[#F0F6FB] p-4 text-xs leading-relaxed text-[#2F6F9F]">
             Sau khi đăng ký, bạn có thể
             tìm kiếm và xem tin ngay.
             Hoàn thiện hồ sơ doanh nghiệp
@@ -784,7 +779,7 @@ const RegisterBusinessPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction ===
             "REGISTER"
@@ -798,7 +793,7 @@ const RegisterBusinessPage = () => {
               handleChangeEmail
             }
             disabled={isLoading}
-            className="w-full text-sm text-slate-500 hover:text-[#244f4d] disabled:opacity-60"
+            className="w-full text-sm text-[#68807F] hover:text-[#2F6F9F] disabled:opacity-60"
           >
             Sử dụng email khác
           </button>
