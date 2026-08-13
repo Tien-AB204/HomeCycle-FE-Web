@@ -150,8 +150,7 @@ const mergeMessages = (...messageGroups) => {
 
 const REALTIME_STATUS_META = Object.freeze({
   [CHAT_REALTIME_STATUS.CONNECTED]: {
-    label: "Realtime đã kết nối",
-    dotClassName: "bg-emerald-400",
+
   },
   [CHAT_REALTIME_STATUS.CONNECTING]: {
     label: "Đang kết nối",
@@ -179,20 +178,20 @@ const ProposalMessage = ({
 
   return (
     <article
-      className={`w-full max-w-md rounded-2xl border p-4 shadow-sm ${
+      className={`w-full max-w-sm rounded-xl border px-4 py-3 shadow-sm ${
         isMine
-          ? "ml-auto border-[#2B5659]/30 bg-[#edf5f5]"
+          ? "ml-auto border-[#4F8588]/30 bg-[#edf5f5]"
           : "mr-auto border-[#BAC2C1]/50 bg-white"
       }`}
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#68807F]">
             {message.messageType === "Offer"
               ? "Đề nghị ban đầu"
               : "Đề xuất mới"}
           </p>
-          <p className="mt-1 text-xl font-black text-[#7A1012]">
+          <p className="mt-0.5 text-lg font-black text-[#B33A32]">
             {formatCurrency(message.offerPrice)}
           </p>
         </div>
@@ -201,18 +200,18 @@ const ProposalMessage = ({
         </span>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-        <div className="rounded-lg bg-white/70 p-2.5">
-          <p className="text-xs text-[#547B7D]">Số lượng</p>
-          <p className="mt-1 font-bold text-[#172830]">{message.offerQuantity}</p>
+      <dl className="mt-2 flex flex-wrap gap-x-7 gap-y-2 border-t border-[#DCE8E5] pt-2.5 text-sm">
+        <div>
+          <dt className="text-[11px] font-semibold text-[#68807F]">Số lượng</dt>
+          <dd className="font-bold text-[#183F41]">{message.offerQuantity}</dd>
         </div>
-        <div className="rounded-lg bg-white/70 p-2.5">
-          <p className="text-xs text-[#547B7D]">Giá bài đăng</p>
-          <p className="mt-1 font-bold text-[#172830]">
+        <div>
+          <dt className="text-[11px] font-semibold text-[#68807F]">Giá bài đăng</dt>
+          <dd className="font-bold text-[#183F41]">
             {formatCurrency(message.basePriceSnapshot)}
-          </p>
+          </dd>
         </div>
-      </div>
+      </dl>
 
       {message.messageContent && (
         <p className="mt-3 text-sm leading-6 text-[#334b50]">
@@ -221,7 +220,7 @@ const ProposalMessage = ({
       )}
 
       {canRespond && (
-        <div className="mt-4 flex flex-wrap gap-2 border-t border-[#BAC2C1]/30 pt-3">
+        <div className="mt-3 flex flex-wrap gap-2 border-t border-[#BAC2C1]/30 pt-3">
           <button
             type="button"
             onClick={() => onAccept(message.messageId)}
@@ -241,7 +240,7 @@ const ProposalMessage = ({
         </div>
       )}
 
-      <p className="mt-3 text-right text-[11px] text-[#789092]">
+      <p className="mt-2 text-right text-[10px] text-[#789092]">
         {isMine ? "Bạn gửi" : "Đối tác gửi"} · {formatDate(message.createdAt)}
       </p>
     </article>
@@ -251,10 +250,10 @@ const ProposalMessage = ({
 const TextMessage = ({ message, isMine }) => {
   return (
     <article
-      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
+      className={`max-w-[78%] rounded-xl px-3.5 py-2.5 text-sm leading-5 shadow-sm sm:max-w-[70%] ${
         isMine
-          ? "ml-auto bg-[#2B5659] text-white"
-          : "mr-auto border border-[#BAC2C1]/40 bg-white text-[#172830]"
+          ? "ml-auto bg-[#4F8588] text-white"
+          : "mr-auto border border-[#BAC2C1]/40 bg-white text-[#183F41]"
       }`}
     >
       <p>{message.messageContent || "Tin nhắn"}</p>
@@ -264,7 +263,7 @@ const TextMessage = ({ message, isMine }) => {
           target="_blank"
           rel="noreferrer"
           className={`mt-2 block break-all text-xs underline ${
-            isMine ? "text-[#C1EAEC]" : "text-[#2B5659]"
+            isMine ? "text-[#C8ECE7]" : "text-[#4F8588]"
           }`}
         >
           Xem tệp đính kèm
@@ -279,11 +278,11 @@ const TextMessage = ({ message, isMine }) => {
 };
 
 const AgreementMessage = ({ message, negotiationId, isMine }) => (
-  <article className={`w-full max-w-md rounded-2xl border border-green-200 bg-green-50 p-4 shadow-sm ${isMine ? "ml-auto" : "mr-auto"}`}>
+  <article className={`w-full max-w-sm rounded-xl border border-green-200 bg-green-50 px-4 py-3 shadow-sm ${isMine ? "ml-auto" : "mr-auto"}`}>
     <p className="text-xs font-black uppercase tracking-[0.16em] text-green-700">Thỏa thuận giao dịch</p>
-    <p className="mt-2 text-sm leading-6 text-green-900">{message.messageContent || "Thỏa thuận đã được tạo. Vui lòng kiểm tra và xác nhận."}</p>
-    <Link to={`/thuong-luong/${negotiationId}/thoa-thuan`} className="mt-3 inline-flex rounded-lg bg-green-700 px-4 py-2 text-xs font-black text-white hover:bg-green-800">Mở Agreement Form</Link>
-    <p className="mt-3 text-right text-[10px] text-green-700/70">{formatDate(message.createdAt)}</p>
+    <p className="mt-1.5 text-sm leading-5 text-green-900">{message.messageContent || "Thỏa thuận đã được tạo. Vui lòng kiểm tra và xác nhận."}</p>
+    <Link to={`/thuong-luong/${negotiationId}/thoa-thuan`} className="mt-2.5 inline-flex rounded-lg bg-green-700 px-3.5 py-2 text-xs font-black text-white hover:bg-green-800">Mở Agreement Form</Link>
+    <p className="mt-2 text-right text-[10px] text-green-700/70">{formatDate(message.createdAt)}</p>
   </article>
 );
 
@@ -869,11 +868,11 @@ const NegotiationRoomPage = () => {
   };
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-5xl px-4 pb-12 pt-5 sm:px-6">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-[#DCE8E5] pb-3">
         <Link
           to="/thuong-luong/phien"
-          className="inline-flex items-center gap-2 text-sm font-bold text-[#2B5659] hover:text-[#172830]"
+          className="inline-flex items-center gap-2 text-sm font-bold text-[#4F8588] transition hover:text-[#183F41]"
         >
           <span aria-hidden="true">←</span> Danh sách phiên
         </Link>
@@ -881,26 +880,29 @@ const NegotiationRoomPage = () => {
           type="button"
           onClick={refreshRoom}
           disabled={loading}
-          className="rounded-lg border border-[#BAC2C1] bg-white px-4 py-2 text-sm font-bold text-[#172830] disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5] disabled:opacity-50"
         >
+          <span className="material-symbols-outlined text-lg" aria-hidden="true">
+            refresh
+          </span>
           Làm mới phòng
         </button>
       </div>
 
       {loading && (
-        <div role="status" className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-16 text-center text-[#547B7D] shadow-sm">
+        <div role="status" className="rounded-xl border border-[#DCE8E5] bg-white p-12 text-center text-[#68807F] shadow-[0_8px_24px_rgba(24,63,65,0.05)]">
           <span className="material-symbols-outlined animate-spin text-3xl">refresh</span>
           <p className="mt-2 text-sm font-semibold">Đang tải phòng thương lượng...</p>
         </div>
       )}
 
       {loadError && !loading && (
-        <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-10 text-center">
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
           <p className="font-semibold text-red-700">{loadError}</p>
           <button
             type="button"
             onClick={refreshRoom}
-            className="mt-4 rounded-lg bg-[#7A1012] px-4 py-2 text-sm font-bold text-white"
+            className="mt-4 rounded-lg bg-[#B33A32] px-4 py-2 text-sm font-bold text-white"
           >
             Thử lại
           </button>
@@ -908,34 +910,36 @@ const NegotiationRoomPage = () => {
       )}
 
       {negotiation && !loading && !loadError && (
-        <div className="overflow-hidden rounded-2xl border border-[#BAC2C1]/40 bg-white shadow-sm">
-          <header className="bg-[#172830] px-5 py-5 text-white sm:flex sm:items-center sm:justify-between sm:gap-5">
+        <div className="overflow-hidden rounded-xl border border-[#D7E7E3] bg-white shadow-[0_8px_24px_rgba(24,63,65,0.07)]">
+          <header className="border-b border-[#DCE8E5] bg-white px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
               {summary?.otherPartyAvatarUrl ? (
                 <img
                   src={summary.otherPartyAvatarUrl}
                   alt=""
-                  className="h-12 w-12 shrink-0 rounded-full object-cover"
+                  className="h-10 w-10 shrink-0 rounded-full object-cover"
                 />
               ) : (
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#547B7D] text-lg font-black">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#4F8588] font-black text-white">
                   {(summary?.otherPartyName || "H").charAt(0).toUpperCase()}
                 </span>
               )}
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#C1EAEC]">
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#68807F]">
                   {isSeller ? "người bán" : "người mua"}
                 </p>
-                <h1 className="mt-1 truncate text-xl font-black">
+                <h1 className="mt-0.5 truncate text-base font-black text-[#183F41]">
                   {summary?.otherPartyName || "Phòng thương lượng"}
                 </h1>
-                <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/70">
-                  <span
-                    aria-hidden="true"
-                    className={`h-2 w-2 rounded-full ${realtimeStatusMeta.dotClassName}`}
-                  />
-                  {realtimeStatusMeta.label}
-                </p>
+                {realtimeStatusMeta.label && (
+                  <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#68807F]">
+                    <span
+                      aria-hidden="true"
+                      className={`h-2 w-2 rounded-full ${realtimeStatusMeta.dotClassName}`}
+                    />
+                    {realtimeStatusMeta.label}
+                  </p>
+                )}
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-0">
@@ -944,15 +948,15 @@ const NegotiationRoomPage = () => {
               </span>
               <Link
                 to={`/posts/${encodeURIComponent(negotiation.postId)}`}
-                className="rounded-lg border border-white/25 bg-white/10 px-3 py-2 text-xs font-bold text-white hover:bg-white/20"
+                className="rounded-lg border border-[#9FBFBA] bg-white px-3 py-2 text-xs font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
               >
                 Xem bài đăng
               </Link>
             </div>
           </header>
 
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="min-w-0 bg-[#f4f7f7]">
+          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_250px]">
+            <div className="min-w-0 bg-[#F4F8F7]">
               {(successMessage || actionError) && (
                 <div
                   role={actionError ? "alert" : "status"}
@@ -966,14 +970,14 @@ const NegotiationRoomPage = () => {
                 </div>
               )}
 
-              <div className="max-h-[620px] min-h-[420px] space-y-4 overflow-y-auto p-4 sm:p-6">
+              <div className="max-h-[420px] min-h-[300px] space-y-3 overflow-y-auto p-4">
                 {messagePagination.hasNextPage && (
                   <div className="flex justify-center">
                     <button
                       type="button"
                       onClick={loadOlderMessages}
                       disabled={isLoadingOlder}
-                      className="rounded-full border border-[#BAC2C1] bg-white px-4 py-2 text-xs font-bold text-[#2B5659] shadow-sm transition hover:bg-[#edf5f5] disabled:opacity-50"
+                      className="rounded-full border border-[#9FBFBA] bg-white px-4 py-2 text-xs font-bold text-[#285E62] shadow-sm transition hover:bg-[#F1F7F5] disabled:opacity-50"
                     >
                       {isLoadingOlder
                         ? "Đang tải..."
@@ -983,7 +987,7 @@ const NegotiationRoomPage = () => {
                 )}
 
                 {messages.length === 0 ? (
-                  <div className="py-20 text-center text-sm font-semibold text-[#547B7D]">
+                  <div className="py-14 text-center text-sm font-semibold text-[#68807F]">
                     Chưa có nội dung trao đổi.
                   </div>
                 ) : (
@@ -1028,7 +1032,7 @@ const NegotiationRoomPage = () => {
                 <div ref={messagesEndRef} aria-hidden="true" />
               </div>
 
-              <div className="border-t border-[#BAC2C1]/40 bg-white p-4 sm:p-5">
+              <div className="border-t border-[#DCE8E5] bg-white p-3.5">
                 {messageError && (
                   <p
                     role="alert"
@@ -1042,26 +1046,26 @@ const NegotiationRoomPage = () => {
                   <form onSubmit={handleMessageSubmit}>
                     <label
                       htmlFor="negotiation-message"
-                      className="text-sm font-black text-[#172830]"
+                      className="text-sm font-black text-[#183F41]"
                     >
                       Nhắn tin với đối tác
                     </label>
                     <div className="mt-2 flex items-end gap-2">
                       <textarea
                         id="negotiation-message"
-                        rows="2"
+                        rows="1"
                         maxLength="2000"
                         value={messageText}
                         onChange={(event) => setMessageText(event.target.value)}
                         placeholder="Nhập nội dung trao đổi..."
-                        className="min-h-12 flex-1 resize-y rounded-xl border border-[#BAC2C1] px-3 py-2.5 text-sm text-[#172830] outline-none transition focus:border-[#2B5659] focus:ring-2 focus:ring-[#2B5659]/10"
+                        className="min-h-11 flex-1 resize-y rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3.5 py-2.5 text-sm text-[#183436] outline-none transition placeholder:text-[#91A4A1] focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
                       />
                       <button
                         type="submit"
                         disabled={
                           isSendingMessage || !messageText.trim()
                         }
-                        className="h-12 rounded-xl bg-[#2B5659] px-5 text-sm font-bold text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="h-11 rounded-lg bg-[#4F8588] px-5 text-sm font-bold text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {isSendingMessage ? "Đang gửi..." : "Gửi"}
                       </button>
@@ -1071,14 +1075,14 @@ const NegotiationRoomPage = () => {
                     </p>
                   </form>
                 ) : (
-                  <p className="rounded-xl bg-[#f4f7f7] p-4 text-center text-sm font-semibold text-[#547B7D]">
+                  <p className="rounded-xl bg-[#F3F8F7] p-4 text-center text-sm font-semibold text-[#68807F]">
                     Phiên hiện ở chế độ chỉ đọc.
                   </p>
                 )}
 
                 {isOpen && (
-                  <details className="mt-4 border-t border-[#BAC2C1]/40 pt-4">
-                    <summary className="cursor-pointer text-sm font-black text-[#2B5659]">
+                  <details className="mt-3 border-t border-[#DCE8E5] pt-3">
+                    <summary className="cursor-pointer text-sm font-black text-[#285E62]">
                       Gửi phản đề về giá và số lượng
                     </summary>
                     <form
@@ -1099,7 +1103,7 @@ const NegotiationRoomPage = () => {
                             }))
                           }
                           required
-                          className="mt-1.5 w-full rounded-lg border border-[#BAC2C1] px-3 py-2.5 text-sm text-[#172830] outline-none focus:border-[#2B5659]"
+                          className="mt-1.5 w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-2.5 text-sm text-[#183436] outline-none focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
                         />
                       </label>
                       <label className="text-xs font-bold text-[#334b50]">
@@ -1116,13 +1120,13 @@ const NegotiationRoomPage = () => {
                             }))
                           }
                           required
-                          className="mt-1.5 w-full rounded-lg border border-[#BAC2C1] px-3 py-2.5 text-sm text-[#172830] outline-none focus:border-[#2B5659]"
+                          className="mt-1.5 w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-2.5 text-sm text-[#183436] outline-none focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
                         />
                       </label>
                       <button
                         type="submit"
                         disabled={Boolean(actionBusy)}
-                        className="rounded-lg bg-[#7A1012] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#5f0d0f] disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-lg bg-[#B33A32] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#5f0d0f] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {actionBusy === "counter"
                           ? "Đang gửi..."
@@ -1134,18 +1138,19 @@ const NegotiationRoomPage = () => {
               </div>
             </div>
 
-            <aside className="border-t border-[#BAC2C1]/40 bg-white p-5 lg:border-l lg:border-t-0">
-              <h2 className="font-black text-[#172830]">Thông tin phiên</h2>
-              <dl className="mt-4 space-y-4 text-sm">
+            <aside className="border-t border-[#DCE8E5] bg-white p-4 lg:border-l lg:border-t-0">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#2F6F9F]">Tổng quan</p>
+              <h2 className="mt-1 font-black text-[#183F41]">Thông tin phiên</h2>
+              <dl className="mt-3 space-y-3 text-sm">
                 <div>
-                  <dt className="text-xs font-semibold text-[#547B7D]">Giá hiện tại</dt>
-                  <dd className="mt-1 text-lg font-black text-[#7A1012]">
+                  <dt className="text-xs font-semibold text-[#68807F]">Giá hiện tại</dt>
+                  <dd className="mt-1 text-xl font-black text-[#B33A32]">
                     {formatCurrency(negotiation.currentOfferPrice)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-xs font-semibold text-[#547B7D]">Số lượng hiện tại</dt>
-                  <dd className="mt-1 font-bold text-[#172830]">
+                  <dt className="text-xs font-semibold text-[#68807F]">Số lượng hiện tại</dt>
+                  <dd className="mt-1 font-bold text-[#183F41]">
                     {negotiation.currentOfferQuantity ?? "—"}
                   </dd>
                 </div>
@@ -1161,15 +1166,15 @@ const NegotiationRoomPage = () => {
                   </div>
                 )}
                 <div>
-                  <dt className="text-xs font-semibold text-[#547B7D]">Bắt đầu lúc</dt>
-                  <dd className="mt-1 font-medium text-[#172830]">
+                  <dt className="text-xs font-semibold text-[#68807F]">Bắt đầu lúc</dt>
+                  <dd className="mt-1 font-medium text-[#183F41]">
                     {formatDate(negotiation.createdAt)}
                   </dd>
                 </div>
               </dl>
 
               {negotiation.negotiationStatus === NEGOTIATION_STATUS.AGREED && (
-                <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-sm leading-6 text-green-800">
+                <div className="mt-4 rounded-xl border border-green-200 bg-green-50 p-3.5 text-sm leading-5 text-green-800">
                   <p className="font-black">Hai bên đã thống nhất giá và số lượng.</p>
                   {agreementPreview?.hasAgreement ? (
                     <>

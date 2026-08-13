@@ -90,17 +90,18 @@ const OfferFormModal = ({
           onClose();
         }
       }}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#172830]/65 p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#183F41]/70 p-4 backdrop-blur-sm"
     >
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="offer-form-title"
-        className="w-full max-w-lg overflow-hidden rounded-2xl border border-[#BAC2C1]/40 bg-white shadow-2xl"
+        className="w-full max-w-lg overflow-hidden rounded-3xl border border-[#D7E7E3] bg-white shadow-[0_28px_80px_rgba(15,45,47,0.28)]"
       >
-        <div className="flex items-start justify-between gap-4 bg-[#172830] px-6 py-5 text-white">
+        <div className="relative flex items-start justify-between gap-4 overflow-hidden bg-gradient-to-r from-[#183F41] via-[#244F51] to-[#2F6F9F] px-6 py-5 text-white">
+          <div className="pointer-events-none absolute -right-10 -top-14 h-32 w-32 rounded-full border-[22px] border-white/5" />
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C1EAEC]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C8ECE7]">
               Yêu cầu thương lượng
             </p>
             <h2
@@ -119,7 +120,7 @@ const OfferFormModal = ({
             onClick={onClose}
             disabled={submitting}
             aria-label="Đóng cửa sổ"
-            className="rounded-lg px-2 py-1 text-2xl leading-none text-[#C1EAEC] transition hover:bg-white/10 disabled:opacity-50"
+            className="rounded-lg px-2 py-1 text-2xl leading-none text-[#C8ECE7] transition hover:bg-white/10 disabled:opacity-50"
           >
             ×
           </button>
@@ -128,11 +129,11 @@ const OfferFormModal = ({
         <form onSubmit={handleSubmit}>
           <div className="space-y-5 px-6 py-5">
             {!usesExistingOffer && post && (
-              <div className="rounded-xl border border-[#BAC2C1]/40 bg-[#f5f8f8] p-4">
-                <p className="line-clamp-2 font-bold text-[#172830]">
+              <div className="rounded-xl border border-[#DCE8E5] bg-[#EDF4F8] p-4">
+                <p className="line-clamp-2 font-bold text-[#183F41]">
                   {post.productName || "Tin đăng bán"}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-[#547B7D]">
+                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-[#68807F]">
                   <span>
                     Giá đăng: {formatCurrency(post.basePrice)}
                   </span>
@@ -144,11 +145,11 @@ const OfferFormModal = ({
             )}
 
             {isCountering && offer && (
-              <div className="rounded-xl border border-[#BAC2C1]/40 bg-[#f5f8f8] p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+              <div className="rounded-xl border border-[#DCE8E5] bg-[#EDF4F8] p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#68807F]">
                   Đề nghị hiện tại
                 </p>
-                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm font-bold text-[#172830]">
+                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm font-bold text-[#183F41]">
                   <span>{formatCurrency(offer.offerPrice)}</span>
                   <span>Số lượng: {offer.offerQuantity}</span>
                 </div>
@@ -167,9 +168,9 @@ const OfferFormModal = ({
             <div>
               <label
                 htmlFor="offer-price"
-                className="mb-1.5 block text-sm font-bold text-[#172830]"
+                className="mb-1.5 block text-sm font-bold text-[#183F41]"
               >
-                Giá đề nghị <span className="text-[#7A1012]">*</span>
+                Giá đề nghị <span className="text-[#B33A32]">*</span>
               </label>
               <div className="relative">
                 <input
@@ -183,14 +184,14 @@ const OfferFormModal = ({
                     setClientError("");
                   }}
                   disabled={submitting}
-                  className="w-full rounded-lg border border-[#BAC2C1] px-4 py-3 pr-12 text-base font-bold text-[#172830] outline-none transition focus:border-[#2B5659] focus:ring-2 focus:ring-[#2B5659]/15 disabled:bg-gray-100"
+                  className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-4 py-3 pr-12 text-base font-bold text-[#183F41] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10 disabled:bg-[#EEF3F1]"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#547B7D]">
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-[#68807F]">
                   đ
                 </span>
               </div>
               {Number(offerPrice) > 0 && (
-                <p className="mt-1.5 text-xs font-semibold text-[#547B7D]">
+                <p className="mt-1.5 text-xs font-semibold text-[#68807F]">
                   {formatCurrency(offerPrice)}
                 </p>
               )}
@@ -199,9 +200,9 @@ const OfferFormModal = ({
             <div>
               <label
                 htmlFor="offer-quantity"
-                className="mb-1.5 block text-sm font-bold text-[#172830]"
+                className="mb-1.5 block text-sm font-bold text-[#183F41]"
               >
-                Số lượng <span className="text-[#7A1012]">*</span>
+                Số lượng <span className="text-[#B33A32]">*</span>
               </label>
               <input
                 id="offer-quantity"
@@ -215,7 +216,7 @@ const OfferFormModal = ({
                   setClientError("");
                 }}
                 disabled={submitting}
-                className="w-full rounded-lg border border-[#BAC2C1] px-4 py-3 text-base font-bold text-[#172830] outline-none transition focus:border-[#2B5659] focus:ring-2 focus:ring-[#2B5659]/15 disabled:bg-gray-100"
+                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-4 py-3 text-base font-bold text-[#183F41] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10 disabled:bg-[#EEF3F1]"
               />
             </div>
 
@@ -226,19 +227,19 @@ const OfferFormModal = ({
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-[#BAC2C1]/35 bg-[#f8fafa] px-6 py-4">
+          <div className="flex justify-end gap-3 border-t border-[#DCE8E5] bg-[#F7FAF9] px-6 py-4">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded-lg border border-[#BAC2C1] bg-white px-4 py-2.5 text-sm font-bold text-[#172830] transition hover:bg-gray-50 disabled:opacity-50"
+              className="rounded-xl border border-[#9FBFBA] bg-white px-4 py-2.5 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5] disabled:opacity-50"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="rounded-lg bg-[#2B5659] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting
                 ? "Đang xử lý..."
