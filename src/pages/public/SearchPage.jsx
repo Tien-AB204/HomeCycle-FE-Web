@@ -3,6 +3,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import logoIcon from "../../assets/brand/logo-icon.png";
 import { useSearchParams } from "react-router-dom";
 import {
   AppstoreOutlined,
@@ -10,7 +11,6 @@ import {
   ReloadOutlined,
   SortAscendingOutlined,
 } from "@ant-design/icons";
-import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import ProductCard from "../../components/shared/ProductCard";
 import {
   CATEGORY_BACKEND_IDS,
@@ -19,7 +19,7 @@ import {
 import postApi from "../../services/apis/postApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 9;
 
 const CATEGORY_OPTIONS = [
   {
@@ -173,9 +173,22 @@ const sortPosts = (posts, sortMode) => {
   }
 };
 
+const MarketplaceMark = ({ className = "" }) => (
+  <span
+    className={`block overflow-hidden rounded-2xl bg-[#5f9291] shadow-md ${className}`}
+    aria-hidden="true"
+  >
+    <img
+      src={logoIcon}
+      alt=""
+      className="h-full w-full scale-[1.42] object-cover"
+    />
+  </span>
+);
+
 const SearchLoading = () => {
   return Array.from(
-    { length: 6 },
+    { length: PAGE_SIZE },
     (_, index) => (
       <div
         key={index}
@@ -464,11 +477,9 @@ const SearchPage = ({ fixedPostType }) => {
               {isFilterOpen ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
               {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </button>
-            <img
-              src={homeCycleMark}
-              alt=""
-              className="hidden h-16 w-16 rounded-2xl shadow-md sm:block"
-            />
+            <div className="hidden sm:block">
+              <MarketplaceMark className="h-16 w-16" />
+            </div>
           </div>
         </div>
       </section>
@@ -778,7 +789,7 @@ const SearchPage = ({ fixedPostType }) => {
               ))
             ) : !error ? (
               <div className="col-span-full rounded-2xl border border-dashed border-[#a9c9c3] bg-white px-6 py-16 text-center shadow-sm">
-                <img src={homeCycleMark} alt="" className="mx-auto h-16 w-16 rounded-2xl shadow-sm" />
+                <MarketplaceMark className="mx-auto h-16 w-16 text-4xl" />
                 <h3 className="mt-3 font-bold text-[#172830]">
                   Không tìm thấy bài đăng phù
                   hợp
