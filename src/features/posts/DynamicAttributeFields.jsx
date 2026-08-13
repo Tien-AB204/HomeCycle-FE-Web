@@ -4,6 +4,9 @@ const normalizeUnit = (unit) => {
   return value.toLowerCase() === "string" ? "" : value;
 };
 
+const fieldClassName =
+  "w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3.5 py-3 text-sm text-[#183436] outline-none transition placeholder:text-[#91A4A1] hover:border-[#A9C5BF] focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10 disabled:cursor-not-allowed disabled:bg-[#EEF3F1] disabled:text-[#839492]";
+
 const DynamicAttributeFields = ({
   attributes,
   values,
@@ -15,14 +18,11 @@ const DynamicAttributeFields = ({
 }) => {
   if (loading) {
     return (
-      <div
-        role="status"
-        className="grid gap-4 sm:grid-cols-2"
-      >
+      <div role="status" className="grid gap-5 sm:grid-cols-2">
         {Array.from({ length: 4 }, (_, index) => (
           <div
             key={index}
-            className="h-20 animate-pulse rounded-lg bg-[#BAC2C1]/20"
+            className="h-20 animate-pulse rounded-xl bg-[#DFEAE7]"
           />
         ))}
       </div>
@@ -33,7 +33,7 @@ const DynamicAttributeFields = ({
     return (
       <div
         role="alert"
-        className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
       >
         {loadError}
       </div>
@@ -42,14 +42,14 @@ const DynamicAttributeFields = ({
 
   if (!Array.isArray(attributes) || attributes.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-[#BAC2C1] bg-[#f8fafa] p-5 text-sm text-[#547B7D]">
+      <div className="rounded-xl border border-dashed border-[#BFD3CE] bg-[#F7FAF9] p-5 text-sm text-[#68807F]">
         Loại sản phẩm này chưa có thuộc tính bổ sung.
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-5 sm:grid-cols-2">
       {attributes.map((attribute) => {
         const fieldValue = values[attribute.attributeId] || {};
         const options = Array.isArray(attribute.options)
@@ -69,10 +69,10 @@ const DynamicAttributeFields = ({
 
         return (
           <label key={attribute.attributeId} className="block">
-            <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+            <span className="mb-1.5 block text-sm font-bold text-[#183F41]">
               {attribute.attributeName}
               {unit && (
-                <span className="font-normal text-[#547B7D]">
+                <span className="font-normal text-[#68807F]">
                   {` (${unit})`}
                 </span>
               )}
@@ -94,7 +94,7 @@ const DynamicAttributeFields = ({
                 }
                 disabled={disabled || options.length === 0}
                 aria-invalid={Boolean(error)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#172830] outline-none transition focus:border-[#2B5659] focus:ring-1 focus:ring-[#2B5659] disabled:cursor-not-allowed disabled:bg-gray-100"
+                className={fieldClassName}
               >
                 <option value="">
                   {options.length > 0
@@ -120,7 +120,7 @@ const DynamicAttributeFields = ({
                 }
                 disabled={disabled}
                 aria-invalid={Boolean(error)}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#172830] outline-none focus:border-[#2B5659] focus:ring-1 focus:ring-[#2B5659] disabled:bg-gray-100"
+                className={fieldClassName}
               >
                 <option value="">Chọn giá trị</option>
                 <option value="true">Có</option>
@@ -140,7 +140,7 @@ const DynamicAttributeFields = ({
                 }
                 disabled={disabled}
                 aria-invalid={Boolean(error)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#2B5659] focus:ring-1 focus:ring-[#2B5659] disabled:bg-gray-100"
+                className={fieldClassName}
               />
             ) : (
               <input
@@ -156,7 +156,7 @@ const DynamicAttributeFields = ({
                 }
                 disabled={disabled}
                 aria-invalid={Boolean(error)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#2B5659] focus:ring-1 focus:ring-[#2B5659] disabled:bg-gray-100"
+                className={fieldClassName}
               />
             )}
 
