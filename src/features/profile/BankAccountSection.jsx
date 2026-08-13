@@ -131,6 +131,7 @@ const BankAccountSection = ({
   bankAccount:
     initialBankAccount,
   onUpdated,
+  updateBank = userService.updateBank,
 }) => {
   const [
     bankAccount,
@@ -446,11 +447,9 @@ const BankAccountSection = ({
 
     try {
       const response =
-        await userService.updateBank(
-          payload,
-        );
+        await updateBank(payload);
 
-      if (!response?.isSuccess) {
+      if (response?.isSuccess === false) {
         throw new Error(
           response?.error?.message ||
             "Cập nhật ngân hàng thất bại.",
