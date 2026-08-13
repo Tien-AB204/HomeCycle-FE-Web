@@ -85,7 +85,7 @@ const TextInput = ({
     <div>
       <label
         htmlFor={id}
-        className="mb-1 block text-xs font-bold text-slate-800"
+        className="mb-1.5 block text-xs font-black text-[#526E6D]"
       >
         {label}
 
@@ -104,7 +104,7 @@ const TextInput = ({
         placeholder={placeholder}
         autoComplete={autoComplete}
         minLength={minLength}
-        className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+        className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
       />
     </div>
   );
@@ -121,7 +121,7 @@ const FileInput = ({
     <div>
       <label
         htmlFor={id}
-        className="mb-1 block text-xs font-bold text-slate-800"
+        className="mb-1.5 block text-xs font-black text-[#526E6D]"
       >
         {label}
       </label>
@@ -132,11 +132,11 @@ const FileInput = ({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={onChange}
-        className="block w-full rounded-md border border-slate-300 bg-white text-sm text-slate-600 file:mr-4 file:border-0 file:bg-[#e6f2f1] file:px-4 file:py-2.5 file:font-medium file:text-[#244f4d] hover:file:bg-[#d7ebe9]"
+        className="block w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] text-sm text-[#68807F] file:mr-4 file:border-0 file:bg-[#E2F0ED] file:px-4 file:py-3 file:font-bold file:text-[#285E62] hover:file:bg-[#D2E8E3]"
       />
 
       {description && (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1.5 text-xs text-[#78908F]">
           {description}
         </p>
       )}
@@ -706,8 +706,8 @@ const RegisterPersonalPage = () => {
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                     stepNumber <=
                     currentStepNumber
-                      ? "bg-[#244f4d] text-white"
-                      : "bg-slate-200 text-slate-500"
+                      ? "bg-[#4F8588] text-white"
+                      : "bg-[#E5ECEA] text-[#78908F]"
                   }`}
                 >
                   {stepNumber}
@@ -718,8 +718,8 @@ const RegisterPersonalPage = () => {
                     className={`mx-1 h-0.5 w-6 sm:mx-2 sm:w-10 ${
                       stepNumber <
                       currentStepNumber
-                        ? "bg-[#244f4d]"
-                        : "bg-slate-200"
+                        ? "bg-[#4F8588]"
+                        : "bg-[#E5ECEA]"
                     }`}
                   />
                 )}
@@ -728,7 +728,7 @@ const RegisterPersonalPage = () => {
           )}
         </div>
 
-        <div className="mt-2 grid grid-cols-4 text-center text-[10px] text-slate-500 sm:text-xs">
+        <div className="mt-2 grid grid-cols-4 text-center text-[10px] font-bold text-[#68807F] sm:text-xs">
           {stepLabels.map((label) => (
             <span key={label}>{label}</span>
           ))}
@@ -740,14 +740,14 @@ const RegisterPersonalPage = () => {
   if (step === STEPS.SUCCESS) {
     return (
       <div className="mx-auto w-full max-w-xl animate-fade-in">
-        <div className="rounded-xl border border-green-200 bg-white p-8 text-center shadow-sm">
+        <div className="rounded-2xl border border-[#BDE6D0] bg-white p-8 text-center shadow-[0_14px_40px_rgba(24,63,65,0.08)]">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-700">
             <span className="material-symbols-outlined text-4xl">
               check_circle
             </span>
           </div>
 
-          <h1 className="text-2xl font-bold text-slate-800">
+          <h1 className="text-2xl font-black text-[#183F41]">
             Đăng ký thành công
           </h1>
 
@@ -755,7 +755,7 @@ const RegisterPersonalPage = () => {
             {successMessage}
           </p>
 
-          <div className="mt-5 rounded-md bg-slate-50 p-4 text-left text-sm">
+          <div className="mt-5 rounded-xl border border-[#DCE8E5] bg-[#F5F9F8] p-4 text-left text-sm text-[#526E6D]">
             <p>
               <span className="font-semibold">
                 Email:
@@ -785,7 +785,7 @@ const RegisterPersonalPage = () => {
                 },
               })
             }
-            className="mt-6 w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38]"
+            className="mt-6 w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70]"
           >
             ĐI ĐẾN ĐĂNG NHẬP
           </button>
@@ -796,18 +796,13 @@ const RegisterPersonalPage = () => {
 
   return (
     <div className="mx-auto w-full max-w-xl animate-fade-in">
-      <div className="mb-6 flex flex-col items-center">
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-md bg-[#244f4d] text-white">
-          <span className="material-symbols-outlined">
-            autorenew
-          </span>
-        </div>
-
-        <h1 className="text-center text-2xl font-bold text-slate-800">
+      <div className="mb-6">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">Tài khoản cá nhân</p>
+        <h1 className="mt-2 text-3xl font-black text-[#183F41]">
           Đăng ký tài khoản cá nhân
         </h1>
 
-        <p className="mt-2 text-center text-sm text-slate-500">
+        <p className="mt-2 text-sm leading-6 text-[#68807F]">
           Xác thực email và hoàn thiện tài khoản.
         </p>
       </div>
@@ -836,12 +831,12 @@ const RegisterPersonalPage = () => {
       {step === STEPS.EMAIL && (
         <form
           onSubmit={handleSendOtp}
-          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
         >
           <div>
             <label
               htmlFor="registration-email"
-              className="mb-1 block text-xs font-bold text-slate-800"
+              className="mb-1.5 block text-xs font-black text-[#526E6D]"
             >
               Email
               <span className="text-red-500">
@@ -861,14 +856,14 @@ const RegisterPersonalPage = () => {
               required
               autoComplete="email"
               placeholder="Nhập địa chỉ email"
-              className="w-full rounded-md border border-slate-300 px-3 py-2.5 text-sm focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction === "SEND_OTP"
               ? "ĐANG GỬI OTP..."
@@ -879,7 +874,7 @@ const RegisterPersonalPage = () => {
             Bạn đã có tài khoản?{" "}
             <Link
               to="/auth/login"
-              className="font-bold text-[#244f4d] hover:underline"
+              className="font-bold text-[#2F6F9F] hover:underline"
             >
               Đăng nhập ngay
             </Link>
@@ -890,10 +885,10 @@ const RegisterPersonalPage = () => {
       {step === STEPS.OTP && (
         <form
           onSubmit={handleVerifyOtp}
-          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
         >
           <div className="text-center">
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="text-lg font-black text-[#183F41]">
               Xác thực email
             </h2>
 
@@ -901,7 +896,7 @@ const RegisterPersonalPage = () => {
               Mã OTP gồm 6 chữ số đã được gửi đến:
             </p>
 
-            <p className="mt-1 break-all text-sm font-bold text-[#244f4d]">
+            <p className="mt-1 break-all text-sm font-black text-[#2F6F9F]">
               {email}
             </p>
           </div>
@@ -909,7 +904,7 @@ const RegisterPersonalPage = () => {
           <div>
             <label
               htmlFor="registration-otp"
-              className="mb-1 block text-xs font-bold text-slate-800"
+              className="mb-1.5 block text-xs font-black text-[#526E6D]"
             >
               Mã OTP
               <span className="text-red-500">
@@ -935,7 +930,7 @@ const RegisterPersonalPage = () => {
               }
               required
               placeholder="Nhập 6 chữ số"
-              className="w-full rounded-md border border-slate-300 px-3 py-3 text-center text-xl font-bold tracking-[0.5em] focus:border-[#244f4d] focus:outline-none focus:ring-1 focus:ring-[#244f4d]"
+              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 text-center text-xl font-black tracking-[0.5em] text-[#183F41] outline-none transition focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
             />
           </div>
 
@@ -944,7 +939,7 @@ const RegisterPersonalPage = () => {
             disabled={
               isLoading || otp.length !== 6
             }
-            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction === "VERIFY_OTP"
               ? "ĐANG XÁC THỰC..."
@@ -958,7 +953,7 @@ const RegisterPersonalPage = () => {
               isLoading ||
               resendCooldown > 0
             }
-            className="w-full text-sm font-semibold text-[#244f4d] hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+            className="w-full text-sm font-bold text-[#2F6F9F] hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
           >
             {loadingAction === "RESEND_OTP"
               ? "ĐANG GỬI LẠI..."
@@ -981,7 +976,7 @@ const RegisterPersonalPage = () => {
       {step === STEPS.BASIC && (
         <form
           onSubmit={handleContinueToOptional}
-          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
         >
           <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
             Email <strong>{email}</strong> đã được
@@ -1061,7 +1056,7 @@ const RegisterPersonalPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             TIẾP TỤC
           </button>
@@ -1080,10 +1075,10 @@ const RegisterPersonalPage = () => {
       {step === STEPS.OPTIONAL && (
         <form
           onSubmit={handleSubmitOptional}
-          className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
         >
           <div>
-            <h2 className="text-lg font-bold text-slate-800">
+            <h2 className="text-lg font-black text-[#183F41]">
               Bổ sung hồ sơ
             </h2>
 
@@ -1104,7 +1099,7 @@ const RegisterPersonalPage = () => {
 
           <hr className="border-slate-200" />
 
-          <h3 className="font-bold text-slate-800">
+          <h3 className="font-black text-[#183F41]">
             Thông tin định danh
           </h3>
 
@@ -1162,7 +1157,7 @@ const RegisterPersonalPage = () => {
 
           <hr className="border-slate-200" />
 
-          <h3 className="font-bold text-slate-800">
+          <h3 className="font-black text-[#183F41]">
             Thông tin ngân hàng
           </h3>
 
@@ -1205,7 +1200,7 @@ const RegisterPersonalPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-md bg-[#244f4d] py-3 font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction === "REGISTER"
               ? "ĐANG ĐĂNG KÝ..."
@@ -1216,7 +1211,7 @@ const RegisterPersonalPage = () => {
             type="button"
             onClick={handleSkipOptional}
             disabled={isLoading}
-            className="w-full rounded-md border border-slate-300 bg-white py-3 font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl border border-[#7FA9A6] bg-white py-3 font-bold text-[#285E62] transition hover:bg-[#F1F7F5] disabled:cursor-not-allowed disabled:opacity-60"
           >
             BỎ QUA, CẬP NHẬT SAU
           </button>

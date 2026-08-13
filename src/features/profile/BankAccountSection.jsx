@@ -99,7 +99,7 @@ const BankField = ({
     <div>
       <label
         htmlFor={id}
-        className="mb-1 block text-xs font-bold text-slate-700"
+        className="mb-1.5 block text-xs font-black text-[#607B7A]"
       >
         {label}
         <span className="text-red-500">
@@ -117,10 +117,10 @@ const BankField = ({
         readOnly={readOnly}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className={`w-full rounded-md border px-3 py-2.5 text-sm outline-none ${
+        className={`w-full rounded-xl border px-3 py-3 text-sm outline-none transition ${
           readOnly
-            ? "cursor-default border-slate-200 bg-slate-100 text-slate-600"
-            : "border-slate-300 bg-white text-slate-800 focus:border-[#244f4d] focus:ring-1 focus:ring-[#244f4d]"
+            ? "cursor-default border-[#E1EAE8] bg-[#F5F8F7] text-[#607B7A]"
+            : "border-[#CDDED9] bg-white text-[#183436] focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
         }`}
       />
     </div>
@@ -524,13 +524,13 @@ const BankAccountSection = ({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between border-b pb-3">
+      <div className="mb-6 flex flex-col gap-4 border-b border-[#DCE8E5] pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-bold text-slate-800">
+          <h2 className="text-lg font-black text-[#183F41]">
             Tài khoản ngân hàng
           </h2>
 
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 max-w-xl text-xs leading-5 text-[#68807F]">
             Tài khoản ngân hàng được
             sử dụng để nhận và thực
             hiện thanh toán.
@@ -544,7 +544,7 @@ const BankAccountSection = ({
               onClick={
                 handleStartEditing
               }
-              className="rounded-md bg-[#244f4d] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#1a3a38]"
+              className="rounded-xl border border-[#4F8588] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
             >
               Cập nhật
             </button>
@@ -571,17 +571,17 @@ const BankAccountSection = ({
 
       {!bankAccount &&
         !isEditing && (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center">
-            <span className="material-symbols-outlined text-5xl text-slate-300">
+          <div className="rounded-2xl border border-dashed border-[#B8D0CC] bg-[#F5F9F8] px-6 py-12 text-center">
+            <span className="material-symbols-outlined text-5xl text-[#7FA9A6]">
               account_balance_wallet
             </span>
 
-            <h3 className="mt-3 font-bold text-slate-700">
+            <h3 className="mt-3 font-black text-[#183F41]">
               Chưa có tài khoản ngân
               hàng
             </h3>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-[#68807F]">
               Thêm tài khoản ngân hàng
               để sử dụng cho các giao
               dịch trên HomeCycle.
@@ -592,7 +592,7 @@ const BankAccountSection = ({
               onClick={
                 handleStartEditing
               }
-              className="mt-5 rounded-md bg-[#244f4d] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#1a3a38]"
+              className="mt-5 rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70]"
             >
               THÊM TÀI KHOẢN
             </button>
@@ -601,22 +601,22 @@ const BankAccountSection = ({
 
       {bankAccount &&
         !isEditing && (
-          <div className="relative max-w-md overflow-hidden rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 p-6 text-white shadow-md">
+          <div className="relative max-w-lg overflow-hidden rounded-2xl bg-gradient-to-br from-[#183F41] via-[#285E62] to-[#2F6F9F] p-6 text-white shadow-[0_16px_36px_rgba(24,63,65,0.16)]">
             <div className="absolute -right-10 -top-10 opacity-10">
               <span className="material-symbols-outlined text-[150px]">
                 account_balance
               </span>
             </div>
 
-            <p className="mb-1 text-sm text-slate-300">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/60">
               Ngân hàng
             </p>
 
-            <p className="mb-6 text-lg font-bold">
+            <p className="mb-6 text-xl font-black">
               {bankAccount.bankName}
             </p>
 
-            <p className="mb-1 text-sm text-slate-300">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/60">
               Mã ngân hàng
             </p>
 
@@ -624,17 +624,17 @@ const BankAccountSection = ({
               {bankAccount.bankCode}
             </p>
 
-            <p className="mb-1 text-sm text-slate-300">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/60">
               Số tài khoản
             </p>
 
-            <p className="mb-6 font-mono text-xl tracking-widest">
+            <p className="mb-6 font-mono text-xl font-bold tracking-widest">
               {
                 bankAccount.accountNumber
               }
             </p>
 
-            <p className="mb-1 text-sm text-slate-300">
+            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/60">
               Chủ tài khoản
             </p>
 
@@ -655,7 +655,7 @@ const BankAccountSection = ({
             <div className="relative sm:col-span-2">
               <label
                 htmlFor="bank-search"
-                className="mb-1 block text-xs font-bold text-slate-700"
+                className="mb-1.5 block text-xs font-black text-[#607B7A]"
               >
                 TÊN NGÂN HÀNG
                 <span className="text-red-500">
@@ -686,7 +686,7 @@ const BankAccountSection = ({
                   }
                   placeholder="Nhập MB Bank, Vietcombank, ACB..."
                   autoComplete="off"
-                  className="w-full rounded-md border border-slate-300 bg-white py-2.5 pl-10 pr-10 text-sm text-slate-800 outline-none focus:border-[#244f4d] focus:ring-1 focus:ring-[#244f4d] disabled:bg-slate-100"
+                  className="w-full rounded-xl border border-[#CDDED9] bg-white py-3 pl-10 pr-10 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10 disabled:bg-[#F5F8F7]"
                 />
 
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[19px] text-slate-400">
@@ -694,7 +694,7 @@ const BankAccountSection = ({
                 </span>
 
                 {isLoadingBanks && (
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[19px] text-[#244f4d]">
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[19px] text-[#4F8588]">
                     refresh
                   </span>
                 )}
@@ -703,7 +703,7 @@ const BankAccountSection = ({
               {isBankListOpen &&
                 !isLoadingBanks &&
                 banks.length > 0 && (
-                  <div className="absolute z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-slate-200 bg-white py-1 shadow-xl">
+                  <div className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-[#DCE8E5] bg-white py-1 shadow-xl">
                     {filteredBanks.length >
                     0 ? (
                       filteredBanks.map(
@@ -722,7 +722,7 @@ const BankAccountSection = ({
                                 bank,
                               );
                             }}
-                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-slate-50"
+                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-[#F1F7F5]"
                           >
                             {bank.logo ? (
                               <img
@@ -741,7 +741,7 @@ const BankAccountSection = ({
                             )}
 
                             <div className="min-w-0 flex-1">
-                              <p className="font-bold text-slate-800">
+                              <p className="font-bold text-[#183F41]">
                                 {
                                   bank.shortName
                                 }
@@ -847,14 +847,14 @@ const BankAccountSection = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 border-t pt-5">
+          <div className="flex justify-end gap-3 border-t border-[#DCE8E5] pt-5">
             <button
               type="button"
               onClick={
                 handleCancelEditing
               }
               disabled={isSaving}
-              className="rounded-md border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl border border-[#9FBFBA] bg-white px-5 py-2.5 text-sm font-bold text-[#526E6D] transition hover:bg-[#F5F9F8] disabled:cursor-not-allowed disabled:opacity-60"
             >
               Hủy
             </button>
@@ -865,7 +865,7 @@ const BankAccountSection = ({
                 isSaving ||
                 isLoadingBanks
               }
-              className="rounded-md bg-[#244f4d] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#1a3a38] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving
                 ? "ĐANG LƯU..."
