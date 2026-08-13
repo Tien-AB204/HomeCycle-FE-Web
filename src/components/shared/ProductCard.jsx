@@ -1,17 +1,20 @@
+import { useNavigate } from "react-router-dom";
+import homeCycleMark from "../../assets/brand/homecycle-mark.png";
+
 const CONDITION_MAP = {
-  good_working: "Chạy tốt / Độ mới cao",
-  minor_fault: "Hỏng nhẹ / Đã qua sử dụng",
-  dead_scrap: "Hỏng nặng / Bán xác máy",
+  good_working: "Hoạt động tốt",
+  minor_fault: "Hư hỏng nhẹ",
+  dead_scrap: "Cần sửa chữa",
 };
 
 const LOGISTICS_MAP = {
   truck_required: "Cần xe tải",
-  need_disassemble: "Cần thợ tháo dỡ",
+  need_disassemble: "Cần tháo dỡ",
   motor_friendly: "Chở bằng xe máy",
   GhnDelivery: "Giao hàng GHN",
   SelfDelivery: "Tự vận chuyển",
   Pickup: "Nhận tại địa chỉ",
-  Unknown: "Thỏa thuận vận chuyển",
+  Unknown: "Thỏa thuận giao nhận",
 };
 
 const formatPrice = (value) => {
@@ -24,58 +27,54 @@ const formatPrice = (value) => {
   return `${price.toLocaleString("vi-VN")} đ`;
 };
 
-const ProductCard = ({
-  data,
-  variant = "business-buy",
-}) => {
+const hasValidPrice = (value) => {
+  const price = Number(value);
+
+  return Number.isFinite(price) && price > 0;
+};
+
+const ProductCard = ({ data, variant = "business-buy" }) => {
   const navigate = useNavigate();
 
   if (!data) {
     return null;
   }
 
-  const image =
-    data.image || data.medias?.[0]?.url;
-  const name =
-    data.name ||
-    data.productName ||
-    "Sản phẩm chưa có tên";
+  const image = data.image || data.thumbnailUrl || data.medias?.[0]?.url;
+  const name = data.name || data.productName || "Sản phẩm chưa có tên";
   const type =
-    data.type ||
-    data.categoryName ||
-    data.productTypeName ||
-    "Sản phẩm";
-  const description =
-    data.desc ||
-    data.description ||
-    "Chưa có mô tả.";
-  const price =
-    data.price ?? data.basePrice;
-  const businessName =
+    data.type || data.categoryName || data.productTypeName || "Đồ gia dụng";
+  const description = data.desc || data.description || "Chưa có mô tả.";
+  const price = data.price ?? data.basePrice;
+  const originalPrice =
+    data.originalPrice ??
+    data.productOriginalPrice ??
+    data.product?.originalPrice;
+  const ownerName = String(
     data.businessName ||
-    data.owner ||
-    "Đối tác thu mua";
+      data.ownerName ||
+      data.sellerName ||
+      data.createdByName ||
+      data.displayName ||
+      (typeof data.owner === "string" ? data.owner : "") ||
+      data.owner?.displayName ||
+      data.owner?.fullName ||
+      "",
+  ).trim();
   const conditionLabel =
-    CONDITION_MAP[data.condition] ||
-    data.productTypeName ||
-    "Đang thu mua";
+    CONDITION_MAP[data.condition] || data.conditionName || data.productTypeName || "Đã qua sử dụng";
   const logisticsLabel =
-    LOGISTICS_MAP[
-      data.logistics ||
-        data.deliveryMethod
-    ] ||
+    LOGISTICS_MAP[data.logistics || data.deliveryMethod] ||
     data.city ||
-    "Thỏa thuận vận chuyển";
+    data.provinceName ||
+    "Thỏa thuận giao nhận";
   const postId = data.postId || "";
+  const isBuyPost = variant === "business-buy";
 
   const handleOpenDetail = () => {
-    if (!postId) {
-      return;
+    if (postId) {
+      navigate(`/posts/${encodeURIComponent(postId)}`);
     }
-
-    navigate(
-      `/posts/${encodeURIComponent(postId)}`,
-    );
   };
 
   const handleCardKeyDown = (event) => {
@@ -83,10 +82,7 @@ const ProductCard = ({
       return;
     }
 
-    if (
-      event.key === "Enter" ||
-      event.key === " "
-    ) {
+    if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleOpenDetail();
     }
@@ -101,115 +97,103 @@ const ProductCard = ({
     <article
       role={postId ? "link" : undefined}
       tabIndex={postId ? 0 : undefined}
-      aria-label={
-        postId
-          ? `Xem chi tiết ${name}`
-          : undefined
-      }
+      aria-label={postId ? `Xem chi tiết ${name}` : undefined}
       onClick={handleOpenDetail}
       onKeyDown={handleCardKeyDown}
-      className={`group flex h-full flex-col justify-between overflow-hidden rounded-md border border-[#BAC2C1]/30 bg-white shadow-sm transition-all duration-300 hover:shadow-md ${
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-[#e0ebe8] bg-white shadow-[0_6px_22px_rgba(32,77,75,0.06)] transition duration-300 hover:-translate-y-1 hover:border-[#b9d2cc] hover:shadow-[0_16px_38px_rgba(32,77,75,0.13)] ${
         postId
-          ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#2B5659] focus:ring-offset-2"
+          ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5f9291] focus:ring-offset-2"
           : ""
       }`}
     >
-      <div className="relative h-48 overflow-hidden bg-[#BAC2C1]/10">
+      <div className="relative h-44 overflow-hidden bg-[#eaf1ef] sm:h-48 lg:h-44 xl:h-48">
         {image ? (
           <img
             src={image}
             alt={name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-br from-[#e8eeee] to-[#cbd9d9] text-[#547B7D]">
-            <span
-              aria-hidden="true"
-              className="text-4xl"
-            >
-              ♻
-            </span>
-            <span className="mt-2 text-xs font-semibold">
-              Chưa có hình ảnh
-            </span>
+          <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-[#eef5f2] to-[#d9e9e5] text-[#5f817e]">
+            <img src={homeCycleMark} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
+            <span className="mt-2 text-xs font-bold">Chưa có hình ảnh</span>
           </div>
         )}
 
-        <span className="absolute left-3 top-3 rounded bg-[#172830] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+        {isBuyPost && (
+          <span className="absolute left-3 top-3 rounded-full bg-[#244f51] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+            Đang tìm mua
+          </span>
+        )}
+        <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold text-[#476765] shadow-sm backdrop-blur">
           {type}
         </span>
       </div>
 
-      <div className="flex flex-grow flex-col justify-between p-4">
-        <div>
-          {variant === "business-buy" ? (
-            <>
-              <div className="mb-1 flex items-center gap-1">
-                <span className="truncate text-[11px] font-bold uppercase tracking-wide text-[#2B5659]">
-                  {businessName}
-                </span>
-                <span
-                  className="text-xs text-[#2B5659]"
-                  title="Đối tác doanh nghiệp"
-                >
-                  ✓
-                </span>
-              </div>
+      <div className="flex flex-1 flex-col p-4">
+        {ownerName && (
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#68807f]">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#e3f0ec] text-[10px] text-[#2d6a65]" aria-hidden="true">✓</span>
+            <span className="truncate">{ownerName}</span>
+          </div>
+        )}
 
-              <h3 className="mb-2 line-clamp-2 text-base font-bold leading-snug text-[#172830]">
-                {name}
-              </h3>
+        <h3 className={`${ownerName ? "mt-2.5" : "mt-0"} line-clamp-2 min-h-10 text-sm font-black leading-5 text-[#183436] transition group-hover:text-[#2d6a65]`}>
+          {name}
+        </h3>
 
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <span className="rounded bg-[#BAC2C1]/30 px-2 py-0.5 text-[10px] font-medium text-[#172830]">
-                  {conditionLabel}
-                </span>
-                <span className="rounded bg-[#7A1012]/10 px-2 py-0.5 text-[10px] font-semibold text-[#7A1012]">
-                  {logisticsLabel}
-                </span>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 className="mb-1 line-clamp-1 text-base font-bold leading-snug text-[#172830]">
-                {name}
-              </h3>
-              <p className="mt-1 line-clamp-2 text-xs italic leading-relaxed text-[#547B7D]">
-                “{description}”
-              </p>
-            </>
-          )}
+        <p className="mt-1.5 line-clamp-2 min-h-9 text-[11px] leading-[18px] text-[#78908f]">
+          {description}
+        </p>
+
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          <span className="rounded-full bg-[#edf5f2] px-2.5 py-1 text-[10px] font-bold text-[#476765]">
+            {conditionLabel}
+          </span>
+          <span className="rounded-full bg-[#e7f0f5] px-2.5 py-1 text-[10px] font-bold text-[#355f73]">
+            {logisticsLabel}
+          </span>
         </div>
 
-        <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-          {variant === "business-buy" ? (
-            <>
-              <div>
-                <p className="text-[10px] font-medium uppercase tracking-tight text-[#547B7D]">
-                  Giá mua tối đa
-                </p>
-                <span className="text-lg font-extrabold text-[#7A1012]">
-                  {formatPrice(price)}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleActionClick}
-                className="rounded bg-[#2B5659] px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#172830]"
-              >
-                Gửi bài bán
-              </button>
-            </>
+        <div className="mt-auto border-t border-[#edf2f0] pt-3">
+          {isBuyPost ? (
+            <div>
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#829795]">
+                Giá mua dự kiến
+              </p>
+              <p className="mt-0.5 text-lg font-black text-[#b33a32]">
+                {formatPrice(price)}
+              </p>
+            </div>
           ) : (
-            <button
-              type="button"
-              onClick={handleActionClick}
-              className="w-full rounded border-2 border-[#BAC2C1] py-2 text-xs font-bold uppercase tracking-wider text-[#2B5659] transition-all hover:border-[#2B5659] hover:bg-[#2B5659] hover:text-white"
-            >
-              Thương lượng giá
-            </button>
+            <div className="flex min-h-10 items-end justify-between gap-3">
+              {hasValidPrice(originalPrice) && (
+                <div className="min-w-0 pb-0.5">
+                  <p className="truncate text-xs font-semibold text-[#8a9997] line-through decoration-[#a74334] decoration-1">
+                    {formatPrice(originalPrice)}
+                  </p>
+                </div>
+              )}
+
+              <div className={`min-w-0 ${hasValidPrice(originalPrice) ? "text-right" : ""}`}>
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9f4038]">
+                  Giá bán
+                </p>
+                <p className="mt-0.5 truncate text-xl font-black leading-none text-[#b33a32]">
+                  {formatPrice(price)}
+                </p>
+              </div>
+            </div>
           )}
+
+          <button
+            type="button"
+            onClick={handleActionClick}
+            className="mt-3 w-full rounded-lg border border-[#5f9291] bg-white px-4 py-2 text-[11px] font-extrabold text-[#2f686c] transition hover:bg-[#3f777b] hover:text-white"
+          >
+            {isBuyPost ? "Xem nhu cầu thu mua" : "Xem và thương lượng"}
+          </button>
         </div>
       </div>
     </article>
@@ -217,4 +201,3 @@ const ProductCard = ({
 };
 
 export default ProductCard;
-import { useNavigate } from "react-router-dom";
