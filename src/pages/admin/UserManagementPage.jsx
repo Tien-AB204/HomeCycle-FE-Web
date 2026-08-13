@@ -256,20 +256,6 @@ export default function UserManagementPage() {
         : [],
     [listState.result],
   );
-  const activeCount = useMemo(
-    () =>
-      accounts.filter(
-        (account) => normalizeValue(account.status) === "active",
-      ).length,
-    [accounts],
-  );
-  const suspendedCount = useMemo(
-    () =>
-      accounts.filter(
-        (account) => normalizeValue(account.status) === "suspended",
-      ).length,
-    [accounts],
-  );
   const hasFilters = Boolean(
     keyword.trim() || roleFilter || statusFilter,
   );
@@ -340,33 +326,6 @@ export default function UserManagementPage() {
           Tìm kiếm, theo dõi trạng thái và kiểm soát quyền truy cập tài khoản.
         </p>
       </header>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-            Tổng người dùng
-          </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {listState.result?.totalCount ?? 0}
-          </p>
-        </div>
-        <div className="rounded-xl border border-green-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-green-600">
-            Hoạt động trong trang
-          </p>
-          <p className="mt-2 text-2xl font-bold text-green-700">
-            {activeCount}
-          </p>
-        </div>
-        <div className="rounded-xl border border-red-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-red-500">
-            Đã khóa trong trang
-          </p>
-          <p className="mt-2 text-2xl font-bold text-red-700">
-            {suspendedCount}
-          </p>
-        </div>
-      </div>
 
       <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">

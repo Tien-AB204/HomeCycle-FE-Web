@@ -1,176 +1,168 @@
-﻿import { NavLink, Outlet, useNavigate } from "react-router-dom";
+﻿import { useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import { useAuth } from "../../hooks/useAuth";
 
 const ADMIN_NAV_GROUPS = [
   {
     group: "TỔNG QUAN",
     items: [
-      {
-        label: "Thống kê hệ thống",
-        path: "/admin/dashboard",
-        icon: "📊",
-      },
+      { label: "Thống kê hệ thống", path: "/admin/dashboard", icon: "space_dashboard" },
     ],
   },
   {
-    group: "DANH MỤC & METADATA",
+    group: "DỮ LIỆU SẢN PHẨM",
     items: [
-      {
-        label: "Quản lý danh mục",
-        path: "/admin/categories",
-        icon: "📁",
-      },
-      {
-        label: "Quản lý thương hiệu",
-        path: "/admin/brands",
-        icon: "🏷️",
-      },
-      {
-        label: "Loại SP & thuộc tính",
-        path: "/admin/product-types",
-        icon: "⚙️",
-      },
+      { label: "Danh mục", path: "/admin/categories", icon: "category" },
+      { label: "Thương hiệu", path: "/admin/brands", icon: "sell" },
+      { label: "Loại và thuộc tính", path: "/admin/product-types", icon: "tune" },
     ],
   },
   {
-    group: "QUẢN TRỊ HỆ THỐNG",
+    group: "VẬN HÀNH HỆ THỐNG",
     items: [
-      {
-        label: "Quản lý người dùng",
-        path: "/admin/users",
-        icon: "👥",
-      },
-      {
-        label: "Quản lý bài đăng",
-        path: "/admin/posts",
-        icon: "🗂️",
-      },
+      { label: "Người dùng", path: "/admin/users", icon: "group" },
+      { label: "Bài đăng", path: "/admin/posts", icon: "inventory_2" },
     ],
   },
 ];
 
-const getDisplayName = (user) => {
-  return user?.fullName || user?.username || user?.email || "Admin";
-};
+const getDisplayName = (user) =>
+  user?.fullName || user?.username || user?.email || "Quản trị viên";
 
-const getAvatarCharacter = (displayName) => {
-  return displayName?.trim().charAt(0).toUpperCase() || "A";
-};
+const getCurrentPage = (pathname) =>
+  ADMIN_NAV_GROUPS.flatMap((group) => group.items).find((item) =>
+    pathname.startsWith(item.path),
+  )?.label || "Trung tâm quản trị";
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
-
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const displayName = getDisplayName(user);
-
-  const avatarCharacter = getAvatarCharacter(displayName);
+  const avatarCharacter = displayName.trim().charAt(0).toUpperCase() || "A";
 
   const handleLogout = () => {
     logout();
-
-    navigate("/auth/login", {
-      replace: true,
-    });
+    navigate("/auth/login", { replace: true });
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 font-sans">
-      <aside className="flex w-64 shrink-0 flex-col justify-between bg-slate-900 text-slate-300 shadow-xl">
-        <div className="min-h-0">
-          <div className="flex items-center gap-3 border-b border-slate-800 p-5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600 text-lg font-bold text-white shadow">
-              HC
-            </div>
+    <div className="admin-portal flex min-h-screen bg-[#F4F7F6] text-[#183436]">
+      {mobileMenuOpen && (
+        <button
+          type="button"
+          aria-label="Đóng menu quản trị"
+          className="fixed inset-0 z-30 bg-[#102F31]/45 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
-            <div>
-              <h2 className="text-base font-bold leading-none text-white">
-                HomeCycle
-              </h2>
-
-              <span className="text-xs font-medium text-green-400">
-                Admin Portal
-              </span>
-            </div>
-          </div>
-
-          <nav
-            aria-label="Điều hướng quản trị"
-            className="max-h-[calc(100vh-140px)] space-y-6 overflow-y-auto p-4"
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-[278px] flex-col overflow-hidden bg-gradient-to-b from-[#183F41] via-[#205357] to-[#285E62] text-white shadow-[18px_0_48px_rgba(24,63,65,0.14)] transition-transform lg:static lg:translate-x-0 ${
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="border-b border-white/10 px-6 py-6">
+          <NavLink
+            to="/admin/dashboard"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-3"
           >
-            {ADMIN_NAV_GROUPS.map((group) => (
-              <div key={group.group} className="space-y-2">
-                <p className="px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                  {group.group}
-                </p>
-
-                <div className="space-y-1">
-                  {group.items.map((item) => (
-                    <NavLink
-                      key={item.path}
-                      to={item.path}
-                      end={item.path === "/admin/dashboard"}
-                      className={({ isActive }) =>
-                        [
-                          "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-                          isActive
-                            ? "bg-green-600 text-white shadow-md"
-                            : "text-slate-400 hover:bg-slate-800 hover:text-white",
-                        ].join(" ")
-                      }
-                    >
-                      <span aria-hidden="true" className="text-base">
-                        {item.icon}
-                      </span>
-
-                      <span>{item.label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </nav>
+            <img src={homeCycleMark} alt="" className="h-11 w-11 rounded-xl border border-white/20 shadow-sm" />
+            <div>
+              <p className="text-lg font-black tracking-tight">HomeCycle</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.2em] text-[#BFE0DC]">
+                Admin Center
+              </p>
+            </div>
+          </NavLink>
         </div>
 
-        <div className="border-t border-slate-800 p-4">
+        <nav aria-label="Điều hướng quản trị" className="min-h-0 flex-1 space-y-7 overflow-y-auto px-4 py-6">
+          {ADMIN_NAV_GROUPS.map((group) => (
+            <div key={group.group}>
+              <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+                {group.group}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === "/admin/dashboard"}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      [
+                        "group flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-bold transition",
+                        isActive
+                          ? "bg-white text-[#245B60] shadow-[0_8px_22px_rgba(8,36,38,0.16)]"
+                          : "text-white/70 hover:bg-white/10 hover:text-white",
+                      ].join(" ")
+                    }
+                  >
+                    <span className="material-symbols-outlined text-[21px]" aria-hidden="true">
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="border-t border-white/10 p-4">
+          <div className="mb-3 flex items-center gap-3 rounded-xl bg-white/10 p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E6F2F0] font-black text-[#285E62]">
+              {avatarCharacter}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-white">{displayName}</p>
+              <p className="text-xs text-white/55">Quản trị viên</p>
+            </div>
+          </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white/75 transition hover:bg-red-400/10 hover:text-red-100"
           >
-            <span aria-hidden="true">🚪</span>
-
-            <span>Đăng xuất</span>
+            <span className="material-symbols-outlined text-[19px]" aria-hidden="true">logout</span>
+            Đăng xuất
           </button>
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 shadow-sm">
-          <div className="text-sm text-gray-500">
-            Xin chào,{" "}
-            <span className="font-semibold text-gray-800">{displayName}</span>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-20 flex h-[72px] shrink-0 items-center justify-between border-b border-[#DCE8E5] bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              aria-label="Mở menu quản trị"
+              onClick={() => setMobileMenuOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#C9DCD8] text-[#285E62] lg:hidden"
+            >
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#2F6F9F]">Quản trị hệ thống</p>
+              <h1 className="truncate text-lg font-black text-[#183F41]">{getCurrentPage(location.pathname)}</h1>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 border-l border-gray-200 pl-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100 text-sm font-bold text-green-700">
-                {avatarCharacter}
-              </div>
-
-              <div className="hidden text-left sm:block">
-                <p className="text-xs font-semibold text-gray-800">
-                  {user?.username || user?.email || "admin_homecycle"}
-                </p>
-
-                <p className="text-[10px] text-gray-500">Quản trị viên</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden text-right sm:block">
+              <p className="max-w-48 truncate text-sm font-bold text-[#183F41]">{displayName}</p>
+              <p className="text-xs text-[#78908E]">Quản trị viên</p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#5F9291] font-black text-white shadow-sm">
+              {avatarCharacter}
             </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-gray-50">
-          <Outlet />
-        </main>
+        <main className="min-h-0 flex-1 overflow-y-auto"><Outlet /></main>
       </div>
     </div>
   );

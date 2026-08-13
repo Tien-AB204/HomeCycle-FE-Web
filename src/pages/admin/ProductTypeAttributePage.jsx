@@ -1234,13 +1234,6 @@ export default function ProductTypeAttributePage() {
                             <h4 className="font-bold text-gray-800">
                               {attribute.attributeName}
                             </h4>
-
-                            <p className="mt-0.5 text-xs text-gray-500">
-                              Mã:{" "}
-                              {
-                                attribute.attributeId
-                              }
-                            </p>
                           </div>
                         </div>
 
