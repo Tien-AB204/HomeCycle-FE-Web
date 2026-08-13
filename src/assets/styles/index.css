@@ -1,15 +1,33 @@
 @import "tailwindcss";
 
-/* Thiết lập nền xám nhạt và phông chữ chuẩn khớp với thiết kế Figma */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  background-color: #f4f7f6;
+  min-width: 320px;
+  background-color: #f7f8f6;
+  color: #183436;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Đảm bảo khung bọc ngoài cùng của React luôn bung tràn màn hình */
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: #bfe0d8;
+  color: #183f41;
+}
+
 #root {
   width: 100%;
   min-height: 100vh;

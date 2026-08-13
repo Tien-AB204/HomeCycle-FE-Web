@@ -7,6 +7,16 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
+import {
+  ArrowLeftOutlined,
+  CalendarOutlined,
+  EnvironmentOutlined,
+  InboxOutlined,
+  SafetyCertificateOutlined,
+  SendOutlined,
+  ShoppingOutlined,
+} from "@ant-design/icons";
+import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
 import OfferFormModal from "../../features/offers/OfferFormModal";
 import { useAuth } from "../../hooks/useAuth";
@@ -109,6 +119,12 @@ const formatCurrency = (value) => {
   }
 
   return `${amount.toLocaleString("vi-VN")} đ`;
+};
+
+const hasValidPrice = (value) => {
+  const amount = Number(value);
+
+  return Number.isFinite(amount) && amount > 0;
 };
 
 const formatDate = (value) => {
@@ -216,11 +232,11 @@ const getAttributeUnit = (unit) => {
 
 const DetailItem = ({ label, value }) => {
   return (
-    <div className="rounded-lg border border-[#BAC2C1]/35 bg-[#f8fafa] p-4">
+    <div className="rounded-xl border border-[#dceae7] bg-[#f8fbfa] p-4 transition hover:border-[#b7d0cb] hover:bg-white">
       <dt className="text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
         {label}
       </dt>
-      <dd className="mt-1.5 break-words text-sm font-semibold text-[#172830]">
+      <dd className="mt-1.5 break-words text-sm font-bold text-[#183f41]">
         {value ?? "—"}
       </dd>
     </div>
@@ -229,9 +245,9 @@ const DetailItem = ({ label, value }) => {
 
 const PostDetailLoading = () => {
   return (
-    <div className="grid animate-pulse gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
-      <div className="h-[520px] rounded-xl bg-[#BAC2C1]/25" />
-      <div className="space-y-4 rounded-xl bg-white p-6">
+    <div className="grid animate-pulse gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="h-[300px] rounded-2xl bg-[#BAC2C1]/25 sm:h-[360px] lg:h-[420px]" />
+      <div className="space-y-3 rounded-2xl bg-white p-5">
         <div className="h-5 w-1/3 rounded bg-[#BAC2C1]/30" />
         <div className="h-8 w-full rounded bg-[#BAC2C1]/30" />
         <div className="h-8 w-2/3 rounded bg-[#BAC2C1]/25" />
@@ -445,11 +461,11 @@ const PostDetailPage = ({ ownerMode = false }) => {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
       <div className="mb-5 flex flex-wrap items-center gap-2 text-sm">
         <Link
           to="/"
-          className="font-medium text-[#547B7D] hover:text-[#172830]"
+          className="font-semibold text-[#547B7D] hover:text-[#2f6f9f]"
         >
           Trang chủ
         </Link>
@@ -458,7 +474,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
         </span>
         <Link
           to={post ? listPath : "/search"}
-          className="font-medium text-[#547B7D] hover:text-[#172830]"
+          className="font-semibold text-[#547B7D] hover:text-[#2f6f9f]"
         >
           {post
             ? ownerMode
@@ -537,20 +553,18 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
       {post && !isLoading && (
         <>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
-            <section className="overflow-hidden rounded-xl border border-[#BAC2C1]/35 bg-white shadow-sm">
-              <div className="flex min-h-[420px] items-center justify-center bg-[#e8eeee] lg:min-h-[520px]">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <section className="overflow-hidden rounded-2xl border border-[#dceae7] bg-white shadow-[0_12px_38px_rgba(24,63,65,0.07)]">
+              <div className="flex h-[300px] items-center justify-center bg-gradient-to-br from-[#edf5f2] via-[#f9fbfa] to-[#e2eef7] sm:h-[360px] lg:h-[420px]">
                 {selectedMedia?.url ? (
                   <img
                     src={selectedMedia.url}
                     alt={post.productName}
-                    className="max-h-[620px] w-full object-contain"
+                    className="h-full w-full object-contain p-3 sm:p-4"
                   />
                 ) : (
                   <div className="flex flex-col items-center text-[#547B7D]">
-                    <span className="text-7xl">
-                      ♻
-                    </span>
+                    <img src={homeCycleMark} alt="" className="h-16 w-16 rounded-2xl shadow-md" />
                     <p className="mt-3 font-semibold">
                       Bài đăng chưa có hình ảnh
                     </p>
@@ -559,7 +573,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
               </div>
 
               {medias.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto border-t border-[#BAC2C1]/30 p-4">
+                <div className="flex gap-2 overflow-x-auto border-t border-[#BAC2C1]/30 p-3">
                   {medias.map((media) => (
                     <button
                       key={media.mediaId}
@@ -574,10 +588,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
                         selectedMedia?.mediaId ===
                         media.mediaId
                       }
-                      className={`h-20 w-20 shrink-0 overflow-hidden rounded-lg border-2 bg-[#e8eeee] transition ${
+                      className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-[#e8eeee] transition ${
                         selectedMedia?.mediaId ===
                         media.mediaId
-                          ? "border-[#2B5659]"
+                          ? "border-[#2f6f9f]"
                           : "border-transparent hover:border-[#BAC2C1]"
                       }`}
                     >
@@ -592,55 +606,78 @@ const PostDetailPage = ({ ownerMode = false }) => {
               )}
             </section>
 
-            <aside className="h-fit rounded-xl border border-[#BAC2C1]/35 bg-white p-6 shadow-sm lg:sticky lg:top-24">
+            <aside className="h-fit rounded-2xl border border-[#dceae7] bg-white p-5 shadow-[0_12px_38px_rgba(24,63,65,0.07)] lg:sticky lg:top-24">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-[#172830] px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#183f41] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
+                  <ShoppingOutlined />
                   {isBuyPost
                     ? "Tin thu mua"
                     : "Tin đăng bán"}
                 </span>
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.className}`}
-                >
-                  {statusMeta.label}
-                </span>
+                {ownerMode && (
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.className}`}
+                  >
+                    {statusMeta.label}
+                  </span>
+                )}
+                
               </div>
 
-              <h1 className="mt-4 text-2xl font-bold leading-tight text-[#172830]">
+              <h1 className="mt-3 text-xl font-black leading-tight text-[#183f41] sm:text-2xl">
                 {post.productName}
               </h1>
 
-              <p className="mt-2 text-sm font-medium text-[#547B7D]">
+              <p className="mt-1.5 text-xs font-medium text-[#547B7D]">
                 {post.categoryName} ·{" "}
                 {post.productTypeName} ·{" "}
                 {post.brandName}
               </p>
 
-              <div className="mt-5 rounded-lg bg-[#7A1012]/8 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#7A1012]">
-                  {isBuyPost
-                    ? "Giá mua tối đa"
-                    : "Giá đăng bán"}
-                </p>
-                <p className="mt-1 text-3xl font-black text-[#7A1012]">
-                  {formatCurrency(
-                    post.basePrice,
-                  )}
-                </p>
+              <div className="mt-4 rounded-xl border border-[#f0d6d2] bg-[#fff7f5] p-4">
+                {isBuyPost ? (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#9f4038]">
+                      Giá mua tối đa
+                    </p>
+                    <p className="mt-1 text-2xl font-black text-[#b33a32]">
+                      {formatCurrency(post.basePrice)}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+                    {hasValidPrice(product.originalPrice) && (
+                      <div className="pb-0.5">
+                        <p className="text-sm font-semibold text-[#879694] line-through decoration-[#a74334] decoration-2">
+                          {formatCurrency(product.originalPrice)}
+                        </p>
+                      </div>
+                    )}
+                    <div className={hasValidPrice(product.originalPrice) ? "text-right" : ""}>
+                      <p className="text-xs font-bold uppercase tracking-wide text-[#9f4038]">
+                        Giá bán
+                      </p>
+                      <p className="mt-1 text-3xl font-black leading-none text-[#b33a32]">
+                        {formatCurrency(post.basePrice)}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <dl className="mt-5 space-y-3 text-sm">
-                <div className="flex justify-between gap-4 border-b border-gray-100 pb-3">
-                  <dt className="text-[#547B7D]">
+              <dl className="mt-4 space-y-2.5 text-sm">
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2.5">
+                  <dt className="flex items-center gap-2 text-[#547B7D]">
+                    <InboxOutlined className="text-[#4f8588]" />
                     Số lượng còn lại
                   </dt>
                   <dd className="font-bold text-[#172830]">
-                    {post.remainingQuantity} /{" "}
-                    {post.quantity}
+                    {post.remainingQuantity}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-4 border-b border-gray-100 pb-3">
-                  <dt className="text-[#547B7D]">
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2.5">
+                  <dt className="flex items-center gap-2 text-[#547B7D]">
+                    <SafetyCertificateOutlined className="text-[#4f8588]" />
                     Vận chuyển
                   </dt>
                   <dd className="text-right font-semibold text-[#172830]">
@@ -650,8 +687,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
                     )}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-4 border-b border-gray-100 pb-3">
-                  <dt className="text-[#547B7D]">
+                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2.5">
+                  <dt className="flex items-center gap-2 text-[#547B7D]">
+                    <CalendarOutlined className="text-[#4f8588]" />
                     Độ ưu tiên
                   </dt>
                   <dd className="font-semibold text-[#172830]">
@@ -662,7 +700,8 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[#547B7D]">
+                  <dt className="flex items-center gap-2 text-[#547B7D]">
+                    <EnvironmentOutlined className="text-[#2f6f9f]" />
                     Khu vực
                   </dt>
                   <dd className="mt-1 font-semibold text-[#172830]">
@@ -673,14 +712,14 @@ const PostDetailPage = ({ ownerMode = false }) => {
               </dl>
 
               {ownerMode ? (
-                <div className="mt-6 rounded-lg border border-[#BAC2C1]/45 bg-[#f5f8f8] p-4">
+                <div className="mt-4 rounded-lg border border-[#BAC2C1]/45 bg-[#f5f8f8] p-3.5">
                   <p className="text-sm leading-6 text-[#547B7D]">
                     Đây là bài đăng của bạn. Bạn có thể chỉnh sửa nội dung hoặc quản lý trạng thái bài đăng.
                   </p>
                   <div className="mt-3 grid gap-2">
                     <Link
                       to={`/bai-dang/chinh-sua/${encodeURIComponent(postId)}`}
-                      className="inline-flex w-full items-center justify-center rounded-md bg-[#2B5659] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830]"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-[#2f6f9f] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#245b84]"
                     >
                       Chỉnh sửa bài đăng
                     </Link>
@@ -718,8 +757,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
                             ? "Bài đăng hiện không nhận thêm đề nghị"
                             : "Gửi đề nghị giá cho người bán"
                   }
-                  className="mt-6 w-full rounded-lg bg-[#2B5659] px-4 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2f6f9f] px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#245b84] disabled:cursor-not-allowed disabled:opacity-60"
                 >
+                  {!isAuthenticated || (!isBuyPost && !isOwnPost && isActivePost && hasAvailableQuantity) ? <SendOutlined /> : null}
                   {!isAuthenticated
                     ? "Đăng nhập để tiếp tục"
                     : isBuyPost
@@ -733,14 +773,39 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 </button>
               )}
 
-              <p className="mt-4 text-xs text-[#547B7D]">
+              <p className="mt-3 flex items-center gap-2 text-xs text-[#547B7D]">
+                <CalendarOutlined />
                 Đăng lúc {formatDate(post.createdAt)}
               </p>
             </aside>
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-2">
-            <section className="rounded-xl border border-[#BAC2C1]/35 bg-white p-6 shadow-sm">
+          <section className="mt-5 grid overflow-hidden rounded-2xl border border-[#dce8e5] bg-white shadow-[0_6px_22px_rgba(24,63,65,0.04)] sm:grid-cols-3">
+            <div className="flex items-start gap-3 px-5 py-4">
+              <SafetyCertificateOutlined className="mt-0.5 text-lg text-[#4f8588]" />
+              <div>
+                <h2 className="text-sm font-black text-[#183f41]">Thông tin minh bạch</h2>
+                <p className="mt-1 text-xs leading-5 text-[#78908e]">Kiểm tra mô tả, tình trạng và thuộc tính trước khi đề nghị.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 border-y border-[#e5eeec] px-5 py-4 sm:border-x sm:border-y-0">
+              <SendOutlined className="mt-0.5 text-lg text-[#2f6f9f]" />
+              <div>
+                <h2 className="text-sm font-black text-[#183f41]">Thương lượng trực tiếp</h2>
+                <p className="mt-1 text-xs leading-5 text-[#78908e]">Hai bên chủ động thống nhất giá, số lượng và giao nhận.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 px-5 py-4">
+              <EnvironmentOutlined className="mt-0.5 text-lg text-[#4f8588]" />
+              <div>
+                <h2 className="text-sm font-black text-[#183f41]">Giao nhận rõ ràng</h2>
+                <p className="mt-1 text-xs leading-5 text-[#78908e]">Xem khu vực và phương thức giao nhận trước khi giao dịch.</p>
+              </div>
+            </div>
+          </section>
+
+          <div className="mt-7 grid gap-6 lg:grid-cols-2">
+            <section className="rounded-2xl border border-[#dceae7] bg-white p-6 shadow-[0_10px_34px_rgba(24,63,65,0.06)]">
               <h2 className="text-xl font-bold text-[#172830]">
                 Mô tả bài đăng
               </h2>
@@ -761,7 +826,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
               )}
             </section>
 
-            <section className="rounded-xl border border-[#BAC2C1]/35 bg-white p-6 shadow-sm">
+            <section className="rounded-2xl border border-[#dceae7] bg-white p-6 shadow-[0_10px_34px_rgba(24,63,65,0.06)]">
               <h2 className="text-xl font-bold text-[#172830]">
                 Thông tin sản phẩm
               </h2>
@@ -801,14 +866,6 @@ const PostDetailPage = ({ ownerMode = false }) => {
                       : "—"
                   }
                 />
-                {!isBuyPost && (
-                  <DetailItem
-                    label="Giá mua ban đầu"
-                    value={formatCurrency(
-                      product.originalPrice,
-                    )}
-                  />
-                )}
                 <DetailItem
                   label="Kích thước (D × R × C)"
                   value={
@@ -835,7 +892,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
             </section>
           </div>
 
-          <section className="mt-6 rounded-xl border border-[#BAC2C1]/35 bg-white p-6 shadow-sm">
+          <section className="mt-6 rounded-2xl border border-[#dceae7] bg-white p-6 shadow-[0_10px_34px_rgba(24,63,65,0.06)]">
             <h2 className="text-xl font-bold text-[#172830]">
               Thuộc tính sản phẩm
             </h2>
@@ -872,9 +929,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
           <div className="mt-6">
             <Link
               to={listPath}
-              className="inline-flex items-center gap-2 rounded-md border border-[#BAC2C1] bg-white px-4 py-2 text-sm font-semibold text-[#172830] transition hover:bg-[#BAC2C1]/20"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#4f8588] bg-white px-4 py-2.5 text-sm font-bold text-[#2f686c] transition hover:bg-[#edf5f2]"
             >
-              ← Quay lại {ownerMode ? "bài đăng của tôi" : "danh sách"}
+              <ArrowLeftOutlined /> Quay lại {ownerMode ? "bài đăng của tôi" : "danh sách"}
             </Link>
           </div>
 

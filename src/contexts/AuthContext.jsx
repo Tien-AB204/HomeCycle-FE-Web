@@ -4,8 +4,10 @@
   useMemo,
   useState,
 } from "react";
+import { ROLES } from "../constants/roles";
 import authApi from "../services/apis/authApi";
-import { normalizeRole } from "../utils/authUtils";
+import { userService } from "../services/userService";
+import { getUserId, normalizeRole } from "../utils/authUtils";
 import AuthContext from "./auth-context";
 
 const TOKEN_REFRESH_THRESHOLD_SECONDS = 60;
@@ -263,6 +265,78 @@ export const AuthProvider = ({
       isActive = false;
     };
   }, []);
+
+  /**
+   * API đăng nhập không luôn trả fullName. Với tài khoản Personal,
+   * tải hồ sơ một lần và đồng bộ tên thật vào session dùng chung.
+   */
+  useEffect(() => {
+    const userId = getUserId(user);
+    const hasFullName = Boolean(
+      String(user?.fullName || user?.FullName || "").trim(),
+    );
+
+    if (
+      !userId ||
+      user?.role !== ROLES.PERSONAL ||
+      hasFullName
+    ) {
+      return undefined;
+    }
+
+    let isActive = true;
+
+    userService
+      .getProfile()
+      .then((response) => {
+        const profile = response?.data ?? response;
+
+        if (!isActive || !profile || typeof profile !== "object") {
+          return;
+        }
+
+        const fullName = String(
+          profile.fullName || profile.FullName || "",
+        ).trim();
+
+        if (!fullName) {
+          return;
+        }
+
+        setUser((currentUser) => {
+          if (!currentUser || getUserId(currentUser) !== userId) {
+            return currentUser;
+          }
+
+          const updatedUser = normalizeUser({
+            ...currentUser,
+            fullName,
+            username:
+              profile.username ||
+              profile.Username ||
+              currentUser.username,
+            avatarUrl:
+              profile.avatarUrl ||
+              profile.AvatarUrl ||
+              currentUser.avatarUrl,
+          });
+
+          localStorage.setItem(
+            "user",
+            JSON.stringify(updatedUser),
+          );
+
+          return updatedUser;
+        });
+      })
+      .catch(() => {
+        // Không làm mất phiên nếu API hồ sơ tạm thời không khả dụng.
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [user]);
 
   /**
    * Lưu session và chuẩn hóa role trước khi lưu.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from "react";
 import { Link, useNavigate } from 'react-router-dom';
 
 const RegisterSelectionPage = () => {
@@ -16,36 +16,34 @@ const RegisterSelectionPage = () => {
 
   return (
     <div className="w-full animate-fade-in">
-      <div className="flex flex-col items-center mb-6">
-        <div className="w-12 h-12 bg-[#244f4d] rounded-md flex items-center justify-center mb-4 text-white">
-          <span className="material-symbols-outlined">autorenew</span>
-        </div>
-        <h2 className="text-xl font-bold text-slate-800 mt-2">Chào mừng bạn đến với HomeCycle</h2>
-        <p className="text-sm text-slate-500 text-center mt-2 px-2">Vui lòng chọn loại tài khoản phù hợp với nhu cầu của bạn để bắt đầu.</p>
+      <div className="mb-7">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">Bắt đầu với HomeCycle</p>
+        <h2 className="mt-2 text-3xl font-black text-[#183F41]">Chọn loại tài khoản</h2>
+        <p className="mt-2 text-sm leading-6 text-[#68807F]">Vui lòng chọn loại tài khoản phù hợp với nhu cầu của bạn để bắt đầu.</p>
       </div>
 
       <div className="space-y-4">
         {/* --- NÚT CÁ NHÂN --- */}
         <div 
           onClick={() => setSelectedRole('personal')} 
-          className={`cursor-pointer rounded-lg p-4 flex gap-4 relative transition duration-200 ${
+          className={`relative flex cursor-pointer gap-4 rounded-xl p-5 transition duration-200 ${
             selectedRole === 'personal' 
-              ? 'border-2 border-[#244f4d] bg-white' // Khi được chọn
-              : 'border border-slate-200 bg-slate-50 hover:border-slate-300' // Khi không được chọn
+              ? 'border-2 border-[#4F8588] bg-[#F1F7F5] shadow-[0_8px_24px_rgba(24,63,65,0.06)]'
+              : 'border border-[#DCE8E5] bg-white hover:border-[#9FBFBA]'
           }`}
         >
           <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition ${
-            selectedRole === 'personal' ? 'bg-[#e6f2f1] text-[#244f4d]' : 'bg-slate-200 text-slate-500'
+            selectedRole === 'personal' ? 'bg-[#DCEFEB] text-[#285E62]' : 'bg-[#F0F4F3] text-[#68807F]'
           }`}>
              <span className="material-symbols-outlined">person</span>
           </div>
           <div>
-            <h3 className="font-bold text-slate-800">Tài khoản Cá nhân</h3>
-            <p className="text-xs text-slate-500 mt-1">Dành cho người dùng muốn đăng tin thanh lý đồ gia dụng cũ, tìm mua sản phẩm và thương lượng giá trực tiếp.</p>
+            <h3 className="font-black text-[#183F41]">Tài khoản Cá nhân</h3>
+            <p className="mt-1 text-xs leading-5 text-[#68807F]">Dành cho người dùng muốn đăng tin thanh lý đồ gia dụng cũ, tìm mua sản phẩm và thương lượng giá trực tiếp.</p>
           </div>
           {/* Nút check chỉ hiện khi được chọn */}
           {selectedRole === 'personal' && (
-            <div className="absolute top-4 right-4 text-[#244f4d]">
+            <div className="absolute right-4 top-4 text-[#4F8588]">
               <span className="material-symbols-outlined filled">check_circle</span>
             </div>
           )}
@@ -54,24 +52,24 @@ const RegisterSelectionPage = () => {
         {/* --- NÚT DOANH NGHIỆP --- */}
         <div 
           onClick={() => setSelectedRole('business')} 
-          className={`cursor-pointer rounded-lg p-4 flex gap-4 relative transition duration-200 ${
+          className={`relative flex cursor-pointer gap-4 rounded-xl p-5 transition duration-200 ${
             selectedRole === 'business' 
-              ? 'border-2 border-[#244f4d] bg-white' 
-              : 'border border-slate-200 bg-slate-50 hover:border-slate-300'
+              ? 'border-2 border-[#4F8588] bg-[#F1F7F5] shadow-[0_8px_24px_rgba(24,63,65,0.06)]'
+              : 'border border-[#DCE8E5] bg-white hover:border-[#9FBFBA]'
           }`}
         >
           <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition ${
-            selectedRole === 'business' ? 'bg-[#e6f2f1] text-[#244f4d]' : 'bg-slate-200 text-slate-500'
+            selectedRole === 'business' ? 'bg-[#E4EFF8] text-[#2F6F9F]' : 'bg-[#F0F4F3] text-[#68807F]'
           }`}>
              <span className="material-symbols-outlined">domain</span>
           </div>
           <div>
-            <h3 className="font-bold text-slate-800">Tài khoản Doanh nghiệp</h3>
-            <p className="text-xs text-slate-500 mt-1">Dành cho các đơn vị thu mua, hộ kinh doanh muốn đăng tin thu mua, quản lý đơn hàng lớn và tiếp cận nguồn hàng thanh lý ổn định.</p>
+            <h3 className="font-black text-[#183F41]">Tài khoản Doanh nghiệp</h3>
+            <p className="mt-1 text-xs leading-5 text-[#68807F]">Dành cho các đơn vị thu mua, hộ kinh doanh muốn đăng tin thu mua, quản lý đơn hàng lớn và tiếp cận nguồn hàng thanh lý ổn định.</p>
           </div>
           {/* Nút check chỉ hiện khi được chọn */}
           {selectedRole === 'business' && (
-            <div className="absolute top-4 right-4 text-[#244f4d]">
+            <div className="absolute right-4 top-4 text-[#4F8588]">
               <span className="material-symbols-outlined filled">check_circle</span>
             </div>
           )}
@@ -80,13 +78,13 @@ const RegisterSelectionPage = () => {
 
       <button 
         onClick={handleContinue} 
-        className="w-full bg-[#244f4d] text-white py-3 rounded-md font-medium mt-6 hover:bg-[#1a3a38] transition"
+        className="mt-6 w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70]"
       >
         Tiếp tục
       </button>
       
-      <div className="mt-6 text-center text-sm text-slate-600">
-          Bạn đã có tài khoản? <Link to="/auth/login" className="font-bold text-[#244f4d] hover:underline">Đăng nhập ngay</Link>
+      <div className="mt-6 border-t border-[#E2ECE9] pt-5 text-center text-sm text-[#68807F]">
+          Bạn đã có tài khoản? <Link to="/auth/login" className="font-bold text-[#2F6F9F] hover:underline">Đăng nhập ngay</Link>
       </div>
     </div>
   );

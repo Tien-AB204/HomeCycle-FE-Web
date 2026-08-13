@@ -200,10 +200,10 @@ export default function AvatarUploader({
               displayName ||
               "người dùng"
             }`}
-            className="h-24 w-24 rounded-full border-4 border-slate-50 object-cover"
+            className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-[0_8px_24px_rgba(24,63,65,0.14)]"
           />
         ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#244f4d] text-3xl font-bold text-white">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#4F8588] to-[#2F6F9F] text-3xl font-black text-white shadow-[0_8px_24px_rgba(24,63,65,0.14)]">
             {fallbackInitial}
           </div>
         )}
@@ -211,7 +211,7 @@ export default function AvatarUploader({
         <label
           htmlFor="profile-avatar-input"
           title="Thay đổi ảnh đại diện"
-          className={`absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#244f4d] text-white shadow transition hover:bg-[#1a3a38] ${
+          className={`absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#4F8588] text-white shadow transition hover:bg-[#356A70] ${
             isUploading
               ? "pointer-events-none opacity-60"
               : "cursor-pointer"
@@ -244,7 +244,7 @@ export default function AvatarUploader({
             type="button"
             onClick={resetSelection}
             disabled={isUploading}
-            className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+            className="rounded-lg border border-[#9FBFBA] px-3 py-1.5 text-xs font-bold text-[#526E6D] hover:bg-[#F5F9F8] disabled:opacity-60"
           >
             Hủy
           </button>
@@ -253,7 +253,7 @@ export default function AvatarUploader({
             type="button"
             onClick={handleUpload}
             disabled={isUploading}
-            className="rounded-md bg-[#244f4d] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1a3a38] disabled:opacity-60"
+            className="rounded-lg bg-[#4F8588] px-3 py-1.5 text-xs font-black text-white hover:bg-[#356A70] disabled:opacity-60"
           >
             {isUploading
               ? "ĐANG TẢI..."
@@ -262,7 +262,7 @@ export default function AvatarUploader({
         </div>
       )}
 
-      <p className="mt-2 text-center text-[11px] text-slate-400">
+      <p className="mt-2 text-center text-[11px] text-[#829796]">
         JPG, PNG hoặc WEBP; tối đa
         5MB
       </p>
