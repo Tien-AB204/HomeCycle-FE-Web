@@ -32,6 +32,33 @@ import { getUserId } from "../../utils/authUtils";
 
 const REFERENCE_PAGE_SIZE = 100;
 
+const FORM_STEPS = Object.freeze([
+  {
+    number: "1",
+    id: "post-step-1",
+    title: "Phân loại",
+    description: "Danh mục và sản phẩm",
+  },
+  {
+    number: "2",
+    id: "post-step-2",
+    title: "Thông tin chính",
+    description: "Giá, số lượng và mô tả",
+  },
+  {
+    number: "3",
+    id: "post-step-3",
+    title: "Thuộc tính",
+    description: "Thông số theo sản phẩm",
+  },
+  {
+    number: "4",
+    id: "post-step-4",
+    title: "Giao nhận",
+    description: "Địa chỉ và hình ảnh",
+  },
+]);
+
 const createInitialForm = () => ({
   categoryId: "",
   productTypeId: "",
@@ -247,14 +274,14 @@ const FieldError = ({ message }) => {
 
 const SectionHeading = ({ number, title, description }) => {
   return (
-    <div className="mb-5 flex items-start gap-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2B5659] text-sm font-black text-white">
+    <div className="mb-6 flex items-start gap-3 border-b border-[#E3ECE9] pb-5">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#E4F1EE] text-sm font-black text-[#2F686C]">
         {number}
       </span>
       <div>
-        <h2 className="font-bold text-[#172830]">{title}</h2>
+        <h2 className="text-lg font-black text-[#183F41]">{title}</h2>
         {description && (
-          <p className="mt-1 text-xs leading-5 text-[#547B7D]">
+          <p className="mt-1 text-sm leading-5 text-[#68807F]">
             {description}
           </p>
         )}
@@ -704,7 +731,7 @@ const CreatePostPage = () => {
       <div className="mx-auto w-full max-w-6xl px-4 py-16 text-center sm:px-6">
         <div
           role="status"
-          className="rounded-xl border border-[#BAC2C1]/40 bg-white p-10 text-[#547B7D] shadow-sm"
+          className="rounded-xl border border-[#BAC2C1]/40 bg-white p-10 text-[#68807F] shadow-sm"
         >
           <span className="material-symbols-outlined animate-spin text-4xl">
             refresh
@@ -759,39 +786,48 @@ const CreatePostPage = () => {
   }
 
   const inputClassName =
-    "w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#172830] outline-none transition focus:border-[#2B5659] focus:ring-1 focus:ring-[#2B5659] disabled:cursor-not-allowed disabled:bg-gray-100";
+    "w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3.5 py-3 text-sm text-[#183436] outline-none transition placeholder:text-[#91A4A1] hover:border-[#A9C5BF] focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10 disabled:cursor-not-allowed disabled:bg-[#EEF3F1] disabled:text-[#839492]";
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:py-8">
       <div className="mb-5 flex flex-wrap items-center gap-2 text-sm">
         <Link
           to={`${listPath}?view=mine`}
-          className="font-semibold text-[#547B7D] hover:text-[#172830]"
+          className="font-semibold text-[#68807F] transition hover:text-[#183F41]"
         >
           Bài đăng của tôi
         </Link>
         <span className="text-[#BAC2C1]">/</span>
-        <span className="font-bold text-[#172830]">
+        <span className="font-bold text-[#183F41]">
           {isEditing ? "Chỉnh sửa" : "Tạo"} {postTypeLabel}
         </span>
       </div>
 
-      <header className="rounded-xl bg-[#172830] p-6 text-white shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#C1EAEC]">
-          {isBuyPost
-            ? "Dành cho doanh nghiệp"
-            : "Dành cho tài khoản cá nhân"}
-        </p>
-        <h1 className="mt-2 text-2xl font-black sm:text-3xl">
-          {isEditing ? "Chỉnh sửa" : "Tạo"} {postTypeLabel}
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[#B7C9D4]">
-          {isEditing
-            ? "Kiểm tra lại thông tin trước khi lưu. Dữ liệu sau cập nhật sẽ được tải lại từ hệ thống."
-            : isBuyPost
-              ? "Mô tả chính xác nhu cầu thu mua để tiếp cận đúng người đang có sản phẩm phù hợp."
-              : "Cung cấp đầy đủ thông tin và hình ảnh để sản phẩm dễ được tìm thấy và tạo sự tin cậy."}
-        </p>
+      <header className="relative overflow-hidden rounded-3xl border border-[#D7E7E3] bg-gradient-to-br from-[#183F41] via-[#244F51] to-[#2F6F9F] p-6 text-white shadow-[0_18px_50px_rgba(24,63,65,0.18)] sm:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full border-[34px] border-white/5" />
+        <div className="pointer-events-none absolute -bottom-20 right-28 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#C8ECE7]">
+              {isBuyPost
+                ? "HomeCycle - Nền tảng mua bán đồ cũ"
+                : "HomeCycle - Nền tảng mua bán đồ cũ"}
+            </p>
+            <h1 className="mt-2 text-2xl font-black sm:text-3xl">
+              {isEditing ? "Chỉnh sửa" : "Tạo"} {postTypeLabel}
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[#D8E9E7]">
+              {isEditing
+                ? "Kiểm tra lại thông tin trước khi lưu. Dữ liệu sau cập nhật sẽ được tải lại từ hệ thống."
+                : isBuyPost
+                  ? "Mô tả chính xác nhu cầu thu mua để tiếp cận đúng người đang có sản phẩm phù hợp."
+                  : "Cung cấp đầy đủ thông tin và hình ảnh để sản phẩm dễ được tìm thấy và tạo sự tin cậy."}
+            </p>
+          </div>
+          <span className="w-fit shrink-0 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold text-white backdrop-blur-sm">
+            {isEditing ? "Chế độ chỉnh sửa" : "Bài đăng mới"}
+          </span>
+        </div>
       </header>
 
       {(referenceError || serverError) && (
@@ -803,8 +839,48 @@ const CreatePostPage = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mt-5 space-y-5">
-        <section className="rounded-xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="mt-6 grid items-start gap-6 lg:grid-cols-[230px_minmax(0,1fr)]"
+      >
+        <aside className="lg:sticky lg:top-28">
+          <div className="rounded-2xl border border-[#DCE8E5] bg-white p-4 shadow-[0_10px_30px_rgba(24,63,65,0.06)]">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#2F6F9F]">
+              Nội dung bài đăng
+            </p>
+            <nav className="mt-3 grid grid-cols-2 gap-2 lg:block lg:space-y-1.5">
+              {FORM_STEPS.map((step) => (
+                <a
+                  key={step.id}
+                  href={`#${step.id}`}
+                  className="group flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition hover:bg-[#EDF5F2]"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[#C9DDD8] bg-[#F7FBFA] text-xs font-black text-[#4F8588] transition group-hover:border-[#4F8588] group-hover:bg-white">
+                    {step.number}
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block text-sm text-[#183F41]">
+                      {step.title}
+                    </strong>
+                    <small className="hidden truncate text-[11px] text-[#78908E] lg:block">
+                      {step.description}
+                    </small>
+                  </span>
+                </a>
+              ))}
+            </nav>
+            <div className="mt-4 rounded-xl bg-[#EDF4F8] p-3 text-xs leading-5 text-[#426A82]">
+              Các trường có dấu <strong className="text-red-600">*</strong> là
+              thông tin bắt buộc.
+            </div>
+          </div>
+        </aside>
+
+        <div className="min-w-0 space-y-5">
+        <section
+          id="post-step-1"
+          className="scroll-mt-32 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
+        >
           <SectionHeading
             number="1"
             title="Phân loại sản phẩm"
@@ -813,7 +889,7 @@ const CreatePostPage = () => {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Danh mục <span className="text-red-600">*</span>
               </span>
               <select
@@ -838,7 +914,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Loại sản phẩm <span className="text-red-600">*</span>
               </span>
               <select
@@ -867,7 +943,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Thương hiệu <span className="text-red-600">*</span>
               </span>
               <select
@@ -887,7 +963,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Tên sản phẩm <span className="text-red-600">*</span>
               </span>
               <input
@@ -910,7 +986,10 @@ const CreatePostPage = () => {
           </div>
         </section>
 
-        <section className="rounded-xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
+        <section
+          id="post-step-2"
+          className="scroll-mt-32 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
+        >
           <SectionHeading
             number="2"
             title={isBuyPost ? "Nhu cầu thu mua" : "Thông tin đăng bán"}
@@ -919,7 +998,7 @@ const CreatePostPage = () => {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 {isBuyPost ? "Giá mua dự kiến" : "Giá đăng bán"}{" "}
                 <span className="text-red-600">*</span>
               </span>
@@ -936,7 +1015,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Số lượng <span className="text-red-600">*</span>
               </span>
               <input
@@ -954,7 +1033,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Độ ưu tiên
               </span>
               <select
@@ -974,7 +1053,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Không gian sử dụng
               </span>
               <select
@@ -994,7 +1073,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Khả năng hoạt động
               </span>
               <select
@@ -1014,7 +1093,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Mức độ hư hỏng
               </span>
               <select
@@ -1034,7 +1113,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Thời gian sử dụng (tháng)
               </span>
               <input
@@ -1054,7 +1133,7 @@ const CreatePostPage = () => {
             {!isBuyPost && (
               <>
                 <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+                  <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                     Mã model
                   </span>
                   <input
@@ -1069,7 +1148,7 @@ const CreatePostPage = () => {
                 </label>
 
                 <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+                  <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                     Giá mua ban đầu
                   </span>
                   <input
@@ -1097,7 +1176,7 @@ const CreatePostPage = () => {
                 ["weight", "Khối lượng"],
               ].map(([fieldName, label]) => (
                 <label key={fieldName} className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+                  <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                     {label}
                   </span>
                   <input
@@ -1118,7 +1197,7 @@ const CreatePostPage = () => {
           )}
 
           <label className="mt-4 block">
-            <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+            <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
               Mô tả bài đăng <span className="text-red-600">*</span>
             </span>
             <textarea
@@ -1136,7 +1215,7 @@ const CreatePostPage = () => {
 
           {!isBuyPost && (
             <label className="mt-4 block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Mô tả chi tiết sản phẩm
               </span>
               <textarea
@@ -1153,7 +1232,10 @@ const CreatePostPage = () => {
           )}
         </section>
 
-        <section className="rounded-xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
+        <section
+          id="post-step-3"
+          className="scroll-mt-32 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
+        >
           <SectionHeading
             number="3"
             title="Thuộc tính sản phẩm"
@@ -1161,7 +1243,7 @@ const CreatePostPage = () => {
           />
 
           {!form.productTypeId ? (
-            <div className="rounded-lg border border-dashed border-[#BAC2C1] bg-[#f8fafa] p-5 text-sm text-[#547B7D]">
+            <div className="rounded-xl border border-dashed border-[#BFD3CE] bg-[#F7FAF9] p-5 text-sm text-[#68807F]">
               Vui lòng chọn loại sản phẩm ở bước 1.
             </div>
           ) : (
@@ -1177,7 +1259,10 @@ const CreatePostPage = () => {
           )}
         </section>
 
-        <section className="rounded-xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
+        <section
+          id="post-step-4"
+          className="scroll-mt-32 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
+        >
           <SectionHeading
             number="4"
             title="Giao nhận và hình ảnh"
@@ -1186,7 +1271,7 @@ const CreatePostPage = () => {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Hình thức giao nhận
               </span>
               <select
@@ -1206,7 +1291,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Tỉnh/Thành phố <span className="text-red-600">*</span>
               </span>
               <input
@@ -1220,7 +1305,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Phường/Xã <span className="text-red-600">*</span>
               </span>
               <input
@@ -1234,7 +1319,7 @@ const CreatePostPage = () => {
             </label>
 
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#172830]">
+              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
                 Địa chỉ chi tiết <span className="text-red-600">*</span>
               </span>
               <input
@@ -1251,7 +1336,7 @@ const CreatePostPage = () => {
           </div>
 
           <div className="mt-5">
-            <span className="mb-2 block text-sm font-semibold text-[#172830]">
+            <span className="mb-2 block text-sm font-semibold text-[#183F41]">
               Hình ảnh sản phẩm <span className="text-red-600">*</span>
             </span>
             <MediaUploadField
@@ -1262,15 +1347,15 @@ const CreatePostPage = () => {
             />
 
             {isEditing && existingMedias.length > 0 && (
-              <div className="mt-4 rounded-lg border border-[#BAC2C1]/40 bg-[#f8fafa] p-4">
-                <p className="text-sm font-bold text-[#172830]">
+              <div className="mt-4 rounded-xl border border-[#DCE8E5] bg-[#F7FAF9] p-4">
+                <p className="text-sm font-bold text-[#183F41]">
                   Ảnh hiện có ({existingMedias.length})
                 </p>
                 <div className="mt-3 flex gap-3 overflow-x-auto">
                   {existingMedias.map((media, index) => (
                     <div
                       key={media.mediaId || media.url}
-                      className="h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-[#BAC2C1] bg-white"
+                      className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-[#C9DDD8] bg-white"
                     >
                       {media.url ? (
                         <img
@@ -1279,14 +1364,14 @@ const CreatePostPage = () => {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full items-center justify-center text-[#547B7D]">
+                        <div className="flex h-full items-center justify-center text-[#68807F]">
                           ♻
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 text-xs leading-5 text-[#547B7D]">
+                <p className="mt-3 text-xs leading-5 text-[#68807F]">
                   Nếu không chọn ảnh mới, frontend sẽ không gửi trường Medias và giữ nguyên dữ liệu ảnh hiện có theo cơ chế của Backend.
                 </p>
               </div>
@@ -1294,10 +1379,10 @@ const CreatePostPage = () => {
           </div>
         </section>
 
-        <div className="flex flex-col-reverse gap-3 rounded-xl border border-[#BAC2C1]/40 bg-white p-4 shadow-sm sm:flex-row sm:justify-end">
+        <div className="sticky bottom-4 z-20 flex flex-col-reverse gap-3 rounded-2xl border border-[#DCE8E5] bg-white/95 p-4 shadow-[0_16px_45px_rgba(24,63,65,0.14)] backdrop-blur sm:flex-row sm:items-center sm:justify-end">
           <Link
             to={`${listPath}?view=mine`}
-            className="rounded-md border border-gray-300 px-5 py-3 text-center text-sm font-bold text-[#172830] transition hover:bg-gray-50"
+            className="rounded-xl border border-[#9FBFBA] bg-white px-5 py-3 text-center text-sm font-bold text-[#285E62] transition hover:border-[#4F8588] hover:bg-[#F1F7F5]"
           >
             Hủy
           </Link>
@@ -1311,7 +1396,7 @@ const CreatePostPage = () => {
               isLoadingDetail ||
               Boolean(referenceError)
             }
-            className="flex items-center justify-center gap-2 rounded-md bg-[#2B5659] px-6 py-3 text-sm font-black text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#4F8588] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting && (
               <span className="material-symbols-outlined animate-spin text-[18px]">
@@ -1326,6 +1411,7 @@ const CreatePostPage = () => {
                 ? "Lưu thay đổi"
                 : `Tạo ${postTypeLabel}`}
           </button>
+        </div>
         </div>
       </form>
     </div>
