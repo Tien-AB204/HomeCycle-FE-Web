@@ -63,6 +63,8 @@ export default function AvatarUploader({
   displayName,
   fallbackInitial,
   onUpdated,
+  updateAvatar =
+    userService.updateAvatar,
 }) {
   const inputRef = useRef(null);
 
@@ -151,24 +153,32 @@ export default function AvatarUploader({
 
     try {
       const response =
-        await userService.updateAvatar(
+        await updateAvatar(
           selectedFile,
         );
 
-      if (
-        !response?.isSuccess ||
-        typeof response?.data !==
-          "string" ||
-        !response.data
-      ) {
+      if (response?.isSuccess === false) {
         throw new Error(
           response?.error?.message ||
             "Cập nhật ảnh đại diện thất bại.",
         );
       }
 
+      const responseData =
+        response?.data ?? response;
+
       const newAvatarUrl =
-        response.data;
+        typeof responseData === "string"
+          ? responseData
+          : responseData?.avatarUrl ||
+            responseData?.url ||
+            previewUrl;
+
+      if (!newAvatarUrl) {
+        throw new Error(
+          "Máy chủ chưa trả về ảnh đại diện mới.",
+        );
+      }
 
       if (
         typeof onUpdated ===
