@@ -4,6 +4,7 @@ export default function ConfirmActionModal({
   description,
   confirmLabel = "Xác nhận",
   tone = "danger",
+  icon,
   busy = false,
   onCancel,
   onConfirm,
@@ -13,6 +14,7 @@ export default function ConfirmActionModal({
   }
 
   const isDanger = tone === "danger";
+  const displayIcon = icon || (isDanger ? "warning" : "check_circle");
 
   return (
     <div
@@ -39,7 +41,7 @@ export default function ConfirmActionModal({
             }`}
             aria-hidden="true"
           >
-            {isDanger ? "visibility_off" : "visibility"}
+            {displayIcon}
           </span>
 
           <div className="min-w-0">
