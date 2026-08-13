@@ -13,7 +13,13 @@ import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import ProductCard from "../../components/shared/ProductCard";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
+import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
+import {
+  getBusinessRecommendations,
+  hasCompletedBusinessSurvey,
+  normalizeBusinessSurvey,
+} from "../../utils/businessRecommendationUtils";
 import { normalizeRole } from "../../utils/authUtils";
 
 const HOME_PAGE_SIZE = 20;
@@ -165,6 +171,8 @@ const SectionHeader = ({ eyebrow, title, description, to }) => (
 const Homepage = () => {
   const { user, isAuthenticated } = useAuth();
   const [posts, setPosts] = useState([]);
+  const [businessSurvey, setBusinessSurvey] = useState(null);
+  const [surveyLoading, setSurveyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
@@ -231,6 +239,46 @@ const Homepage = () => {
     };
   }, [requestVersion]);
 
+  useEffect(() => {
+    if (!isBusinessUser) {
+      return undefined;
+    }
+
+    let isActive = true;
+
+    Promise.resolve()
+      .then(() => {
+        if (isActive) {
+          setSurveyLoading(true);
+        }
+
+        return businessProfileApi.getSurveyDetail();
+      })
+      .then((surveyResponse) => {
+        if (!isActive) return;
+
+        setBusinessSurvey(
+          normalizeBusinessSurvey(
+            surveyResponse,
+          ),
+        );
+      })
+      .catch(() => {
+        if (isActive) {
+          setBusinessSurvey(null);
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setSurveyLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [isBusinessUser]);
+
   const businessPosts = useMemo(
     () =>
       posts
@@ -246,6 +294,21 @@ const Homepage = () => {
         .slice(0, PERSONAL_POST_LIMIT),
     [posts],
   );
+
+  const recommendedPosts = useMemo(
+    () =>
+      getBusinessRecommendations({
+        posts,
+        survey: businessSurvey,
+        limit: PERSONAL_POST_LIMIT,
+      }),
+    [businessSurvey, posts],
+  );
+
+  const hasBusinessSurvey =
+    hasCompletedBusinessSurvey(
+      businessSurvey,
+    );
 
   const handleRetry = () => {
     setLoading(true);
@@ -442,6 +505,55 @@ const Homepage = () => {
             </button>
           </div>
         )}
+
+        {isBusinessUser &&
+          (surveyLoading ||
+            hasBusinessSurvey) && (
+            <section className="pb-12">
+              <div className="overflow-hidden rounded-[2rem] border border-[#cfe1dc] bg-gradient-to-br from-[#edf7f3] via-white to-[#eaf2f8] p-5 shadow-[0_12px_36px_rgba(32,77,75,0.08)] sm:p-7">
+                <SectionHeader
+                  eyebrow="Dành riêng cho doanh nghiệp"
+                  title="Nguồn hàng phù hợp khảo sát"
+                  description="Các tin bán được ưu tiên theo loại sản phẩm, khu vực và tình trạng hàng hóa doanh nghiệp đã chọn trong khảo sát."
+                  to="/tin-dang-ban?view=marketplace"
+                />
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                  {surveyLoading || loading ? (
+                    <LoadingCards
+                      count={
+                        PERSONAL_POST_LIMIT
+                      }
+                    />
+                  ) : recommendedPosts.length > 0 ? (
+                    recommendedPosts.map(
+                      (post) => (
+                        <ProductCard
+                          key={post.postId}
+                          data={post}
+                          variant="personal-sell"
+                        />
+                      ),
+                    )
+                  ) : (
+                    <EmptyPosts message="Chưa có tin bán phù hợp với khảo sát hiện tại. Bạn có thể cập nhật khảo sát trong Hồ sơ doanh nghiệp." />
+                  )}
+                </div>
+
+                <div className="mt-5 flex justify-end">
+                  <Link
+                    to="/ho-so?tab=survey"
+                    className="inline-flex items-center gap-2 rounded-full bg-[#244f51] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356a70]"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      tune
+                    </span>
+                    Cập nhật khảo sát
+                  </Link>
+                </div>
+              </div>
+            </section>
+          )}
 
         <section className="pb-12">
           <SectionHeader
