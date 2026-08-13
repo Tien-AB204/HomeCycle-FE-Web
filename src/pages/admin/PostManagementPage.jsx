@@ -238,20 +238,6 @@ export default function PostManagementPage() {
 
     return filteredPosts.slice(startIndex, startIndex + PAGE_SIZE);
   }, [filteredPosts, pageNumber]);
-  const activeCount = useMemo(
-    () =>
-      posts.filter((post) => normalizeValue(post.status) === "active").length,
-    [posts],
-  );
-  const restrictedCount = useMemo(
-    () =>
-      posts.filter((post) =>
-        ["suspended", "closed", "deleted"].includes(
-          normalizeValue(post.status),
-        ),
-      ).length,
-    [posts],
-  );
   const hasFilters = Boolean(
     keyword.trim() || postTypeFilter || statusFilter,
   );
@@ -317,33 +303,6 @@ export default function PostManagementPage() {
           Theo dõi bài đăng bán, tin thu mua và xử lý nội dung không phù hợp.
         </p>
       </header>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-            Tổng bài đăng
-          </p>
-          <p className="mt-2 text-2xl font-bold text-gray-900">
-            {listState.result?.totalCount ?? posts.length}
-          </p>
-        </div>
-        <div className="rounded-xl border border-green-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-green-600">
-            Đang hoạt động
-          </p>
-          <p className="mt-2 text-2xl font-bold text-green-700">
-            {activeCount}
-          </p>
-        </div>
-        <div className="rounded-xl border border-amber-100 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-600">
-            Đã hạn chế
-          </p>
-          <p className="mt-2 text-2xl font-bold text-amber-700">
-            {restrictedCount}
-          </p>
-        </div>
-      </div>
 
       <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_190px_190px_auto]">

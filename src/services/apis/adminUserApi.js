@@ -1,6 +1,8 @@
 import axiosClient from "./axiosClient";
 
 const DEFAULT_PAGE_SIZE = 10;
+const MANAGEMENT_PAGE_SIZE = 100;
+const PAGE_REQUEST_BATCH_SIZE = 4;
 
 const normalizeRequiredId = (value, message) => {
   const normalizedValue = String(value || "").trim();
@@ -80,6 +82,64 @@ const adminUserApi = {
       pageNumber: normalizedPageNumber,
       pageSize: normalizedPageSize,
     });
+  },
+
+  getAllForManagement: async ({ signal } = {}) => {
+    const firstPage = await adminUserApi.getAll({
+      pageNumber: 1,
+      pageSize: MANAGEMENT_PAGE_SIZE,
+      signal,
+    });
+
+    if (firstPage.totalPages <= 1) {
+      return {
+        items: firstPage.items,
+        totalCount: firstPage.totalCount,
+      };
+    }
+
+    const remainingPageNumbers = Array.from(
+      { length: firstPage.totalPages - 1 },
+      (_, index) => index + 2,
+    );
+    const pages = [firstPage];
+
+    for (
+      let startIndex = 0;
+      startIndex < remainingPageNumbers.length;
+      startIndex += PAGE_REQUEST_BATCH_SIZE
+    ) {
+      const pageNumberBatch = remainingPageNumbers.slice(
+        startIndex,
+        startIndex + PAGE_REQUEST_BATCH_SIZE,
+      );
+      const pageBatch = await Promise.all(
+        pageNumberBatch.map((currentPageNumber) =>
+          adminUserApi.getAll({
+            pageNumber: currentPageNumber,
+            pageSize: MANAGEMENT_PAGE_SIZE,
+            signal,
+          }),
+        ),
+      );
+
+      pages.push(...pageBatch);
+    }
+
+    const usersById = new Map();
+
+    pages.forEach((page) => {
+      page.items.forEach((user) => {
+        if (user?.userId) {
+          usersById.set(user.userId, user);
+        }
+      });
+    });
+
+    return {
+      items: Array.from(usersById.values()),
+      totalCount: firstPage.totalCount,
+    };
   },
 
   lock: async (userId) => {
