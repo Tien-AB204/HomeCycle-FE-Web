@@ -18,6 +18,7 @@ import RegisterPersonalPage from "../pages/auth/RegisterPersonalPage";
 import RegisterSelectionPage from "../pages/auth/RegisterSelectionPage";
 import PostDetailPage from "../pages/public/PostDetailPage";
 import SearchPage from "../pages/public/SearchPage";
+import ErrorPage from "../pages/public/ErrorPage";
 
 // Moderator Pages và Security
 import { ROLES } from "../constants/roles";
@@ -54,6 +55,7 @@ import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 const AppRouter = () => {
   return (
     <Routes>
+      <Route path="/loi" element={<ErrorPage />} />
       {/* Trang công khai và người dùng */}
       <Route element={<MainLayout />}>
         <Route
@@ -308,6 +310,7 @@ const AppRouter = () => {
           />
         </Route>
       </Route>
+      <Route path="*" element={<ErrorPage notFound />} />
     </Routes>
   );
 };
