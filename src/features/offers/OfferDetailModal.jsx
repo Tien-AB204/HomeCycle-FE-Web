@@ -29,8 +29,8 @@ const Participant = ({ label, participant }) => {
   const name = participant?.displayName || "Người dùng HomeCycle";
 
   return (
-    <div className="rounded-xl border border-[#BAC2C1]/35 bg-[#f8fafa] p-4">
-      <p className="text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+    <div className="rounded-xl border border-[#DCE8E5] bg-[#F7FAF9] p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-[#68807F]">
         {label}
       </p>
       <div className="mt-3 flex items-center gap-3">
@@ -41,11 +41,11 @@ const Participant = ({ label, participant }) => {
             className="h-10 w-10 rounded-full object-cover"
           />
         ) : (
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2B5659] font-black text-white">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4F8588] font-black text-white">
             {name.charAt(0).toUpperCase()}
           </span>
         )}
-        <p className="min-w-0 truncate text-sm font-bold text-[#172830]">
+        <p className="min-w-0 truncate text-sm font-bold text-[#183F41]">
           {name}
         </p>
       </div>
@@ -79,17 +79,18 @@ const OfferDetailModal = ({
           onClose();
         }
       }}
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#172830]/65 p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-[#183F41]/70 p-4 backdrop-blur-sm"
     >
       <section
         role="dialog"
         aria-modal="true"
         aria-labelledby="offer-detail-title"
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[#BAC2C1]/40 bg-white shadow-2xl"
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[#D7E7E3] bg-white shadow-[0_28px_80px_rgba(15,45,47,0.28)]"
       >
-        <div className="flex items-start justify-between gap-4 bg-[#172830] px-6 py-5 text-white">
+        <div className="relative flex items-start justify-between gap-4 overflow-hidden bg-gradient-to-r from-[#183F41] via-[#244F51] to-[#2F6F9F] px-6 py-5 text-white">
+          <div className="pointer-events-none absolute -right-10 -top-14 h-32 w-32 rounded-full border-[22px] border-white/5" />
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C1EAEC]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C8ECE7]">
               Chi tiết thương lượng
             </p>
             <h2 id="offer-detail-title" className="mt-1 text-xl font-bold">
@@ -101,7 +102,7 @@ const OfferDetailModal = ({
             onClick={onClose}
             disabled={actionBusy}
             aria-label="Đóng cửa sổ"
-            className="rounded-lg px-2 py-1 text-2xl leading-none text-[#C1EAEC] transition hover:bg-white/10 disabled:opacity-50"
+            className="rounded-lg px-2 py-1 text-2xl leading-none text-[#C8ECE7] transition hover:bg-white/10 disabled:opacity-50"
           >
             ×
           </button>
@@ -109,7 +110,7 @@ const OfferDetailModal = ({
 
         <div className="p-6">
           {loading && (
-            <div role="status" className="py-16 text-center text-[#547B7D]">
+            <div role="status" className="py-16 text-center text-[#68807F]">
               <span className="material-symbols-outlined animate-spin text-3xl">
                 refresh
               </span>
@@ -125,7 +126,7 @@ const OfferDetailModal = ({
               <button
                 type="button"
                 onClick={onRetry}
-                className="mt-4 rounded-lg bg-[#7A1012] px-4 py-2 text-sm font-bold text-white"
+                className="mt-4 rounded-lg bg-[#B33A32] px-4 py-2 text-sm font-bold text-white"
               >
                 Thử lại
               </button>
@@ -140,7 +141,7 @@ const OfferDetailModal = ({
                 >
                   {statusMeta.label}
                 </span>
-                <span className="text-xs font-medium text-[#547B7D]">
+                <span className="text-xs font-medium text-[#68807F]">
                   Tạo lúc {formatDate(offer.createdAt)}
                 </span>
               </div>
@@ -151,19 +152,19 @@ const OfferDetailModal = ({
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-[#7A1012]/8 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7A1012]">
+                <div className="rounded-xl border border-[#F1D2CE] bg-[#FFF6F4] p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#B33A32]">
                     Giá đề nghị
                   </p>
-                  <p className="mt-1 text-2xl font-black text-[#7A1012]">
+                  <p className="mt-1 text-2xl font-black text-[#B33A32]">
                     {formatCurrency(offer.offerPrice)}
                   </p>
                 </div>
-                <div className="rounded-xl bg-[#2B5659]/10 p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[#2B5659]">
+                <div className="rounded-xl bg-[#EDF4F8] p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#4F8588]">
                     Số lượng
                   </p>
-                  <p className="mt-1 text-2xl font-black text-[#172830]">
+                  <p className="mt-1 text-2xl font-black text-[#183F41]">
                     {offer.offerQuantity}
                   </p>
                 </div>
@@ -173,7 +174,7 @@ const OfferDetailModal = ({
                 <Link
                   to={`/posts/${encodeURIComponent(offer.postId)}`}
                   onClick={onClose}
-                  className="rounded-lg border border-[#BAC2C1] bg-white px-4 py-2.5 text-sm font-bold text-[#172830] transition hover:bg-[#BAC2C1]/15"
+                  className="rounded-xl border border-[#9FBFBA] bg-white px-4 py-2.5 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
                 >
                   Xem bài đăng
                 </Link>
@@ -183,7 +184,7 @@ const OfferDetailModal = ({
                     type="button"
                     onClick={onEdit}
                     disabled={actionBusy}
-                    className="rounded-lg bg-[#2B5659] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830] disabled:opacity-50"
+                    className="rounded-xl bg-[#4F8588] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#356A70] disabled:opacity-50"
                   >
                     Chỉnh sửa
                   </button>
@@ -216,7 +217,7 @@ const OfferDetailModal = ({
                     type="button"
                     onClick={onCounter}
                     disabled={actionBusy}
-                    className="rounded-lg bg-[#2B5659] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#172830] disabled:opacity-50"
+                    className="rounded-xl bg-[#4F8588] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#356A70] disabled:opacity-50"
                   >
                     Phản đề và mở phòng
                   </button>
@@ -227,7 +228,7 @@ const OfferDetailModal = ({
                     type="button"
                     onClick={onAccept}
                     disabled={actionBusy}
-                    className="rounded-lg bg-green-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-800 disabled:opacity-50"
+                    className="rounded-xl bg-green-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-800 disabled:opacity-50"
                   >
                     {actionBusy ? "Đang xử lý..." : "Đồng ý mức giá"}
                   </button>
@@ -235,14 +236,15 @@ const OfferDetailModal = ({
               </div>
 
               {offer.negotiationId && (
-                <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4">
-                  <p className="break-all text-xs font-medium text-green-700">
-                    Phiên thương lượng: {offer.negotiationId}
-                  </p>
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#DCE8E5] bg-[#F7FAF9] p-4">
+                  <div>
+                    <p className="text-sm font-black text-[#183F41]">Phòng thương lượng đã sẵn sàng</p>
+                    <p className="mt-1 text-xs text-[#68807F]">Tiếp tục trao đổi giá, số lượng và điều kiện giao nhận.</p>
+                  </div>
                   <Link
                     to={`/thuong-luong/${encodeURIComponent(offer.negotiationId)}`}
                     onClick={onClose}
-                    className="mt-3 inline-flex rounded-lg bg-green-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-800"
+                    className="inline-flex rounded-lg bg-[#4F8588] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#356A70]"
                   >
                     Mở phòng thương lượng
                   </Link>

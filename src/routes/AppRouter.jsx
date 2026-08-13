@@ -47,6 +47,8 @@ import AgreementPage from "../pages/user/AgreementPage";
 import AppointmentPage from "../pages/user/AppointmentPage";
 import PendingPaymentsPage from "../pages/user/PendingPaymentsPage";
 import PaymentResultPage from "../pages/user/PaymentResultPage";
+import OrderListPage from "../pages/user/OrderListPage";
+import OrderDetailPage from "../pages/user/OrderDetailPage";
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
@@ -152,6 +154,16 @@ const AppRouter = () => {
           <Route
             path="/lich-hen"
             element={<AppointmentPage />}
+          />
+
+          <Route
+            path="/don-hang"
+            element={<OrderListPage />}
+          />
+
+          <Route
+            path="/don-hang/:orderId"
+            element={<OrderDetailPage />}
           />
 
           <Route

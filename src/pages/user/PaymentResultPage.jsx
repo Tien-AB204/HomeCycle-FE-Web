@@ -64,16 +64,16 @@ const PaymentResultPage = () => {
   const cancelled = wasCancelled || state.status.toLowerCase() === "cancelled";
 
   return (
-    <section className="mx-auto flex min-h-[65vh] w-full max-w-3xl items-center px-4 py-10 sm:px-6">
-      <div className="w-full rounded-3xl border border-[#BAC2C1]/40 bg-white p-7 text-center shadow-sm sm:p-10">
-        <div className="text-5xl" aria-hidden="true">
-          {completed ? "✅" : cancelled ? "↩️" : state.loading ? "⏳" : "🔄"}
-        </div>
+    <section className="mx-auto flex min-h-[65vh] w-full max-w-2xl items-center px-4 py-10 sm:px-6">
+      <div className="w-full rounded-2xl border border-[#DCE8E5] bg-white p-7 text-center shadow-[0_16px_42px_rgba(24,63,65,0.09)] sm:p-10">
+        <span className={`material-symbols-outlined text-5xl ${completed ? "text-green-600" : cancelled ? "text-[#B33A32]" : "text-[#2F6F9F]"}`} aria-hidden="true">
+          {completed ? "check_circle" : cancelled ? "cancel" : state.loading ? "progress_activity" : "sync"}
+        </span>
 
-        <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-[#547B7D]">
+        <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-[#4F8588]">
           Kết quả thanh toán
         </p>
-        <h1 className="mt-2 text-2xl font-black text-[#172830]">
+        <h1 className="mt-2 text-2xl font-black text-[#183F41]">
           {completed
             ? "Thanh toán thành công"
             : cancelled
@@ -83,7 +83,7 @@ const PaymentResultPage = () => {
                 : "PayOS đã ghi nhận thanh toán"}
         </h1>
 
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#547B7D]">
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#68807F]">
           {completed
             ? "HomeCycle đã ghi nhận khoản thanh toán và cập nhật dữ liệu giao dịch."
             : cancelled
@@ -110,24 +110,32 @@ const PaymentResultPage = () => {
 
         {!agreementId && (
           <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Không tìm thấy mã thỏa thuận trên trình duyệt này. Hãy mở lại mục Thanh toán để kiểm tra.
+            Không tìm thấy mã thỏa thuận trên trình duyệt này. Hãy mở lại thỏa thuận để kiểm tra.
           </p>
         )}
 
         <div className="mt-7 flex flex-wrap justify-center gap-3">
+          {state.order?.orderId && (
+            <Link
+              to={`/don-hang/${state.order.orderId}`}
+              className="rounded-lg bg-green-700 px-5 py-3 text-sm font-black text-white hover:bg-green-800"
+            >
+              Xem đơn hàng
+            </Link>
+          )}
           {agreementId && (
             <Link
               to={`/thoa-thuan/${agreementId}`}
-              className="rounded-xl bg-[#2B5659] px-5 py-3 text-sm font-black text-white hover:bg-[#172830]"
+              className="rounded-lg bg-[#4F8588] px-5 py-3 text-sm font-black text-white hover:bg-[#356A70]"
             >
               Quay lại thỏa thuận
             </Link>
           )}
           <Link
             to="/thanh-toan"
-            className="rounded-xl border border-[#BAC2C1] px-5 py-3 text-sm font-black text-[#2B5659] hover:bg-[#BAC2C1]/20"
+            className="rounded-lg border border-[#4F8588] bg-white px-5 py-3 text-sm font-black text-[#285E62] hover:bg-[#F1F7F5]"
           >
-            Danh sách thanh toán
+            Lịch sử thanh toán
           </Link>
         </div>
       </div>

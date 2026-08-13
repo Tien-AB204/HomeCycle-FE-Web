@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   AGREEMENT_TYPE,
   AGREEMENT_TYPE_OPTIONS,
@@ -7,6 +7,7 @@ import {
   PAYMENT_TYPE,
   PAYMENT_TYPE_OPTIONS,
 } from "../../constants/agreements";
+import AddressSelector from "./AddressSelector";
 
 const toDateTimeLocal = (value) => {
   if (!value) return "";
@@ -46,6 +47,11 @@ const AgreementForm = ({ agreement, negotiationId, onSubmit, onCancel, busy }) =
     setValues((current) => ({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
   };
+
+  const updateAddress = useCallback((name, value) => {
+    setValues((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: "" }));
+  }, []);
 
   const validate = () => {
     const nextErrors = {};
@@ -96,22 +102,22 @@ const AgreementForm = ({ agreement, negotiationId, onSubmit, onCancel, busy }) =
     });
   };
 
-  const inputClass = "mt-1.5 w-full rounded-xl border border-[#BAC2C1] bg-white px-3.5 py-3 text-sm text-[#172830] outline-none transition focus:border-[#2B5659] focus:ring-2 focus:ring-[#2B5659]/10";
+  const inputClass = "mt-1.5 w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3.5 py-3 text-sm text-[#183F41] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <section className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#547B7D]">1. Hình thức thỏa thuận</p>
+      <section className="rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#4F8588]">1. Hình thức thỏa thuận</p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {AGREEMENT_TYPE_OPTIONS.map((option) => (
-            <label key={option.value} className={`cursor-pointer rounded-xl border p-4 transition ${values.agreementType === option.value ? "border-[#2B5659] bg-[#EAF3F3]" : "border-[#BAC2C1]/50 hover:border-[#547B7D]"}`}>
+            <label key={option.value} className={`cursor-pointer rounded-xl border p-4 transition ${values.agreementType === option.value ? "border-[#4F8588] bg-[#F1F7F5]" : "border-[#DCE8E5] hover:border-[#9FBFBA]"}`}>
               <input type="radio" name="agreementType" value={option.value} checked={values.agreementType === option.value} onChange={updateField} className="sr-only" />
-              <span className="block font-black text-[#172830]">{option.label}</span>
-              <span className="mt-1 block text-xs leading-5 text-[#547B7D]">{option.description}</span>
+              <span className="block font-black text-[#183F41]">{option.label}</span>
+              <span className="mt-1 block text-xs leading-5 text-[#68807F]">{option.description}</span>
             </label>
           ))}
         </div>
-        <label className="mt-5 block text-sm font-bold text-[#172830]">
+        <label className="mt-5 block text-sm font-bold text-[#183F41]">
           Hình thức thanh toán
           <select name="paymentType" value={values.paymentType} onChange={updateField} className={inputClass}>
             {PAYMENT_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -120,55 +126,64 @@ const AgreementForm = ({ agreement, negotiationId, onSubmit, onCancel, busy }) =
       </section>
 
       {values.agreementType === AGREEMENT_TYPE.INSPECTION && (
-        <section className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#547B7D]">2. Lịch kiểm định</p>
+        <section className="rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#4F8588]">2. Lịch kiểm định</p>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-bold text-[#172830]">
+            <label className="text-sm font-bold text-[#183F41]">
               Ngày giờ kiểm định <span className="text-red-600">*</span>
               <input type="datetime-local" name="inspectionDate" value={values.inspectionDate} onChange={updateField} className={inputClass} />
               <FieldError>{errors.inspectionDate}</FieldError>
             </label>
-            <label className="text-sm font-bold text-[#172830]">
-              Địa chỉ kiểm định <span className="text-red-600">*</span>
-              <input name="inspectionAddress" value={values.inspectionAddress} onChange={updateField} placeholder="Địa điểm hai bên gặp để kiểm tra sản phẩm" className={inputClass} />
-              <FieldError>{errors.inspectionAddress}</FieldError>
-            </label>
+            <AddressSelector
+              id="inspection-address"
+              label="Địa chỉ kiểm định"
+              value={values.inspectionAddress}
+              onChange={(value) => updateAddress("inspectionAddress", value)}
+              error={errors.inspectionAddress}
+              required
+              inputClass={inputClass}
+            />
           </div>
         </section>
       )}
 
-      <section className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#547B7D]">{values.agreementType === AGREEMENT_TYPE.INSPECTION ? "3" : "2"}. Giao nhận</p>
+      <section className="rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#4F8588]">{values.agreementType === AGREEMENT_TYPE.INSPECTION ? "3" : "2"}. Giao nhận</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-bold text-[#172830]">
+          <label className="text-sm font-bold text-[#183F41]">
             Phương thức giao nhận
             <select name="deliveryMethod" value={values.deliveryMethod} onChange={updateField} className={inputClass}>
               {DELIVERY_METHOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
           </label>
-          <label className="text-sm font-bold text-[#172830]">
+          <label className="text-sm font-bold text-[#183F41]">
             Ngày giờ nhận hàng
             <input type="datetime-local" name="collectionDate" value={values.collectionDate} onChange={updateField} className={inputClass} />
           </label>
-          <label className="text-sm font-bold text-[#172830]">
-            Địa chỉ lấy hàng <span className="text-red-600">*</span>
-            <input name="pickupAddress" value={values.pickupAddress} onChange={updateField} className={inputClass} />
-            <FieldError>{errors.pickupAddress}</FieldError>
-          </label>
-          <label className="text-sm font-bold text-[#172830]">
-            Địa chỉ nhận hàng <span className="text-red-600">*</span>
-            <input name="deliveryAddress" value={values.deliveryAddress} onChange={updateField} className={inputClass} />
-            <FieldError>{errors.deliveryAddress}</FieldError>
-          </label>
+          <AddressSelector
+            id="pickup-address"
+            label="Địa chỉ lấy hàng"
+            value={values.pickupAddress}
+            onChange={(value) => updateAddress("pickupAddress", value)}
+            error={errors.pickupAddress}
+            required
+            inputClass={inputClass}
+          />
+          <AddressSelector
+            id="delivery-address"
+            label="Địa chỉ nhận hàng"
+            value={values.deliveryAddress}
+            onChange={(value) => updateAddress("deliveryAddress", value)}
+            error={errors.deliveryAddress}
+            required
+            inputClass={inputClass}
+          />
         </div>
-        <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
-          Tích hợp giao hàng GHN đang được backend cập nhật. Hiện tại form hỗ trợ người mua tự lấy hoặc người bán giao hàng.
-        </p>
       </section>
 
-      <section className="rounded-2xl border border-[#BAC2C1]/40 bg-white p-5 shadow-sm sm:p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#547B7D]">{values.agreementType === AGREEMENT_TYPE.INSPECTION ? "4" : "3"}. Điều khoản chung</p>
-        <label className="mt-4 block text-sm font-bold text-[#172830]">
+      <section className="rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#4F8588]">{values.agreementType === AGREEMENT_TYPE.INSPECTION ? "4" : "3"}. Điều khoản chung</p>
+        <label className="mt-4 block text-sm font-bold text-[#183F41]">
           Nội dung đã thống nhất <span className="text-red-600">*</span>
           <textarea name="notes" value={values.notes} onChange={updateField} rows={6} placeholder="Mô tả tình trạng sản phẩm, lịch hẹn, cách thanh toán và trách nhiệm của hai bên..." className={inputClass} />
           <FieldError>{errors.notes}</FieldError>
@@ -176,8 +191,8 @@ const AgreementForm = ({ agreement, negotiationId, onSubmit, onCancel, busy }) =
       </section>
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        {onCancel && <button type="button" onClick={onCancel} disabled={busy} className="rounded-xl border border-[#BAC2C1] px-5 py-3 text-sm font-bold text-[#2B5659] hover:bg-[#BAC2C1]/20 disabled:opacity-50">Hủy chỉnh sửa</button>}
-        <button type="submit" disabled={busy} className="rounded-xl bg-[#2B5659] px-6 py-3 text-sm font-black text-white transition hover:bg-[#172830] disabled:cursor-not-allowed disabled:opacity-50">
+        {onCancel && <button type="button" onClick={onCancel} disabled={busy} className="rounded-lg border border-[#4F8588] bg-white px-5 py-3 text-sm font-bold text-[#285E62] hover:bg-[#F1F7F5] disabled:opacity-50">Hủy chỉnh sửa</button>}
+        <button type="submit" disabled={busy} className="rounded-lg bg-[#4F8588] px-6 py-3 text-sm font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-50">
           {busy ? "Đang lưu..." : agreement ? "Lưu và xác nhận nội dung mới" : "Tạo và gửi thỏa thuận"}
         </button>
       </div>
