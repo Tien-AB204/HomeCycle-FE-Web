@@ -38,7 +38,7 @@ import UserManagementPage from "../pages/admin/UserManagementPage";
 import PostManagementPage from "../pages/admin/PostManagementPage";
 
 // User Pages
-import UserProfilePage from "../pages/user/UserProfilePage";
+import ProfilePage from "../pages/user/ProfilePage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import CreatePostPage from "../pages/user/CreatePostPage";
 import NegotiationListPage from "../pages/user/NegotiationListPage";
@@ -175,9 +175,20 @@ const AppRouter = () => {
         </Route>
 
         <Route
-          path="/ho-so"
-          element={<UserProfilePage />}
-        />
+          element={
+            <RoleRoute
+              allowedRoles={[
+                ROLES.PERSONAL,
+                ROLES.BUSINESS,
+              ]}
+            />
+          }
+        >
+          <Route
+            path="/ho-so"
+            element={<ProfilePage />}
+          />
+        </Route>
       </Route>
 
       {/* Đăng nhập và đăng ký */}
