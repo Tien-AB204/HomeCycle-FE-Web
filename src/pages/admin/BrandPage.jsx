@@ -3,6 +3,7 @@ import {
   useState,
 } from "react";
 import BrandModal from "../../features/system/brand/BrandModal";
+import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import brandApi from "../../services/apis/brandApi";
 
 const PAGE_SIZE = 10;
@@ -124,6 +125,8 @@ export default function BrandPage() {
     deletingBrandId,
     setDeletingBrandId,
   ] = useState(null);
+
+  const [pendingStatusBrand, setPendingStatusBrand] = useState(null);
 
   const [
     modalError,
@@ -383,20 +386,30 @@ export default function BrandPage() {
     }
   };
 
-  const handleHideBrand = async (
-    brand,
-  ) => {
+  const handleOpenStatusConfirmation = (brand) => {
     if (deletingBrandId) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn ẩn thương hiệu "${brand.brandName}"?\n\nThương hiệu sẽ không còn xuất hiện trong các danh sách đang hoạt động.`,
-    );
+    setActionError("");
+    setSuccessMessage("");
+    setPendingStatusBrand(brand);
+  };
 
-    if (!confirmed) {
+  const handleCloseStatusConfirmation = () => {
+    if (!deletingBrandId) {
+      setPendingStatusBrand(null);
+    }
+  };
+
+  const handleChangeBrandStatus = async () => {
+    const brand = pendingStatusBrand;
+
+    if (!brand || deletingBrandId) {
       return;
     }
+
+    const shouldActivate = !brand.isActive;
 
     setDeletingBrandId(
       brand.brandId,
@@ -405,13 +418,21 @@ export default function BrandPage() {
     setSuccessMessage("");
 
     try {
-      await brandApi.remove(
-        brand.brandId,
-      );
+      if (shouldActivate) {
+        await brandApi.update(brand.brandId, {
+          brandName: brand.brandName,
+          description: brand.description || "",
+          isActive: true,
+        });
+      } else {
+        await brandApi.remove(brand.brandId);
+      }
 
       setSuccessMessage(
-        `Đã ẩn thương hiệu "${brand.brandName}" thành công.`,
+        `Đã ${shouldActivate ? "kích hoạt lại" : "ẩn"} thương hiệu "${brand.brandName}" thành công.`,
       );
+
+      setPendingStatusBrand(null);
 
       refreshCurrentPage();
     } catch (requestError) {
@@ -863,24 +884,19 @@ export default function BrandPage() {
 
                       <button
                         type="button"
-                        onClick={() =>
-                          handleHideBrand(
-                            brand,
-                          )
-                        }
-                        disabled={
-                          Boolean(
-                            deletingBrandId,
-                          ) ||
-                          !brand.isActive
-                        }
+                        onClick={() => handleOpenStatusConfirmation(brand)}
+                        disabled={Boolean(deletingBrandId)}
                         title={
                           brand.isActive
                             ? "Ẩn thương hiệu"
-                            : "Thương hiệu đã được ẩn"
+                            : "Kích hoạt lại thương hiệu"
                         }
-                        aria-label={`Ẩn ${brand.brandName}`}
-                        className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50"
+                        aria-label={`${brand.isActive ? "Ẩn" : "Kích hoạt lại"} ${brand.brandName}`}
+                        className={`rounded-md p-1.5 transition disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50 ${
+                          brand.isActive
+                            ? "text-red-600 hover:bg-red-50"
+                            : "text-green-700 hover:bg-green-50"
+                        }`}
                       >
                         <span
                           className={[
@@ -891,8 +907,10 @@ export default function BrandPage() {
                           ].join(" ")}
                         >
                           {isDeleting
-                            ? "refresh"
-                            : "visibility_off"}
+                            ? "progress_activity"
+                            : brand.isActive
+                              ? "visibility_off"
+                              : "visibility"}
                         </span>
                       </button>
                     </td>
@@ -973,6 +991,25 @@ export default function BrandPage() {
           serverError={modalError}
         />
       )}
+
+      <ConfirmActionModal
+        open={Boolean(pendingStatusBrand)}
+        title={
+          pendingStatusBrand?.isActive
+            ? "Ẩn thương hiệu"
+            : "Kích hoạt lại thương hiệu"
+        }
+        description={
+          pendingStatusBrand?.isActive
+            ? `Thương hiệu “${pendingStatusBrand?.brandName || ""}” sẽ không còn xuất hiện trong danh sách đang hoạt động.`
+            : `Thương hiệu “${pendingStatusBrand?.brandName || ""}” sẽ được hiển thị trở lại trên hệ thống.`
+        }
+        confirmLabel={pendingStatusBrand?.isActive ? "Ẩn thương hiệu" : "Kích hoạt"}
+        tone={pendingStatusBrand?.isActive ? "danger" : "success"}
+        busy={Boolean(deletingBrandId)}
+        onCancel={handleCloseStatusConfirmation}
+        onConfirm={handleChangeBrandStatus}
+      />
     </div>
   );
 }

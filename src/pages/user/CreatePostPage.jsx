@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 import DynamicAttributeFields from "../../features/posts/DynamicAttributeFields";
 import MediaUploadField from "../../features/posts/MediaUploadField";
+import PostAddressFields from "../../features/posts/PostAddressFields";
 import {
   DAMAGE_LEVEL_OPTIONS,
   DELIVERY_METHOD_OPTIONS,
@@ -1290,49 +1291,15 @@ const CreatePostPage = () => {
               </select>
             </label>
 
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
-                Tỉnh/Thành phố <span className="text-red-600">*</span>
-              </span>
-              <input
-                type="text"
-                value={form.city}
-                onChange={(event) => updateField("city", event.target.value)}
-                disabled={isSubmitting}
-                className={inputClassName}
-              />
-              <FieldError message={fieldErrors.city} />
-            </label>
-
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
-                Phường/Xã <span className="text-red-600">*</span>
-              </span>
-              <input
-                type="text"
-                value={form.ward}
-                onChange={(event) => updateField("ward", event.target.value)}
-                disabled={isSubmitting}
-                className={inputClassName}
-              />
-              <FieldError message={fieldErrors.ward} />
-            </label>
-
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
-                Địa chỉ chi tiết <span className="text-red-600">*</span>
-              </span>
-              <input
-                type="text"
-                value={form.streetAddress}
-                onChange={(event) =>
-                  updateField("streetAddress", event.target.value)
-                }
-                disabled={isSubmitting}
-                className={inputClassName}
-              />
-              <FieldError message={fieldErrors.streetAddress} />
-            </label>
+            <PostAddressFields
+              city={form.city}
+              ward={form.ward}
+              streetAddress={form.streetAddress}
+              errors={fieldErrors}
+              disabled={isSubmitting}
+              inputClassName={inputClassName}
+              onChange={updateField}
+            />
           </div>
 
           <div className="mt-5">
