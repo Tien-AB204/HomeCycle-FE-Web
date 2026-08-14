@@ -1,4 +1,5 @@
 import axios from "axios";
+import { notifyGlobalApiError } from "../../utils/globalApiError";
 
 const DEFAULT_API_BASE_URL =
   "https://homecycle-backend.onrender.com/api";
@@ -79,6 +80,7 @@ axiosClient.interceptors.response.use(
       !isPublicAuthRequest(originalRequest.url);
 
     if (!shouldRefresh) {
+      notifyGlobalApiError(error);
       return Promise.reject(error);
     }
 
@@ -161,6 +163,7 @@ axiosClient.interceptors.response.use(
     } catch (refreshError) {
       clearStoredSession();
       notifySessionExpired();
+      notifyGlobalApiError(refreshError);
 
       return Promise.reject(refreshError);
     }

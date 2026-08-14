@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import CategoryModal from "../../features/system/category/CategoryModal";
+import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import categoryApi from "../../services/apis/categoryApi";
 
 const PAGE_SIZE = 5;
@@ -94,6 +95,8 @@ export default function CategoryPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const [deletingCategoryId, setDeletingCategoryId] = useState(null);
+
+  const [pendingStatusCategory, setPendingStatusCategory] = useState(null);
 
   const [modalError, setModalError] = useState("");
 
@@ -314,16 +317,32 @@ export default function CategoryPage() {
     }
   };
 
-  const handleHideCategory = async (category) => {
+  const handleOpenStatusConfirmation = (category) => {
     if (deletingCategoryId) {
       return;
     }
 
-    const confirmed = window.confirm(
-      `Bạn có chắc muốn ẩn danh mục "${category.categoryName}"?\n\nDanh mục sẽ không còn được hiển thị cho người dùng.`,
-    );
+    setActionError("");
+    setSuccessMessage("");
+    setPendingStatusCategory(category);
+  };
 
-    if (!confirmed) {
+  const handleCloseStatusConfirmation = () => {
+    if (!deletingCategoryId) {
+      setPendingStatusCategory(null);
+    }
+  };
+
+  const handleChangeCategoryStatus = async () => {
+    const category = pendingStatusCategory;
+
+    if (!category || deletingCategoryId) {
+      return;
+    }
+
+    const shouldActivate = !category.isActive;
+
+    if (deletingCategoryId) {
       return;
     }
 
@@ -332,13 +351,23 @@ export default function CategoryPage() {
     setSuccessMessage("");
 
     try {
-      await categoryApi.remove(category.categoryId);
+      if (shouldActivate) {
+        await categoryApi.update(category.categoryId, {
+          categoryName: category.categoryName,
+          description: category.description || "",
+          isActive: true,
+        });
+      } else {
+        await categoryApi.remove(category.categoryId);
+      }
 
       setSuccessMessage(
-        `Đã ẩn danh mục "${category.categoryName}" thành công.`,
+        `Đã ${shouldActivate ? "kích hoạt lại" : "ẩn"} danh mục "${category.categoryName}" thành công.`,
       );
 
-      const isLastItemOnPage = categories.length === 1;
+      setPendingStatusCategory(null);
+
+      const isLastItemOnPage = !shouldActivate && categories.length === 1;
 
       if (isLastItemOnPage && pagination.pageNumber > 1) {
         setLoading(true);
@@ -604,17 +633,19 @@ export default function CategoryPage() {
 
                       <button
                         type="button"
-                        onClick={() => handleHideCategory(category)}
-                        disabled={
-                          Boolean(deletingCategoryId) || !category.isActive
-                        }
+                        onClick={() => handleOpenStatusConfirmation(category)}
+                        disabled={Boolean(deletingCategoryId)}
                         title={
                           category.isActive
                             ? "Ẩn danh mục"
-                            : "Danh mục đã được ẩn"
+                            : "Kích hoạt lại danh mục"
                         }
-                        aria-label={`Ẩn ${category.categoryName}`}
-                        className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50"
+                        aria-label={`${category.isActive ? "Ẩn" : "Kích hoạt lại"} ${category.categoryName}`}
+                        className={`rounded-md p-1.5 transition disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50 ${
+                          category.isActive
+                            ? "text-red-600 hover:bg-red-50"
+                            : "text-green-700 hover:bg-green-50"
+                        }`}
                       >
                         <span
                           className={[
@@ -622,7 +653,11 @@ export default function CategoryPage() {
                             isDeleting ? "animate-spin" : "",
                           ].join(" ")}
                         >
-                          {isDeleting ? "refresh" : "visibility_off"}
+                          {isDeleting
+                            ? "progress_activity"
+                            : category.isActive
+                              ? "visibility_off"
+                              : "visibility"}
                         </span>
                       </button>
                     </td>
@@ -680,6 +715,25 @@ export default function CategoryPage() {
           serverError={modalError}
         />
       )}
+
+      <ConfirmActionModal
+        open={Boolean(pendingStatusCategory)}
+        title={
+          pendingStatusCategory?.isActive
+            ? "Ẩn danh mục"
+            : "Kích hoạt lại danh mục"
+        }
+        description={
+          pendingStatusCategory?.isActive
+            ? `Danh mục “${pendingStatusCategory?.categoryName || ""}” sẽ không còn hiển thị cho người dùng.`
+            : `Danh mục “${pendingStatusCategory?.categoryName || ""}” sẽ được hiển thị trở lại trên hệ thống.`
+        }
+        confirmLabel={pendingStatusCategory?.isActive ? "Ẩn danh mục" : "Kích hoạt"}
+        tone={pendingStatusCategory?.isActive ? "danger" : "success"}
+        busy={Boolean(deletingCategoryId)}
+        onCancel={handleCloseStatusConfirmation}
+        onConfirm={handleChangeCategoryStatus}
+      />
     </div>
   );
 }

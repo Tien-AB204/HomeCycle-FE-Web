@@ -18,6 +18,7 @@ import RegisterPersonalPage from "../pages/auth/RegisterPersonalPage";
 import RegisterSelectionPage from "../pages/auth/RegisterSelectionPage";
 import PostDetailPage from "../pages/public/PostDetailPage";
 import SearchPage from "../pages/public/SearchPage";
+import ErrorPage from "../pages/public/ErrorPage";
 
 // Moderator Pages và Security
 import { ROLES } from "../constants/roles";
@@ -37,7 +38,7 @@ import UserManagementPage from "../pages/admin/UserManagementPage";
 import PostManagementPage from "../pages/admin/PostManagementPage";
 
 // User Pages
-import UserProfilePage from "../pages/user/UserProfilePage";
+import ProfilePage from "../pages/user/ProfilePage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import CreatePostPage from "../pages/user/CreatePostPage";
 import NegotiationListPage from "../pages/user/NegotiationListPage";
@@ -54,6 +55,7 @@ import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 const AppRouter = () => {
   return (
     <Routes>
+      <Route path="/loi" element={<ErrorPage />} />
       {/* Trang công khai và người dùng */}
       <Route element={<MainLayout />}>
         <Route
@@ -173,9 +175,20 @@ const AppRouter = () => {
         </Route>
 
         <Route
-          path="/ho-so"
-          element={<UserProfilePage />}
-        />
+          element={
+            <RoleRoute
+              allowedRoles={[
+                ROLES.PERSONAL,
+                ROLES.BUSINESS,
+              ]}
+            />
+          }
+        >
+          <Route
+            path="/ho-so"
+            element={<ProfilePage />}
+          />
+        </Route>
       </Route>
 
       {/* Đăng nhập và đăng ký */}
@@ -308,6 +321,7 @@ const AppRouter = () => {
           />
         </Route>
       </Route>
+      <Route path="*" element={<ErrorPage notFound />} />
     </Routes>
   );
 };

@@ -415,10 +415,6 @@ export default function AdminPostDetailModal({
                       value={post.productName || "—"}
                       emphasize
                     />
-                    <DetailRow
-                      label="Mã mẫu"
-                      value={product.modelNumber || "—"}
-                    />
                     {!isBuyPost && (
                       <DetailRow
                         label="Giá mua ban đầu"
@@ -492,8 +488,6 @@ export default function AdminPostDetailModal({
                       label="Ngày hết hạn"
                       value={formatDateTime(post.expiryDate)}
                     />
-                    <DetailRow label="Mã chủ sở hữu" value={post.ownerId} />
-                    <DetailRow label="Mã bài đăng" value={post.postId} />
                   </dl>
                 </section>
               </div>
