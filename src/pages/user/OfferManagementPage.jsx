@@ -8,6 +8,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { getOfferStatusMeta } from "../../constants/offers";
+import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import OfferDetailModal from "../../features/offers/OfferDetailModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
 import offerApi from "../../services/apis/offerApi";
@@ -69,6 +70,7 @@ const OfferManagementPage = () => {
   const [selectedOfferId, setSelectedOfferId] = useState("");
   const [detailVersion, setDetailVersion] = useState(0);
   const [actionBusy, setActionBusy] = useState(false);
+  const [pendingAction, setPendingAction] = useState("");
   const [editingOffer, setEditingOffer] = useState(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState("");
@@ -221,31 +223,26 @@ const OfferManagementPage = () => {
     );
   };
 
-  const runOfferAction = async (action) => {
+  const runOfferAction = (action) => {
     if (!selectedOffer || actionBusy) {
       return;
     }
 
-    const confirmationMessage = {
-      cancel: "Bạn có chắc muốn hủy đề nghị này?",
-      reject: "Bạn có chắc muốn từ chối đề nghị này?",
-      accept:
-        "Đồng ý mức giá và số lượng này? Hai bên sẽ được xem là đã thống nhất đề xuất.",
-    }[action];
+    setPendingAction(action);
+  };
 
-    if (!window.confirm(confirmationMessage)) {
-      return;
-    }
+  const confirmOfferAction = async () => {
+    if (!selectedOffer || !pendingAction || actionBusy) return;
 
     setActionBusy(true);
 
     try {
       let message = "";
 
-      if (action === "cancel") {
+      if (pendingAction === "cancel") {
         await offerApi.cancel(selectedOffer.offerId);
         message = "Đã hủy đề nghị thành công.";
-      } else if (action === "reject") {
+      } else if (pendingAction === "reject") {
         await offerApi.reject(selectedOffer.offerId);
         message = "Đã từ chối đề nghị thành công.";
       } else {
@@ -254,6 +251,7 @@ const OfferManagementPage = () => {
       }
 
       setSuccessMessage(message);
+      setPendingAction("");
       setDetailVersion(
         (currentVersion) => currentVersion + 1,
       );
@@ -627,6 +625,44 @@ const OfferManagementPage = () => {
           onSubmit={handleCounterOffer}
         />
       )}
+
+      <ConfirmActionModal
+        open={Boolean(pendingAction)}
+        title={
+          pendingAction === "cancel"
+            ? "Hủy đề nghị?"
+            : pendingAction === "reject"
+              ? "Từ chối đề nghị?"
+              : "Chấp nhận đề nghị?"
+        }
+        description={
+          pendingAction === "cancel"
+            ? "Đề nghị bạn đã gửi sẽ được hủy và không thể tiếp tục xử lý."
+            : pendingAction === "reject"
+              ? "Đề nghị này sẽ bị từ chối. Người gửi sẽ nhìn thấy trạng thái mới."
+              : "Mức giá và số lượng này sẽ được chấp nhận, sau đó hai bên có thể tiếp tục trong phòng thương lượng."
+        }
+        confirmLabel={
+          pendingAction === "cancel"
+            ? "Hủy đề nghị"
+            : pendingAction === "reject"
+              ? "Từ chối"
+              : "Chấp nhận"
+        }
+        tone={pendingAction === "accept" ? "success" : "danger"}
+        icon={
+          pendingAction === "cancel"
+            ? "cancel"
+            : pendingAction === "reject"
+              ? "thumb_down"
+              : "handshake"
+        }
+        busy={actionBusy}
+        onCancel={() => {
+          if (!actionBusy) setPendingAction("");
+        }}
+        onConfirm={() => void confirmOfferAction()}
+      />
     </section>
   );
 };

@@ -43,6 +43,7 @@ const LoginPage = () => {
   ] = useState(false);
   const [loading, setLoading] =
     useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -52,6 +53,7 @@ const LoginPage = () => {
     }
 
     setLoading(true);
+    setErrorMessage("");
 
     try {
       const loggedInUser =
@@ -72,14 +74,17 @@ const LoginPage = () => {
         error,
       );
 
-      const errorMessage =
+      const status = error?.response?.status;
+      const nextErrorMessage =
         error?.response?.data?.message ||
         error?.response?.data?.error
           ?.message ||
         error?.message ||
         "Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.";
 
-      alert(errorMessage);
+      if (error?.response && Number(status) < 500) {
+        setErrorMessage(nextErrorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -109,6 +114,12 @@ const LoginPage = () => {
         onSubmit={handleLogin}
         className="space-y-5"
       >
+        {errorMessage && (
+          <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">error</span>
+            <p className="leading-5">{errorMessage}</p>
+          </div>
+        )}
         <div>
           <label
             htmlFor="login-email"
@@ -128,11 +139,10 @@ const LoginPage = () => {
               required
               autoComplete="email"
               value={email}
-              onChange={(event) =>
-                setEmail(
-                  event.target.value,
-                )
-              }
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setErrorMessage("");
+              }}
               placeholder="Nhập địa chỉ email của bạn..."
               className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-10 pr-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
             />
@@ -158,11 +168,10 @@ const LoginPage = () => {
               required
               autoComplete="current-password"
               value={password}
-              onChange={(event) =>
-                setPassword(
-                  event.target.value,
-                )
-              }
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setErrorMessage("");
+              }}
               placeholder="Nhập mật khẩu của bạn..."
               className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 pr-10 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
             />
