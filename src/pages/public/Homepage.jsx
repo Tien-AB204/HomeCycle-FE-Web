@@ -171,6 +171,8 @@ const Homepage = () => {
   const { user, isAuthenticated } = useAuth();
   const [posts, setPosts] = useState([]);
   const [businessSurvey, setBusinessSurvey] = useState(null);
+  const [recommendationSourcePosts, setRecommendationSourcePosts] = useState([]);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [surveyLoading, setSurveyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -239,6 +241,7 @@ const Homepage = () => {
       return undefined;
     }
 
+    const controller = new AbortController();
     let isActive = true;
 
     Promise.resolve()
@@ -247,7 +250,9 @@ const Homepage = () => {
           setSurveyLoading(true);
         }
 
-        return businessProfileApi.getSurveyDetail();
+        return businessProfileApi.getSurveyDetail({
+          signal: controller.signal,
+        });
       })
       .then((surveyResponse) => {
         if (!isActive) return;
@@ -271,8 +276,58 @@ const Homepage = () => {
 
     return () => {
       isActive = false;
+      controller.abort();
     };
   }, [isBusinessUser]);
+
+  useEffect(() => {
+    if (
+      !isBusinessUser ||
+      !hasCompletedBusinessSurvey(businessSurvey)
+    ) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+
+    Promise.resolve()
+      .then(() => {
+        if (isActive) {
+          setRecommendationLoading(true);
+        }
+
+        return postApi.searchAll({
+          postType: "Sell",
+          onlyAvailable: true,
+          sortBy: "Newest",
+          signal: controller.signal,
+        });
+      })
+      .then((result) => {
+        if (isActive) {
+          setRecommendationSourcePosts(result.items || []);
+        }
+      })
+      .catch((requestError) => {
+        if (!isActive || isCanceledRequest(requestError)) {
+          return;
+        }
+
+        setRecommendationSourcePosts([]);
+        setError(getErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (isActive) {
+          setRecommendationLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [businessSurvey, isBusinessUser, requestVersion]);
 
   const businessPosts = useMemo(
     () =>
@@ -293,11 +348,11 @@ const Homepage = () => {
   const recommendedPosts = useMemo(
     () =>
       getBusinessRecommendations({
-        posts,
+        posts: recommendationSourcePosts,
         survey: businessSurvey,
         limit: PERSONAL_POST_LIMIT,
       }),
-    [businessSurvey, posts],
+    [businessSurvey, recommendationSourcePosts],
   );
 
   const hasBusinessSurvey =
@@ -481,11 +536,11 @@ const Homepage = () => {
                   eyebrow="Dành riêng cho doanh nghiệp"
                   title="Nguồn hàng phù hợp khảo sát"
                   description="Các tin bán được ưu tiên theo loại sản phẩm, khu vực và tình trạng hàng hóa doanh nghiệp đã chọn trong khảo sát."
-                  to="/tin-dang-ban?view=marketplace"
+                  to="/tin-dang-ban?view=recommended"
                 />
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  {surveyLoading || loading ? (
+                  {surveyLoading || recommendationLoading ? (
                     <LoadingCards
                       count={
                         PERSONAL_POST_LIMIT
