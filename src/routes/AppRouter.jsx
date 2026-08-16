@@ -50,6 +50,7 @@ import PendingPaymentsPage from "../pages/user/PendingPaymentsPage";
 import PaymentResultPage from "../pages/user/PaymentResultPage";
 import OrderListPage from "../pages/user/OrderListPage";
 import OrderDetailPage from "../pages/user/OrderDetailPage";
+import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 
 const AppRouter = () => {
@@ -166,6 +167,11 @@ const AppRouter = () => {
           <Route
             path="/don-hang/:orderId"
             element={<OrderDetailPage />}
+          />
+
+          <Route
+            path="/danh-gia/nguoi-dung/:userId"
+            element={<ReceivedReviewsPage />}
           />
 
           <Route
