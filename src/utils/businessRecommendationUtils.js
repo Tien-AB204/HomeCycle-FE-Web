@@ -18,8 +18,21 @@ const normalizeText = (value) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[\s_-]+/g, "")
+    .replace(/[^a-z0-9]+/g, "")
     .trim();
+
+const normalizeCity = (value) => {
+  const normalizedValue = normalizeText(value).replace(
+    /^(thanhpho|tinh|tp)/,
+    "",
+  );
+
+  if (["hcm", "saigon"].includes(normalizedValue)) {
+    return "hochiminh";
+  }
+
+  return normalizedValue;
+};
 
 const normalizeArray = (value) =>
   Array.isArray(value) ? value : [];
@@ -98,7 +111,7 @@ export const normalizeBusinessSurvey = (
         "value",
       ]),
     )
-    .map(normalizeText)
+    .map(normalizeCity)
     .filter(Boolean);
 
   const productTypeIds = normalizeArray(
@@ -113,7 +126,9 @@ export const normalizeBusinessSurvey = (
       ]),
     )
     .map((value) =>
-      String(value || "").trim(),
+      String(value || "")
+        .trim()
+        .toLowerCase(),
     )
     .filter(Boolean);
 
@@ -181,9 +196,11 @@ const getRecommendationScore = (
       "productTypeId",
       "ProductTypeId",
     ]),
-  ).trim();
+  )
+    .trim()
+    .toLowerCase();
 
-  const city = normalizeText(
+  const city = normalizeCity(
     getPostValue(post, [
       "city",
       "provinceName",
@@ -242,6 +259,48 @@ const getRecommendationScore = (
   return score;
 };
 
+const isEligibleRecommendation = (
+  post,
+  survey,
+) => {
+  const isActiveSellPost =
+    String(post?.status || "")
+      .trim()
+      .toLowerCase() === "active" &&
+    String(post?.postType || "")
+      .trim()
+      .toLowerCase() === "sell";
+
+  if (!isActiveSellPost) {
+    return false;
+  }
+
+  const productTypeId = String(
+    getPostValue(post, [
+      "productTypeId",
+      "ProductTypeId",
+    ]),
+  )
+    .trim()
+    .toLowerCase();
+  const city = normalizeCity(
+    getPostValue(post, [
+      "city",
+      "provinceName",
+      "province",
+    ]),
+  );
+
+  return Boolean(
+    productTypeId &&
+      city &&
+      survey.productTypeIds.includes(
+        productTypeId,
+      ) &&
+      survey.targetCities.includes(city),
+  );
+};
+
 export const getBusinessRecommendations = ({
   posts,
   survey,
@@ -255,14 +314,11 @@ export const getBusinessRecommendations = ({
   }
 
   return posts
-    .filter(
-      (post) =>
-        String(post?.status || "")
-          .trim()
-          .toLowerCase() === "active" &&
-        String(post?.postType || "")
-          .trim()
-          .toLowerCase() === "sell",
+    .filter((post) =>
+      isEligibleRecommendation(
+        post,
+        survey,
+      ),
     )
     .map((post) => ({
       post,
@@ -271,7 +327,6 @@ export const getBusinessRecommendations = ({
         survey,
       ),
     }))
-    .filter(({ score }) => score > 0)
     .sort((first, second) => {
       if (second.score !== first.score) {
         return second.score - first.score;

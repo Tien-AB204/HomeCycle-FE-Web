@@ -16,8 +16,13 @@ import {
   CATEGORY_BACKEND_IDS,
   MAIN_CATEGORIES,
 } from "../../constants/filterOptions";
+import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
 import productTypeApi from "../../services/apis/productTypeApi";
+import {
+  getBusinessRecommendations,
+  normalizeBusinessSurvey,
+} from "../../utils/businessRecommendationUtils";
 
 const PAGE_SIZE = 9;
 
@@ -206,7 +211,7 @@ const SearchLoading = () => {
   );
 };
 
-const SearchPage = ({ fixedPostType }) => {
+const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
   const [searchParams, setSearchParams] =
     useSearchParams();
   const keyword =
@@ -236,10 +241,8 @@ const SearchPage = ({ fixedPostType }) => {
   const [isLoadingProductTypes, setIsLoadingProductTypes] =
     useState(false);
 
-  const requestPayload = useMemo(
+  const searchCriteria = useMemo(
     () => ({
-      pageNumber,
-      pageSize: PAGE_SIZE,
       keyword,
       postType:
         fixedPostTypeValue ||
@@ -273,13 +276,34 @@ const SearchPage = ({ fixedPostType }) => {
       filters.productTypeId,
       fixedPostTypeValue,
       keyword,
-      pageNumber,
     ],
+  );
+
+  const requestPayload = useMemo(
+    () => ({
+      ...searchCriteria,
+      pageNumber,
+      pageSize: PAGE_SIZE,
+    }),
+    [pageNumber, searchCriteria],
+  );
+
+  const recommendationRequestPayload = useMemo(
+    () => ({
+      ...searchCriteria,
+      pageSize: 100,
+    }),
+    [searchCriteria],
   );
 
   const requestKey = useMemo(
     () => JSON.stringify(requestPayload),
     [requestPayload],
+  );
+
+  const recommendationRequestKey = useMemo(
+    () => JSON.stringify(recommendationRequestPayload),
+    [recommendationRequestPayload],
   );
 
   const [searchState, setSearchState] =
@@ -288,8 +312,17 @@ const SearchPage = ({ fixedPostType }) => {
       result: null,
       error: "",
     });
+  const [recommendationState, setRecommendationState] = useState({
+    requestKey: "",
+    result: null,
+    error: "",
+  });
 
   useEffect(() => {
+    if (recommendationMode) {
+      return undefined;
+    }
+
     const controller = new AbortController();
     let isActive = true;
 
@@ -329,7 +362,67 @@ const SearchPage = ({ fixedPostType }) => {
       isActive = false;
       controller.abort();
     };
-  }, [requestKey, requestPayload]);
+  }, [recommendationMode, requestKey, requestPayload]);
+
+  useEffect(() => {
+    if (!recommendationMode) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+
+    Promise.all([
+      businessProfileApi.getSurveyDetail({
+        signal: controller.signal,
+      }),
+      postApi.searchAll({
+        ...recommendationRequestPayload,
+        signal: controller.signal,
+      }),
+    ])
+      .then(([surveyResponse, postsResult]) => {
+        if (!isActive) {
+          return;
+        }
+
+        const survey = normalizeBusinessSurvey(surveyResponse);
+        const items = getBusinessRecommendations({
+          posts: postsResult.items,
+          survey,
+          limit: Number.POSITIVE_INFINITY,
+        });
+
+        setRecommendationState({
+          requestKey: recommendationRequestKey,
+          result: {
+            items,
+            totalCount: items.length,
+          },
+          error: "",
+        });
+      })
+      .catch((requestError) => {
+        if (!isActive || isCanceledRequest(requestError)) {
+          return;
+        }
+
+        setRecommendationState({
+          requestKey: recommendationRequestKey,
+          result: null,
+          error: getErrorMessage(requestError),
+        });
+      });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [
+    recommendationMode,
+    recommendationRequestKey,
+    recommendationRequestPayload,
+  ]);
 
   useEffect(() => {
     if (!filters.categoryId) {
@@ -377,22 +470,55 @@ const SearchPage = ({ fixedPostType }) => {
     };
   }, [filters.categoryId]);
 
+  const activeRequestKey = recommendationMode
+    ? recommendationRequestKey
+    : requestKey;
+  const activeSearchState = recommendationMode
+    ? recommendationState
+    : searchState;
   const isLoading =
-    searchState.requestKey !== requestKey;
-  const result =
-    searchState.requestKey === requestKey
-      ? searchState.result
+    activeSearchState.requestKey !== activeRequestKey;
+  const sourceResult =
+    activeSearchState.requestKey === activeRequestKey
+      ? activeSearchState.result
       : null;
   const error =
-    searchState.requestKey === requestKey
-      ? searchState.error
+    activeSearchState.requestKey === activeRequestKey
+      ? activeSearchState.error
       : "";
 
   const sortedPosts = useMemo(
-    () =>
-      sortPosts(result?.items, sortMode),
-    [result?.items, sortMode],
+    () => {
+      const posts = sortPosts(sourceResult?.items, sortMode);
+
+      if (!recommendationMode) {
+        return posts;
+      }
+
+      const startIndex = (pageNumber - 1) * PAGE_SIZE;
+
+      return posts.slice(startIndex, startIndex + PAGE_SIZE);
+    },
+    [pageNumber, recommendationMode, sortMode, sourceResult?.items],
   );
+
+  const result = useMemo(() => {
+    if (!sourceResult || !recommendationMode) {
+      return sourceResult;
+    }
+
+    const totalCount = sourceResult.totalCount || 0;
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+    return {
+      ...sourceResult,
+      pageNumber,
+      pageSize: PAGE_SIZE,
+      totalPages,
+      hasPreviousPage: pageNumber > 1,
+      hasNextPage: pageNumber < totalPages,
+    };
+  }, [pageNumber, recommendationMode, sourceResult]);
 
   const updateFilter = (name, value) => {
     setFilters((currentFilters) => ({
@@ -438,7 +564,9 @@ const SearchPage = ({ fixedPostType }) => {
   };
 
   const pageTitle =
-    fixedPostType === "SELL"
+    recommendationMode
+      ? "Đề xuất cho doanh nghiệp"
+      : fixedPostType === "SELL"
       ? "Tin đăng bán"
       : fixedPostType === "BUY"
         ? "Tin thu mua"
@@ -460,7 +588,9 @@ const SearchPage = ({ fixedPostType }) => {
             {pageTitle}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#647f7d]">
-            {fixedPostType === "SELL"
+            {recommendationMode
+              ? "Chỉ hiển thị tin bán đồng thời khớp loại sản phẩm và tỉnh thành doanh nghiệp đã chọn trong khảo sát."
+              : fixedPostType === "SELL"
               ? "Tìm kiếm trong các bài đăng bán đang hoạt động."
               : fixedPostType === "BUY"
                 ? "Tìm kiếm trong các nhu cầu thu mua đang hoạt động."
@@ -791,12 +921,14 @@ const SearchPage = ({ fixedPostType }) => {
               <div className="col-span-full rounded-2xl border border-dashed border-[#a9c9c3] bg-white px-6 py-16 text-center shadow-sm">
                 <MarketplaceMark className="mx-auto h-16 w-16 text-4xl" />
                 <h3 className="mt-3 font-bold text-[#172830]">
-                  Không tìm thấy bài đăng phù
-                  hợp
+                  {recommendationMode
+                    ? "Chưa có tin bán phù hợp khảo sát"
+                    : "Không tìm thấy bài đăng phù hợp"}
                 </h3>
                 <p className="mt-1 text-sm text-[#547B7D]">
-                  Hãy thử từ khóa hoặc bộ lọc
-                  khác.
+                  {recommendationMode
+                    ? "Bạn có thể cập nhật khảo sát hoặc thử lại khi có tin đăng mới."
+                    : "Hãy thử từ khóa hoặc bộ lọc khác."}
                 </p>
               </div>
             ) : null}
