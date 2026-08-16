@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -16,8 +17,25 @@ import {
   CATEGORY_BACKEND_IDS,
   MAIN_CATEGORIES,
 } from "../../constants/filterOptions";
+import { useAuth } from "../../hooks/useAuth";
+import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
+import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
 import productTypeApi from "../../services/apis/productTypeApi";
+import {
+  getBusinessRecommendationMismatchMessage,
+  getBusinessRecommendations,
+  normalizeBusinessSurvey,
+} from "../../utils/businessRecommendationUtils";
+import { getUserId } from "../../utils/authUtils";
+import {
+  getBusinessSurveySnapshot,
+  isFreshBusinessSurveySnapshot,
+} from "../../utils/businessSurveySession";
+import {
+  isPostCatalogStorageEvent,
+  POST_CATALOG_CHANGED_EVENT,
+} from "../../utils/postCatalogEvents";
 
 const PAGE_SIZE = 9;
 
@@ -206,7 +224,9 @@ const SearchLoading = () => {
   );
 };
 
-const SearchPage = ({ fixedPostType }) => {
+const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
+  const { user } = useAuth();
+  const businessUserId = getUserId(user);
   const [searchParams, setSearchParams] =
     useSearchParams();
   const keyword =
@@ -236,10 +256,8 @@ const SearchPage = ({ fixedPostType }) => {
   const [isLoadingProductTypes, setIsLoadingProductTypes] =
     useState(false);
 
-  const requestPayload = useMemo(
+  const searchCriteria = useMemo(
     () => ({
-      pageNumber,
-      pageSize: PAGE_SIZE,
       keyword,
       postType:
         fixedPostTypeValue ||
@@ -273,13 +291,34 @@ const SearchPage = ({ fixedPostType }) => {
       filters.productTypeId,
       fixedPostTypeValue,
       keyword,
-      pageNumber,
     ],
+  );
+
+  const requestPayload = useMemo(
+    () => ({
+      ...searchCriteria,
+      pageNumber,
+      pageSize: PAGE_SIZE,
+    }),
+    [pageNumber, searchCriteria],
+  );
+
+  const recommendationRequestPayload = useMemo(
+    () => ({
+      ...searchCriteria,
+      pageSize: 100,
+    }),
+    [searchCriteria],
   );
 
   const requestKey = useMemo(
     () => JSON.stringify(requestPayload),
     [requestPayload],
+  );
+
+  const recommendationRequestKey = useMemo(
+    () => JSON.stringify(recommendationRequestPayload),
+    [recommendationRequestPayload],
   );
 
   const [searchState, setSearchState] =
@@ -288,8 +327,19 @@ const SearchPage = ({ fixedPostType }) => {
       result: null,
       error: "",
     });
+  const [recommendationState, setRecommendationState] = useState({
+    requestKey: "",
+    result: null,
+    error: "",
+  });
+  const [recommendationSurvey, setRecommendationSurvey] = useState(null);
+  const [recommendationNotice, setRecommendationNotice] = useState("");
 
   useEffect(() => {
+    if (recommendationMode) {
+      return undefined;
+    }
+
     const controller = new AbortController();
     let isActive = true;
 
@@ -329,7 +379,129 @@ const SearchPage = ({ fixedPostType }) => {
       isActive = false;
       controller.abort();
     };
-  }, [requestKey, requestPayload]);
+  }, [recommendationMode, requestKey, requestPayload]);
+
+  useEffect(() => {
+    if (!recommendationMode) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+    let isRefreshing = false;
+    let refreshQueued = false;
+    const surveySnapshot = getBusinessSurveySnapshot(businessUserId);
+    const surveyRequest = isFreshBusinessSurveySnapshot(surveySnapshot)
+      ? Promise.resolve(surveySnapshot.survey)
+      : businessProfileApi
+          .getSurveyDetail({
+            signal: controller.signal,
+          })
+          .catch((requestError) => {
+            if (surveySnapshot) {
+              return surveySnapshot.survey;
+            }
+
+            throw requestError;
+          });
+
+    const refreshRecommendations = async (showInitialError = false) => {
+      if (isRefreshing) {
+        refreshQueued = true;
+        return;
+      }
+
+      isRefreshing = true;
+
+      try {
+        const surveyResponse = await surveyRequest;
+        const survey = normalizeBusinessSurvey(surveyResponse);
+        const posts = await businessRecommendationApi.search({
+          survey,
+          searchCriteria: recommendationRequestPayload,
+          signal: controller.signal,
+        });
+        const items = getBusinessRecommendations({
+          posts,
+          survey,
+          limit: Number.POSITIVE_INFINITY,
+        });
+
+        if (isActive) {
+          setRecommendationSurvey(survey);
+          setRecommendationState({
+            requestKey: recommendationRequestKey,
+            result: {
+              items,
+              totalCount: items.length,
+            },
+            error: "",
+          });
+        }
+      } catch (requestError) {
+        if (
+          isActive &&
+          showInitialError &&
+          !isCanceledRequest(requestError)
+        ) {
+          setRecommendationState({
+            requestKey: recommendationRequestKey,
+            result: null,
+            error: getErrorMessage(requestError),
+          });
+        }
+      } finally {
+        isRefreshing = false;
+
+        if (refreshQueued && isActive) {
+          refreshQueued = false;
+          void refreshRecommendations(false);
+        }
+      }
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshRecommendations(false);
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (isPostCatalogStorageEvent(event)) {
+        refreshWhenVisible();
+      }
+    };
+
+    void Promise.resolve().then(() => refreshRecommendations(true));
+
+    window.addEventListener("focus", refreshWhenVisible);
+    window.addEventListener(
+      POST_CATALOG_CHANGED_EVENT,
+      refreshWhenVisible,
+    );
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      isActive = false;
+      controller.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      window.removeEventListener(
+        POST_CATALOG_CHANGED_EVENT,
+        refreshWhenVisible,
+      );
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener(
+        "visibilitychange",
+        refreshWhenVisible,
+      );
+    };
+  }, [
+    businessUserId,
+    recommendationMode,
+    recommendationRequestKey,
+    recommendationRequestPayload,
+  ]);
 
   useEffect(() => {
     if (!filters.categoryId) {
@@ -377,21 +549,137 @@ const SearchPage = ({ fixedPostType }) => {
     };
   }, [filters.categoryId]);
 
+  const activeRequestKey = recommendationMode
+    ? recommendationRequestKey
+    : requestKey;
+  const activeSearchState = recommendationMode
+    ? recommendationState
+    : searchState;
   const isLoading =
-    searchState.requestKey !== requestKey;
-  const result =
-    searchState.requestKey === requestKey
-      ? searchState.result
+    activeSearchState.requestKey !== activeRequestKey;
+  const sourceResult =
+    activeSearchState.requestKey === activeRequestKey
+      ? activeSearchState.result
       : null;
   const error =
-    searchState.requestKey === requestKey
-      ? searchState.error
+    activeSearchState.requestKey === activeRequestKey
+      ? activeSearchState.error
       : "";
 
   const sortedPosts = useMemo(
-    () =>
-      sortPosts(result?.items, sortMode),
-    [result?.items, sortMode],
+    () => {
+      const posts = sortPosts(sourceResult?.items, sortMode);
+
+      if (!recommendationMode) {
+        return posts;
+      }
+
+      const startIndex = (pageNumber - 1) * PAGE_SIZE;
+
+      return posts.slice(startIndex, startIndex + PAGE_SIZE);
+    },
+    [pageNumber, recommendationMode, sortMode, sourceResult?.items],
+  );
+
+  const result = useMemo(() => {
+    if (!sourceResult || !recommendationMode) {
+      return sourceResult;
+    }
+
+    const totalCount = sourceResult.totalCount || 0;
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+    return {
+      ...sourceResult,
+      pageNumber,
+      pageSize: PAGE_SIZE,
+      totalPages,
+      hasPreviousPage: pageNumber > 1,
+      hasNextPage: pageNumber < totalPages,
+    };
+  }, [pageNumber, recommendationMode, sourceResult]);
+
+  const handleRecommendationOpen = useCallback(
+    async (post) => {
+      if (!recommendationMode) {
+        return true;
+      }
+
+      if (!recommendationSurvey) {
+        setRecommendationNotice(
+          "Không thể kiểm tra bài đăng vì dữ liệu khảo sát chưa sẵn sàng.",
+        );
+        return false;
+      }
+
+      try {
+        const latestPost = await postApi.getById(post.postId);
+        const verifiedPost = {
+          ...post,
+          ...latestPost,
+          productTypeId:
+            latestPost.productTypeId || post.productTypeId,
+          product: {
+            ...(post.product || {}),
+            ...(latestPost.product || {}),
+          },
+        };
+        const mismatchMessage =
+          getBusinessRecommendationMismatchMessage(
+            verifiedPost,
+            recommendationSurvey,
+          );
+
+        if (mismatchMessage) {
+          setRecommendationState((currentState) => {
+            if (!currentState.result) {
+              return currentState;
+            }
+
+            const items = currentState.result.items.filter(
+              (currentPost) => currentPost.postId !== post.postId,
+            );
+
+            return {
+              ...currentState,
+              result: {
+                ...currentState.result,
+                items,
+                totalCount: items.length,
+              },
+            };
+          });
+          setRecommendationNotice(mismatchMessage);
+          return false;
+        }
+
+        setRecommendationNotice("");
+        setRecommendationState((currentState) => {
+          if (!currentState.result) {
+            return currentState;
+          }
+
+          return {
+            ...currentState,
+            result: {
+              ...currentState.result,
+              items: currentState.result.items.map((currentPost) =>
+                currentPost.postId === post.postId
+                  ? verifiedPost
+                  : currentPost,
+              ),
+            },
+          };
+        });
+        return true;
+      } catch {
+        setRecommendationNotice(
+          "Không thể kiểm tra dữ liệu mới nhất của bài đăng. Vui lòng thử lại.",
+        );
+        return false;
+      }
+    },
+    [recommendationMode, recommendationSurvey],
   );
 
   const updateFilter = (name, value) => {
@@ -438,7 +726,9 @@ const SearchPage = ({ fixedPostType }) => {
   };
 
   const pageTitle =
-    fixedPostType === "SELL"
+    recommendationMode
+      ? "Đề xuất cho doanh nghiệp"
+      : fixedPostType === "SELL"
       ? "Tin đăng bán"
       : fixedPostType === "BUY"
         ? "Tin thu mua"
@@ -460,7 +750,9 @@ const SearchPage = ({ fixedPostType }) => {
             {pageTitle}
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[#647f7d]">
-            {fixedPostType === "SELL"
+            {recommendationMode
+              ? "Chỉ hiển thị tin bán đồng thời khớp loại sản phẩm và tỉnh thành doanh nghiệp đã chọn trong khảo sát."
+              : fixedPostType === "SELL"
               ? "Tìm kiếm trong các bài đăng bán đang hoạt động."
               : fixedPostType === "BUY"
                 ? "Tìm kiếm trong các nhu cầu thu mua đang hoạt động."
@@ -770,6 +1062,15 @@ const SearchPage = ({ fixedPostType }) => {
             </div>
           )}
 
+          {recommendationNotice && recommendationMode && (
+            <div
+              role="alert"
+              className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-900"
+            >
+              {recommendationNotice}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {isLoading ? (
               <SearchLoading />
@@ -785,18 +1086,25 @@ const SearchPage = ({ fixedPostType }) => {
                       ? "business-buy"
                       : "personal-sell"
                   }
+                  onBeforeOpen={
+                    recommendationMode
+                      ? handleRecommendationOpen
+                      : undefined
+                  }
                 />
               ))
             ) : !error ? (
               <div className="col-span-full rounded-2xl border border-dashed border-[#a9c9c3] bg-white px-6 py-16 text-center shadow-sm">
                 <MarketplaceMark className="mx-auto h-16 w-16 text-4xl" />
                 <h3 className="mt-3 font-bold text-[#172830]">
-                  Không tìm thấy bài đăng phù
-                  hợp
+                  {recommendationMode
+                    ? "Chưa có tin bán phù hợp khảo sát"
+                    : "Không tìm thấy bài đăng phù hợp"}
                 </h3>
                 <p className="mt-1 text-sm text-[#547B7D]">
-                  Hãy thử từ khóa hoặc bộ lọc
-                  khác.
+                  {recommendationMode
+                    ? "Bạn có thể cập nhật khảo sát hoặc thử lại khi có tin đăng mới."
+                    : "Hãy thử từ khóa hoặc bộ lọc khác."}
                 </p>
               </div>
             ) : null}

@@ -2,6 +2,7 @@ import axiosClient from "./axiosClient";
 
 const DEFAULT_PAGE_NUMBER = 1;
 const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_SEARCH_ALL_PAGE_SIZE = 100;
 const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
 const createApiError = (response, fallbackMessage) => {
@@ -501,6 +502,58 @@ export const postApi = {
     const data = unwrapResponse(response, "Không thể tìm kiếm bài đăng.");
 
     return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
+  },
+
+  searchAll: async ({
+    pageSize = DEFAULT_SEARCH_ALL_PAGE_SIZE,
+    signal,
+    ...searchCriteria
+  } = {}) => {
+    const normalizedPageSize = normalizePageSize(pageSize);
+    const firstPage = await postApi.search({
+      ...searchCriteria,
+      pageNumber: 1,
+      pageSize: normalizedPageSize,
+      signal,
+    });
+    const pages = [firstPage];
+
+    for (
+      let pageNumber = 2;
+      pageNumber <= firstPage.totalPages;
+      pageNumber += 1
+    ) {
+      pages.push(
+        await postApi.search({
+          ...searchCriteria,
+          pageNumber,
+          pageSize: normalizedPageSize,
+          signal,
+        }),
+      );
+    }
+
+    const uniquePosts = new Map();
+
+    pages.forEach((page) => {
+      page.items.forEach((post) => {
+        if (post?.postId) {
+          uniquePosts.set(post.postId, post);
+        }
+      });
+    });
+
+    const items = [...uniquePosts.values()];
+
+    return {
+      items,
+      pageNumber: 1,
+      pageSize: items.length,
+      totalCount: items.length,
+      totalPages: items.length > 0 ? 1 : 0,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
   },
 
   getById: async (postId, { signal } = {}) => {

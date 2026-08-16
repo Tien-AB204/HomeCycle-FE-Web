@@ -6,6 +6,9 @@ import {
 import businessProfileApi from "../../services/apis/businessProfileApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 import provinceApi from "../../services/apis/provinceApi";
+import { useAuth } from "../../hooks/useAuth";
+import { getUserId } from "../../utils/authUtils";
+import { saveBusinessSurveySnapshot } from "../../utils/businessSurveySession";
 import {
   BusinessSectionIntro,
   FormMessage,
@@ -19,7 +22,7 @@ import {
 const DAMAGE_LEVELS = [
   { value: 0, label: "Không hư hỏng" },
   { value: 1, label: "Trầy xước nhẹ" },
-  { value: 2, label: "Hư hỏng nhỏ" },
+  { value: 2, label: "Hư hỏng nhẹ" },
   { value: 3, label: "Hư hỏng vừa" },
   { value: 4, label: "Hư hỏng nặng" },
   { value: 5, label: "Mất hoàn toàn" },
@@ -136,6 +139,7 @@ export default function BusinessSurveySection({
   survey,
   onUpdated,
 }) {
+  const { user } = useAuth();
   const [form, setForm] = useState(() =>
     createForm(survey),
   );
@@ -305,10 +309,14 @@ export default function BusinessSurveySection({
       await businessProfileApi.submitSurvey(
         form,
       );
-      await onUpdated?.();
-      setSuccess(
-        "Khảo sát nhu cầu thu mua đã được lưu.",
+      saveBusinessSurveySnapshot(
+        getUserId(user),
+        form,
       );
+      setSuccess(
+        "Khảo sát nhu cầu thu mua đã được cập nhật thành công.",
+      );
+      onUpdated?.(form);
     } catch (updateError) {
       setError(
         getBusinessApiErrorMessage(
@@ -327,10 +335,6 @@ export default function BusinessSurveySection({
         icon="query_stats"
         title="Khảo sát nhu cầu thu mua"
         description="Thiết lập nhóm sản phẩm, địa bàn và tình trạng hàng hóa doanh nghiệp quan tâm để HomeCycle đề xuất chính xác hơn."
-      />
-      <FormMessage
-        error={error}
-        success={success}
       />
 
       <form
@@ -500,10 +504,18 @@ export default function BusinessSurveySection({
           </p>
         )}
 
-        <div className="flex justify-end border-t border-[#E4ECEA] pt-5">
-          <SaveButton isSaving={isSaving}>
-            LƯU KHẢO SÁT
-          </SaveButton>
+        <div className="border-t border-[#E4ECEA] pt-5">
+          <div className="flex justify-end">
+            <SaveButton isSaving={isSaving}>
+              LƯU KHẢO SÁT
+            </SaveButton>
+          </div>
+          <div className="mt-3">
+            <FormMessage
+              error={error}
+              success={success}
+            />
+          </div>
         </div>
       </form>
     </div>
