@@ -161,7 +161,10 @@ const DynamicAttributeFields = ({
             )}
 
             {error && (
-              <span className="mt-1 block text-xs text-red-600">
+              <span
+                role="alert"
+                className="mt-1 block text-xs text-red-600"
+              >
                 {error}
               </span>
             )}
