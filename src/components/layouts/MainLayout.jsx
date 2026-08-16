@@ -7,7 +7,6 @@ import {
   useNavigate,
 } from "react-router-dom";
 import homeCycleLogo from "../../assets/brand/homecycle-logo.png";
-import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import { normalizeRole } from "../../utils/authUtils";
@@ -132,8 +131,7 @@ const MainLayout = () => {
   return (
     <div className="flex min-h-screen flex-col bg-[#f7f8f6] font-sans text-[#183436]">
       <div className="bg-[#244f51] text-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-2 text-center text-xs font-medium sm:text-sm">
-          <img src={homeCycleMark} alt="" className="h-5 w-5 rounded-md" />
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-2 text-center text-xs font-medium sm:text-sm">
           <span>Mua bán đồ cũ an toàn · Cho đồ vật một vòng đời mới</span>
         </div>
       </div>
