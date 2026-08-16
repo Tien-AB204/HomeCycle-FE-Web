@@ -35,6 +35,7 @@ const FUNCTIONALITY_STATUSES = {
   FullyFunctional: "Hoạt động đầy đủ",
   PartiallyFunctional:
     "Hoạt động một phần",
+  NonFunctional: "Không hoạt động",
   NotFunctional: "Không hoạt động",
 };
 
@@ -46,9 +47,13 @@ const SPACE_USAGES = {
 };
 
 const DAMAGE_LEVELS = {
+  None: "Không hư hỏng",
   No_Damage: "Không hư hỏng",
   Cosmetic_Damage: "Trầy xước ngoại quan",
   Minor_Damage: "Hư hỏng nhẹ",
+  Moderate_Damage: "Hư hỏng vừa",
+  Severe_Damage: "Hư hỏng nặng",
+  Total_Loss: "Mất hoàn toàn",
   Major_Damage: "Hư hỏng nặng",
 };
 

@@ -30,6 +30,12 @@ import postApi from "../../services/apis/postApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi";
 import { getUserId } from "../../utils/authUtils";
+import {
+  getFunctionalityForDamageLevel,
+  getPostConditionFieldErrors,
+  getPostFormApiErrors,
+  normalizePostConditionValues,
+} from "../../utils/postFormUtils";
 
 const REFERENCE_PAGE_SIZE = 100;
 
@@ -97,6 +103,10 @@ const toFormString = (value, fallbackValue = "") => {
 
 const createFormFromPost = (post) => {
   const product = post?.product || {};
+  const condition = normalizePostConditionValues(
+    product.damageLevel,
+    product.functionalityStatus,
+  );
 
   return {
     ...createInitialForm(),
@@ -116,10 +126,9 @@ const createFormFromPost = (post) => {
     ward: post?.ward || "",
     streetAddress: post?.streetAddress || "",
     spaceUsage: product.spaceUsage || "Living_room",
-    functionalityStatus:
-      product.functionalityStatus || "FullyFunctional",
+    functionalityStatus: condition.functionalityStatus,
     usageDuration: toFormString(product.usageDuration, "0"),
-    damageLevel: product.damageLevel || "None",
+    damageLevel: condition.damageLevel,
     length: toFormString(product.length),
     width: toFormString(product.width),
     height: toFormString(product.height),
@@ -159,28 +168,10 @@ const isCanceledRequest = (error) => {
   );
 };
 
-const getValidationMessage = (errors) => {
-  if (!errors || typeof errors !== "object") {
-    return "";
-  }
-
-  return Object.values(errors)
-    .flat()
-    .filter(Boolean)
-    .join("\n");
-};
-
-const getErrorMessage = (error) => {
-  const responseData = error?.response?.data;
-
-  return (
-    getValidationMessage(responseData?.errors) ||
-    responseData?.error?.message ||
-    responseData?.message ||
-    error?.message ||
-    "Không thể xử lý bài đăng. Vui lòng thử lại."
-  );
-};
+const getErrorMessage = (error, fallbackMessage) =>
+  getPostFormApiErrors(error, fallbackMessage).generalMessage ||
+  fallbackMessage ||
+  "Không thể xử lý bài đăng. Vui lòng thử lại.";
 
 const parseOptionalNumber = (value) => {
   if (value === "" || value === null || value === undefined) {
@@ -269,7 +260,9 @@ const buildAttributeValues = (attributes, values) => {
 
 const FieldError = ({ message }) => {
   return message ? (
-    <p className="mt-1 text-xs text-red-600">{message}</p>
+    <p role="alert" className="mt-1 text-xs text-red-600">
+      {message}
+    </p>
   ) : null;
 };
 
@@ -314,6 +307,7 @@ const CreatePostPage = () => {
   const [referenceError, setReferenceError] = useState("");
   const [attributeLoadError, setAttributeLoadError] = useState("");
   const [serverError, setServerError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [detailError, setDetailError] = useState("");
   const [detailRequestVersion, setDetailRequestVersion] = useState(0);
   const [isLoadingReferences, setIsLoadingReferences] = useState(true);
@@ -514,6 +508,25 @@ const CreatePostPage = () => {
       [name]: "",
     }));
     setServerError("");
+    setSuccessMessage("");
+  };
+
+  const handleDamageLevelChange = (event) => {
+    const damageLevel = event.target.value;
+    const functionalityStatus = getFunctionalityForDamageLevel(damageLevel);
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      damageLevel,
+      functionalityStatus,
+    }));
+    setFieldErrors((currentErrors) => ({
+      ...currentErrors,
+      damageLevel: "",
+      functionalityStatus: "",
+    }));
+    setServerError("");
+    setSuccessMessage("");
   };
 
   const handleCategoryChange = (event) => {
@@ -536,6 +549,8 @@ const CreatePostPage = () => {
       categoryId: "",
       productTypeId: "",
     }));
+    setServerError("");
+    setSuccessMessage("");
   };
 
   const handleProductTypeChange = (event) => {
@@ -562,6 +577,7 @@ const CreatePostPage = () => {
       [attributeId]: "",
     }));
     setServerError("");
+    setSuccessMessage("");
   };
 
   const validateForm = () => {
@@ -603,6 +619,14 @@ const CreatePostPage = () => {
       nextErrors.usageDuration =
         "Thời gian sử dụng phải là số nguyên không âm.";
     }
+
+    Object.assign(
+      nextErrors,
+      getPostConditionFieldErrors(
+        form.damageLevel,
+        form.functionalityStatus,
+      ),
+    );
 
     if (!form.city.trim()) {
       nextErrors.city = "Vui lòng nhập tỉnh hoặc thành phố.";
@@ -669,9 +693,16 @@ const CreatePostPage = () => {
 
     setIsSubmitting(true);
     setServerError("");
+    setSuccessMessage("");
+
+    const normalizedCondition = normalizePostConditionValues(
+      form.damageLevel,
+      form.functionalityStatus,
+    );
 
     const payload = {
       ...form,
+      ...normalizedCondition,
       productName: form.productName.trim(),
       price: Number(form.price),
       originalPrice: parseOptionalNumber(form.originalPrice),
@@ -699,19 +730,32 @@ const CreatePostPage = () => {
           ? await postApi.createBuy(payload)
           : await postApi.createSell(payload);
 
-      navigate(`${listPath}?view=mine`, {
-        replace: true,
-        state: {
-          postSuccessMessage: `Đã ${
-            isEditing ? "cập nhật" : "tạo"
-          } ${postTypeLabel} “${
-            savedPost.productName || payload.productName
-          }” thành công.`,
-        },
-      });
+      const nextSuccessMessage = `Đã ${
+        isEditing ? "cập nhật" : "tạo"
+      } ${postTypeLabel} “${
+        savedPost.productName || payload.productName
+      }” thành công.`;
+
+      if (isEditing) {
+        setSuccessMessage(nextSuccessMessage);
+        setFieldErrors({});
+        setAttributeErrors({});
+      } else {
+        navigate(`${listPath}?view=mine`, {
+          replace: true,
+          state: {
+            postSuccessMessage: nextSuccessMessage,
+          },
+        });
+      }
     } catch (requestError) {
-      setServerError(getErrorMessage(requestError));
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const apiErrors = getPostFormApiErrors(requestError);
+
+      setFieldErrors((currentErrors) => ({
+        ...currentErrors,
+        ...apiErrors.fieldErrors,
+      }));
+      setServerError(apiErrors.generalMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -831,17 +875,18 @@ const CreatePostPage = () => {
         </div>
       </header>
 
-      {(referenceError || serverError) && (
+      {referenceError && (
         <div
           role="alert"
           className="mt-5 whitespace-pre-line rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
         >
-          {serverError || referenceError}
+          {referenceError}
         </div>
       )}
 
       <form
         onSubmit={handleSubmit}
+        noValidate
         className="mt-6 grid items-start gap-6 lg:grid-cols-[230px_minmax(0,1fr)]"
       >
         <aside className="lg:sticky lg:top-28">
@@ -1051,6 +1096,7 @@ const CreatePostPage = () => {
                   </option>
                 ))}
               </select>
+              <FieldError message={fieldErrors.priorityLevel} />
             </label>
 
             <label className="block">
@@ -1071,6 +1117,7 @@ const CreatePostPage = () => {
                   </option>
                 ))}
               </select>
+              <FieldError message={fieldErrors.spaceUsage} />
             </label>
 
             <label className="block">
@@ -1079,10 +1126,7 @@ const CreatePostPage = () => {
               </span>
               <select
                 value={form.functionalityStatus}
-                onChange={(event) =>
-                  updateField("functionalityStatus", event.target.value)
-                }
-                disabled={isSubmitting}
+                disabled
                 className={inputClassName}
               >
                 {FUNCTIONALITY_OPTIONS.map((option) => (
@@ -1091,6 +1135,10 @@ const CreatePostPage = () => {
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-[#68807F]">
+                Tự động xác định theo mức độ hư hỏng.
+              </p>
+              <FieldError message={fieldErrors.functionalityStatus} />
             </label>
 
             <label className="block">
@@ -1099,9 +1147,7 @@ const CreatePostPage = () => {
               </span>
               <select
                 value={form.damageLevel}
-                onChange={(event) =>
-                  updateField("damageLevel", event.target.value)
-                }
+                onChange={handleDamageLevelChange}
                 disabled={isSubmitting}
                 className={inputClassName}
               >
@@ -1111,6 +1157,7 @@ const CreatePostPage = () => {
                   </option>
                 ))}
               </select>
+              <FieldError message={fieldErrors.damageLevel} />
             </label>
 
             <label className="block">
@@ -1146,6 +1193,7 @@ const CreatePostPage = () => {
                     disabled={isSubmitting}
                     className={inputClassName}
                   />
+                  <FieldError message={fieldErrors.modelNumber} />
                 </label>
 
                 <label className="block">
@@ -1229,6 +1277,7 @@ const CreatePostPage = () => {
                 maxLength={2000}
                 className={`${inputClassName} resize-y`}
               />
+              <FieldError message={fieldErrors.detailDescription} />
             </label>
           )}
         </section>
@@ -1289,6 +1338,7 @@ const CreatePostPage = () => {
                   </option>
                 ))}
               </select>
+              <FieldError message={fieldErrors.deliveryMethod} />
             </label>
 
             <PostAddressFields
@@ -1346,38 +1396,60 @@ const CreatePostPage = () => {
           </div>
         </section>
 
-        <div className="sticky bottom-4 z-20 flex flex-col-reverse gap-3 rounded-2xl border border-[#DCE8E5] bg-white/95 p-4 shadow-[0_16px_45px_rgba(24,63,65,0.14)] backdrop-blur sm:flex-row sm:items-center sm:justify-end">
-          <Link
-            to={`${listPath}?view=mine`}
-            className="rounded-xl border border-[#9FBFBA] bg-white px-5 py-3 text-center text-sm font-bold text-[#285E62] transition hover:border-[#4F8588] hover:bg-[#F1F7F5]"
-          >
-            Hủy
-          </Link>
-          <button
-            type="submit"
-            disabled={
-              isSubmitting ||
-              isLoadingReferences ||
-              isLoadingProductTypes ||
-              isLoadingAttributes ||
-              isLoadingDetail ||
-              Boolean(referenceError)
-            }
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#4F8588] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSubmitting && (
-              <span className="material-symbols-outlined animate-spin text-[18px]">
-                refresh
-              </span>
-            )}
-            {isSubmitting
-              ? isEditing
-                ? "Đang lưu thay đổi..."
-                : "Đang tạo bài..."
-              : isEditing
-                ? "Lưu thay đổi"
-                : `Tạo ${postTypeLabel}`}
-          </button>
+        <div className="sticky bottom-4 z-20 rounded-2xl border border-[#DCE8E5] bg-white/95 p-4 shadow-[0_16px_45px_rgba(24,63,65,0.14)] backdrop-blur">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Link
+              to={`${listPath}?view=mine`}
+              className="rounded-xl border border-[#9FBFBA] bg-white px-5 py-3 text-center text-sm font-bold text-[#285E62] transition hover:border-[#4F8588] hover:bg-[#F1F7F5]"
+            >
+              Hủy
+            </Link>
+            <button
+              type="submit"
+              disabled={
+                isSubmitting ||
+                isLoadingReferences ||
+                isLoadingProductTypes ||
+                isLoadingAttributes ||
+                isLoadingDetail ||
+                Boolean(referenceError)
+              }
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#4F8588] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmitting && (
+                <span className="material-symbols-outlined animate-spin text-[18px]">
+                  refresh
+                </span>
+              )}
+              {isSubmitting
+                ? isEditing
+                  ? "Đang lưu thay đổi..."
+                  : "Đang tạo bài..."
+                : isEditing
+                  ? "Lưu thay đổi"
+                  : `Tạo ${postTypeLabel}`}
+            </button>
+          </div>
+
+          {successMessage && (
+            <p
+              id="post-submit-feedback"
+              role="status"
+              className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 sm:ml-auto sm:max-w-xl"
+            >
+              {successMessage}
+            </p>
+          )}
+
+          {serverError && (
+            <p
+              id="post-submit-error"
+              role="alert"
+              className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 sm:ml-auto sm:max-w-xl"
+            >
+              {serverError}
+            </p>
+          )}
         </div>
         </div>
       </form>
