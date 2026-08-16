@@ -16,6 +16,7 @@ import {
   CATEGORY_BACKEND_IDS,
   MAIN_CATEGORIES,
 } from "../../constants/filterOptions";
+import { useAuth } from "../../hooks/useAuth";
 import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
 import productTypeApi from "../../services/apis/productTypeApi";
@@ -23,6 +24,11 @@ import {
   getBusinessRecommendations,
   normalizeBusinessSurvey,
 } from "../../utils/businessRecommendationUtils";
+import { getUserId } from "../../utils/authUtils";
+import {
+  getBusinessSurveySnapshot,
+  isFreshBusinessSurveySnapshot,
+} from "../../utils/businessSurveySession";
 
 const PAGE_SIZE = 9;
 
@@ -212,6 +218,8 @@ const SearchLoading = () => {
 };
 
 const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
+  const { user } = useAuth();
+  const businessUserId = getUserId(user);
   const [searchParams, setSearchParams] =
     useSearchParams();
   const keyword =
@@ -371,11 +379,23 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
 
     const controller = new AbortController();
     let isActive = true;
+    const surveySnapshot = getBusinessSurveySnapshot(businessUserId);
+    const surveyRequest = isFreshBusinessSurveySnapshot(surveySnapshot)
+      ? Promise.resolve(surveySnapshot.survey)
+      : businessProfileApi
+          .getSurveyDetail({
+            signal: controller.signal,
+          })
+          .catch((requestError) => {
+            if (surveySnapshot) {
+              return surveySnapshot.survey;
+            }
+
+            throw requestError;
+          });
 
     Promise.all([
-      businessProfileApi.getSurveyDetail({
-        signal: controller.signal,
-      }),
+      surveyRequest,
       postApi.searchAll({
         ...recommendationRequestPayload,
         signal: controller.signal,
@@ -419,6 +439,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
       controller.abort();
     };
   }, [
+    businessUserId,
     recommendationMode,
     recommendationRequestKey,
     recommendationRequestPayload,

@@ -737,12 +737,9 @@ export default function BusinessProfilePage() {
 
           {activeTab === "survey" && (
             <BusinessSurveySection
-              key={JSON.stringify(
-                survey || {},
-              )}
               survey={survey}
-              onUpdated={async () => {
-                await loadProfile();
+              onUpdated={(updatedSurvey) => {
+                setSurvey(updatedSurvey);
               }}
             />
           )}
