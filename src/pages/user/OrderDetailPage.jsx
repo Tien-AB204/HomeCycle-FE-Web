@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
+  ORDER_STATUS,
   PAYMENT_STATUS,
   getOrderStatusMeta,
   getPaymentDisplayMeta,
 } from "../../constants/orders";
+import OrderReviewSection from "../../features/reviews/OrderReviewSection";
+import { useAuth } from "../../hooks/useAuth";
 import orderApi from "../../services/apis/orderApi";
 import postApi from "../../services/apis/postApi";
+import { getUserId } from "../../utils/authUtils";
+
+const OWN_POST_REVIEW_MESSAGE =
+  "Chủ bài đăng không thể tự đánh giá đơn hàng của tin đăng.";
 
 const formatCurrency = (value) =>
   `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
@@ -80,6 +87,7 @@ const OrderProductImage = ({ src, alt }) => {
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
+  const { user } = useAuth();
   const [state, setState] = useState({
     loading: true,
     detail: null,
@@ -97,7 +105,7 @@ const OrderDetailPage = () => {
         });
         let post = null;
 
-        if (!detail.order.productName && detail.order.postId) {
+        if (detail.order.postId) {
           try {
             post = await postApi.getById(detail.order.postId, {
               signal: controller.signal,
@@ -192,14 +200,44 @@ const OrderDetailPage = () => {
       finalTotalAmount > 0 ? (amountPaid / finalTotalAmount) * 100 : 0,
     ),
   );
-  const reviewDescription = detail.review?.hasReviewed
-    ? `Bạn đã đánh giá ${detail.review.rating || 0}/5.`
-    : detail.review?.canReview
-      ? "Đơn hàng đã đủ điều kiện để đánh giá."
-      : "Bạn có thể đánh giá sau khi đơn hàng hoàn tất.";
+  const isOrderCompleted =
+    Number(order.orderStatus) === ORDER_STATUS.COMPLETED;
+  const currentUserId = getUserId(user).toLowerCase();
+  const postOwnerId = String(
+    state.post?.ownerId ||
+      detail.postOwnerId ||
+      order.postOwnerId ||
+      "",
+  ).trim().toLowerCase();
+  const isPostOwner = Boolean(
+    currentUserId &&
+      postOwnerId &&
+      currentUserId === postOwnerId,
+  );
+  const reviewEligibility = isPostOwner
+    ? {
+        ...(detail.review || {}),
+        canReview: false,
+        blockedReason: OWN_POST_REVIEW_MESSAGE,
+      }
+    : detail.review;
+  const reviewDescription = isPostOwner
+    ? OWN_POST_REVIEW_MESSAGE
+    : detail.review?.hasReviewed
+      ? `Bạn đã đánh giá ${detail.review.rating || 0}/5.`
+      : (detail.review?.canReview ?? isOrderCompleted)
+        ? "Đơn hàng đã đủ điều kiện để đánh giá."
+        : "Bạn có thể đánh giá sau khi đơn hàng hoàn tất.";
   const disputeDescription = detail.dispute?.hasActiveDispute
     ? "Đơn hàng đang có tranh chấp cần được xử lý."
     : "Đơn hàng hiện không có tranh chấp.";
+  const counterpartyUserId =
+    detail.counterpartyUserId ||
+    detail.counterpartyId ||
+    detail.counterparty?.userId ||
+    order.counterpartyUserId ||
+    order.counterpartyId ||
+    "";
 
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-6xl px-4 pb-14 pt-7 sm:px-6">
@@ -364,6 +402,13 @@ const OrderDetailPage = () => {
           />
         </div>
       </section>
+
+      <OrderReviewSection
+        orderId={order.orderId || orderId}
+        orderStatus={order.orderStatus}
+        eligibility={reviewEligibility}
+        counterpartyUserId={counterpartyUserId}
+      />
     </section>
   );
 };
