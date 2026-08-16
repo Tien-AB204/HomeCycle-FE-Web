@@ -20,7 +20,11 @@ import {
   hasCompletedBusinessSurvey,
   normalizeBusinessSurvey,
 } from "../../utils/businessRecommendationUtils";
-import { normalizeRole } from "../../utils/authUtils";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
+import {
+  getBusinessSurveySnapshot,
+  isFreshBusinessSurveySnapshot,
+} from "../../utils/businessSurveySession";
 
 const HOME_PAGE_SIZE = 20;
 const BUSINESS_POST_LIMIT = 4;
@@ -179,6 +183,7 @@ const Homepage = () => {
   const [requestVersion, setRequestVersion] = useState(0);
   const normalizedRole = normalizeRole(user?.role);
   const isBusinessUser = normalizedRole === ROLES.BUSINESS;
+  const businessUserId = getUserId(user);
   const preferredDisplayName =
     user?.fullName ||
     user?.FullName ||
@@ -243,11 +248,16 @@ const Homepage = () => {
 
     const controller = new AbortController();
     let isActive = true;
+    const surveySnapshot = getBusinessSurveySnapshot(businessUserId);
 
     Promise.resolve()
       .then(() => {
         if (isActive) {
           setSurveyLoading(true);
+        }
+
+        if (isFreshBusinessSurveySnapshot(surveySnapshot)) {
+          return surveySnapshot.survey;
         }
 
         return businessProfileApi.getSurveyDetail({
@@ -265,7 +275,11 @@ const Homepage = () => {
       })
       .catch(() => {
         if (isActive) {
-          setBusinessSurvey(null);
+          setBusinessSurvey(
+            surveySnapshot
+              ? normalizeBusinessSurvey(surveySnapshot.survey)
+              : null,
+          );
         }
       })
       .finally(() => {
@@ -278,7 +292,7 @@ const Homepage = () => {
       isActive = false;
       controller.abort();
     };
-  }, [isBusinessUser]);
+  }, [businessUserId, isBusinessUser, requestVersion]);
 
   useEffect(() => {
     if (
