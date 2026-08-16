@@ -35,6 +35,32 @@ button {
   flex-direction: column;
 }
 
+/*
+ * Material Symbols khai báo display: inline-block trong stylesheet bên ngoài,
+ * vì vậy có thể ghi đè các utility flex và làm glyph lệch khỏi khung tròn.
+ * Quy tắc chung này giữ icon ở giữa trên mọi màn hình public, user, mod và admin.
+ */
+.material-symbols-outlined {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  vertical-align: middle;
+}
+
+/* Đồng bộ cách căn giữa icon SVG của Ant Design với Material Symbols. */
+.anticon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 0 !important;
+  vertical-align: middle;
+}
+
+.anticon > svg {
+  display: block;
+}
+
 /* Đồng bộ các màn hình quản trị cũ với nhận diện HomeCycle. */
 .admin-portal .text-green-700 {
   color: #36777a !important;

@@ -28,6 +28,7 @@ export default function ErrorPage({ notFound = false }) {
   const status = notFound ? 404 : Number(location.state?.status) || 500;
   const content = ERROR_CONTENT[status] || ERROR_CONTENT[500];
   const referenceCode = location.state?.code;
+  const detailMessage = location.state?.message || content.description;
   const returnTo = location.state?.returnTo;
   const handleRetry = () => {
     if (typeof returnTo === "string" && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
@@ -56,7 +57,7 @@ export default function ErrorPage({ notFound = false }) {
           </span>
           <p className="mt-6 text-xs font-black uppercase tracking-[0.22em] text-[#4F8588]">{content.eyebrow}</p>
           <h1 className="mt-2 text-2xl font-black text-[#183F41] sm:text-3xl">{content.title}</h1>
-          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#68807F]">{content.description}</p>
+          <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#68807F]">{detailMessage}</p>
 
           {referenceCode && (
             <p className="mt-4 text-xs text-[#849A98]">Mã tham chiếu: <strong>{referenceCode}</strong></p>
