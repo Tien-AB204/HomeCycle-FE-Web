@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AppstoreOutlined,
   CheckCircleOutlined,
@@ -13,9 +13,11 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import ProductCard from "../../components/shared/ProductCard";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
+import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
 import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
 import {
+  getBusinessRecommendationMismatchMessage,
   getBusinessRecommendations,
   hasCompletedBusinessSurvey,
   normalizeBusinessSurvey,
@@ -25,6 +27,10 @@ import {
   getBusinessSurveySnapshot,
   isFreshBusinessSurveySnapshot,
 } from "../../utils/businessSurveySession";
+import {
+  isPostCatalogStorageEvent,
+  POST_CATALOG_CHANGED_EVENT,
+} from "../../utils/postCatalogEvents";
 
 const HOME_PAGE_SIZE = 20;
 const BUSINESS_POST_LIMIT = 4;
@@ -177,6 +183,7 @@ const Homepage = () => {
   const [businessSurvey, setBusinessSurvey] = useState(null);
   const [recommendationSourcePosts, setRecommendationSourcePosts] = useState([]);
   const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationNotice, setRecommendationNotice] = useState("");
   const [surveyLoading, setSurveyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -304,42 +311,91 @@ const Homepage = () => {
 
     const controller = new AbortController();
     let isActive = true;
+    let isRefreshing = false;
+    let refreshQueued = false;
 
-    Promise.resolve()
-      .then(() => {
-        if (isActive) {
-          setRecommendationLoading(true);
-        }
+    const refreshRecommendations = async (showLoading = false) => {
+      if (isRefreshing) {
+        refreshQueued = true;
+        return;
+      }
 
-        return postApi.searchAll({
-          postType: "Sell",
-          onlyAvailable: true,
-          sortBy: "Newest",
+      isRefreshing = true;
+
+      if (showLoading && isActive) {
+        setRecommendationLoading(true);
+      }
+
+      try {
+        const result = await businessRecommendationApi.search({
+          survey: businessSurvey,
+          searchCriteria: {
+            sortBy: "Newest",
+          },
           signal: controller.signal,
         });
-      })
-      .then((result) => {
-        if (isActive) {
-          setRecommendationSourcePosts(result.items || []);
-        }
-      })
-      .catch((requestError) => {
-        if (!isActive || isCanceledRequest(requestError)) {
-          return;
-        }
 
-        setRecommendationSourcePosts([]);
-        setError(getErrorMessage(requestError));
-      })
-      .finally(() => {
         if (isActive) {
+          setRecommendationSourcePosts(result || []);
+        }
+      } catch (requestError) {
+        if (
+          isActive &&
+          showLoading &&
+          !isCanceledRequest(requestError)
+        ) {
+          setRecommendationSourcePosts([]);
+          setError(getErrorMessage(requestError));
+        }
+      } finally {
+        isRefreshing = false;
+
+        if (showLoading && isActive) {
           setRecommendationLoading(false);
         }
-      });
+
+        if (refreshQueued && isActive) {
+          refreshQueued = false;
+          void refreshRecommendations(false);
+        }
+      }
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshRecommendations(false);
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (isPostCatalogStorageEvent(event)) {
+        refreshWhenVisible();
+      }
+    };
+
+    void Promise.resolve().then(() => refreshRecommendations(true));
+
+    window.addEventListener("focus", refreshWhenVisible);
+    window.addEventListener(
+      POST_CATALOG_CHANGED_EVENT,
+      refreshWhenVisible,
+    );
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
       isActive = false;
       controller.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      window.removeEventListener(
+        POST_CATALOG_CHANGED_EVENT,
+        refreshWhenVisible,
+      );
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener(
+        "visibilitychange",
+        refreshWhenVisible,
+      );
     };
   }, [businessSurvey, isBusinessUser, requestVersion]);
 
@@ -367,6 +423,55 @@ const Homepage = () => {
         limit: PERSONAL_POST_LIMIT,
       }),
     [businessSurvey, recommendationSourcePosts],
+  );
+
+  const handleRecommendationOpen = useCallback(
+    async (post) => {
+      try {
+        const latestPost = await postApi.getById(post.postId);
+        const verifiedPost = {
+          ...post,
+          ...latestPost,
+          productTypeId:
+            latestPost.productTypeId || post.productTypeId,
+          product: {
+            ...(post.product || {}),
+            ...(latestPost.product || {}),
+          },
+        };
+        const mismatchMessage =
+          getBusinessRecommendationMismatchMessage(
+            verifiedPost,
+            businessSurvey,
+          );
+
+        if (mismatchMessage) {
+          setRecommendationSourcePosts((currentPosts) =>
+            currentPosts.filter(
+              (currentPost) => currentPost.postId !== post.postId,
+            ),
+          );
+          setRecommendationNotice(mismatchMessage);
+          return false;
+        }
+
+        setRecommendationNotice("");
+        setRecommendationSourcePosts((currentPosts) =>
+          currentPosts.map((currentPost) =>
+            currentPost.postId === post.postId
+              ? verifiedPost
+              : currentPost,
+          ),
+        );
+        return true;
+      } catch {
+        setRecommendationNotice(
+          "Không thể kiểm tra dữ liệu mới nhất của bài đăng. Vui lòng thử lại.",
+        );
+        return false;
+      }
+    },
+    [businessSurvey],
   );
 
   const hasBusinessSurvey =
@@ -553,6 +658,15 @@ const Homepage = () => {
                   to="/tin-dang-ban?view=recommended"
                 />
 
+                {recommendationNotice && (
+                  <div
+                    role="alert"
+                    className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900"
+                  >
+                    {recommendationNotice}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                   {surveyLoading || recommendationLoading ? (
                     <LoadingCards
@@ -567,6 +681,7 @@ const Homepage = () => {
                           key={post.postId}
                           data={post}
                           variant="personal-sell"
+                          onBeforeOpen={handleRecommendationOpen}
                         />
                       ),
                     )
