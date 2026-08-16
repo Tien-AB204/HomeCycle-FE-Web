@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  getBusinessRecommendationMismatchMessage,
+  getBusinessRecommendationMismatchReasons,
   getBusinessRecommendations,
+  isEligibleBusinessRecommendation,
   normalizeBusinessSurvey,
 } from "./businessRecommendationUtils.js";
 
@@ -101,4 +104,77 @@ test("does not admit unrelated posts just because condition fields match", () =>
   });
 
   assert.deepEqual(recommendations, []);
+});
+
+test("accepts a hydrated search item after restoring fields omitted by search API", () => {
+  const searchItem = {
+    postId: "vacuum-search-item",
+    status: "Active",
+    postType: "Sell",
+    productTypeName: "Máy hút bụi",
+    city: "Thành phố Hồ Chí Minh",
+  };
+
+  assert.equal(
+    isEligibleBusinessRecommendation(searchItem, survey),
+    false,
+  );
+  assert.equal(
+    isEligibleBusinessRecommendation(
+      {
+        ...searchItem,
+        productTypeId: VACUUM_TYPE_ID,
+        damageLevel: "Minor_Damage",
+        functionalityStatus: "FullyFunctional",
+      },
+      survey,
+    ),
+    true,
+  );
+});
+
+test("excludes an otherwise matching post when remaining quantity is zero", () => {
+  const soldOutPost = createPost({
+    postId: "sold-out-vacuum",
+    productTypeId: VACUUM_TYPE_ID,
+    city: "Thành phố Hồ Chí Minh",
+  });
+  soldOutPost.quantity = 1;
+  soldOutPost.remainingQuantity = 0;
+
+  const recommendations = getBusinessRecommendations({
+    posts: [soldOutPost],
+    survey,
+    limit: Number.POSITIVE_INFINITY,
+  });
+
+  assert.deepEqual(recommendations, []);
+  assert.equal(
+    getBusinessRecommendationMismatchMessage(soldOutPost, survey),
+    "Sản phẩm trong bài đăng đã hết số lượng khả dụng.",
+  );
+});
+
+test("requires damage level and functionality status selected in the survey", () => {
+  const changedPost = createPost({
+    postId: "changed-vacuum",
+    productTypeId: TV_TYPE_ID,
+    city: "Đà Nẵng",
+    damageLevel: "Severe_Damage",
+    functionalityStatus: "NonFunctional",
+  });
+
+  assert.deepEqual(
+    getBusinessRecommendationMismatchReasons(changedPost, survey),
+    [
+      "productType",
+      "city",
+      "damageLevel",
+      "functionalityStatus",
+    ],
+  );
+  assert.equal(
+    getBusinessRecommendationMismatchMessage(changedPost, survey),
+    "Loại sản phẩm, thành phố, mức độ hư hỏng và tình trạng hoạt động của bài đăng không còn phù hợp với yêu cầu khảo sát của bạn.",
+  );
 });
