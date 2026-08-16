@@ -6,10 +6,10 @@ import {
   MessageOutlined,
   SearchOutlined,
   ShoppingOutlined,
+  SyncOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import ProductCard from "../../components/shared/ProductCard";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
@@ -50,7 +50,7 @@ const CATEGORIES = [
 const BENEFITS = [
   { icon: CheckCircleOutlined, title: "Minh bạch", description: "Thông tin rõ ràng" },
   { icon: MessageOutlined, title: "Linh hoạt", description: "Thương lượng trực tiếp" },
-  { icon: homeCycleMark, title: "Bền vững", description: "Kéo dài vòng đời sản phẩm", isImage: true },
+  { icon: SyncOutlined, title: "Bền vững", description: "Kéo dài vòng đời sản phẩm" },
 ];
 
 const isCanceledRequest = (error) =>
@@ -87,8 +87,7 @@ const LoadingCards = ({ count }) => {
 
 const EmptyPosts = ({ message }) => (
   <div className="col-span-full rounded-2xl border border-dashed border-[#aac6bf] bg-white px-6 py-12 text-center">
-    <img src={homeCycleMark} alt="" className="mx-auto h-12 w-12 rounded-xl" />
-    <p className="mt-3 text-sm font-semibold text-[#587170]">{message}</p>
+    <p className="text-sm font-semibold text-[#587170]">{message}</p>
   </div>
 );
 
@@ -200,10 +199,6 @@ const Homepage = () => {
   const managedPostLabel = isBusinessUser
     ? "Tin thu mua của tôi"
     : "Tin đăng bán của tôi";
-  const createPostLabel = isBusinessUser
-    ? "Đăng tin thu mua"
-    : "Đăng tin bán";
-
   useEffect(() => {
     const controller = new AbortController();
     let isActive = true;
@@ -325,8 +320,7 @@ const Homepage = () => {
 
         <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-20">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#34716c] shadow-sm">
-              <img src={homeCycleMark} alt="" className="h-5 w-5 rounded-md" />
+            <span className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#34716c] shadow-sm">
               {isAuthenticated
                 ? `Xin chào, ${displayName}`
                 : "Marketplace đồ cũ cho gia đình"}
@@ -353,46 +347,22 @@ const Homepage = () => {
             </p>
 
             {!isAuthenticated && <HomepageSearch />}
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                to={isAuthenticated ? "/bai-dang/tao-moi" : "/auth/register"}
-                className="rounded-full bg-[#4f8588] px-6 py-3 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#356a70]"
-              >
-                {isAuthenticated ? createPostLabel : "Bắt đầu đăng tin"}
-              </Link>
-              <Link
-                to={
-                  isAuthenticated
-                    ? "/thuong-luong/phien"
-                    : "/tin-thu-mua"
-                }
-                className="rounded-full border border-[#2f6f9f] bg-white/80 px-6 py-3 text-sm font-extrabold text-[#2f6f9f] transition hover:bg-[#2f6f9f] hover:text-white"
-              >
-                {isAuthenticated
-                  ? "Mở phòng thương lượng"
-                  : "Xem nhu cầu thu mua"}
-              </Link>
-            </div>
           </div>
 
           <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:ml-auto">
             <div className="absolute inset-8 rotate-6 rounded-[2.5rem] bg-[#79a7ad]" />
             <div className="relative rounded-[2.5rem] border border-white/80 bg-white/90 p-6 shadow-[0_30px_80px_rgba(30,78,77,0.18)] backdrop-blur sm:p-8">
-              <div className="flex items-start justify-between gap-6">
-                <div>
-                  <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#66817f]">
-                    {isAuthenticated ? "Khu vực của bạn" : "HomeCycle hôm nay"}
-                  </p>
-                  <p className="mt-2 text-3xl font-black text-[#183f41]">
-                    {isAuthenticated
-                      ? isBusinessUser
-                        ? "Thu mua chủ động"
-                        : "Bán đồ thuận tiện"
-                      : "Mua bán dễ dàng"}
-                  </p>
-                </div>
-                <img src={homeCycleMark} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#66817f]">
+                  {isAuthenticated ? "Khu vực của bạn" : "HomeCycle hôm nay"}
+                </p>
+                <p className="mt-2 text-3xl font-black text-[#183f41]">
+                  {isAuthenticated
+                    ? isBusinessUser
+                      ? "Thu mua chủ động"
+                      : "Bán đồ thuận tiện"
+                    : "Mua bán dễ dàng"}
+                </p>
               </div>
 
               <div className="mt-7 grid grid-cols-2 gap-3">
@@ -446,11 +416,7 @@ const Homepage = () => {
             return (
               <div key={benefit.title} className="flex items-center gap-4 py-5 sm:justify-center sm:px-5">
                 <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-[#e6f3ef] text-xl text-[#2d6a65]" aria-hidden="true">
-                  {benefit.isImage ? (
-                    <img src={benefit.icon} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <BenefitIcon />
-                  )}
+                  <BenefitIcon />
                 </span>
                 <div>
                   <p className="font-extrabold text-[#244f51]">{benefit.title}</p>

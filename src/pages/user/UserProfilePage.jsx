@@ -360,12 +360,6 @@ export default function UserProfilePage() {
       fullName: profileForm.fullName.trim(),
 
       phoneNumber: profileForm.phoneNumber.trim(),
-
-      /*
-       * API hiện vẫn yêu cầu address nhưng frontend
-       * chưa hỗ trợ cập nhật field này.
-       */
-      address: profile.address || profile.representativeAddress || "",
     };
 
     setIsSavingProfile(true);
