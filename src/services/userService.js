@@ -17,15 +17,13 @@ export const userService = {
     username,
     fullName,
     phoneNumber,
-    address,
   }) => {
-    return axiosClient.put(
+    return axiosClient.patch(
       "/personal-profiles/me/profile",
       {
         username,
         fullName,
         phoneNumber,
-        address,
       },
     );
   },
@@ -106,7 +104,7 @@ export const userService = {
       );
     }
 
-    return axiosClient.put(
+    return axiosClient.patch(
       "/personal-profiles/me/identity",
       payload,
       {
@@ -127,7 +125,7 @@ export const userService = {
     accountNumber,
     accountName,
   }) => {
-    return axiosClient.put(
+    return axiosClient.patch(
       "/personal-profiles/me/bank",
       {
         bankCode,
