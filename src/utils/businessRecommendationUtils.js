@@ -259,10 +259,15 @@ const getRecommendationScore = (
   return score;
 };
 
-const isEligibleRecommendation = (
+export const getBusinessRecommendationMismatchReasons = (
   post,
   survey,
 ) => {
+  if (!hasCompletedBusinessSurvey(survey)) {
+    return ["survey"];
+  }
+
+  const reasons = [];
   const isActiveSellPost =
     String(post?.status || "")
       .trim()
@@ -270,9 +275,18 @@ const isEligibleRecommendation = (
     String(post?.postType || "")
       .trim()
       .toLowerCase() === "sell";
+  const remainingQuantity = Number(
+    post?.remainingQuantity ?? post?.quantity,
+  );
+  const hasAvailableQuantity =
+    !Number.isFinite(remainingQuantity) || remainingQuantity > 0;
 
   if (!isActiveSellPost) {
-    return false;
+    reasons.push("status");
+  }
+
+  if (!hasAvailableQuantity) {
+    reasons.push("remainingQuantity");
   }
 
   const productTypeId = String(
@@ -290,15 +304,98 @@ const isEligibleRecommendation = (
       "province",
     ]),
   );
-
-  return Boolean(
-    productTypeId &&
-      city &&
-      survey.productTypeIds.includes(
-        productTypeId,
-      ) &&
-      survey.targetCities.includes(city),
+  const damageLevel = normalizeText(
+    getPostValue(post, [
+      "damageLevel",
+      "condition",
+    ]),
   );
+  const functionalityStatus = normalizeText(
+    getPostValue(post, [
+      "functionalityStatus",
+    ]),
+  );
+
+  if (
+    !productTypeId ||
+    !survey.productTypeIds.includes(productTypeId)
+  ) {
+    reasons.push("productType");
+  }
+
+  if (!city || !survey.targetCities.includes(city)) {
+    reasons.push("city");
+  }
+
+  if (
+    !damageLevel ||
+    !survey.acceptableDamageLevels.includes(damageLevel)
+  ) {
+    reasons.push("damageLevel");
+  }
+
+  if (
+    !functionalityStatus ||
+    !survey.acceptableFunctionalityStatuses.includes(
+      functionalityStatus,
+    )
+  ) {
+    reasons.push("functionalityStatus");
+  }
+
+  return reasons;
+};
+
+export const isEligibleBusinessRecommendation = (
+  post,
+  survey,
+) =>
+  getBusinessRecommendationMismatchReasons(post, survey).length === 0;
+
+const RECOMMENDATION_REASON_LABELS = {
+  productType: "loại sản phẩm",
+  city: "thành phố",
+  damageLevel: "mức độ hư hỏng",
+  functionalityStatus: "tình trạng hoạt động",
+};
+
+const joinVietnameseLabels = (labels) => {
+  if (labels.length <= 1) {
+    return labels[0] || "";
+  }
+
+  return `${labels.slice(0, -1).join(", ")} và ${labels.at(-1)}`;
+};
+
+export const getBusinessRecommendationMismatchMessage = (
+  post,
+  survey,
+) => {
+  const reasons = getBusinessRecommendationMismatchReasons(post, survey);
+
+  if (reasons.includes("remainingQuantity")) {
+    return "Sản phẩm trong bài đăng đã hết số lượng khả dụng.";
+  }
+
+  if (reasons.includes("status")) {
+    return "Bài đăng không còn hoạt động hoặc không còn là tin đăng bán.";
+  }
+
+  if (reasons.includes("survey")) {
+    return "Không thể đối chiếu bài đăng vì khảo sát doanh nghiệp chưa đầy đủ.";
+  }
+
+  const labels = reasons
+    .map((reason) => RECOMMENDATION_REASON_LABELS[reason])
+    .filter(Boolean);
+
+  if (labels.length === 0) {
+    return "";
+  }
+
+  const mismatchFields = joinVietnameseLabels(labels);
+
+  return `${mismatchFields.charAt(0).toUpperCase()}${mismatchFields.slice(1)} của bài đăng không còn phù hợp với yêu cầu khảo sát của bạn.`;
 };
 
 export const getBusinessRecommendations = ({
@@ -315,7 +412,7 @@ export const getBusinessRecommendations = ({
 
   return posts
     .filter((post) =>
-      isEligibleRecommendation(
+      isEligibleBusinessRecommendation(
         post,
         survey,
       ),
