@@ -1,4 +1,5 @@
 import {
+  Navigate,
   useLocation,
   useNavigate,
 } from "react-router-dom";
@@ -7,7 +8,9 @@ import {
   MARKETPLACE_POST_TYPES,
   normalizePostType,
 } from "../../constants/marketplace";
+import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
+import { normalizeRole } from "../../utils/authUtils";
 import SearchPage from "../public/SearchPage";
 import MyPostsPage from "./MyPostsPage";
 
@@ -16,16 +19,25 @@ const PostSectionPage = ({ postType }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const normalizedPostType = normalizePostType(postType);
+  const viewMode = new URLSearchParams(location.search).get("view");
+  const isRecommendationView =
+    viewMode === "recommended" &&
+    normalizedPostType === MARKETPLACE_POST_TYPES.SELL;
+  const isBusinessUser = normalizeRole(user?.role) === ROLES.BUSINESS;
   const isMarketplaceView =
-    new URLSearchParams(location.search).get("view") ===
-    "marketplace";
+    viewMode === "marketplace" || isRecommendationView;
   const hasManagementAccess =
     isAuthenticated &&
     canManagePostType(user?.role, normalizedPostType);
 
+  if (isRecommendationView && (!isAuthenticated || !isBusinessUser)) {
+    return <Navigate to="/tin-dang-ban?view=marketplace" replace />;
+  }
+
   if (!hasManagementAccess || isMarketplaceView) {
     return (
       <SearchPage
+        recommendationMode={isRecommendationView}
         fixedPostType={
           normalizedPostType === MARKETPLACE_POST_TYPES.SELL
             ? "SELL"
