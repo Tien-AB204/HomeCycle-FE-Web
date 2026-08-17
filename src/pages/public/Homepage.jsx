@@ -101,6 +101,41 @@ const EmptyPosts = ({ message }) => (
   </div>
 );
 
+const BusinessSurveyPrompt = () => (
+  <section className="pb-12">
+    <div className="grid gap-5 rounded-[2rem] border border-[#cfe1dc] bg-gradient-to-br from-[#edf7f3] via-white to-[#eaf2f8] p-6 shadow-[0_12px_36px_rgba(32,77,75,0.08)] sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-8">
+      <span
+        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dceee9] text-[#2f686c]"
+        aria-hidden="true"
+      >
+        <span className="material-symbols-outlined text-[30px]">
+          query_stats
+        </span>
+      </span>
+      <div>
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#4f8588]">
+          Dành riêng cho doanh nghiệp
+        </p>
+        <h2 className="mt-2 text-xl font-black leading-snug text-[#183436] sm:text-2xl">
+          Hãy thực hiện khảo sát để hệ thống đề xuất cho bạn những sản phẩm phù hợp
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#68807f]">
+          Chọn khu vực, loại sản phẩm và tình trạng hàng hóa doanh nghiệp quan tâm.
+        </p>
+      </div>
+      <Link
+        to="/ho-so?tab=survey"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#244f51] px-5 py-3 text-sm font-black text-white transition hover:bg-[#356a70] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#244f51]"
+      >
+        <span className="material-symbols-outlined text-[18px]">
+          tune
+        </span>
+        Thực hiện khảo sát
+      </Link>
+    </div>
+  </section>
+);
+
 const HomepageSearch = () => {
   const navigate = useNavigate();
   const keywordInputRef = useRef(null);
@@ -645,6 +680,12 @@ const Homepage = () => {
             </button>
           </div>
         )}
+
+        {isBusinessUser &&
+          !surveyLoading &&
+          !hasBusinessSurvey && (
+            <BusinessSurveyPrompt />
+          )}
 
         {isBusinessUser &&
           (surveyLoading ||
