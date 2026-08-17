@@ -22,6 +22,7 @@ import ErrorPage from "../pages/public/ErrorPage";
 
 // Moderator Pages và Security
 import { ROLES } from "../constants/roles";
+import DisputeManagementPage from "../pages/mod/DisputeManagementPage";
 import ModDashboardPage from "../pages/mod/ModDashboardPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
@@ -268,6 +269,11 @@ const AppRouter = () => {
           <Route
             path="posts"
             element={<PostModerationPage />}
+          />
+
+          <Route
+            path="disputes"
+            element={<DisputeManagementPage />}
           />
         </Route>
       </Route>
