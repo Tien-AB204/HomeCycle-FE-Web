@@ -9,9 +9,19 @@ import {
 } from "react-router-dom";
 import { getOfferStatusMeta } from "../../constants/offers";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
+import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferDetailModal from "../../features/offers/OfferDetailModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
 import offerApi from "../../services/apis/offerApi";
+import postApi from "../../services/apis/postApi";
+import {
+  getOfferChangedFields,
+  getPostChangedFields,
+  isConcurrencyConflict,
+  OFFER_CHANGED_WARNING,
+  POST_CHANGED_WARNING,
+  VERIFICATION_FAILED_WARNING,
+} from "../../utils/transactionFreshnessUtils";
 
 const PAGE_SIZE = 10;
 
@@ -77,6 +87,7 @@ const OfferManagementPage = () => {
   const [counteringOffer, setCounteringOffer] = useState(null);
   const [counterSubmitting, setCounterSubmitting] = useState(false);
   const [counterError, setCounterError] = useState("");
+  const [staleWarning, setStaleWarning] = useState(null);
   const listRequestKey = `${activeTab}:${pageNumber}:${requestVersion}`;
   const detailRequestKey = `${selectedOfferId}:${detailVersion}`;
   const [listState, setListState] = useState({
@@ -87,6 +98,7 @@ const OfferManagementPage = () => {
   const [detailState, setDetailState] = useState({
     requestKey: "",
     offer: null,
+    post: null,
     error: "",
   });
 
@@ -147,10 +159,14 @@ const OfferManagementPage = () => {
     let isActive = true;
 
     offerApi
-      .getById(selectedOfferId, {
-        signal: controller.signal,
-      })
-      .then((offer) => {
+      .getById(selectedOfferId, { signal: controller.signal })
+      .then(async (offer) => ({
+        offer,
+        post: offer.postId
+          ? await postApi.getById(offer.postId, { signal: controller.signal })
+          : null,
+      }))
+      .then(({ offer, post }) => {
         if (!isActive) {
           return;
         }
@@ -158,6 +174,7 @@ const OfferManagementPage = () => {
         setDetailState({
           requestKey: detailRequestKey,
           offer,
+          post,
           error: "",
         });
       })
@@ -172,6 +189,7 @@ const OfferManagementPage = () => {
         setDetailState({
           requestKey: detailRequestKey,
           offer: null,
+          post: null,
           error: getErrorMessage(
             requestError,
             "Không thể tải chi tiết đề nghị.",
@@ -205,6 +223,10 @@ const OfferManagementPage = () => {
     detailState.requestKey === detailRequestKey
       ? detailState.offer
       : null;
+  const selectedPost =
+    detailState.requestKey === detailRequestKey
+      ? detailState.post
+      : null;
   const detailError =
     detailState.requestKey === detailRequestKey
       ? detailState.error
@@ -231,12 +253,60 @@ const OfferManagementPage = () => {
     setPendingAction(action);
   };
 
+  const verifyOfferContext = async (offerSnapshot, postSnapshot) => {
+    const latestOffer = await offerApi.getById(offerSnapshot.offerId);
+    const postId = latestOffer.postId || offerSnapshot.postId;
+    const latestPost = postId ? await postApi.getById(postId) : null;
+    const offerChanges = getOfferChangedFields(offerSnapshot, latestOffer);
+    const postChanges = postSnapshot && latestPost
+      ? getPostChangedFields(postSnapshot, latestPost)
+      : [];
+
+    return { latestOffer, latestPost, offerChanges, postChanges };
+  };
+
+  const stopForFreshnessChange = ({
+    latestOffer,
+    latestPost,
+    offerChanges,
+    postChanges,
+  }) => {
+    if (selectedOfferId) {
+      setDetailState({
+        requestKey: detailRequestKey,
+        offer: latestOffer,
+        post: latestPost,
+        error: "",
+      });
+    }
+    setPendingAction("");
+    setEditingOffer(null);
+    setCounteringOffer(null);
+    setStaleWarning({
+      message:
+        offerChanges.length > 0
+          ? OFFER_CHANGED_WARNING
+          : POST_CHANGED_WARNING,
+      changedFields: [...offerChanges, ...postChanges],
+    });
+    refreshList();
+  };
+
   const confirmOfferAction = async () => {
     if (!selectedOffer || !pendingAction || actionBusy) return;
 
     setActionBusy(true);
 
     try {
+      const verification = await verifyOfferContext(selectedOffer, selectedPost);
+      if (
+        verification.offerChanges.length > 0 ||
+        verification.postChanges.length > 0
+      ) {
+        stopForFreshnessChange(verification);
+        return;
+      }
+
       let message = "";
 
       if (pendingAction === "cancel") {
@@ -257,9 +327,16 @@ const OfferManagementPage = () => {
       );
       refreshList();
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setPendingAction("");
+        setStaleWarning({ message: OFFER_CHANGED_WARNING });
+        setDetailVersion((currentVersion) => currentVersion + 1);
+        return;
+      }
       setDetailState({
         requestKey: detailRequestKey,
         offer: selectedOffer,
+        post: selectedPost,
         error: getErrorMessage(
           requestError,
           "Không thể xử lý đề nghị.",
@@ -270,16 +347,48 @@ const OfferManagementPage = () => {
     }
   };
 
-  const openEditModal = () => {
-    setEditingOffer(selectedOffer);
-    setEditError("");
-    setSelectedOfferId("");
+  const openEditModal = async () => {
+    if (!selectedOffer || actionBusy) return;
+    setActionBusy(true);
+    try {
+      const verification = await verifyOfferContext(selectedOffer, selectedPost);
+      if (verification.offerChanges.length || verification.postChanges.length) {
+        stopForFreshnessChange(verification);
+        return;
+      }
+      setEditingOffer({
+        ...verification.latestOffer,
+        __postSnapshot: verification.latestPost,
+      });
+      setEditError("");
+      setSelectedOfferId("");
+    } catch {
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+    } finally {
+      setActionBusy(false);
+    }
   };
 
-  const openCounterModal = () => {
-    setCounteringOffer(selectedOffer);
-    setCounterError("");
-    setSelectedOfferId("");
+  const openCounterModal = async () => {
+    if (!selectedOffer || actionBusy) return;
+    setActionBusy(true);
+    try {
+      const verification = await verifyOfferContext(selectedOffer, selectedPost);
+      if (verification.offerChanges.length || verification.postChanges.length) {
+        stopForFreshnessChange(verification);
+        return;
+      }
+      setCounteringOffer({
+        ...verification.latestOffer,
+        __postSnapshot: verification.latestPost,
+      });
+      setCounterError("");
+      setSelectedOfferId("");
+    } catch {
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+    } finally {
+      setActionBusy(false);
+    }
   };
 
   const handleCounterOffer = async (terms) => {
@@ -291,6 +400,15 @@ const OfferManagementPage = () => {
     setCounterError("");
 
     try {
+      const verification = await verifyOfferContext(
+        counteringOffer,
+        counteringOffer.__postSnapshot,
+      );
+      if (verification.offerChanges.length || verification.postChanges.length) {
+        stopForFreshnessChange(verification);
+        return;
+      }
+
       const result = await offerApi.counter(counteringOffer.offerId, terms);
       setCounteringOffer(null);
       refreshList();
@@ -313,6 +431,12 @@ const OfferManagementPage = () => {
         },
       );
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setCounteringOffer(null);
+        setStaleWarning({ message: OFFER_CHANGED_WARNING });
+        refreshList();
+        return;
+      }
       setCounterError(
         getErrorMessage(requestError, "Không thể gửi phản đề."),
       );
@@ -330,11 +454,26 @@ const OfferManagementPage = () => {
     setEditError("");
 
     try {
+      const verification = await verifyOfferContext(
+        editingOffer,
+        editingOffer.__postSnapshot,
+      );
+      if (verification.offerChanges.length || verification.postChanges.length) {
+        stopForFreshnessChange(verification);
+        return;
+      }
+
       await offerApi.update(editingOffer.offerId, terms);
       setEditingOffer(null);
       setSuccessMessage("Đã cập nhật đề nghị thành công.");
       refreshList();
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setEditingOffer(null);
+        setStaleWarning({ message: OFFER_CHANGED_WARNING });
+        refreshList();
+        return;
+      }
       setEditError(
         getErrorMessage(
           requestError,
@@ -662,6 +801,12 @@ const OfferManagementPage = () => {
           if (!actionBusy) setPendingAction("");
         }}
         onConfirm={() => void confirmOfferAction()}
+      />
+      <StaleDataWarningModal
+        open={Boolean(staleWarning)}
+        message={staleWarning?.message}
+        changedFields={staleWarning?.changedFields}
+        onAcknowledge={() => setStaleWarning(null)}
       />
     </section>
   );

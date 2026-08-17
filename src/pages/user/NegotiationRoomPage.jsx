@@ -17,16 +17,27 @@ import {
   NEGOTIATION_STATUS,
 } from "../../constants/negotiations";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
+import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import { useAuth } from "../../hooks/useAuth";
 import messageApi, {
   normalizeMessage,
 } from "../../services/apis/messageApi";
 import agreementApi from "../../services/apis/agreementApi";
 import negotiationApi from "../../services/apis/negotiationApi";
+import postApi from "../../services/apis/postApi";
 import chatRealtimeService, {
   CHAT_REALTIME_STATUS,
 } from "../../services/realtime/chatRealtimeService";
 import { getUserId } from "../../utils/authUtils";
+import {
+  getNegotiationChangedFields,
+  getPostChangedFields,
+  getProposalChangedFields,
+  isConcurrencyConflict,
+  NEGOTIATION_CHANGED_WARNING,
+  POST_CHANGED_WARNING,
+  VERIFICATION_FAILED_WARNING,
+} from "../../utils/transactionFreshnessUtils";
 
 const MESSAGE_PAGE_SIZE = 50;
 const FALLBACK_POLL_INTERVAL_MS = 10000;
@@ -302,12 +313,14 @@ const NegotiationRoomPage = () => {
   const [requestState, setRequestState] = useState({
     requestKey: "",
     negotiation: null,
+    post: null,
     error: "",
   });
   const [actionBusy, setActionBusy] = useState("");
   const [actionError, setActionError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [pendingConfirmation, setPendingConfirmation] = useState(null);
+  const [staleWarning, setStaleWarning] = useState(null);
   const [agreementPreview, setAgreementPreview] = useState(null);
   const [counterForm, setCounterForm] = useState({
     offerPrice: "",
@@ -429,7 +442,16 @@ const NegotiationRoomPage = () => {
         signal: controller.signal,
       }),
     ])
-      .then(([negotiation, history]) => {
+      .then(async ([negotiation, history]) => ({
+        negotiation,
+        history,
+        post: negotiation.postId
+          ? await postApi.getById(negotiation.postId, {
+              signal: controller.signal,
+            })
+          : null,
+      }))
+      .then(({ negotiation, history, post }) => {
         if (!isActive) {
           return;
         }
@@ -444,6 +466,7 @@ const NegotiationRoomPage = () => {
               history.items,
             ),
           },
+          post,
           error: "",
         });
         setMessagePagination({
@@ -467,6 +490,7 @@ const NegotiationRoomPage = () => {
         setRequestState({
           requestKey,
           negotiation: null,
+          post: null,
           error: getErrorMessage(
             requestError,
             "Không thể tải phòng thương lượng.",
@@ -675,6 +699,7 @@ const NegotiationRoomPage = () => {
 
   const loading = requestState.requestKey !== requestKey;
   const negotiation = loading ? null : requestState.negotiation;
+  const postSnapshot = loading ? null : requestState.post;
   const loadError = loading ? "" : requestState.error;
   const statusMeta = getNegotiationStatusMeta(
     negotiation?.negotiationStatus,
@@ -793,12 +818,102 @@ const NegotiationRoomPage = () => {
     setPendingConfirmation({ type: "proposal", action, messageId });
   };
 
+  const verifyRoomContext = async (proposalSnapshot = null) => {
+    const latestNegotiation = await negotiationApi.getById(negotiationId);
+    const [latestHistory, latestPost] = await Promise.all([
+      messageApi.getHistory(negotiationId, {
+        pageNumber: 1,
+        pageSize: MESSAGE_PAGE_SIZE,
+      }),
+      latestNegotiation.postId
+        ? postApi.getById(latestNegotiation.postId)
+        : Promise.resolve(null),
+    ]);
+    const mergedNegotiation = {
+      ...latestNegotiation,
+      messages: mergeMessages(
+        latestNegotiation.messages || [],
+        latestHistory.items || [],
+      ),
+    };
+
+    return {
+      latestNegotiation: mergedNegotiation,
+      latestPost,
+      negotiationChanges: getNegotiationChangedFields(
+        negotiation,
+        mergedNegotiation,
+      ),
+      proposalChanges: proposalSnapshot
+        ? getProposalChangedFields(proposalSnapshot, mergedNegotiation)
+        : [],
+      postChanges:
+        postSnapshot && latestPost
+          ? getPostChangedFields(postSnapshot, latestPost)
+          : [],
+    };
+  };
+
+  const stopForRoomChange = (verification) => {
+    setRequestState({
+      requestKey,
+      negotiation: verification.latestNegotiation,
+      post: verification.latestPost,
+      error: "",
+    });
+    setCounterForm({
+      offerPrice: String(
+        verification.latestNegotiation.currentOfferPrice ?? "",
+      ),
+      offerQuantity: String(
+        verification.latestNegotiation.currentOfferQuantity ?? 1,
+      ),
+    });
+    setPendingConfirmation(null);
+    setStaleWarning({
+      message:
+        verification.proposalChanges.length > 0 ||
+        verification.negotiationChanges.length > 0
+          ? NEGOTIATION_CHANGED_WARNING
+          : POST_CHANGED_WARNING,
+      changedFields: [
+        ...verification.proposalChanges,
+        ...verification.negotiationChanges,
+        ...verification.postChanges,
+      ],
+    });
+  };
+
   const confirmProposalAction = async ({ action, messageId }) => {
     if (!negotiation || actionBusy) return;
 
     setActionBusy(`${action}:${messageId}`);
     setActionError("");
     setSuccessMessage("");
+
+    const proposalSnapshot = messages.find(
+      (message) => String(message.messageId) === String(messageId),
+    );
+
+    let verification;
+    try {
+      verification = await verifyRoomContext(proposalSnapshot);
+    } catch {
+      setPendingConfirmation(null);
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+      setActionBusy("");
+      return;
+    }
+
+    if (
+      verification.proposalChanges.length ||
+      verification.negotiationChanges.length ||
+      verification.postChanges.length
+    ) {
+      stopForRoomChange(verification);
+      setActionBusy("");
+      return;
+    }
 
     try {
       if (action === "accept") {
@@ -812,6 +927,12 @@ const NegotiationRoomPage = () => {
       setPendingConfirmation(null);
       refreshRoom();
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setPendingConfirmation(null);
+        setStaleWarning({ message: NEGOTIATION_CHANGED_WARNING });
+        refreshRoom();
+        return;
+      }
       setActionError(
         getErrorMessage(requestError, "Không thể xử lý đề xuất."),
       );
@@ -831,11 +952,34 @@ const NegotiationRoomPage = () => {
     setActionError("");
     setSuccessMessage("");
 
+    let verification;
+    try {
+      verification = await verifyRoomContext();
+    } catch {
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+      setActionBusy("");
+      return;
+    }
+
+    if (
+      verification.negotiationChanges.length ||
+      verification.postChanges.length
+    ) {
+      stopForRoomChange(verification);
+      setActionBusy("");
+      return;
+    }
+
     try {
       await negotiationApi.counter(negotiationId, counterForm);
       setSuccessMessage("Đã gửi đề xuất mới đến đối tác.");
       refreshRoom();
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setStaleWarning({ message: NEGOTIATION_CHANGED_WARNING });
+        refreshRoom();
+        return;
+      }
       setActionError(
         getErrorMessage(requestError, "Không thể gửi đề xuất mới."),
       );
@@ -859,12 +1003,34 @@ const NegotiationRoomPage = () => {
     setActionError("");
     setSuccessMessage("");
 
+    let verification;
+    try {
+      verification = await verifyRoomContext();
+    } catch {
+      setPendingConfirmation(null);
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+      setActionBusy("");
+      return;
+    }
+
+    if (verification.negotiationChanges.length) {
+      stopForRoomChange(verification);
+      setActionBusy("");
+      return;
+    }
+
     try {
       await negotiationApi.cancel(negotiationId);
       setSuccessMessage("Đã hủy phiên thương lượng.");
       setPendingConfirmation(null);
       refreshRoom();
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setPendingConfirmation(null);
+        setStaleWarning({ message: NEGOTIATION_CHANGED_WARNING });
+        refreshRoom();
+        return;
+      }
       setActionError(
         getErrorMessage(requestError, "Không thể hủy phiên thương lượng."),
       );
@@ -1262,6 +1428,12 @@ const NegotiationRoomPage = () => {
             void confirmProposalAction(pendingConfirmation);
           }
         }}
+      />
+      <StaleDataWarningModal
+        open={Boolean(staleWarning)}
+        message={staleWarning?.message}
+        changedFields={staleWarning?.changedFields}
+        onAcknowledge={() => setStaleWarning(null)}
       />
     </section>
   );
