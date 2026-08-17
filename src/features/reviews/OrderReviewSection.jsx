@@ -128,7 +128,7 @@ const OrderReviewSection = ({
 
     await reviewApi.createForOrder(orderId, payload);
     setModal(null);
-    await loadReviews({ successMessage: "Đã gửi đánh giá thành công." });
+    await loadReviews({ successMessage: "Đã gửi đánh giá đối tác thành công." });
   };
 
   return (
@@ -138,9 +138,9 @@ const OrderReviewSection = ({
           <p className="text-xs font-black uppercase tracking-[0.14em] text-[#2F6F9F]">
             Sau giao dịch
           </p>
-          <h2 className="mt-1 text-xl font-black text-[#183F41]">Đánh giá đơn hàng</h2>
+          <h2 className="mt-1 text-xl font-black text-[#183F41]">Đánh giá đối tác</h2>
           <p className="mt-1 text-sm text-[#68807F]">
-            Mỗi bên được đánh giá một lần sau khi đơn hàng hoàn tất.
+            Mỗi bên có thể đánh giá người còn lại một lần sau khi đơn hàng hoàn tất.
           </p>
         </div>
 
@@ -171,7 +171,7 @@ const OrderReviewSection = ({
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#4F8588] px-4 py-2 text-sm font-black text-white transition hover:bg-[#356A70]"
             >
               <span className="material-symbols-outlined text-lg" aria-hidden="true">rate_review</span>
-              Viết đánh giá
+              Đánh giá đối tác
             </button>
           )}
         </div>
@@ -212,9 +212,9 @@ const OrderReviewSection = ({
           <h3 className="mt-2 font-black text-[#183F41]">Chưa có đánh giá</h3>
           <p className="mt-1 text-sm text-[#68807F]">
             {canCreate
-              ? "Hãy là người đầu tiên chia sẻ trải nghiệm của giao dịch này."
+              ? "Chia sẻ trải nghiệm giao dịch của bạn với đối tác."
               : blockedReason ||
-                "Đánh giá sẽ mở khi đơn hàng hoàn tất và đủ điều kiện."}
+                "Đánh giá đối tác sẽ mở khi đơn hàng hoàn tất và đủ điều kiện."}
           </p>
         </div>
       )}
@@ -274,7 +274,7 @@ const OrderReviewSection = ({
 
       {state.mine && !canCreate && state.mine.canEdit !== false && (
         <p className="mt-4 rounded-lg bg-[#EAF3F8] px-4 py-3 text-xs font-semibold leading-5 text-[#2F6F9F]">
-          Bạn chỉ được chỉnh sửa đánh giá trong vòng 3 ngày sau khi nhận hàng và không thể xóa đánh giá.
+          Bạn chỉ được chỉnh sửa đánh giá trong vòng 3 ngày kể từ khi gửi.
         </p>
       )}
 
