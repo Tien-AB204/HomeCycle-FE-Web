@@ -1,17 +1,10 @@
-const FUNCTIONALITY_BY_NUMBER = {
-  0: "FullyFunctional",
-  1: "PartiallyFunctional",
-  2: "NonFunctional",
-};
-
-const DAMAGE_LEVEL_BY_NUMBER = {
-  0: "None",
-  1: "Cosmetic_Damage",
-  2: "Minor_Damage",
-  3: "Moderate_Damage",
-  4: "Severe_Damage",
-  5: "Total_Loss",
-};
+import {
+  BUSINESS_SURVEY_DAMAGE_LEVELS,
+  BUSINESS_SURVEY_FUNCTIONALITY_STATUSES,
+  deriveBusinessSurveyFunctionalityStatuses,
+  getBusinessSurveyDamagePostValue,
+  normalizeBusinessSurveyDamageLevels,
+} from "./businessSurveyConditionUtils.js";
 
 const normalizeText = (value) =>
   String(value || "")
@@ -61,37 +54,6 @@ const getItemValue = (item, keys) => {
   return "";
 };
 
-const normalizeEnumValues = (
-  values,
-  numberMap,
-) => {
-  return normalizeArray(values)
-    .map((item) =>
-      getItemValue(item, [
-        "value",
-        "id",
-        "name",
-        "status",
-      ]),
-    )
-    .map((value) => {
-      const numericValue = Number(value);
-
-      if (
-        Number.isInteger(numericValue) &&
-        numberMap[numericValue] !==
-          undefined
-      ) {
-        return normalizeText(
-          numberMap[numericValue],
-        );
-      }
-
-      return normalizeText(value);
-    })
-    .filter(Boolean);
-};
-
 export const normalizeBusinessSurvey = (
   surveyResponse,
 ) => {
@@ -132,19 +94,33 @@ export const normalizeBusinessSurvey = (
     )
     .filter(Boolean);
 
+  const damageLevelNumbers =
+    normalizeBusinessSurveyDamageLevels(
+      survey.acceptableDamageLevels,
+    );
+  const functionalityStatusNumbers =
+    deriveBusinessSurveyFunctionalityStatuses(
+      damageLevelNumbers,
+    );
+
   return {
     targetCities,
     productTypeIds,
-    acceptableDamageLevels:
-      normalizeEnumValues(
-        survey.acceptableDamageLevels,
-        DAMAGE_LEVEL_BY_NUMBER,
+    acceptableDamageLevels: damageLevelNumbers.map((value) =>
+      normalizeText(
+        BUSINESS_SURVEY_DAMAGE_LEVELS.find(
+          (option) => option.value === value,
+        )?.postValue,
       ),
-    acceptableFunctionalityStatuses:
-      normalizeEnumValues(
-        survey.acceptableFunctionalityStatuses,
-        FUNCTIONALITY_BY_NUMBER,
-      ),
+    ),
+    acceptableFunctionalityStatuses: functionalityStatusNumbers.map(
+      (value) =>
+        normalizeText(
+          BUSINESS_SURVEY_FUNCTIONALITY_STATUSES.find(
+            (option) => option.value === value,
+          )?.postValue,
+        ),
+    ),
     procurementScales: normalizeArray(
       survey.procurementScales,
     ),
@@ -209,10 +185,12 @@ const getRecommendationScore = (
   );
 
   const damageLevel = normalizeText(
-    getPostValue(post, [
-      "damageLevel",
-      "condition",
-    ]),
+    getBusinessSurveyDamagePostValue(
+      getPostValue(post, [
+        "damageLevel",
+        "condition",
+      ]),
+    ),
   );
 
   const functionalityStatus =
@@ -305,10 +283,12 @@ export const getBusinessRecommendationMismatchReasons = (
     ]),
   );
   const damageLevel = normalizeText(
-    getPostValue(post, [
-      "damageLevel",
-      "condition",
-    ]),
+    getBusinessSurveyDamagePostValue(
+      getPostValue(post, [
+        "damageLevel",
+        "condition",
+      ]),
+    ),
   );
   const functionalityStatus = normalizeText(
     getPostValue(post, [
