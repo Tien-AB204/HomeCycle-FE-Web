@@ -7,13 +7,9 @@ import {
   getPaymentDisplayMeta,
 } from "../../constants/orders";
 import OrderReviewSection from "../../features/reviews/OrderReviewSection";
-import { useAuth } from "../../hooks/useAuth";
 import orderApi from "../../services/apis/orderApi";
 import postApi from "../../services/apis/postApi";
-import { getUserId } from "../../utils/authUtils";
 
-const OWN_POST_REVIEW_MESSAGE =
-  "Chủ bài đăng không thể tự đánh giá đơn hàng của tin đăng.";
 
 const formatCurrency = (value) =>
   `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
@@ -87,7 +83,7 @@ const OrderProductImage = ({ src, alt }) => {
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
-  const { user } = useAuth();
+
   const [state, setState] = useState({
     loading: true,
     detail: null,
@@ -202,32 +198,12 @@ const OrderDetailPage = () => {
   );
   const isOrderCompleted =
     Number(order.orderStatus) === ORDER_STATUS.COMPLETED;
-  const currentUserId = getUserId(user).toLowerCase();
-  const postOwnerId = String(
-    state.post?.ownerId ||
-      detail.postOwnerId ||
-      order.postOwnerId ||
-      "",
-  ).trim().toLowerCase();
-  const isPostOwner = Boolean(
-    currentUserId &&
-      postOwnerId &&
-      currentUserId === postOwnerId,
-  );
-  const reviewEligibility = isPostOwner
-    ? {
-        ...(detail.review || {}),
-        canReview: false,
-        blockedReason: OWN_POST_REVIEW_MESSAGE,
-      }
-    : detail.review;
-  const reviewDescription = isPostOwner
-    ? OWN_POST_REVIEW_MESSAGE
-    : detail.review?.hasReviewed
-      ? `Bạn đã đánh giá ${detail.review.rating || 0}/5.`
-      : (detail.review?.canReview ?? isOrderCompleted)
-        ? "Đơn hàng đã đủ điều kiện để đánh giá."
-        : "Bạn có thể đánh giá sau khi đơn hàng hoàn tất.";
+  const reviewEligibility = detail.review;
+  const reviewDescription = detail.review?.hasReviewed
+    ? `Bạn đã đánh giá đối tác ${detail.review.rating || 0}/5 sao.`
+    : (detail.review?.canReview ?? isOrderCompleted)
+      ? "Bạn có thể đánh giá đối tác trong giao dịch này."
+      : "Bạn có thể đánh giá đối tác sau khi đơn hàng hoàn tất.";
   const disputeDescription = detail.dispute?.hasActiveDispute
     ? "Đơn hàng đang có tranh chấp cần được xử lý."
     : "Đơn hàng hiện không có tranh chấp.";
@@ -393,7 +369,7 @@ const OrderDetailPage = () => {
                 : "Chưa có thông tin vận chuyển từ hệ thống."
             }
           />
-          <ServiceRow icon="star" title="Đánh giá" description={reviewDescription} />
+          <ServiceRow icon="star" title="Đánh giá đối tác" description={reviewDescription} />
           <ServiceRow
             icon={detail.dispute?.hasActiveDispute ? "warning" : "verified_user"}
             title="Tranh chấp"
