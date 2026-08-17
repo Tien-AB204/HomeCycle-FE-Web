@@ -6,9 +6,20 @@ import {
 } from "../../constants/agreements";
 import AgreementForm from "../../features/agreements/AgreementForm";
 import AgreementSummary from "../../features/agreements/AgreementSummary";
+import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import agreementApi from "../../services/apis/agreementApi";
+import negotiationApi from "../../services/apis/negotiationApi";
 import orderApi from "../../services/apis/orderApi";
 import paymentApi from "../../services/apis/paymentApi";
+import postApi from "../../services/apis/postApi";
+import {
+  AGREEMENT_CHANGED_WARNING,
+  getAgreementChangedFields,
+  getNegotiationChangedFields,
+  getPostChangedFields,
+  isConcurrencyConflict,
+  VERIFICATION_FAILED_WARNING,
+} from "../../utils/transactionFreshnessUtils";
 
 const PENDING_AGREEMENT_KEY = "homecycle:pending-payment-agreement-id";
 
@@ -35,6 +46,11 @@ const AgreementPage = () => {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [transactionContext, setTransactionContext] = useState({
+    negotiation: null,
+    post: null,
+  });
+  const [staleWarning, setStaleWarning] = useState(null);
   const pollingRef = useRef(null);
 
   const stopPolling = useCallback(() => {
@@ -59,6 +75,28 @@ const AgreementPage = () => {
       }
       setPreview(nextPreview);
       setAgreement(nextAgreement);
+
+      const nextNegotiationId =
+        nextAgreement?.negotiationId ||
+        nextPreview?.negotiationId ||
+        negotiationIdParam;
+      if (nextNegotiationId) {
+        try {
+          const nextNegotiation = await negotiationApi.getById(
+            nextNegotiationId,
+            { signal },
+          );
+          const nextPost = nextNegotiation.postId
+            ? await postApi.getById(nextNegotiation.postId, { signal })
+            : null;
+          setTransactionContext({
+            negotiation: nextNegotiation,
+            post: nextPost,
+          });
+        } catch {
+          setTransactionContext({ negotiation: null, post: null });
+        }
+      }
 
       if (nextAgreement?.agreementStatus === AGREEMENT_STATUS.CONFIRMED) {
         try {
@@ -94,16 +132,99 @@ const AgreementPage = () => {
     await loadData();
   };
 
+  const verifyAgreementContext = async () => {
+    if (!agreement?.agreementId) {
+      return null;
+    }
+
+    const latestAgreement = await agreementApi.getById(agreement.agreementId);
+    const latestPreview = await agreementApi.getPreview(
+      latestAgreement.negotiationId,
+    );
+    const latestNegotiation = await negotiationApi.getById(
+      latestAgreement.negotiationId,
+    );
+    const latestPost = latestNegotiation.postId
+      ? await postApi.getById(latestNegotiation.postId)
+      : null;
+
+    return {
+      latestAgreement,
+      latestPreview,
+      latestNegotiation,
+      latestPost,
+      agreementChanges: getAgreementChangedFields(
+        agreement,
+        latestAgreement,
+      ),
+      negotiationChanges: transactionContext.negotiation
+        ? getNegotiationChangedFields(
+            transactionContext.negotiation,
+            latestNegotiation,
+          )
+        : [],
+      postChanges:
+        transactionContext.post && latestPost
+          ? getPostChangedFields(transactionContext.post, latestPost)
+          : [],
+    };
+  };
+
+  const stopForAgreementChange = (verification) => {
+    setAgreement(verification.latestAgreement);
+    setPreview(verification.latestPreview);
+    setTransactionContext({
+      negotiation: verification.latestNegotiation,
+      post: verification.latestPost,
+    });
+    setEditing(false);
+    setStaleWarning({
+      message: AGREEMENT_CHANGED_WARNING,
+      changedFields: [
+        ...verification.agreementChanges,
+        ...verification.negotiationChanges,
+        ...verification.postChanges,
+      ],
+    });
+  };
+
   const runAction = async (key, action, successMessage) => {
     setBusy(key);
     setError("");
     setNotice("");
+
+    if (agreement?.agreementId) {
+      let verification;
+      try {
+        verification = await verifyAgreementContext();
+      } catch {
+        setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+        setBusy("");
+        return;
+      }
+
+      if (
+        verification.agreementChanges.length ||
+        verification.negotiationChanges.length ||
+        verification.postChanges.length
+      ) {
+        stopForAgreementChange(verification);
+        setBusy("");
+        return;
+      }
+    }
+
     try {
       await action();
       setNotice(successMessage);
       setEditing(false);
       await refresh();
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setStaleWarning({ message: AGREEMENT_CHANGED_WARNING });
+        await refresh();
+        return;
+      }
       setError(getErrorMessage(requestError, "Không thể xử lý thỏa thuận."));
     } finally {
       setBusy("");
@@ -149,6 +270,29 @@ const AgreementPage = () => {
     if (checkoutWindow) checkoutWindow.opener = null;
     setBusy("payos");
     setError("");
+
+    let verification;
+    try {
+      verification = await verifyAgreementContext();
+    } catch {
+      if (checkoutWindow) checkoutWindow.close();
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+      setBusy("");
+      return;
+    }
+
+    if (
+      verification &&
+      (verification.agreementChanges.length ||
+        verification.negotiationChanges.length ||
+        verification.postChanges.length)
+    ) {
+      if (checkoutWindow) checkoutWindow.close();
+      stopForAgreementChange(verification);
+      setBusy("");
+      return;
+    }
+
     try {
       localStorage.setItem(PENDING_AGREEMENT_KEY, agreement.agreementId);
       const result = await paymentApi.createPayOsCheckout(agreement.agreementId);
@@ -164,6 +308,11 @@ const AgreementPage = () => {
       }, 5000);
     } catch (requestError) {
       if (checkoutWindow) checkoutWindow.close();
+      if (isConcurrencyConflict(requestError)) {
+        setStaleWarning({ message: AGREEMENT_CHANGED_WARNING });
+        await refresh();
+        return;
+      }
       setError(getErrorMessage(requestError, "Không thể tạo liên kết thanh toán PayOS."));
     } finally {
       setBusy("");
@@ -264,6 +413,12 @@ const AgreementPage = () => {
           </section>
         )}
       </>}
+      <StaleDataWarningModal
+        open={Boolean(staleWarning)}
+        message={staleWarning?.message}
+        changedFields={staleWarning?.changedFields}
+        onAcknowledge={() => setStaleWarning(null)}
+      />
     </section>
   );
 };
