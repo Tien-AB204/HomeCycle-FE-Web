@@ -63,9 +63,7 @@ const PostAddressFields = ({
       })
       .catch((error) => {
         if (error?.name !== "AbortError") {
-          setLoadError(
-            error?.message || "Không thể tải danh sách tỉnh, thành phố.",
-          );
+          setLoadError("Không thể tải danh sách tỉnh, thành phố.");
         }
       })
       .finally(() => setLoadingProvinces(false));
@@ -95,9 +93,7 @@ const PostAddressFields = ({
         if (error?.name !== "AbortError") {
           setWards([]);
           setWardCode("");
-          setLoadError(
-            error?.message || "Không thể tải danh sách phường, xã.",
-          );
+          setLoadError("Không thể tải danh sách phường, xã.");
         }
       })
       .finally(() => setLoadingWards(false));
@@ -154,7 +150,10 @@ const PostAddressFields = ({
           ))}
         </select>
         {errors.city && (
-          <p className="mt-1.5 text-xs font-semibold text-red-600">
+          <p
+            role="alert"
+            className="mt-1.5 text-xs font-semibold text-red-600"
+          >
             {errors.city}
           </p>
         )}
@@ -185,7 +184,10 @@ const PostAddressFields = ({
           ))}
         </select>
         {errors.ward && (
-          <p className="mt-1.5 text-xs font-semibold text-red-600">
+          <p
+            role="alert"
+            className="mt-1.5 text-xs font-semibold text-red-600"
+          >
             {errors.ward}
           </p>
         )}
@@ -205,7 +207,10 @@ const PostAddressFields = ({
           required
         />
         {errors.streetAddress && (
-          <p className="mt-1.5 text-xs font-semibold text-red-600">
+          <p
+            role="alert"
+            className="mt-1.5 text-xs font-semibold text-red-600"
+          >
             {errors.streetAddress}
           </p>
         )}

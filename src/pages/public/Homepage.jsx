@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AppstoreOutlined,
   CheckCircleOutlined,
@@ -11,16 +11,32 @@ import {
 } from "@ant-design/icons";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import ProductCard from "../../components/shared/ProductCard";
+import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
+import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
 import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
 import {
+  getBusinessRecommendationMismatchMessage,
   getBusinessRecommendations,
   hasCompletedBusinessSurvey,
   normalizeBusinessSurvey,
 } from "../../utils/businessRecommendationUtils";
-import { normalizeRole } from "../../utils/authUtils";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
+import {
+  getBusinessSurveySnapshot,
+  isFreshBusinessSurveySnapshot,
+} from "../../utils/businessSurveySession";
+import {
+  isPostCatalogStorageEvent,
+  POST_CATALOG_CHANGED_EVENT,
+} from "../../utils/postCatalogEvents";
+import {
+  getPostChangedFields,
+  POST_CHANGED_WARNING,
+  VERIFICATION_FAILED_WARNING,
+} from "../../utils/transactionFreshnessUtils";
 
 const HOME_PAGE_SIZE = 20;
 const BUSINESS_POST_LIMIT = 4;
@@ -89,6 +105,41 @@ const EmptyPosts = ({ message }) => (
   <div className="col-span-full rounded-2xl border border-dashed border-[#aac6bf] bg-white px-6 py-12 text-center">
     <p className="text-sm font-semibold text-[#587170]">{message}</p>
   </div>
+);
+
+const BusinessSurveyPrompt = () => (
+  <section className="pb-12">
+    <div className="grid gap-5 rounded-[2rem] border border-[#cfe1dc] bg-gradient-to-br from-[#edf7f3] via-white to-[#eaf2f8] p-6 shadow-[0_12px_36px_rgba(32,77,75,0.08)] sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-8">
+      <span
+        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dceee9] text-[#2f686c]"
+        aria-hidden="true"
+      >
+        <span className="material-symbols-outlined text-[30px]">
+          query_stats
+        </span>
+      </span>
+      <div>
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#4f8588]">
+          Dành riêng cho doanh nghiệp
+        </p>
+        <h2 className="mt-2 text-xl font-black leading-snug text-[#183436] sm:text-2xl">
+          Hãy thực hiện khảo sát để hệ thống đề xuất cho bạn những sản phẩm phù hợp
+        </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#68807f]">
+          Chọn khu vực, loại sản phẩm và tình trạng hàng hóa doanh nghiệp quan tâm.
+        </p>
+      </div>
+      <Link
+        to="/ho-so?tab=survey"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#244f51] px-5 py-3 text-sm font-black text-white transition hover:bg-[#356a70] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#244f51]"
+      >
+        <span className="material-symbols-outlined text-[18px]">
+          tune
+        </span>
+        Thực hiện khảo sát
+      </Link>
+    </div>
+  </section>
 );
 
 const HomepageSearch = () => {
@@ -169,14 +220,20 @@ const SectionHeader = ({ eyebrow, title, description, to }) => (
 
 const Homepage = () => {
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [businessSurvey, setBusinessSurvey] = useState(null);
+  const [recommendationSourcePosts, setRecommendationSourcePosts] = useState([]);
+  const [recommendationLoading, setRecommendationLoading] = useState(false);
+  const [recommendationNotice, setRecommendationNotice] = useState("");
+  const [staleWarning, setStaleWarning] = useState(null);
   const [surveyLoading, setSurveyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
   const normalizedRole = normalizeRole(user?.role);
   const isBusinessUser = normalizedRole === ROLES.BUSINESS;
+  const businessUserId = getUserId(user);
   const preferredDisplayName =
     user?.fullName ||
     user?.FullName ||
@@ -239,7 +296,9 @@ const Homepage = () => {
       return undefined;
     }
 
+    const controller = new AbortController();
     let isActive = true;
+    const surveySnapshot = getBusinessSurveySnapshot(businessUserId);
 
     Promise.resolve()
       .then(() => {
@@ -247,7 +306,13 @@ const Homepage = () => {
           setSurveyLoading(true);
         }
 
-        return businessProfileApi.getSurveyDetail();
+        if (isFreshBusinessSurveySnapshot(surveySnapshot)) {
+          return surveySnapshot.survey;
+        }
+
+        return businessProfileApi.getSurveyDetail({
+          signal: controller.signal,
+        });
       })
       .then((surveyResponse) => {
         if (!isActive) return;
@@ -260,7 +325,11 @@ const Homepage = () => {
       })
       .catch(() => {
         if (isActive) {
-          setBusinessSurvey(null);
+          setBusinessSurvey(
+            surveySnapshot
+              ? normalizeBusinessSurvey(surveySnapshot.survey)
+              : null,
+          );
         }
       })
       .finally(() => {
@@ -271,8 +340,107 @@ const Homepage = () => {
 
     return () => {
       isActive = false;
+      controller.abort();
     };
-  }, [isBusinessUser]);
+  }, [businessUserId, isBusinessUser, requestVersion]);
+
+  useEffect(() => {
+    if (
+      !isBusinessUser ||
+      !hasCompletedBusinessSurvey(businessSurvey)
+    ) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+    let isRefreshing = false;
+    let refreshQueued = false;
+
+    const refreshRecommendations = async (showLoading = false) => {
+      if (isRefreshing) {
+        refreshQueued = true;
+        return;
+      }
+
+      isRefreshing = true;
+
+      if (showLoading && isActive) {
+        setRecommendationLoading(true);
+      }
+
+      try {
+        const result = await businessRecommendationApi.search({
+          survey: businessSurvey,
+          searchCriteria: {
+            sortBy: "Newest",
+          },
+          signal: controller.signal,
+        });
+
+        if (isActive) {
+          setRecommendationSourcePosts(result || []);
+        }
+      } catch (requestError) {
+        if (
+          isActive &&
+          showLoading &&
+          !isCanceledRequest(requestError)
+        ) {
+          setRecommendationSourcePosts([]);
+          setError(getErrorMessage(requestError));
+        }
+      } finally {
+        isRefreshing = false;
+
+        if (showLoading && isActive) {
+          setRecommendationLoading(false);
+        }
+
+        if (refreshQueued && isActive) {
+          refreshQueued = false;
+          void refreshRecommendations(false);
+        }
+      }
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshRecommendations(false);
+      }
+    };
+
+    const handleStorage = (event) => {
+      if (isPostCatalogStorageEvent(event)) {
+        refreshWhenVisible();
+      }
+    };
+
+    void Promise.resolve().then(() => refreshRecommendations(true));
+
+    window.addEventListener("focus", refreshWhenVisible);
+    window.addEventListener(
+      POST_CATALOG_CHANGED_EVENT,
+      refreshWhenVisible,
+    );
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      isActive = false;
+      controller.abort();
+      window.removeEventListener("focus", refreshWhenVisible);
+      window.removeEventListener(
+        POST_CATALOG_CHANGED_EVENT,
+        refreshWhenVisible,
+      );
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener(
+        "visibilitychange",
+        refreshWhenVisible,
+      );
+    };
+  }, [businessSurvey, isBusinessUser, requestVersion]);
 
   const businessPosts = useMemo(
     () =>
@@ -293,12 +461,100 @@ const Homepage = () => {
   const recommendedPosts = useMemo(
     () =>
       getBusinessRecommendations({
-        posts,
+        posts: recommendationSourcePosts,
         survey: businessSurvey,
         limit: PERSONAL_POST_LIMIT,
       }),
-    [businessSurvey, posts],
+    [businessSurvey, recommendationSourcePosts],
   );
+
+  const handleRecommendationOpen = useCallback(
+    async (post) => {
+      try {
+        const latestPost = await postApi.getById(post.postId);
+        const verifiedPost = {
+          ...post,
+          ...latestPost,
+          productTypeId:
+            latestPost.productTypeId || post.productTypeId,
+          product: {
+            ...(post.product || {}),
+            ...(latestPost.product || {}),
+          },
+        };
+        const changedFields = getPostChangedFields(post, verifiedPost);
+        const mismatchMessage =
+          getBusinessRecommendationMismatchMessage(
+            verifiedPost,
+            businessSurvey,
+          );
+
+        if (mismatchMessage) {
+          setStaleWarning({
+            postId: post.postId,
+            title: "Bài đăng không còn phù hợp khảo sát",
+            message: mismatchMessage,
+            changedFields,
+          });
+          return false;
+        }
+
+        if (changedFields.length > 0) {
+          setStaleWarning({
+            postId: post.postId,
+            message: POST_CHANGED_WARNING,
+            changedFields,
+          });
+          return false;
+        }
+
+        setRecommendationNotice("");
+        setRecommendationSourcePosts((currentPosts) =>
+          currentPosts.map((currentPost) =>
+            currentPost.postId === post.postId
+              ? verifiedPost
+              : currentPost,
+          ),
+        );
+        return true;
+      } catch {
+        setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+        return false;
+      }
+    },
+    [businessSurvey],
+  );
+
+  const handlePostOpen = useCallback(async (post) => {
+    try {
+      const latestPost = await postApi.getById(post.postId);
+      const verifiedPost = {
+        ...post,
+        ...latestPost,
+        product: { ...(post.product || {}), ...(latestPost.product || {}) },
+      };
+      const changedFields = getPostChangedFields(post, verifiedPost);
+
+      if (changedFields.length > 0) {
+        setStaleWarning({
+          postId: post.postId,
+          message: POST_CHANGED_WARNING,
+          changedFields,
+        });
+        return false;
+      }
+
+      setPosts((currentPosts) =>
+        currentPosts.map((currentPost) =>
+          currentPost.postId === post.postId ? verifiedPost : currentPost,
+        ),
+      );
+      return true;
+    } catch {
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+      return false;
+    }
+  }, []);
 
   const hasBusinessSurvey =
     hasCompletedBusinessSurvey(
@@ -473,6 +729,12 @@ const Homepage = () => {
         )}
 
         {isBusinessUser &&
+          !surveyLoading &&
+          !hasBusinessSurvey && (
+            <BusinessSurveyPrompt />
+          )}
+
+        {isBusinessUser &&
           (surveyLoading ||
             hasBusinessSurvey) && (
             <section className="pb-12">
@@ -481,11 +743,20 @@ const Homepage = () => {
                   eyebrow="Dành riêng cho doanh nghiệp"
                   title="Nguồn hàng phù hợp khảo sát"
                   description="Các tin bán được ưu tiên theo loại sản phẩm, khu vực và tình trạng hàng hóa doanh nghiệp đã chọn trong khảo sát."
-                  to="/tin-dang-ban?view=marketplace"
+                  to="/tin-dang-ban?view=recommended"
                 />
 
+                {recommendationNotice && (
+                  <div
+                    role="alert"
+                    className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900"
+                  >
+                    {recommendationNotice}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  {surveyLoading || loading ? (
+                  {surveyLoading || recommendationLoading ? (
                     <LoadingCards
                       count={
                         PERSONAL_POST_LIMIT
@@ -498,6 +769,7 @@ const Homepage = () => {
                           key={post.postId}
                           data={post}
                           variant="personal-sell"
+                          onBeforeOpen={handleRecommendationOpen}
                         />
                       ),
                     )
@@ -533,7 +805,7 @@ const Homepage = () => {
               <LoadingCards count={BUSINESS_POST_LIMIT} />
             ) : businessPosts.length > 0 ? (
               businessPosts.map((post) => (
-                <ProductCard key={post.postId} data={post} variant="business-buy" />
+                <ProductCard key={post.postId} data={post} variant="business-buy" onBeforeOpen={handlePostOpen} />
               ))
             ) : (
               <EmptyPosts message="Hiện chưa có tin thu mua đang hoạt động." />
@@ -555,7 +827,7 @@ const Homepage = () => {
               <LoadingCards count={PERSONAL_POST_LIMIT} />
             ) : personalPosts.length > 0 ? (
               personalPosts.map((post) => (
-                <ProductCard key={post.postId} data={post} variant="personal-sell" />
+                <ProductCard key={post.postId} data={post} variant="personal-sell" onBeforeOpen={handlePostOpen} />
               ))
             ) : (
               <EmptyPosts message="Hiện chưa có tin đăng bán đang hoạt động." />
@@ -581,6 +853,27 @@ const Homepage = () => {
           </div>
         </div>
       </section>
+      <StaleDataWarningModal
+        open={Boolean(staleWarning)}
+        title={staleWarning?.title}
+        message={staleWarning?.message}
+        changedFields={staleWarning?.changedFields}
+        onAcknowledge={() => {
+          const postId = staleWarning?.postId;
+          setStaleWarning(null);
+          if (postId) {
+            navigate(
+              `/posts/${encodeURIComponent(postId)}`,
+              {
+                state: {
+                  returnTo: "/",
+                  returnState: null,
+                },
+              },
+            );
+          }
+        }}
+      />
     </div>
   );
 };
