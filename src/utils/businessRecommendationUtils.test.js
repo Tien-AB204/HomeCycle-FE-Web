@@ -25,7 +25,7 @@ const createPost = ({
   productTypeId,
   city,
   damageLevel = "Minor_Damage",
-  functionalityStatus = "FullyFunctional",
+  functionalityStatus = "PartiallyFunctional",
 }) => ({
   postId,
   status: "Active",
@@ -125,7 +125,7 @@ test("accepts a hydrated search item after restoring fields omitted by search AP
         ...searchItem,
         productTypeId: VACUUM_TYPE_ID,
         damageLevel: "Minor_Damage",
-        functionalityStatus: "FullyFunctional",
+        functionalityStatus: "PartiallyFunctional",
       },
       survey,
     ),
@@ -176,5 +176,23 @@ test("requires damage level and functionality status selected in the survey", ()
   assert.equal(
     getBusinessRecommendationMismatchMessage(changedPost, survey),
     "Loại sản phẩm, thành phố, mức độ hư hỏng và tình trạng hoạt động của bài đăng không còn phù hợp với yêu cầu khảo sát của bạn.",
+  );
+});
+
+test("derives survey functionality from damage and migrates legacy damage values", () => {
+  const normalizedSurvey = normalizeBusinessSurvey({
+    targetCities: ["Hà Nội"],
+    productTypeIds: [BED_TYPE_ID],
+    acceptableDamageLevels: [3, 5],
+    acceptableFunctionalityStatuses: [0],
+    procurementScales: [0],
+  });
+
+  assert.deepEqual(normalizedSurvey.acceptableDamageLevels, [
+    "severedamage",
+  ]);
+  assert.deepEqual(
+    normalizedSurvey.acceptableFunctionalityStatuses,
+    ["nonfunctional"],
   );
 });
