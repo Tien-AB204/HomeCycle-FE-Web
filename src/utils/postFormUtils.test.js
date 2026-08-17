@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  POST_NOT_EDITABLE_MESSAGE,
   getFunctionalityForDamageLevel,
+  getManagedPostQuantity,
   getPostConditionFieldErrors,
   getPostFormApiErrors,
+  isPostStatusEditable,
   normalizePostConditionValues,
 } from "./postFormUtils.js";
 
@@ -82,5 +85,23 @@ test("never exposes an English network error to the user", () => {
   assert.equal(
     getPostFormApiErrors(new Error("Network Error")).generalMessage,
     "Không thể kết nối đến hệ thống. Vui lòng kiểm tra mạng và thử lại.",
+  );
+});
+
+test("shows the quantity configured by the post owner instead of remaining stock", () => {
+  assert.equal(
+    getManagedPostQuantity({ quantity: 5, remainingQuantity: 3 }),
+    5,
+  );
+  assert.equal(getManagedPostQuantity({ remainingQuantity: 3 }), 3);
+});
+
+test("allows editing only while the post is active", () => {
+  assert.equal(isPostStatusEditable("Active"), true);
+  assert.equal(isPostStatusEditable("Closed"), false);
+  assert.equal(isPostStatusEditable("Suspended"), false);
+  assert.equal(
+    POST_NOT_EDITABLE_MESSAGE,
+    "Không thể chỉnh sửa bài đăng không hoạt động.",
   );
 });
