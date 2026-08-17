@@ -8,7 +8,8 @@ import {
   ProfileOutlined,
   HomeOutlined,
   DashboardOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -27,6 +28,11 @@ const MODERATOR_NAV_ITEMS = [
     name: "Quản lý bài đăng",
     path: "/mod/posts",
     icon: ProfileOutlined,
+  },
+  {
+    name: "Tranh chấp",
+    path: "/mod/disputes",
+    icon: WarningOutlined,
   },
 ];
 
