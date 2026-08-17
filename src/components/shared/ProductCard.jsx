@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 
 const CONDITION_MAP = {
@@ -38,8 +41,10 @@ const ProductCard = ({
   data,
   variant = "business-buy",
   onBeforeOpen,
+  navState,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isChecking, setIsChecking] = useState(false);
 
   if (!data) {
@@ -76,6 +81,10 @@ const ProductCard = ({
     "Thỏa thuận giao nhận";
   const postId = data.postId || "";
   const isBuyPost = variant === "business-buy";
+  const resolvedNavState = navState ?? {
+    returnTo: `${location.pathname}${location.search}`,
+    returnState: location.state || null,
+  };
 
   const handleOpenDetail = async () => {
     if (!postId || isChecking) {
@@ -83,7 +92,9 @@ const ProductCard = ({
     }
 
     if (typeof onBeforeOpen !== "function") {
-      navigate(`/posts/${encodeURIComponent(postId)}`);
+      navigate(`/posts/${encodeURIComponent(postId)}`, {
+        state: resolvedNavState,
+      });
       return;
     }
 
@@ -93,7 +104,9 @@ const ProductCard = ({
       const canOpen = await onBeforeOpen(data);
 
       if (canOpen !== false) {
-        navigate(`/posts/${encodeURIComponent(postId)}`);
+        navigate(`/posts/${encodeURIComponent(postId)}`, {
+          state: resolvedNavState,
+        });
       }
     } catch {
       // Callback chịu trách nhiệm hiển thị lỗi; không mở dữ liệu chưa xác minh.

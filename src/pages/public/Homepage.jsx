@@ -11,6 +11,7 @@ import {
 } from "@ant-design/icons";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import ProductCard from "../../components/shared/ProductCard";
+import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
@@ -31,6 +32,11 @@ import {
   isPostCatalogStorageEvent,
   POST_CATALOG_CHANGED_EVENT,
 } from "../../utils/postCatalogEvents";
+import {
+  getPostChangedFields,
+  POST_CHANGED_WARNING,
+  VERIFICATION_FAILED_WARNING,
+} from "../../utils/transactionFreshnessUtils";
 
 const HOME_PAGE_SIZE = 20;
 const BUSINESS_POST_LIMIT = 4;
@@ -214,11 +220,13 @@ const SectionHeader = ({ eyebrow, title, description, to }) => (
 
 const Homepage = () => {
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
   const [businessSurvey, setBusinessSurvey] = useState(null);
   const [recommendationSourcePosts, setRecommendationSourcePosts] = useState([]);
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [recommendationNotice, setRecommendationNotice] = useState("");
+  const [staleWarning, setStaleWarning] = useState(null);
   const [surveyLoading, setSurveyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -474,6 +482,7 @@ const Homepage = () => {
             ...(latestPost.product || {}),
           },
         };
+        const changedFields = getPostChangedFields(post, verifiedPost);
         const mismatchMessage =
           getBusinessRecommendationMismatchMessage(
             verifiedPost,
@@ -481,12 +490,21 @@ const Homepage = () => {
           );
 
         if (mismatchMessage) {
-          setRecommendationSourcePosts((currentPosts) =>
-            currentPosts.filter(
-              (currentPost) => currentPost.postId !== post.postId,
-            ),
-          );
-          setRecommendationNotice(mismatchMessage);
+          setStaleWarning({
+            postId: post.postId,
+            title: "Bài đăng không còn phù hợp khảo sát",
+            message: mismatchMessage,
+            changedFields,
+          });
+          return false;
+        }
+
+        if (changedFields.length > 0) {
+          setStaleWarning({
+            postId: post.postId,
+            message: POST_CHANGED_WARNING,
+            changedFields,
+          });
           return false;
         }
 
@@ -500,14 +518,43 @@ const Homepage = () => {
         );
         return true;
       } catch {
-        setRecommendationNotice(
-          "Không thể kiểm tra dữ liệu mới nhất của bài đăng. Vui lòng thử lại.",
-        );
+        setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
         return false;
       }
     },
     [businessSurvey],
   );
+
+  const handlePostOpen = useCallback(async (post) => {
+    try {
+      const latestPost = await postApi.getById(post.postId);
+      const verifiedPost = {
+        ...post,
+        ...latestPost,
+        product: { ...(post.product || {}), ...(latestPost.product || {}) },
+      };
+      const changedFields = getPostChangedFields(post, verifiedPost);
+
+      if (changedFields.length > 0) {
+        setStaleWarning({
+          postId: post.postId,
+          message: POST_CHANGED_WARNING,
+          changedFields,
+        });
+        return false;
+      }
+
+      setPosts((currentPosts) =>
+        currentPosts.map((currentPost) =>
+          currentPost.postId === post.postId ? verifiedPost : currentPost,
+        ),
+      );
+      return true;
+    } catch {
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+      return false;
+    }
+  }, []);
 
   const hasBusinessSurvey =
     hasCompletedBusinessSurvey(
@@ -758,7 +805,7 @@ const Homepage = () => {
               <LoadingCards count={BUSINESS_POST_LIMIT} />
             ) : businessPosts.length > 0 ? (
               businessPosts.map((post) => (
-                <ProductCard key={post.postId} data={post} variant="business-buy" />
+                <ProductCard key={post.postId} data={post} variant="business-buy" onBeforeOpen={handlePostOpen} />
               ))
             ) : (
               <EmptyPosts message="Hiện chưa có tin thu mua đang hoạt động." />
@@ -780,7 +827,7 @@ const Homepage = () => {
               <LoadingCards count={PERSONAL_POST_LIMIT} />
             ) : personalPosts.length > 0 ? (
               personalPosts.map((post) => (
-                <ProductCard key={post.postId} data={post} variant="personal-sell" />
+                <ProductCard key={post.postId} data={post} variant="personal-sell" onBeforeOpen={handlePostOpen} />
               ))
             ) : (
               <EmptyPosts message="Hiện chưa có tin đăng bán đang hoạt động." />
@@ -806,6 +853,27 @@ const Homepage = () => {
           </div>
         </div>
       </section>
+      <StaleDataWarningModal
+        open={Boolean(staleWarning)}
+        title={staleWarning?.title}
+        message={staleWarning?.message}
+        changedFields={staleWarning?.changedFields}
+        onAcknowledge={() => {
+          const postId = staleWarning?.postId;
+          setStaleWarning(null);
+          if (postId) {
+            navigate(
+              `/posts/${encodeURIComponent(postId)}`,
+              {
+                state: {
+                  returnTo: "/",
+                  returnState: null,
+                },
+              },
+            );
+          }
+        }}
+      />
     </div>
   );
 };

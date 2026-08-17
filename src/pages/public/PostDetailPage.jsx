@@ -4,6 +4,7 @@ import {
 } from "react";
 import {
   Link,
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -18,11 +19,18 @@ import {
 } from "@ant-design/icons";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
+import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
 import { useAuth } from "../../hooks/useAuth";
 import offerApi from "../../services/apis/offerApi";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
+import {
+  getPostChangedFields,
+  isConcurrencyConflict,
+  POST_CHANGED_WARNING,
+  VERIFICATION_FAILED_WARNING,
+} from "../../utils/transactionFreshnessUtils";
 
 const DELIVERY_METHODS = {
   GhnDelivery: "Giao hàng GHN",
@@ -266,6 +274,7 @@ const PostDetailLoading = () => {
 const PostDetailPage = ({ ownerMode = false }) => {
   const { postId = "" } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const userId = getUserId(user);
   const [requestVersion, setRequestVersion] =
@@ -280,6 +289,8 @@ const PostDetailPage = ({ ownerMode = false }) => {
     useState(false);
   const [offerError, setOfferError] =
     useState("");
+  const [isVerifyingPost, setIsVerifyingPost] = useState(false);
+  const [staleWarning, setStaleWarning] = useState(null);
   const requestKey = `${ownerMode ? "owner" : "public"}:${userId}:${postId}:${requestVersion}`;
   const [detailState, setDetailState] =
     useState({
@@ -378,11 +389,23 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const isBuyPost =
     String(post?.postType).toLowerCase() ===
     "buy";
-  const listPath = `${
+  const fallbackListPath = `${
     isBuyPost
       ? "/tin-thu-mua"
       : "/tin-dang-ban"
   }${ownerMode ? "?view=mine" : ""}`;
+  const requestedReturnTo =
+    location.state?.returnTo;
+  const hasSafeReturnPath =
+    typeof requestedReturnTo === "string" &&
+    requestedReturnTo.startsWith("/") &&
+    !requestedReturnTo.startsWith("//");
+  const listPath = hasSafeReturnPath
+    ? requestedReturnTo
+    : fallbackListPath;
+  const listState = hasSafeReturnPath
+    ? location.state?.returnState
+    : undefined;
   const address = [
     post?.streetAddress,
     post?.ward,
@@ -407,7 +430,22 @@ const PostDetailPage = ({ ownerMode = false }) => {
     Number.isFinite(remainingQuantity) &&
     remainingQuantity > 0;
 
-  const handlePrimaryAction = () => {
+  const updateDisplayedPost = (latestPost) => {
+    setDetailState((currentState) => ({
+      ...currentState,
+      post: {
+        ...(currentState.post || {}),
+        ...latestPost,
+        product: {
+          ...(currentState.post?.product || {}),
+          ...(latestPost.product || {}),
+        },
+      },
+      error: "",
+    }));
+  };
+
+  const handlePrimaryAction = async () => {
     if (!isAuthenticated) {
       navigate("/auth/login", {
         state: {
@@ -418,14 +456,40 @@ const PostDetailPage = ({ ownerMode = false }) => {
       return;
     }
 
-    if (
-      !isBuyPost &&
-      !isOwnPost &&
-      isActivePost &&
-      hasAvailableQuantity
-    ) {
+    if (isBuyPost || isOwnPost || isVerifyingPost) {
+      return;
+    }
+
+    setIsVerifyingPost(true);
+    try {
+      const latestPost = await postApi.getById(post.postId);
+      const verifiedPost = {
+        ...post,
+        ...latestPost,
+        product: { ...(post.product || {}), ...(latestPost.product || {}) },
+      };
+      const changedFields = getPostChangedFields(post, verifiedPost);
+      const latestRemainingQuantity = Number(verifiedPost.remainingQuantity);
+      const latestIsAvailable =
+        String(verifiedPost.status || "").toLowerCase() === "active" &&
+        Number.isFinite(latestRemainingQuantity) &&
+        latestRemainingQuantity > 0;
+
+      if (changedFields.length > 0 || !latestIsAvailable) {
+        updateDisplayedPost(verifiedPost);
+        setStaleWarning({
+          message: POST_CHANGED_WARNING,
+          changedFields,
+        });
+        return;
+      }
+
       setOfferError("");
       setIsOfferModalOpen(true);
+    } catch {
+      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+    } finally {
+      setIsVerifyingPost(false);
     }
   };
 
@@ -438,6 +502,29 @@ const PostDetailPage = ({ ownerMode = false }) => {
     setOfferError("");
 
     try {
+      const latestPost = await postApi.getById(post.postId);
+      const verifiedPost = {
+        ...post,
+        ...latestPost,
+        product: { ...(post.product || {}), ...(latestPost.product || {}) },
+      };
+      const changedFields = getPostChangedFields(post, verifiedPost);
+      const latestRemainingQuantity = Number(verifiedPost.remainingQuantity);
+      const isUnavailable =
+        String(verifiedPost.status || "").toLowerCase() !== "active" ||
+        !Number.isFinite(latestRemainingQuantity) ||
+        latestRemainingQuantity < Number(terms.offerQuantity || 0);
+
+      if (changedFields.length > 0 || isUnavailable) {
+        updateDisplayedPost(verifiedPost);
+        setIsOfferModalOpen(false);
+        setStaleWarning({
+          message: POST_CHANGED_WARNING,
+          changedFields,
+        });
+        return;
+      }
+
       await offerApi.create({
         postId: post.postId,
         ...terms,
@@ -447,10 +534,15 @@ const PostDetailPage = ({ ownerMode = false }) => {
         "Đã gửi đề nghị thương lượng. Bạn có thể theo dõi tại mục Thương lượng.",
       );
     } catch (requestError) {
+      if (isConcurrencyConflict(requestError)) {
+        setIsOfferModalOpen(false);
+        setStaleWarning({ message: POST_CHANGED_WARNING });
+        return;
+      }
       setOfferError(
         getErrorMessage(
           requestError,
-          "Không thể gửi đề nghị thương lượng.",
+          VERIFICATION_FAILED_WARNING,
         ),
       );
     } finally {
@@ -479,6 +571,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
         </span>
         <Link
           to={post ? listPath : "/search"}
+          state={post ? listState : undefined}
           className="font-semibold text-[#547B7D] hover:text-[#2f6f9f]"
         >
           {post
@@ -744,11 +837,12 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   type="button"
                   onClick={handlePrimaryAction}
                   disabled={
-                    isAuthenticated &&
+                    isVerifyingPost ||
+                    (isAuthenticated &&
                     (isBuyPost ||
                       isOwnPost ||
                       !isActivePost ||
-                      !hasAvailableQuantity)
+                      !hasAvailableQuantity))
                   }
                   title={
                     !isAuthenticated
@@ -934,6 +1028,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
           <div className="mt-6">
             <Link
               to={listPath}
+              state={listState}
               className="inline-flex items-center gap-2 rounded-xl border border-[#4f8588] bg-white px-4 py-2.5 text-sm font-bold text-[#2f686c] transition hover:bg-[#edf5f2]"
             >
               <ArrowLeftOutlined /> Quay lại {ownerMode ? "bài đăng của tôi" : "danh sách"}
@@ -954,6 +1049,13 @@ const PostDetailPage = ({ ownerMode = false }) => {
               onSubmit={handleCreateOffer}
             />
           )}
+
+          <StaleDataWarningModal
+            open={Boolean(staleWarning)}
+            message={staleWarning?.message}
+            changedFields={staleWarning?.changedFields}
+            onAcknowledge={() => setStaleWarning(null)}
+          />
         </>
       )}
     </div>
