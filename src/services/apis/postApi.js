@@ -1,7 +1,9 @@
 import axiosClient from "./axiosClient";
+import { notifyPostCatalogChanged } from "../../utils/postCatalogEvents";
 
 const DEFAULT_PAGE_NUMBER = 1;
 const DEFAULT_PAGE_SIZE = 10;
+const DEFAULT_SEARCH_ALL_PAGE_SIZE = 100;
 const ZERO_GUID = "00000000-0000-0000-0000-000000000000";
 
 const createApiError = (response, fallbackMessage) => {
@@ -337,8 +339,10 @@ export const postApi = {
       "/posts/create/sell",
       createSellFormData(postData),
     );
+    const post = ensureCreatedPost(response, "Không thể tạo tin đăng bán.");
 
-    return ensureCreatedPost(response, "Không thể tạo tin đăng bán.");
+    notifyPostCatalogChanged({ postId: post.postId, reason: "created" });
+    return post;
   },
 
   createBuy: async (postData) => {
@@ -350,8 +354,10 @@ export const postApi = {
       "/posts/create/buy",
       createBuyFormData(postData),
     );
+    const post = ensureCreatedPost(response, "Không thể tạo tin thu mua.");
 
-    return ensureCreatedPost(response, "Không thể tạo tin thu mua.");
+    notifyPostCatalogChanged({ postId: post.postId, reason: "created" });
+    return post;
   },
 
   updateSell: async (postId, postData) => {
@@ -368,8 +374,10 @@ export const postApi = {
       `/posts/update/sell/${encodeURIComponent(normalizedPostId)}`,
       createSellFormData(postData),
     );
+    const post = ensureCreatedPost(response, "Không thể cập nhật tin đăng bán.");
 
-    return ensureCreatedPost(response, "Không thể cập nhật tin đăng bán.");
+    notifyPostCatalogChanged({ postId: post.postId, reason: "updated" });
+    return post;
   },
 
   updateBuy: async (postId, postData) => {
@@ -386,8 +394,10 @@ export const postApi = {
       `/posts/update/buy/${encodeURIComponent(normalizedPostId)}`,
       createBuyFormData(postData),
     );
+    const post = ensureCreatedPost(response, "Không thể cập nhật tin thu mua.");
 
-    return ensureCreatedPost(response, "Không thể cập nhật tin thu mua.");
+    notifyPostCatalogChanged({ postId: post.postId, reason: "updated" });
+    return post;
   },
 
   close: async (postId) => {
@@ -400,6 +410,7 @@ export const postApi = {
       `/posts/${encodeURIComponent(normalizedPostId)}/close`,
     );
 
+    notifyPostCatalogChanged({ postId: normalizedPostId, reason: "closed" });
     return true;
   },
 
@@ -413,6 +424,10 @@ export const postApi = {
       `/posts/${encodeURIComponent(normalizedPostId)}/reactivate`,
     );
 
+    notifyPostCatalogChanged({
+      postId: normalizedPostId,
+      reason: "reactivated",
+    });
     return true;
   },
 
@@ -501,6 +516,58 @@ export const postApi = {
     const data = unwrapResponse(response, "Không thể tìm kiếm bài đăng.");
 
     return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
+  },
+
+  searchAll: async ({
+    pageSize = DEFAULT_SEARCH_ALL_PAGE_SIZE,
+    signal,
+    ...searchCriteria
+  } = {}) => {
+    const normalizedPageSize = normalizePageSize(pageSize);
+    const firstPage = await postApi.search({
+      ...searchCriteria,
+      pageNumber: 1,
+      pageSize: normalizedPageSize,
+      signal,
+    });
+    const pages = [firstPage];
+
+    for (
+      let pageNumber = 2;
+      pageNumber <= firstPage.totalPages;
+      pageNumber += 1
+    ) {
+      pages.push(
+        await postApi.search({
+          ...searchCriteria,
+          pageNumber,
+          pageSize: normalizedPageSize,
+          signal,
+        }),
+      );
+    }
+
+    const uniquePosts = new Map();
+
+    pages.forEach((page) => {
+      page.items.forEach((post) => {
+        if (post?.postId) {
+          uniquePosts.set(post.postId, post);
+        }
+      });
+    });
+
+    const items = [...uniquePosts.values()];
+
+    return {
+      items,
+      pageNumber: 1,
+      pageSize: items.length,
+      totalCount: items.length,
+      totalPages: items.length > 0 ? 1 : 0,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
   },
 
   getById: async (postId, { signal } = {}) => {

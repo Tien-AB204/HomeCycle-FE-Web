@@ -21,6 +21,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
+import { getManagedPostQuantity } from "../../utils/postFormUtils";
 
 const PAGE_SIZE = 10;
 
@@ -391,7 +392,7 @@ const MyPostsPage = ({ expectedPostType }) => {
 
                       <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-[#f5f8f7] px-2.5 py-2 text-[11px] text-[#68817f]">
                         <span className="inline-flex min-w-0 items-center gap-1.5">
-                          <InboxOutlined /> Còn  {post.remainingQuantity ?? 0}
+                          <InboxOutlined /> Số lượng {getManagedPostQuantity(post)}
                         </span>
                         <span className="inline-flex min-w-0 items-center justify-end gap-1.5 text-right">
                           <ClockCircleOutlined /> {formatDate(post.updatedAt || post.createdAt)}

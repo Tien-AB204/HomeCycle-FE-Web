@@ -1,4 +1,8 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import {
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 
 const CONDITION_MAP = {
@@ -33,8 +37,15 @@ const hasValidPrice = (value) => {
   return Number.isFinite(price) && price > 0;
 };
 
-const ProductCard = ({ data, variant = "business-buy" }) => {
+const ProductCard = ({
+  data,
+  variant = "business-buy",
+  onBeforeOpen,
+  navState,
+}) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isChecking, setIsChecking] = useState(false);
 
   if (!data) {
     return null;
@@ -70,10 +81,37 @@ const ProductCard = ({ data, variant = "business-buy" }) => {
     "Thỏa thuận giao nhận";
   const postId = data.postId || "";
   const isBuyPost = variant === "business-buy";
+  const resolvedNavState = navState ?? {
+    returnTo: `${location.pathname}${location.search}`,
+    returnState: location.state || null,
+  };
 
-  const handleOpenDetail = () => {
-    if (postId) {
-      navigate(`/posts/${encodeURIComponent(postId)}`);
+  const handleOpenDetail = async () => {
+    if (!postId || isChecking) {
+      return;
+    }
+
+    if (typeof onBeforeOpen !== "function") {
+      navigate(`/posts/${encodeURIComponent(postId)}`, {
+        state: resolvedNavState,
+      });
+      return;
+    }
+
+    setIsChecking(true);
+
+    try {
+      const canOpen = await onBeforeOpen(data);
+
+      if (canOpen !== false) {
+        navigate(`/posts/${encodeURIComponent(postId)}`, {
+          state: resolvedNavState,
+        });
+      }
+    } catch {
+      // Callback chịu trách nhiệm hiển thị lỗi; không mở dữ liệu chưa xác minh.
+    } finally {
+      setIsChecking(false);
     }
   };
 
@@ -84,13 +122,13 @@ const ProductCard = ({ data, variant = "business-buy" }) => {
 
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      handleOpenDetail();
+      void handleOpenDetail();
     }
   };
 
   const handleActionClick = (event) => {
     event.stopPropagation();
-    handleOpenDetail();
+    void handleOpenDetail();
   };
 
   return (
@@ -98,6 +136,7 @@ const ProductCard = ({ data, variant = "business-buy" }) => {
       role={postId ? "link" : undefined}
       tabIndex={postId ? 0 : undefined}
       aria-label={postId ? `Xem chi tiết ${name}` : undefined}
+      aria-busy={isChecking || undefined}
       onClick={handleOpenDetail}
       onKeyDown={handleCardKeyDown}
       className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-[#e0ebe8] bg-white shadow-[0_6px_22px_rgba(32,77,75,0.06)] transition duration-300 hover:-translate-y-1 hover:border-[#b9d2cc] hover:shadow-[0_16px_38px_rgba(32,77,75,0.13)] ${
@@ -190,9 +229,14 @@ const ProductCard = ({ data, variant = "business-buy" }) => {
           <button
             type="button"
             onClick={handleActionClick}
-            className="mt-3 w-full rounded-lg border border-[#5f9291] bg-white px-4 py-2 text-[11px] font-extrabold text-[#2f686c] transition hover:bg-[#3f777b] hover:text-white"
+            disabled={isChecking}
+            className="mt-3 w-full rounded-lg border border-[#5f9291] bg-white px-4 py-2 text-[11px] font-extrabold text-[#2f686c] transition hover:bg-[#3f777b] hover:text-white disabled:cursor-wait disabled:opacity-60"
           >
-            {isBuyPost ? "Xem nhu cầu thu mua" : "Xem và thương lượng"}
+            {isChecking
+              ? "Đang kiểm tra..."
+              : isBuyPost
+                ? "Xem nhu cầu thu mua"
+                : "Xem và thương lượng"}
           </button>
         </div>
       </div>
