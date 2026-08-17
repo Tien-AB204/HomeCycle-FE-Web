@@ -209,6 +209,15 @@ const DisputeManagementPage = () => {
   }, [listParams]);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setPageNumber(1);
+      setKeyword(keywordInput.trim());
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
+  }, [keywordInput]);
+
+  useEffect(() => {
     if (!selectedDisputeId) {
       setDetail(null);
       setDetailError(null);
@@ -236,11 +245,6 @@ const DisputeManagementPage = () => {
 
     fetchDetail();
   }, [selectedDisputeId]);
-
-  const applySearch = () => {
-    setPageNumber(1);
-    setKeyword(keywordInput.trim());
-  };
 
   const clearFilters = () => {
     setKeywordInput("");
@@ -321,19 +325,13 @@ const DisputeManagementPage = () => {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Input
-              value={keywordInput}
-              onChange={(event) => setKeywordInput(event.target.value)}
-              onPressEnter={applySearch}
-              prefix={<SearchOutlined className="text-gray-400" />}
-              placeholder="Tìm mã, người dùng, đơn hàng..."
-              allowClear
-            />
-            <Button type="primary" onClick={applySearch} className="bg-[#285E62]">
-              Tìm
-            </Button>
-          </div>
+          <Input
+            value={keywordInput}
+            onChange={(event) => setKeywordInput(event.target.value)}
+            prefix={<SearchOutlined className="text-gray-400" />}
+            placeholder="Tìm mã, người dùng, đơn hàng..."
+            allowClear
+          />
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Select
