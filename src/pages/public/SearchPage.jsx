@@ -5,7 +5,11 @@ import {
   useState,
 } from "react";
 import logoIcon from "../../assets/brand/logo-icon.png";
-import { useSearchParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   AppstoreOutlined,
   FilterOutlined,
@@ -13,6 +17,7 @@ import {
   SortAscendingOutlined,
 } from "@ant-design/icons";
 import ProductCard from "../../components/shared/ProductCard";
+import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import {
   CATEGORY_BACKEND_IDS,
   MAIN_CATEGORIES,
@@ -36,6 +41,11 @@ import {
   isPostCatalogStorageEvent,
   POST_CATALOG_CHANGED_EVENT,
 } from "../../utils/postCatalogEvents";
+import {
+  getPostChangedFields,
+  POST_CHANGED_WARNING,
+  VERIFICATION_FAILED_WARNING,
+} from "../../utils/transactionFreshnessUtils";
 
 const PAGE_SIZE = 9;
 
@@ -226,6 +236,10 @@ const SearchLoading = () => {
 
 const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const restoredSearchState =
+    location.state?.searchPageState;
   const businessUserId = getUserId(user);
   const [searchParams, setSearchParams] =
     useSearchParams();
@@ -245,12 +259,34 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
     : Boolean(fixedPostType);
 
   const [filters, setFilters] = useState(
-    createInitialFilters,
+    () => ({
+      ...createInitialFilters(),
+      ...(restoredSearchState?.filters || {}),
+    }),
   );
   const [pageNumber, setPageNumber] =
-    useState(1);
+    useState(() => {
+      const restoredPage = Number(
+        restoredSearchState?.pageNumber,
+      );
+
+      return Number.isInteger(restoredPage) &&
+        restoredPage > 0
+        ? restoredPage
+        : 1;
+    });
   const [sortMode, setSortMode] =
-    useState("newest");
+    useState(() => {
+      const restoredSort =
+        restoredSearchState?.sortMode;
+
+      return SORT_OPTIONS.some(
+        (option) =>
+          option.value === restoredSort,
+      )
+        ? restoredSort
+        : "newest";
+    });
   const [productTypes, setProductTypes] =
     useState([]);
   const [isLoadingProductTypes, setIsLoadingProductTypes] =
@@ -334,6 +370,26 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
   });
   const [recommendationSurvey, setRecommendationSurvey] = useState(null);
   const [recommendationNotice, setRecommendationNotice] = useState("");
+  const [staleWarning, setStaleWarning] = useState(null);
+  const detailNavigationState = useMemo(
+    () => ({
+      returnTo: `${location.pathname}${location.search}`,
+      returnState: {
+        searchPageState: {
+          filters,
+          pageNumber,
+          sortMode,
+        },
+      },
+    }),
+    [
+      filters,
+      location.pathname,
+      location.search,
+      pageNumber,
+      sortMode,
+    ],
+  );
 
   useEffect(() => {
     if (recommendationMode) {
@@ -599,13 +655,9 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
     };
   }, [pageNumber, recommendationMode, sourceResult]);
 
-  const handleRecommendationOpen = useCallback(
+  const handlePostOpen = useCallback(
     async (post) => {
-      if (!recommendationMode) {
-        return true;
-      }
-
-      if (!recommendationSurvey) {
+      if (recommendationMode && !recommendationSurvey) {
         setRecommendationNotice(
           "Không thể kiểm tra bài đăng vì dữ liệu khảo sát chưa sẵn sàng.",
         );
@@ -624,58 +676,57 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             ...(latestPost.product || {}),
           },
         };
-        const mismatchMessage =
-          getBusinessRecommendationMismatchMessage(
-            verifiedPost,
-            recommendationSurvey,
-          );
+        const changedFields = getPostChangedFields(post, verifiedPost);
+        const mismatchMessage = recommendationMode
+          ? getBusinessRecommendationMismatchMessage(
+              verifiedPost,
+              recommendationSurvey,
+            )
+          : "";
 
         if (mismatchMessage) {
-          setRecommendationState((currentState) => {
-            if (!currentState.result) {
-              return currentState;
-            }
-
-            const items = currentState.result.items.filter(
-              (currentPost) => currentPost.postId !== post.postId,
-            );
-
-            return {
-              ...currentState,
-              result: {
-                ...currentState.result,
-                items,
-                totalCount: items.length,
-              },
-            };
+          setStaleWarning({
+            postId: post.postId,
+            title: "Bài đăng không còn phù hợp khảo sát",
+            message: mismatchMessage,
+            changedFields,
           });
-          setRecommendationNotice(mismatchMessage);
+          return false;
+        }
+
+        if (changedFields.length > 0) {
+          setStaleWarning({
+            postId: post.postId,
+            message: POST_CHANGED_WARNING,
+            changedFields,
+          });
           return false;
         }
 
         setRecommendationNotice("");
-        setRecommendationState((currentState) => {
-          if (!currentState.result) {
-            return currentState;
-          }
+        const updateResult = (currentState) =>
+          !currentState.result
+            ? currentState
+            : {
+                ...currentState,
+                result: {
+                  ...currentState.result,
+                  items: currentState.result.items.map((currentPost) =>
+                    currentPost.postId === post.postId
+                      ? verifiedPost
+                      : currentPost,
+                  ),
+                },
+              };
 
-          return {
-            ...currentState,
-            result: {
-              ...currentState.result,
-              items: currentState.result.items.map((currentPost) =>
-                currentPost.postId === post.postId
-                  ? verifiedPost
-                  : currentPost,
-              ),
-            },
-          };
-        });
+        if (recommendationMode) {
+          setRecommendationState(updateResult);
+        } else {
+          setSearchState(updateResult);
+        }
         return true;
       } catch {
-        setRecommendationNotice(
-          "Không thể kiểm tra dữ liệu mới nhất của bài đăng. Vui lòng thử lại.",
-        );
+        setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
         return false;
       }
     },
@@ -1086,11 +1137,8 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                       ? "business-buy"
                       : "personal-sell"
                   }
-                  onBeforeOpen={
-                    recommendationMode
-                      ? handleRecommendationOpen
-                      : undefined
-                  }
+                  onBeforeOpen={handlePostOpen}
+                  navState={detailNavigationState}
                 />
               ))
             ) : !error ? (
@@ -1158,6 +1206,24 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             )}
         </section>
       </div>
+      <StaleDataWarningModal
+        open={Boolean(staleWarning)}
+        title={staleWarning?.title}
+        message={staleWarning?.message}
+        changedFields={staleWarning?.changedFields}
+        onAcknowledge={() => {
+          const postId = staleWarning?.postId;
+          setStaleWarning(null);
+          if (postId) {
+            navigate(
+              `/posts/${encodeURIComponent(postId)}`,
+              {
+                state: detailNavigationState,
+              },
+            );
+          }
+        }}
+      />
     </div>
   );
 };
