@@ -11,7 +11,7 @@ export const FUNCTIONALITY_OPTIONS = Object.freeze([
     value: "PartiallyFunctional",
     label: "Hoạt động một phần",
   },
-  { value: "NotFunctional", label: "Không hoạt động" },
+  { value: "NonFunctional", label: "Không hoạt động" },
 ]);
 
 export const DAMAGE_LEVEL_OPTIONS = Object.freeze([
@@ -21,8 +21,26 @@ export const DAMAGE_LEVEL_OPTIONS = Object.freeze([
     label: "Trầy xước ngoại quan",
   },
   { value: "Minor_Damage", label: "Hư hỏng nhẹ" },
-  { value: "Major_Damage", label: "Hư hỏng nặng" },
+  { value: "Severe_Damage", label: "Hư hỏng nặng" },
 ]);
+
+export const FUNCTIONALITY_BY_DAMAGE_LEVEL = Object.freeze({
+  None: "FullyFunctional",
+  Cosmetic_Damage: "FullyFunctional",
+  Minor_Damage: "PartiallyFunctional",
+  Severe_Damage: "NonFunctional",
+});
+
+export const LEGACY_DAMAGE_LEVEL_ALIASES = Object.freeze({
+  No_Damage: "None",
+  Major_Damage: "Severe_Damage",
+  Moderate_Damage: "Severe_Damage",
+  Total_Loss: "Severe_Damage",
+});
+
+export const LEGACY_FUNCTIONALITY_ALIASES = Object.freeze({
+  NotFunctional: "NonFunctional",
+});
 
 export const DELIVERY_METHOD_OPTIONS = Object.freeze([
   { value: "GhnDelivery", label: "Giao hàng GHN" },

@@ -6,6 +6,15 @@ import {
 import businessProfileApi from "../../services/apis/businessProfileApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 import provinceApi from "../../services/apis/provinceApi";
+import { useAuth } from "../../hooks/useAuth";
+import { getUserId } from "../../utils/authUtils";
+import { saveBusinessSurveySnapshot } from "../../utils/businessSurveySession";
+import {
+  BUSINESS_SURVEY_DAMAGE_LEVELS,
+  BUSINESS_SURVEY_FUNCTIONALITY_STATUSES,
+  deriveBusinessSurveyFunctionalityStatuses,
+  normalizeBusinessSurveyDamageLevels,
+} from "../../utils/businessSurveyConditionUtils";
 import {
   BusinessSectionIntro,
   FormMessage,
@@ -15,27 +24,6 @@ import {
   getBusinessApiErrorMessage,
   pickValue,
 } from "./businessProfileUtils";
-
-const DAMAGE_LEVELS = [
-  { value: 0, label: "Không hư hỏng" },
-  { value: 1, label: "Trầy xước nhẹ" },
-  { value: 2, label: "Hư hỏng nhỏ" },
-  { value: 3, label: "Hư hỏng vừa" },
-  { value: 4, label: "Hư hỏng nặng" },
-  { value: 5, label: "Mất hoàn toàn" },
-];
-
-const FUNCTIONALITY_STATUSES = [
-  { value: 0, label: "Hoạt động đầy đủ" },
-  {
-    value: 1,
-    label: "Hoạt động một phần",
-  },
-  {
-    value: 2,
-    label: "Không còn hoạt động",
-  },
-];
 
 const PROCUREMENT_SCALES = [
   { value: 0, label: "Thu mua lẻ" },
@@ -56,76 +44,82 @@ const toNumberArray = (value) =>
     )
     .filter(Number.isInteger);
 
-const createForm = (survey) => ({
-  targetCities: toArray(
-    pickValue(survey, [
-      "targetCities",
-      "cities",
-    ], []),
-  ).map((item) =>
-    String(
-      typeof item === "object"
-        ? item.name ?? item.city ?? ""
-        : item,
-    ),
-  ),
-  acceptableDamageLevels: toNumberArray(
-    pickValue(
-      survey,
-      ["acceptableDamageLevels"],
-      [],
-    ),
-  ),
-  acceptableFunctionalityStatuses:
-    toNumberArray(
+const createForm = (survey) => {
+  const acceptableDamageLevels =
+    normalizeBusinessSurveyDamageLevels(
       pickValue(
         survey,
-        [
-          "acceptableFunctionalityStatuses",
-        ],
+        ["acceptableDamageLevels"],
+        [],
+      ),
+    );
+
+  return {
+    targetCities: toArray(
+      pickValue(
+        survey,
+        ["targetCities", "cities"],
+        [],
+      ),
+    ).map((item) =>
+      String(
+        typeof item === "object"
+          ? item.name ?? item.city ?? ""
+          : item,
+      ),
+    ),
+    acceptableDamageLevels,
+    acceptableFunctionalityStatuses:
+      deriveBusinessSurveyFunctionalityStatuses(
+        acceptableDamageLevels,
+      ),
+    procurementScales: toNumberArray(
+      pickValue(
+        survey,
+        ["procurementScales"],
         [],
       ),
     ),
-  procurementScales: toNumberArray(
-    pickValue(
-      survey,
-      ["procurementScales"],
-      [],
-    ),
-  ),
-  productTypeIds: toArray(
-    pickValue(
-      survey,
-      ["productTypeIds", "productTypes"],
-      [],
-    ),
-  )
-    .map((item) =>
-      String(
-        typeof item === "object"
-          ? item.productTypeId ?? item.id ?? ""
-          : item,
+    productTypeIds: toArray(
+      pickValue(
+        survey,
+        ["productTypeIds", "productTypes"],
+        [],
       ),
     )
-    .filter(Boolean),
-});
+      .map((item) =>
+        String(
+          typeof item === "object"
+            ? item.productTypeId ?? item.id ?? ""
+            : item,
+        ),
+      )
+      .filter(Boolean),
+  };
+};
 
 const ToggleOption = ({
   checked,
   onChange,
+  disabled = false,
   children,
 }) => (
   <label
-    className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
+    className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
+      disabled ? "cursor-not-allowed opacity-75" : "cursor-pointer"
+    } ${
       checked
         ? "border-[#4F8588] bg-[#EAF4F1] text-[#214F53]"
-        : "border-[#D8E5E2] bg-white text-[#607B7A] hover:border-[#9FBFBA]"
+        : `border-[#D8E5E2] bg-white text-[#607B7A] ${
+            disabled ? "" : "hover:border-[#9FBFBA]"
+          }`
     }`}
   >
     <input
       type="checkbox"
       checked={checked}
       onChange={onChange}
+      disabled={disabled}
       className="h-4 w-4 accent-[#4F8588]"
     />
     {children}
@@ -136,6 +130,7 @@ export default function BusinessSurveySection({
   survey,
   onUpdated,
 }) {
+  const { user } = useAuth();
   const [form, setForm] = useState(() =>
     createForm(survey),
   );
@@ -256,6 +251,29 @@ export default function BusinessSurveySection({
     setSuccess("");
   };
 
+  const toggleDamageLevel = (value) => {
+    setForm((current) => {
+      const selectedDamageLevels = current.acceptableDamageLevels.includes(
+        value,
+      )
+        ? current.acceptableDamageLevels.filter((item) => item !== value)
+        : [...current.acceptableDamageLevels, value];
+      const acceptableDamageLevels =
+        normalizeBusinessSurveyDamageLevels(selectedDamageLevels);
+
+      return {
+        ...current,
+        acceptableDamageLevels,
+        acceptableFunctionalityStatuses:
+          deriveBusinessSurveyFunctionalityStatuses(
+            acceptableDamageLevels,
+          ),
+      };
+    });
+    setError("");
+    setSuccess("");
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -305,10 +323,14 @@ export default function BusinessSurveySection({
       await businessProfileApi.submitSurvey(
         form,
       );
-      await onUpdated?.();
-      setSuccess(
-        "Khảo sát nhu cầu thu mua đã được lưu.",
+      saveBusinessSurveySnapshot(
+        getUserId(user),
+        form,
       );
+      setSuccess(
+        "Khảo sát nhu cầu thu mua đã được cập nhật thành công.",
+      );
+      onUpdated?.(form);
     } catch (updateError) {
       setError(
         getBusinessApiErrorMessage(
@@ -327,10 +349,6 @@ export default function BusinessSurveySection({
         icon="query_stats"
         title="Khảo sát nhu cầu thu mua"
         description="Thiết lập nhóm sản phẩm, địa bàn và tình trạng hàng hóa doanh nghiệp quan tâm để HomeCycle đề xuất chính xác hơn."
-      />
-      <FormMessage
-        error={error}
-        success={success}
       />
 
       <form
@@ -377,17 +395,14 @@ export default function BusinessSurveySection({
             Mức độ hư hỏng chấp nhận
           </legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {DAMAGE_LEVELS.map((option) => (
+            {BUSINESS_SURVEY_DAMAGE_LEVELS.map((option) => (
               <ToggleOption
                 key={option.value}
                 checked={form.acceptableDamageLevels.includes(
                   option.value,
                 )}
                 onChange={() =>
-                  toggleValue(
-                    "acceptableDamageLevels",
-                    option.value,
-                  )
+                  toggleDamageLevel(option.value)
                 }
               >
                 {option.label}
@@ -401,25 +416,23 @@ export default function BusinessSurveySection({
             Tình trạng hoạt động
           </legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            {FUNCTIONALITY_STATUSES.map(
+            {BUSINESS_SURVEY_FUNCTIONALITY_STATUSES.map(
               (option) => (
                 <ToggleOption
                   key={option.value}
                   checked={form.acceptableFunctionalityStatuses.includes(
                     option.value,
                   )}
-                  onChange={() =>
-                    toggleValue(
-                      "acceptableFunctionalityStatuses",
-                      option.value,
-                    )
-                  }
+                  disabled
                 >
                   {option.label}
                 </ToggleOption>
               ),
             )}
           </div>
+          <p className="mt-2 text-xs font-medium text-[#68807F]">
+            Tự động xác định theo mức độ hư hỏng đã chọn để đồng bộ với bài đăng.
+          </p>
         </fieldset>
 
         <fieldset>
@@ -500,10 +513,18 @@ export default function BusinessSurveySection({
           </p>
         )}
 
-        <div className="flex justify-end border-t border-[#E4ECEA] pt-5">
-          <SaveButton isSaving={isSaving}>
-            LƯU KHẢO SÁT
-          </SaveButton>
+        <div className="border-t border-[#E4ECEA] pt-5">
+          <div className="flex justify-end">
+            <SaveButton isSaving={isSaving}>
+              LƯU KHẢO SÁT
+            </SaveButton>
+          </div>
+          <div className="mt-3">
+            <FormMessage
+              error={error}
+              success={success}
+            />
+          </div>
         </div>
       </form>
     </div>
