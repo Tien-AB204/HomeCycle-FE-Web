@@ -83,7 +83,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
               Giao dịch HomeCycle
             </p>
             <h2 id="review-modal-title" className="mt-1 text-xl font-black text-[#183F41]">
-              {mode === "edit" ? "Chỉnh sửa đánh giá" : "Đánh giá giao dịch"}
+              {mode === "edit" ? "Chỉnh sửa đánh giá" : "Đánh giá đối tác"}
             </h2>
           </div>
           <button
@@ -116,7 +116,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               rows={5}
-              placeholder="Sản phẩm, giao tiếp và quá trình giao nhận như thế nào?"
+              placeholder="Giao tiếp, mức độ hợp tác và quá trình giao nhận với đối tác như thế nào?"
               className="mt-2 w-full resize-y rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-4 py-3 text-sm leading-6 text-[#183F41] outline-none transition focus:border-[#4F8588] focus:bg-white"
             />
           </label>
@@ -168,7 +168,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
 
           {mode === "edit" && review?.images?.length > 0 && (
             <p className="rounded-lg bg-[#F1F7F5] p-3 text-xs font-semibold leading-5 text-[#68807F]">
-              Swagger hiện chỉ cho sửa số sao và bình luận. Ảnh đã gửi sẽ được giữ nguyên.
+              Chỉ được chỉnh sửa số sao và bình luận. Ảnh đã gửi sẽ được giữ nguyên.
             </p>
           )}
 

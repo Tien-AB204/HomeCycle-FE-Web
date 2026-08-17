@@ -30,6 +30,16 @@ const getErrorMessage = (error, fallbackMessage) =>
   error?.message ||
   fallbackMessage;
 
+const getApiErrorCode = (error) =>
+  String(
+    error?.response?.data?.error?.code ||
+      error?.response?.data?.code ||
+      "",
+  ).trim();
+
+const isAgreementRevisionMismatch = (error) =>
+  getApiErrorCode(error) === "Agreement.RevisionMismatch";
+
 const formatCurrency = (value) => {
   const amount = Number(value);
   return Number.isFinite(amount) ? `${amount.toLocaleString("vi-VN")} đ` : "—";
@@ -220,7 +230,10 @@ const AgreementPage = () => {
       setEditing(false);
       await refresh();
     } catch (requestError) {
-      if (isConcurrencyConflict(requestError)) {
+      if (
+        isConcurrencyConflict(requestError) ||
+        isAgreementRevisionMismatch(requestError)
+      ) {
         setStaleWarning({ message: AGREEMENT_CHANGED_WARNING });
         await refresh();
         return;
@@ -295,7 +308,14 @@ const AgreementPage = () => {
 
     try {
       localStorage.setItem(PENDING_AGREEMENT_KEY, agreement.agreementId);
-      const result = await paymentApi.createPayOsCheckout(agreement.agreementId);
+      const origin = window.location.origin;
+      const result = await paymentApi.createPayOsCheckout(
+        agreement.agreementId,
+        {
+          returnUrl: `${origin}/payments/success`,
+          cancelUrl: `${origin}/payments/cancel`,
+        },
+      );
       if (checkoutWindow) checkoutWindow.location.href = result.checkoutUrl;
       else window.location.assign(result.checkoutUrl);
       setNotice("Đã mở trang PayOS ở thẻ mới. Sau khi chuyển khoản, HomeCycle sẽ tự kiểm tra trạng thái.");
@@ -377,7 +397,7 @@ const AgreementPage = () => {
 
         <div className="mt-5 flex flex-wrap justify-end gap-3 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
           {canEdit && <button type="button" onClick={() => setEditing(true)} className="rounded-lg border border-[#4F8588] px-5 py-3 text-sm font-black text-[#285E62] hover:bg-[#F1F7F5]">Chỉnh sửa thỏa thuận</button>}
-          {preview?.canConfirm && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("accept", () => agreementApi.accept(agreement.agreementId), "Bạn đã xác nhận thỏa thuận.")} className="rounded-lg bg-[#4F8588] px-5 py-3 text-sm font-black text-white hover:bg-[#356A70] disabled:opacity-50">{busy === "accept" ? "Đang xác nhận..." : "Xác nhận thỏa thuận"}</button>}
+          {preview?.canConfirm && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("accept", () => agreementApi.accept(agreement.agreementId, agreement?.agreementDetails?.revision), "Bạn đã xác nhận thỏa thuận.")} className="rounded-lg bg-[#4F8588] px-5 py-3 text-sm font-black text-white hover:bg-[#356A70] disabled:opacity-50">{busy === "accept" ? "Đang xác nhận..." : "Xác nhận thỏa thuận"}</button>}
           {canRequestEdit && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("request-edit", () => agreementApi.requestEdit(agreement.agreementId), "Đã mở lại thỏa thuận. Hai bên cần xác nhận lại sau khi chỉnh sửa.")} className="rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-black text-amber-800 hover:bg-amber-100 disabled:opacity-50">Yêu cầu chỉnh sửa</button>}
         </div>
 
