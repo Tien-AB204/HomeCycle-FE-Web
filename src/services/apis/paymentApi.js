@@ -7,10 +7,27 @@ const ensureId = (value) => {
 };
 
 export const paymentApi = {
-  createPayOsCheckout: async (agreementId) => {
+  createPayOsCheckout: async (agreementId, { returnUrl, cancelUrl } = {}) => {
     const id = ensureId(agreementId);
-    const response = await axiosClient.post(`/payments/payos/checkout/${encodeURIComponent(id)}`);
-    if (!response?.checkoutUrl) throw new Error("Không nhận được liên kết thanh toán PayOS.");
+    const normalizedReturnUrl = String(returnUrl || "").trim();
+    const normalizedCancelUrl = String(cancelUrl || "").trim();
+
+    if (!normalizedReturnUrl || !normalizedCancelUrl) {
+      throw new Error("Không xác định được đường dẫn quay lại sau thanh toán.");
+    }
+
+    const response = await axiosClient.post(
+      `/payments/payos/checkout/${encodeURIComponent(id)}`,
+      {
+        returnUrl: normalizedReturnUrl,
+        cancelUrl: normalizedCancelUrl,
+      },
+    );
+
+    if (!response?.checkoutUrl) {
+      throw new Error("Không nhận được liên kết thanh toán PayOS.");
+    }
+
     return response;
   },
 

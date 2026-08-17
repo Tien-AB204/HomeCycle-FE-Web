@@ -110,7 +110,7 @@ const PaymentResultPage = () => {
 
         {!agreementId && (
           <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Không tìm thấy mã thỏa thuận trên trình duyệt này. Hãy mở lại thỏa thuận để kiểm tra.
+            Thành toán thành công, quay lại đơn hàng để xem trạng thái thanh toán.
           </p>
         )}
 

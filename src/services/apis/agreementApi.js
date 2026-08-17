@@ -42,9 +42,20 @@ export const agreementApi = {
     return axiosClient.put(`/agreements/${encodeURIComponent(id)}`, payload);
   },
 
-  accept: async (agreementId) => {
+  accept: async (agreementId, expectedRevision) => {
     const id = normalizeIdentifier(agreementId, "Không tìm thấy mã thỏa thuận.");
-    return axiosClient.patch(`/agreements/${encodeURIComponent(id)}/accept`);
+    const revision = Number(expectedRevision);
+
+    if (!Number.isInteger(revision) || revision < 1) {
+      throw new Error(
+        "Không xác định được phiên bản thỏa thuận mới nhất. Vui lòng tải lại trang.",
+      );
+    }
+
+    return axiosClient.patch(
+      `/agreements/${encodeURIComponent(id)}/accept`,
+      { expectedRevision: revision },
+    );
   },
 
   requestEdit: async (agreementId) => {
