@@ -64,6 +64,26 @@ const FIELD_ERROR_MESSAGES = Object.freeze({
   attributes: "Thuộc tính sản phẩm không hợp lệ.",
 });
 
+export const POST_NOT_EDITABLE_MESSAGE =
+  "Không thể chỉnh sửa bài đăng không hoạt động.";
+
+export const isPostStatusEditable = (status) =>
+  String(status || "").trim().toLowerCase() === "active";
+
+export const getManagedPostQuantity = (post) => {
+  const quantity = Number(post?.quantity);
+
+  if (Number.isInteger(quantity) && quantity >= 0) {
+    return quantity;
+  }
+
+  const remainingQuantity = Number(post?.remainingQuantity);
+
+  return Number.isInteger(remainingQuantity) && remainingQuantity >= 0
+    ? remainingQuantity
+    : 0;
+};
+
 const getLastBackendKey = (key) =>
   String(key || "")
     .replace(/\[\d+\]/g, "")

@@ -31,9 +31,11 @@ import productTypeApi from "../../services/apis/productTypeApi";
 import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi";
 import { getUserId } from "../../utils/authUtils";
 import {
+  POST_NOT_EDITABLE_MESSAGE,
   getFunctionalityForDamageLevel,
   getPostConditionFieldErrors,
   getPostFormApiErrors,
+  isPostStatusEditable,
   normalizePostConditionValues,
 } from "../../utils/postFormUtils";
 
@@ -337,6 +339,10 @@ const CreatePostPage = () => {
           throw new Error(
             "Bài đăng không phù hợp với quyền quản lý của tài khoản này.",
           );
+        }
+
+        if (!isPostStatusEditable(post.status)) {
+          throw new Error(POST_NOT_EDITABLE_MESSAGE);
         }
 
         const nextForm = createFormFromPost(post);
@@ -722,6 +728,14 @@ const CreatePostPage = () => {
     };
 
     try {
+      if (isEditing) {
+        const latestPost = await postApi.getDetailByUser(userId, postId);
+
+        if (!isPostStatusEditable(latestPost.status)) {
+          throw new Error(POST_NOT_EDITABLE_MESSAGE);
+        }
+      }
+
       const savedPost = isEditing
         ? isBuyPost
           ? await postApi.updateBuy(postId, payload)
@@ -749,6 +763,31 @@ const CreatePostPage = () => {
         });
       }
     } catch (requestError) {
+      if (
+        isEditing &&
+        [400, 409].includes(Number(requestError?.response?.status))
+      ) {
+        try {
+          const latestPost = await postApi.getDetailByUser(userId, postId);
+
+          if (!isPostStatusEditable(latestPost.status)) {
+            setFieldErrors({});
+            setAttributeErrors({});
+            setServerError(POST_NOT_EDITABLE_MESSAGE);
+            return;
+          }
+        } catch (statusRequestError) {
+          if (
+            statusRequestError?.message === POST_NOT_EDITABLE_MESSAGE
+          ) {
+            setFieldErrors({});
+            setAttributeErrors({});
+            setServerError(POST_NOT_EDITABLE_MESSAGE);
+            return;
+          }
+        }
+      }
+
       const apiErrors = getPostFormApiErrors(requestError);
 
       setFieldErrors((currentErrors) => ({
@@ -770,6 +809,8 @@ const CreatePostPage = () => {
       ? "Phiên đăng nhập không có mã người dùng. Vui lòng đăng xuất và đăng nhập lại."
       : "";
   const resolvedDetailError = missingUserIdError || detailError;
+  const isNonEditablePostError =
+    resolvedDetailError === POST_NOT_EDITABLE_MESSAGE;
 
   if (isEditing && isLoadingDetail && !resolvedDetailError) {
     return (
@@ -803,7 +844,7 @@ const CreatePostPage = () => {
             {resolvedDetailError}
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            {!missingUserIdError && (
+            {!missingUserIdError && !isNonEditablePostError && (
               <button
                 type="button"
                 onClick={() => {
