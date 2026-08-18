@@ -15,7 +15,8 @@ const PaymentResultPage = () => {
   const [searchParams] = useSearchParams();
   const agreementId = localStorage.getItem(PENDING_AGREEMENT_KEY) || "";
   const payOsStatus = String(searchParams.get("status") || "").toUpperCase();
-  const wasCancelled = String(searchParams.get("cancel") || "").toLowerCase() === "true";
+  const wasCancelled =
+    String(searchParams.get("cancel") || "").toLowerCase() === "true";
   const [state, setState] = useState({
     loading: Boolean(agreementId) && !wasCancelled,
     status: wasCancelled ? "Cancelled" : "",
@@ -66,8 +67,17 @@ const PaymentResultPage = () => {
   return (
     <section className="mx-auto flex min-h-[65vh] w-full max-w-2xl items-center px-4 py-10 sm:px-6">
       <div className="w-full rounded-2xl border border-[#DCE8E5] bg-white p-7 text-center shadow-[0_16px_42px_rgba(24,63,65,0.09)] sm:p-10">
-        <span className={`material-symbols-outlined text-5xl ${completed ? "text-green-600" : cancelled ? "text-[#B33A32]" : "text-[#2F6F9F]"}`} aria-hidden="true">
-          {completed ? "check_circle" : cancelled ? "cancel" : state.loading ? "progress_activity" : "sync"}
+        <span
+          className={`material-symbols-outlined text-5xl ${completed ? "text-green-600" : cancelled ? "text-[#B33A32]" : "text-[#2F6F9F]"}`}
+          aria-hidden="true"
+        >
+          {completed
+            ? "check_circle"
+            : cancelled
+              ? "cancel"
+              : state.loading
+                ? "progress_activity"
+                : "sync"}
         </span>
 
         <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-[#4F8588]">
@@ -95,22 +105,30 @@ const PaymentResultPage = () => {
 
         {state.error && (
           <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm leading-6 text-amber-800">
-            <strong>Thanh toán đã được PayOS ghi nhận nhưng backend chưa đồng bộ xong.</strong>
+            <strong>
+              Thanh toán đã được PayOS ghi nhận nhưng backend chưa đồng bộ xong.
+            </strong>
             <br />
-            {state.error} Bạn không cần chuyển khoản lần nữa; hãy quay lại kiểm tra trạng thái sau.
+            {state.error} Bạn không cần chuyển khoản lần nữa; hãy quay lại kiểm
+            tra trạng thái sau.
           </div>
         )}
 
         {state.order && (
           <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-left text-sm text-green-900">
-            <p><strong>Mã đơn hàng:</strong> {state.order.orderCode || state.order.orderId}</p>
-            <p className="mt-1"><strong>Số lượng:</strong> {state.order.quantity}</p>
+            <p>
+              <strong>Mã đơn hàng:</strong>{" "}
+              {state.order.orderCode || state.order.orderId}
+            </p>
+            <p className="mt-1">
+              <strong>Số lượng:</strong> {state.order.quantity}
+            </p>
           </div>
         )}
 
         {!agreementId && (
           <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Thành toán thành công, quay lại đơn hàng để xem trạng thái thanh toán.
+            Không tìm thấy thông tin phiên thanh toán để đối chiếu. Bạn có thể vào danh sách đơn hàng để kiểm tra trạng thái giao dịch.
           </p>
         )}
 
@@ -118,24 +136,17 @@ const PaymentResultPage = () => {
           {state.order?.orderId && (
             <Link
               to={`/don-hang/${state.order.orderId}`}
-              className="rounded-lg bg-green-700 px-5 py-3 text-sm font-black text-white hover:bg-green-800"
+              className="rounded-lg bg-[#4F8588] px-5 py-3 text-sm font-black text-white transition hover:bg-[#356A70]"
             >
               Xem đơn hàng
             </Link>
           )}
-          {agreementId && (
-            <Link
-              to={`/thoa-thuan/${agreementId}`}
-              className="rounded-lg bg-[#4F8588] px-5 py-3 text-sm font-black text-white hover:bg-[#356A70]"
-            >
-              Quay lại thỏa thuận
-            </Link>
-          )}
+
           <Link
-            to="/thanh-toan"
-            className="rounded-lg border border-[#4F8588] bg-white px-5 py-3 text-sm font-black text-[#285E62] hover:bg-[#F1F7F5]"
+            to="/"
+            className="rounded-lg border border-[#4F8588] bg-white px-5 py-3 text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5]"
           >
-            Lịch sử thanh toán
+            Về trang chủ
           </Link>
         </div>
       </div>

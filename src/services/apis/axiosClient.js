@@ -1,8 +1,7 @@
 import axios from "axios";
 import { notifyGlobalApiError } from "../../utils/globalApiError";
 
-const DEFAULT_API_BASE_URL =
-  "https://homecycle-backend.onrender.com/api";
+const DEFAULT_API_BASE_URL = "https://homecycle-backend.onrender.com/api";
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL
@@ -33,9 +32,7 @@ const clearStoredSession = () => {
 };
 
 const notifySessionExpired = () => {
-  window.dispatchEvent(
-    new Event("auth:session-expired"),
-  );
+  window.dispatchEvent(new Event("auth:session-expired"));
 };
 
 const axiosClient = axios.create({
@@ -47,18 +44,13 @@ let refreshPromise = null;
 
 axiosClient.interceptors.request.use(
   (config) => {
-    const accessToken =
-      localStorage.getItem("accessToken");
+    const accessToken = localStorage.getItem("accessToken");
 
     /*
      * Không gửi access token tới các API xác thực công khai.
      */
-    if (
-      accessToken &&
-      !isPublicAuthRequest(config.url)
-    ) {
-      config.headers.Authorization =
-        `Bearer ${accessToken}`;
+    if (accessToken && !isPublicAuthRequest(config.url)) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     return config;
@@ -80,12 +72,14 @@ axiosClient.interceptors.response.use(
       !isPublicAuthRequest(originalRequest.url);
 
     if (!shouldRefresh) {
-      notifyGlobalApiError(error);
+      if (!originalRequest?.skipGlobalErrorPage) {
+        notifyGlobalApiError(error);
+      }
+
       return Promise.reject(error);
     }
 
-    const storedRefreshToken =
-      localStorage.getItem("refreshToken");
+    const storedRefreshToken = localStorage.getItem("refreshToken");
 
     if (!storedRefreshToken) {
       clearStoredSession();
@@ -115,36 +109,22 @@ axiosClient.interceptors.response.use(
             },
           )
           .then((response) => {
-            const responseData =
-              response?.data || {};
+            const responseData = response?.data || {};
 
-            const accessToken =
-              responseData.accessToken;
+            const accessToken = responseData.accessToken;
 
-            const newRefreshToken =
-              responseData.refreshToken;
+            const newRefreshToken = responseData.refreshToken;
 
-            if (
-              !accessToken ||
-              !newRefreshToken
-            ) {
-              throw new Error(
-                "Refresh token response không hợp lệ.",
-              );
+            if (!accessToken || !newRefreshToken) {
+              throw new Error("Refresh token response không hợp lệ.");
             }
 
             /*
              * Backend sử dụng refresh-token rotation.
              */
-            localStorage.setItem(
-              "accessToken",
-              accessToken,
-            );
+            localStorage.setItem("accessToken", accessToken);
 
-            localStorage.setItem(
-              "refreshToken",
-              newRefreshToken,
-            );
+            localStorage.setItem("refreshToken", newRefreshToken);
 
             return accessToken;
           })
@@ -153,11 +133,9 @@ axiosClient.interceptors.response.use(
           });
       }
 
-      const newAccessToken =
-        await refreshPromise;
+      const newAccessToken = await refreshPromise;
 
-      originalRequest.headers.Authorization =
-        `Bearer ${newAccessToken}`;
+      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
       return axiosClient(originalRequest);
     } catch (refreshError) {
