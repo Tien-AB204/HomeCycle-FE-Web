@@ -83,7 +83,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
               Giao dịch HomeCycle
             </p>
             <h2 id="review-modal-title" className="mt-1 text-xl font-black text-[#183F41]">
-              {mode === "edit" ? "Chỉnh sửa đánh giá" : "Đánh giá đối tác"}
+              {mode === "edit" ? "Chỉnh sửa đánh giá" : "Đánh giá đơn hàng"}
             </h2>
           </div>
           <button
@@ -116,7 +116,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               rows={5}
-              placeholder="Giao tiếp, mức độ hợp tác và quá trình giao nhận với đối tác như thế nào?"
+              placeholder="Sản phẩm, giao tiếp và quá trình giao nhận của đơn hàng như thế nào?"
               className="mt-2 w-full resize-y rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-4 py-3 text-sm leading-6 text-[#183F41] outline-none transition focus:border-[#4F8588] focus:bg-white"
             />
           </label>

@@ -6,10 +6,15 @@ import {
   getOrderStatusMeta,
   getPaymentDisplayMeta,
 } from "../../constants/orders";
+import OrderTransactionActions from "../../features/orders/OrderTransactionActions";
 import OrderReviewSection from "../../features/reviews/OrderReviewSection";
 import orderApi from "../../services/apis/orderApi";
 import postApi from "../../services/apis/postApi";
+import { getUserId } from "../../utils/authUtils";
+import { useAuth } from "../../hooks/useAuth";
 
+const OWN_POST_REVIEW_MESSAGE =
+  "Chủ bài đăng không thể tự đánh giá đơn hàng của tin đăng.";
 
 const formatCurrency = (value) =>
   `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
@@ -83,6 +88,8 @@ const OrderProductImage = ({ src, alt }) => {
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
+  const { user } = useAuth();
+  const [version, setVersion] = useState(0);
 
   const [state, setState] = useState({
     loading: true,
@@ -118,10 +125,7 @@ const OrderDetailPage = () => {
 
         setState({ loading: false, detail, post, error: "" });
       } catch (error) {
-        if (
-          error?.name !== "CanceledError" &&
-          error?.code !== "ERR_CANCELED"
-        ) {
+        if (error?.name !== "CanceledError" && error?.code !== "ERR_CANCELED") {
           setState({
             loading: false,
             detail: null,
@@ -134,13 +138,16 @@ const OrderDetailPage = () => {
 
     void loadDetail();
     return () => controller.abort();
-  }, [orderId]);
+  }, [orderId, version]);
 
   if (state.loading) {
     return (
       <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-6xl px-4 py-8 sm:px-6">
         <div className="rounded-xl border border-[#DCE8E5] bg-white p-14 text-center font-semibold text-[#68807F]">
-          <span className="material-symbols-outlined animate-spin text-3xl" aria-hidden="true">
+          <span
+            className="material-symbols-outlined animate-spin text-3xl"
+            aria-hidden="true"
+          >
             progress_activity
           </span>
           <p className="mt-2">Đang tải chi tiết đơn hàng...</p>
@@ -153,7 +160,10 @@ const OrderDetailPage = () => {
     return (
       <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-4xl px-4 py-8 sm:px-6">
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <span className="material-symbols-outlined text-4xl text-red-700" aria-hidden="true">
+          <span
+            className="material-symbols-outlined text-4xl text-red-700"
+            aria-hidden="true"
+          >
             error
           </span>
           <h1 className="mt-3 text-xl font-black text-red-800">
@@ -196,14 +206,35 @@ const OrderDetailPage = () => {
       finalTotalAmount > 0 ? (amountPaid / finalTotalAmount) * 100 : 0,
     ),
   );
-  const isOrderCompleted =
-    Number(order.orderStatus) === ORDER_STATUS.COMPLETED;
-  const reviewEligibility = detail.review;
-  const reviewDescription = detail.review?.hasReviewed
-    ? `Bạn đã đánh giá đối tác ${detail.review.rating || 0}/5 sao.`
-    : (detail.review?.canReview ?? isOrderCompleted)
-      ? "Bạn có thể đánh giá đối tác trong giao dịch này."
-      : "Bạn có thể đánh giá đối tác sau khi đơn hàng hoàn tất.";
+  const isOrderCompleted = Number(order.orderStatus) === ORDER_STATUS.COMPLETED;
+
+  const currentUserId = getUserId(user).toLowerCase();
+
+  const postOwnerId = String(
+    state.post?.ownerId || detail.postOwnerId || order.postOwnerId || "",
+  )
+    .trim()
+    .toLowerCase();
+
+  const isPostOwner = Boolean(
+    currentUserId && postOwnerId && currentUserId === postOwnerId,
+  );
+
+  const reviewEligibility = isPostOwner
+    ? {
+        ...(detail.review || {}),
+        canReview: false,
+        blockedReason: OWN_POST_REVIEW_MESSAGE,
+      }
+    : detail.review;
+
+  const reviewDescription = isPostOwner
+    ? OWN_POST_REVIEW_MESSAGE
+    : detail.review?.hasReviewed
+      ? `Bạn đã đánh giá ${detail.review.rating || 0}/5 sao.`
+      : (detail.review?.canReview ?? isOrderCompleted)
+        ? "Đơn hàng đã đủ điều kiện để đánh giá."
+        : "Bạn có thể đánh giá sau khi đơn hàng hoàn tất.";
   const disputeDescription = detail.dispute?.hasActiveDispute
     ? "Đơn hàng đang có tranh chấp cần được xử lý."
     : "Đơn hàng hiện không có tranh chấp.";
@@ -237,10 +268,14 @@ const OrderDetailPage = () => {
           </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className={`rounded-full border px-3 py-1 text-xs font-black ${orderStatus.className}`}>
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-black ${orderStatus.className}`}
+          >
             {orderStatus.label}
           </span>
-          <span className={`rounded-full border px-3 py-1 text-xs font-black ${paymentStatus.className}`}>
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-black ${paymentStatus.className}`}
+          >
             {paymentStatus.label}
           </span>
         </div>
@@ -258,17 +293,24 @@ const OrderDetailPage = () => {
                 <h2 className="mt-1.5 text-xl font-black text-[#183F41]">
                   {productName}
                 </h2>
-                {detail.postDescription && detail.postDescription !== productName && (
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#68807F]">
-                    {detail.postDescription}
-                  </p>
-                )}
+                {detail.postDescription &&
+                  detail.postDescription !== productName && (
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#68807F]">
+                      {detail.postDescription}
+                    </p>
+                  )}
                 <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
                   <p className="text-[#68807F]">
-                    Số lượng: <strong className="text-[#183F41]">{order.quantity || 0}</strong>
+                    Số lượng:{" "}
+                    <strong className="text-[#183F41]">
+                      {order.quantity || 0}
+                    </strong>
                   </p>
                   <p className="text-[#68807F]">
-                    Đối tác: <strong className="text-[#183F41]">{detail.counterpartyName || "Người dùng HomeCycle"}</strong>
+                    Đối tác:{" "}
+                    <strong className="text-[#183F41]">
+                      {detail.counterpartyName || "Người dùng HomeCycle"}
+                    </strong>
                   </p>
                 </div>
               </div>
@@ -280,13 +322,21 @@ const OrderDetailPage = () => {
               <h2 className="font-black text-[#183F41]">Thông tin giao dịch</h2>
             </div>
             <dl className="divide-y divide-[#E3ECE9]">
-              <DetailRow label="Ngày tạo">{formatDate(order.createdAt)}</DetailRow>
-              <DetailRow label="Cập nhật gần nhất">{formatDate(order.updatedAt)}</DetailRow>
-              <DetailRow label="Ngày hoàn tất">{formatDate(order.completedAt)}</DetailRow>
+              <DetailRow label="Ngày tạo">
+                {formatDate(order.createdAt)}
+              </DetailRow>
+              <DetailRow label="Cập nhật gần nhất">
+                {formatDate(order.updatedAt)}
+              </DetailRow>
+              <DetailRow label="Ngày hoàn tất">
+                {formatDate(order.completedAt)}
+              </DetailRow>
               <DetailRow label="Phương thức thanh toán">
                 {detail.paymentMethod || "Chưa có thông tin"}
               </DetailRow>
-              <DetailRow label="Thanh toán lúc">{formatDate(detail.paidAt)}</DetailRow>
+              <DetailRow label="Thanh toán lúc">
+                {formatDate(detail.paidAt)}
+              </DetailRow>
             </dl>
           </section>
         </div>
@@ -298,7 +348,8 @@ const OrderDetailPage = () => {
           <p className="mt-2 text-3xl font-black text-[#B93832]">
             {formatCurrency(order.finalTotalAmount)}
           </p>
-          {Number(order.originalTotalAmount) !== Number(order.finalTotalAmount) && (
+          {Number(order.originalTotalAmount) !==
+            Number(order.finalTotalAmount) && (
             <p className="mt-1 text-sm text-[#789092] line-through">
               {formatCurrency(order.originalTotalAmount)}
             </p>
@@ -311,18 +362,26 @@ const OrderDetailPage = () => {
             />
           </div>
           <div className="mt-2 flex items-center justify-between gap-3 text-xs font-bold text-[#68807F]">
-            <span>{isFullyPaid ? "Đã thanh toán đủ" : paymentStatus.description || "Tiến độ thanh toán"}</span>
+            <span>
+              {isFullyPaid
+                ? "Đã thanh toán đủ"
+                : paymentStatus.description || "Tiến độ thanh toán"}
+            </span>
             <span>{Math.round(paymentPercent)}%</span>
           </div>
 
           <dl className="mt-5 divide-y divide-[#E3ECE9] border-y border-[#E3ECE9]">
             <div className="flex items-center justify-between gap-4 py-3 text-sm">
               <dt className="text-[#68807F]">Đã thanh toán</dt>
-              <dd className="font-black text-[#356A70]">{formatCurrency(order.amountPaid)}</dd>
+              <dd className="font-black text-[#356A70]">
+                {formatCurrency(order.amountPaid)}
+              </dd>
             </div>
             <div className="flex items-center justify-between gap-4 py-3 text-sm">
               <dt className="text-[#68807F]">Còn lại</dt>
-              <dd className="font-black text-[#183F41]">{formatCurrency(order.amountRemaining)}</dd>
+              <dd className="font-black text-[#183F41]">
+                {formatCurrency(order.amountRemaining)}
+              </dd>
             </div>
           </dl>
 
@@ -355,6 +414,12 @@ const OrderDetailPage = () => {
         </aside>
       </div>
 
+      <OrderTransactionActions
+        order={order}
+        detail={detail}
+        onRefresh={() => setVersion((current) => current + 1)}
+      />
+
       <section className="mt-5 rounded-xl border border-[#DCE8E5] bg-white px-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
         <div className="border-b border-[#E3ECE9] py-4">
           <h2 className="font-black text-[#183F41]">Theo dõi sau giao dịch</h2>
@@ -365,13 +430,19 @@ const OrderDetailPage = () => {
             title="Giao nhận"
             description={
               detail.shipment
-                ? "Thông tin vận chuyển đã được ghi nhận trong đơn hàng."
+                ? "Thông tin giao nhận đã được ghi nhận trong đơn hàng."
                 : "Chưa có thông tin vận chuyển từ hệ thống."
             }
           />
-          <ServiceRow icon="star" title="Đánh giá đối tác" description={reviewDescription} />
           <ServiceRow
-            icon={detail.dispute?.hasActiveDispute ? "warning" : "verified_user"}
+            icon="star"
+            title="Đánh giá đơn hàng"
+            description={reviewDescription}
+          />
+          <ServiceRow
+            icon={
+              detail.dispute?.hasActiveDispute ? "warning" : "verified_user"
+            }
             title="Tranh chấp"
             description={disputeDescription}
             tone={detail.dispute?.hasActiveDispute ? "warning" : "default"}

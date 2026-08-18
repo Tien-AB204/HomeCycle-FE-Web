@@ -67,24 +67,19 @@ const OrderReviewSection = ({
   }, [loadReviews]);
 
   const items = useMemo(() => state.page?.items || [], [state.page]);
-  const averageRating = Number(state.page?.averageRating) > 0
-    ? Number(state.page.averageRating)
-    : items.length
-      ? items.reduce((total, review) => total + review.rating, 0) / items.length
-      : 0;
-  const isOrderCompleted =
-    Number(orderStatus) === ORDER_STATUS.COMPLETED;
+  const averageRating =
+    Number(state.page?.averageRating) > 0
+      ? Number(state.page.averageRating)
+      : items.length
+        ? items.reduce((total, review) => total + review.rating, 0) /
+          items.length
+        : 0;
+  const isOrderCompleted = Number(orderStatus) === ORDER_STATUS.COMPLETED;
   const serverCanReview = eligibility?.canReview;
   const isEligible =
-    typeof serverCanReview === "boolean"
-      ? serverCanReview
-      : isOrderCompleted;
+    typeof serverCanReview === "boolean" ? serverCanReview : isOrderCompleted;
   const blockedReason = eligibility?.blockedReason || "";
-  const canCreate =
-    !state.loading &&
-    !state.error &&
-    isEligible &&
-    !state.mine;
+  const canCreate = !state.loading && !state.error && isEligible && !state.mine;
 
   const changePage = (nextPage) => {
     setNotice("");
@@ -97,7 +92,8 @@ const OrderReviewSection = ({
       setNotice("");
       setState((current) => ({
         ...current,
-        error: "Backend chưa trả mã đánh giá nên chưa thể mở chức năng chỉnh sửa.",
+        error:
+          "Backend chưa trả mã đánh giá nên chưa thể mở chức năng chỉnh sửa.",
       }));
       return;
     }
@@ -128,7 +124,9 @@ const OrderReviewSection = ({
 
     await reviewApi.createForOrder(orderId, payload);
     setModal(null);
-    await loadReviews({ successMessage: "Đã gửi đánh giá đối tác thành công." });
+    await loadReviews({
+      successMessage: "Đã gửi đánh giá đơn hàng thành công.",
+    });
   };
 
   return (
@@ -138,9 +136,12 @@ const OrderReviewSection = ({
           <p className="text-xs font-black uppercase tracking-[0.14em] text-[#2F6F9F]">
             Sau giao dịch
           </p>
-          <h2 className="mt-1 text-xl font-black text-[#183F41]">Đánh giá đối tác</h2>
+          <h2 className="mt-1 text-xl font-black text-[#183F41]">
+            Đánh giá đơn hàng
+          </h2>
+
           <p className="mt-1 text-sm text-[#68807F]">
-            Mỗi bên có thể đánh giá người còn lại một lần sau khi đơn hàng hoàn tất.
+            Mỗi đơn hàng chỉ được đánh giá một lần sau khi đơn hàng hoàn tất.
           </p>
         </div>
 
@@ -149,7 +150,8 @@ const OrderReviewSection = ({
             <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2">
               <ReviewStars value={Math.round(averageRating)} size="text-lg" />
               <span className="text-sm font-black text-[#183F41]">
-                {averageRating.toFixed(1)} · {state.page?.totalCount || items.length} đánh giá
+                {averageRating.toFixed(1)} ·{" "}
+                {state.page?.totalCount || items.length} đánh giá
               </span>
             </div>
           )}
@@ -170,21 +172,32 @@ const OrderReviewSection = ({
               }}
               className="inline-flex items-center gap-1.5 rounded-lg bg-[#4F8588] px-4 py-2 text-sm font-black text-white transition hover:bg-[#356A70]"
             >
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">rate_review</span>
-              Đánh giá đối tác
+              <span
+                className="material-symbols-outlined text-lg"
+                aria-hidden="true"
+              >
+                rate_review
+              </span>
+              Viết đánh giá
             </button>
           )}
         </div>
       </div>
 
       {notice && (
-        <div role="status" className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+        <div
+          role="status"
+          className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"
+        >
           {notice}
         </div>
       )}
 
       {state.error && (
-        <div role="alert" className="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          role="alert"
+          className="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 sm:flex-row sm:items-center sm:justify-between"
+        >
           <span>{state.error}</span>
           <button
             type="button"
@@ -201,20 +214,30 @@ const OrderReviewSection = ({
 
       {state.loading && (
         <div className="py-10 text-center text-sm font-semibold text-[#68807F]">
-          <span className="material-symbols-outlined animate-spin text-2xl" aria-hidden="true">progress_activity</span>
+          <span
+            className="material-symbols-outlined animate-spin text-2xl"
+            aria-hidden="true"
+          >
+            progress_activity
+          </span>
           <p className="mt-1">Đang tải đánh giá...</p>
         </div>
       )}
 
       {!state.loading && !state.error && items.length === 0 && (
         <div className="py-10 text-center">
-          <span className="material-symbols-outlined text-4xl text-[#9FBFBA]" aria-hidden="true">reviews</span>
+          <span
+            className="material-symbols-outlined text-4xl text-[#9FBFBA]"
+            aria-hidden="true"
+          >
+            reviews
+          </span>
           <h3 className="mt-2 font-black text-[#183F41]">Chưa có đánh giá</h3>
           <p className="mt-1 text-sm text-[#68807F]">
             {canCreate
-              ? "Chia sẻ trải nghiệm giao dịch của bạn với đối tác."
+              ? "Hãy chia sẻ trải nghiệm của bạn về đơn hàng này."
               : blockedReason ||
-                "Đánh giá đối tác sẽ mở khi đơn hàng hoàn tất và đủ điều kiện."}
+                "Đánh giá sẽ mở khi đơn hàng hoàn tất và đủ điều kiện."}
           </p>
         </div>
       )}
@@ -237,14 +260,17 @@ const OrderReviewSection = ({
             );
           })}
 
-          {state.mine && !items.some((review) => review.reviewId === state.mine.reviewId) && (
-            <ReviewCard
-              review={state.mine}
-              ownReview
-              onEdit={openEditModal}
-              editing={openingEdit}
-            />
-          )}
+          {state.mine &&
+            !items.some(
+              (review) => review.reviewId === state.mine.reviewId,
+            ) && (
+              <ReviewCard
+                review={state.mine}
+                ownReview
+                onEdit={openEditModal}
+                editing={openingEdit}
+              />
+            )}
         </div>
       )}
 
