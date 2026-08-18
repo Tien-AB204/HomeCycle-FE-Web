@@ -8,7 +8,8 @@ import {
   ProfileOutlined,
   HomeOutlined,
   DashboardOutlined,
-  LogoutOutlined
+  LogoutOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../hooks/useAuth";
 
@@ -27,6 +28,11 @@ const MODERATOR_NAV_ITEMS = [
     name: "Quản lý bài đăng",
     path: "/mod/posts",
     icon: ProfileOutlined,
+  },
+  {
+    name: "Tranh chấp",
+    path: "/mod/disputes",
+    icon: WarningOutlined,
   },
 ];
 
@@ -52,17 +58,17 @@ const ModLayout = () => {
   const displayInitial = username.charAt(0).toUpperCase();
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] font-sans">
-      <aside className="z-20 flex w-[250px] shrink-0 flex-col bg-[#1a202c] text-white shadow-lg">
+    <div className="flex h-screen bg-[#F4F7F6] font-sans text-[#183436]">
+      <aside className="z-20 flex w-[250px] shrink-0 flex-col bg-gradient-to-b from-[#183F41] via-[#205357] to-[#285E62] text-white shadow-[18px_0_48px_rgba(24,63,65,0.14)]">
         
         {/* === LOGO === */}
-        <div className="flex shrink-0 flex-col items-center justify-center gap-2 border-b border-gray-800/50 px-6 py-6">
+        <div className="flex shrink-0 flex-col items-center justify-center gap-2 border-b border-white/10 px-6 py-6">
           <img 
             src="/logo-light-transparent.png" 
             alt="HomeCycle" 
             className="h-8 object-contain transition-transform hover:scale-105"
           />
-          <span className="rounded bg-[#0aa679] px-3 py-0.5 text-[10px] font-bold text-white shadow-sm tracking-widest uppercase mt-1">
+          <span className="mt-1 rounded bg-white/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[#BFE0DC] shadow-sm">
             Moderator
           </span>
         </div>
@@ -85,10 +91,10 @@ const ModLayout = () => {
                     isActive,
                   }) =>
                     [
-                      "flex items-center gap-3 rounded-lg px-4 py-3 text-[15px] transition-all",
+                      "flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-bold transition-all",
                       isActive
-                        ? "bg-[#0aa679] font-medium text-white shadow-md"
-                        : "text-gray-400 hover:bg-white/5 hover:text-gray-200",
+                        ? "bg-white text-[#245B60] shadow-[0_8px_22px_rgba(8,36,38,0.16)]"
+                        : "text-white/70 hover:bg-white/10 hover:text-white",
                     ].join(" ")
                   }
                 >
@@ -105,23 +111,23 @@ const ModLayout = () => {
         </nav>
 
         {/* === FOOTER: THÔNG TIN USER & NÚT ĐIỀU HƯỚNG === */}
-        <div className="mt-auto border-t border-gray-800 p-4 flex flex-col gap-3">
+        <div className="mt-auto flex flex-col gap-3 border-t border-white/10 p-4">
           
           {/* Hiển thị Avatar chữ cái đầu, Username và Email của Mod */}
-          <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-white/5 border border-white/5">
-            <div className="w-9 h-9 shrink-0 rounded-full bg-[#0aa679] flex items-center justify-center text-white font-bold text-sm shadow-sm">
+          <div className="flex items-center gap-3 rounded-xl bg-white/10 p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E6F2F0] text-sm font-black text-[#285E62]">
               {displayInitial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-gray-200 truncate">{username}</p>
-              <p className="text-[11px] text-gray-400 truncate">{email}</p>
+              <p className="truncate text-xs font-bold text-white">{username}</p>
+              <p className="truncate text-[11px] text-white/55">{email}</p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={handleGoHome}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-600/50 bg-[#2d3748] py-2.5 text-sm font-medium text-gray-200 transition-colors hover:border-[#0aa679] hover:bg-[#0aa679] hover:text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 py-2.5 text-sm font-bold text-white/75 transition hover:bg-white/15 hover:text-white"
           >
             <HomeOutlined className="text-lg" />
             Về trang chủ
@@ -130,7 +136,7 @@ const ModLayout = () => {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-600/90 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-red-700"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 py-2.5 text-sm font-bold text-white/75 transition hover:bg-red-400/10 hover:text-red-100"
           >
             <LogoutOutlined className="text-base" />
             Đăng xuất
