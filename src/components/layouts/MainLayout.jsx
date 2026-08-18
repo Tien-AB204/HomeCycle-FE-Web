@@ -25,7 +25,6 @@ const ACCOUNT_NAVIGATION = [
     activePrefix: "/thuong-luong/",
   },
   { name: "Lịch hẹn", path: "/lich-hen" },
-  { name: "Thanh toán", path: "/thanh-toan" },
   { name: "Đơn hàng", path: "/don-hang" },
   { name: "Hồ sơ", path: "/ho-so" },
 ];

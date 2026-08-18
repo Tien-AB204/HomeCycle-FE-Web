@@ -24,10 +24,7 @@ const unwrapPayload = (response) => response?.data ?? response;
 
 const normalizeImages = (review) => {
   const images =
-    review?.imageUrls ||
-    review?.images ||
-    review?.reviewImages ||
-    [];
+    review?.imageUrls || review?.images || review?.reviewImages || [];
 
   if (!Array.isArray(images)) return [];
 
@@ -126,10 +123,7 @@ const validateImages = (images) => {
 };
 
 export const reviewApi = {
-  createForOrder: async (
-    orderId,
-    { rating, comment = "", images = [] },
-  ) => {
+  createForOrder: async (orderId, { rating, comment = "", images = [] }) => {
     const id = normalizeIdentifier(orderId, "Không tìm thấy mã đơn hàng.");
     const formData = new FormData();
 
@@ -140,6 +134,9 @@ export const reviewApi = {
     const response = await axiosClient.post(
       `/reviews/orders/${encodeURIComponent(id)}`,
       formData,
+      {
+        skipGlobalErrorPage: true,
+      },
     );
 
     return normalizeReview(response);
@@ -147,7 +144,11 @@ export const reviewApi = {
 
   getByOrder: async (
     orderId,
-    { pageNumber = DEFAULT_PAGE_NUMBER, pageSize = DEFAULT_PAGE_SIZE, signal } = {},
+    {
+      pageNumber = DEFAULT_PAGE_NUMBER,
+      pageSize = DEFAULT_PAGE_SIZE,
+      signal,
+    } = {},
   ) => {
     const id = normalizeIdentifier(orderId, "Không tìm thấy mã đơn hàng.");
     const response = await axiosClient.get(
@@ -176,9 +177,12 @@ export const reviewApi = {
 
   getById: async (reviewId, { signal } = {}) => {
     const id = normalizeIdentifier(reviewId, "Không tìm thấy mã đánh giá.");
-    const response = await axiosClient.get(`/reviews/${encodeURIComponent(id)}`, {
-      signal,
-    });
+    const response = await axiosClient.get(
+      `/reviews/${encodeURIComponent(id)}`,
+      {
+        signal,
+      },
+    );
 
     return normalizeReview(response);
   },
@@ -201,7 +205,11 @@ export const reviewApi = {
 
   getByUser: async (
     userId,
-    { pageNumber = DEFAULT_PAGE_NUMBER, pageSize = DEFAULT_PAGE_SIZE, signal } = {},
+    {
+      pageNumber = DEFAULT_PAGE_NUMBER,
+      pageSize = DEFAULT_PAGE_SIZE,
+      signal,
+    } = {},
   ) => {
     const id = normalizeIdentifier(userId, "Không tìm thấy người dùng.");
     const response = await axiosClient.get(

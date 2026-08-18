@@ -29,7 +29,10 @@ export const orderApi = {
     }
 
     const response = await axiosClient.get(`/orders/${perspective}`, {
-      params: { PageNumber: pageNumber, PageSize: pageSize },
+      params: {
+        PageNumber: pageNumber,
+        PageSize: pageSize,
+      },
       signal,
     });
 
@@ -37,36 +40,109 @@ export const orderApi = {
   },
 
   getBuyerOrders: (options = {}) =>
-    orderApi.getAll({ ...options, perspective: ORDER_PERSPECTIVE.BUYER }),
+    orderApi.getAll({
+      ...options,
+      perspective: ORDER_PERSPECTIVE.BUYER,
+    }),
 
   getSellerOrders: (options = {}) =>
-    orderApi.getAll({ ...options, perspective: ORDER_PERSPECTIVE.SELLER }),
+    orderApi.getAll({
+      ...options,
+      perspective: ORDER_PERSPECTIVE.SELLER,
+    }),
 
   getById: async (orderId, { signal } = {}) => {
-    const id = normalizeIdentifier(orderId, "Không tìm thấy mã đơn hàng.");
-    const response = await axiosClient.get(`/orders/${encodeURIComponent(id)}`, {
-      signal,
-    });
+    const id = normalizeIdentifier(
+      orderId,
+      "Không tìm thấy mã đơn hàng.",
+    );
+
+    const response = await axiosClient.get(
+      `/orders/${encodeURIComponent(id)}`,
+      {
+        signal,
+      },
+    );
 
     if (!response?.order?.orderId) {
-      throw new Error("Response chi tiết đơn hàng không hợp lệ.");
+      throw new Error(
+        "Response chi tiết đơn hàng không hợp lệ.",
+      );
     }
 
     return response;
   },
 
-  getByAgreementId: async (agreementId, { signal } = {}) => {
+  getByAgreementId: async (
+    agreementId,
+    { signal } = {},
+  ) => {
     const id = normalizeIdentifier(
       agreementId,
       "Không tìm thấy mã thỏa thuận.",
     );
+
     const response = await axiosClient.get(
       `/orders/agreement/${encodeURIComponent(id)}`,
-      { signal },
+      {
+        signal,
+      },
     );
 
     if (!response?.orderId) {
-      throw new Error("Response đơn hàng theo thỏa thuận không hợp lệ.");
+      throw new Error(
+        "Response đơn hàng theo thỏa thuận không hợp lệ.",
+      );
+    }
+
+    return response;
+  },
+
+  /**
+   * Người bán xác nhận đã bàn giao hàng.
+   *
+   * Backend chỉ cho phép thao tác này với hình thức giao nhận trực tiếp.
+   * Response là OrderConfirmationResponseDto, không phải OrderDetailDto.
+   */
+  confirmHandover: async (orderId) => {
+    const id = normalizeIdentifier(
+      orderId,
+      "Không tìm thấy mã đơn hàng để xác nhận bàn giao.",
+    );
+
+    const response = await axiosClient.post(
+      `/orders/${encodeURIComponent(id)}/confirm-handover`,
+    );
+
+    if (!response?.orderId) {
+      throw new Error(
+        "Response xác nhận bàn giao không hợp lệ.",
+      );
+    }
+
+    return response;
+  },
+
+  /**
+   * Người mua xác nhận đã nhận hàng.
+   *
+   * Backend có thể chuyển Order sang Completed khi yêu cầu hợp lệ.
+   * Response là OrderConfirmationResponseDto.
+   */
+  confirmReceived: async (orderId) => {
+    const id = normalizeIdentifier(
+      orderId,
+      "Không tìm thấy mã đơn hàng để xác nhận đã nhận hàng.",
+    );
+
+    const response = await axiosClient.post(
+      `/orders/${encodeURIComponent(id)}/confirm-received`,
+    );
+
+    if (!response?.orderId) {
+      throw new Error(
+        "Response xác nhận nhận hàng không hợp lệ.",
+      );
     }
 
     return response;
