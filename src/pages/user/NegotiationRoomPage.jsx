@@ -125,6 +125,79 @@ const sortMessages = (messages) => {
   });
 };
 
+const getLatestPendingProposal = (negotiation) => {
+  const pendingProposals = sortMessages(
+    negotiation?.messages || [],
+  ).filter(
+    (message) =>
+      isProposalMessage(message.messageType) &&
+      String(message.offerStatus).toLowerCase() === "pending",
+  );
+
+  return pendingProposals[pendingProposals.length - 1] || null;
+};
+
+const getAcceptanceFreshness = ({
+  proposalSnapshot,
+  latestNegotiation,
+  currentUserId,
+}) => {
+  const changedFields = [];
+
+  if (!proposalSnapshot || !latestNegotiation) {
+    return {
+      latestProposal: null,
+      changedFields: ["phản đề mới nhất"],
+    };
+  }
+
+  if (
+    latestNegotiation.negotiationStatus !==
+    NEGOTIATION_STATUS.OPEN
+  ) {
+    changedFields.push("trạng thái phiên thương lượng");
+  }
+
+  const latestProposal =
+    getLatestPendingProposal(latestNegotiation);
+
+  if (!latestProposal) {
+    changedFields.push("trạng thái phản đề");
+
+    return {
+      latestProposal: null,
+      changedFields,
+    };
+  }
+
+  if (
+    Number(latestProposal.offerPrice) !==
+    Number(proposalSnapshot.offerPrice)
+  ) {
+    changedFields.push("mức giá phản đề");
+  }
+
+  if (
+    Number(latestProposal.offerQuantity) !==
+    Number(proposalSnapshot.offerQuantity)
+  ) {
+    changedFields.push("số lượng phản đề");
+  }
+
+  if (
+    String(latestProposal.senderId) !==
+      String(proposalSnapshot.senderId) ||
+    String(latestProposal.senderId) === String(currentUserId)
+  ) {
+    changedFields.push("phản đề mới nhất");
+  }
+
+  return {
+    latestProposal,
+    changedFields: [...new Set(changedFields)],
+  };
+};
+
 const mergeMessages = (...messageGroups) => {
   const messagesById = new Map();
   const messageIdByClientId = new Map();
@@ -905,7 +978,36 @@ const NegotiationRoomPage = () => {
       return;
     }
 
-    if (
+    let proposalMessageIdToProcess = messageId;
+
+    if (action === "accept") {
+      const acceptanceFreshness = getAcceptanceFreshness({
+        proposalSnapshot,
+        latestNegotiation: verification.latestNegotiation,
+        currentUserId,
+      });
+
+      if (acceptanceFreshness.changedFields.length > 0) {
+        stopForRoomChange({
+          ...verification,
+          // Khi chốt giá chỉ cảnh báo nếu chính phản đề mới nhất đã đổi
+          // giá, số lượng, người gửi hoặc trạng thái phiên không còn Open.
+          // Không chặn thao tác chỉ vì giá bài đăng/currentOfferPrice đổi
+          // trong khi phản đề mới nhất vẫn giữ nguyên.
+          proposalChanges: acceptanceFreshness.changedFields,
+          negotiationChanges: [],
+          postChanges: [],
+        });
+        setActionBusy("");
+        return;
+      }
+
+      // Có thể xuất hiện một message mới hơn nhưng cùng mức giá/số lượng
+      // (ví dụ realtime cập nhật chậm). Luôn accept đúng proposal Pending
+      // mới nhất thay vì dùng messageId cũ mà người dùng đã bấm trước đó.
+      proposalMessageIdToProcess =
+        acceptanceFreshness.latestProposal?.messageId || messageId;
+    } else if (
       verification.proposalChanges.length ||
       verification.negotiationChanges.length ||
       verification.postChanges.length
@@ -917,7 +1019,10 @@ const NegotiationRoomPage = () => {
 
     try {
       if (action === "accept") {
-        await negotiationApi.acceptProposal(negotiationId, messageId);
+        await negotiationApi.acceptProposal(
+          negotiationId,
+          proposalMessageIdToProcess,
+        );
         setSuccessMessage("Hai bên đã thống nhất mức giá và số lượng này.");
       } else {
         await negotiationApi.rejectProposal(negotiationId, messageId);
