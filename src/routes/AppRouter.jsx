@@ -6,7 +6,7 @@ import AuthLayout from "../components/layouts/AuthLayout";
 import MainLayout from "../components/layouts/MainLayout";
 import ModLayout from "../components/layouts/ModLayout";
 
-// Public và Auth Pages
+// Public vÃ  Auth Pages
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterBusinessPage from "../pages/auth/RegisterBusinessPage";
@@ -16,8 +16,9 @@ import ErrorPage from "../pages/public/ErrorPage";
 import PostDetailPage from "../pages/public/PostDetailPage";
 import SearchPage from "../pages/public/SearchPage";
 
-// Moderator Pages và Security
+// Moderator Pages vÃ  Security
 import { ROLES } from "../constants/roles";
+import DisputeManagementPage from "../pages/mod/DisputeManagementPage";
 import ModDashboardPage from "../pages/mod/ModDashboardPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
@@ -53,7 +54,7 @@ const AppRouter = () => {
   return (
     <Routes>
       <Route path="/loi" element={<ErrorPage />} />
-      {/* Trang công khai và người dùng */}
+      {/* Trang cÃ´ng khai vÃ  ngÆ°á»i dÃ¹ng */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomeRoute />} />
 
@@ -139,7 +140,7 @@ const AppRouter = () => {
         </Route>
       </Route>
 
-      {/* Đăng nhập và đăng ký */}
+      {/* ÄÄƒng nháº­p vÃ  Ä‘Äƒng kÃ½ */}
       <Route element={<AuthLayout />}>
         <Route path="/auth/login" element={<LoginPage />} />
 
@@ -161,15 +162,20 @@ const AppRouter = () => {
       {/* Moderator */}
       <Route element={<RoleRoute allowedRole={ROLES.MODERATOR} />}>
         <Route path="/mod" element={<ModLayout />}>
-          {/* Đổi redirect mặc định về dashboard */}
+          {/* Äá»•i redirect máº·c Ä‘á»‹nh vá» dashboard */}
           <Route index element={<Navigate to="dashboard" replace />} />
 
-          {/* Thêm Route cho Dashboard mới */}
+          {/* ThÃªm Route cho Dashboard má»›i */}
           <Route path="dashboard" element={<ModDashboardPage />} />
 
           <Route path="verification" element={<VerificationPage />} />
 
           <Route path="posts" element={<PostModerationPage />} />
+
+          <Route
+            path="disputes"
+            element={<DisputeManagementPage />}
+          />
         </Route>
       </Route>
 
