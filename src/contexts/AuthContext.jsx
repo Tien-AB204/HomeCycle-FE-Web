@@ -1,4 +1,4 @@
-﻿import {
+import {
   useCallback,
   useEffect,
   useMemo,
@@ -607,10 +607,10 @@ export const AuthProvider = ({
 
   if (isAuthInitializing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div
           role="status"
-          className="flex items-center gap-3 text-[#244f4d]"
+          className="flex items-center gap-3 text-primary"
         >
           <span className="material-symbols-outlined animate-spin text-3xl">
             refresh
