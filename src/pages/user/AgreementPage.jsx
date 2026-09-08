@@ -352,33 +352,33 @@ const AgreementPage = () => {
   const canPay = isBuyer && agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
 
   if (loading) {
-    return <div className="mx-auto mt-6 max-w-5xl rounded-2xl border border-[#DCE8E5] bg-white p-14 text-center font-semibold text-[#68807F] shadow-[0_10px_30px_rgba(24,63,65,0.05)]">Đang tải thỏa thuận...</div>;
+    return <div className="mx-auto mt-6 max-w-5xl rounded-2xl border border-border bg-white p-14 text-center font-semibold text-textLight shadow-[0_10px_30px_rgba(23,40,48,0.05)]">Đang tải thỏa thuận...</div>;
   }
 
   return (
     <section className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
-      <div className="relative mb-5 overflow-hidden rounded-2xl bg-gradient-to-r from-[#183F41] via-[#285E62] to-[#2F6F9F] px-6 py-6 text-white shadow-[0_16px_40px_rgba(24,63,65,0.14)] sm:flex sm:items-center sm:justify-between sm:gap-5">
+      <div className="relative mb-5 overflow-hidden rounded-2xl bg-primary px-6 py-6 text-white shadow-[0_16px_40px_rgba(23,40,48,0.14)] sm:flex sm:items-center sm:justify-between sm:gap-5">
         <div className="pointer-events-none absolute -right-10 -top-20 h-44 w-44 rounded-full border-[30px] border-white/5" />
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C8ECE7]">Thỏa thuận giao dịch</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Thỏa thuận giao dịch</p>
           <h1 className="mt-2 text-2xl font-black">Thỏa thuận giao dịch</h1>
           <p className="mt-2 text-sm leading-6 text-white/75">Kiểm tra lịch hẹn, giao nhận và điều khoản trước khi xác nhận.</p>
         </div>
         {negotiationId && <Link to={`/thuong-luong/${negotiationId}`} className="relative mt-4 inline-flex rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-sm font-bold hover:bg-white/20 sm:mt-0">← Quay lại phòng</Link>}
       </div>
 
-      {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>}
-      {notice && <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-700">{notice}</div>}
+      {error && <div role="alert" className="mb-5 rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm font-semibold text-error">{error}</div>}
+      {notice && <div className="mb-5 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-semibold text-success">{notice}</div>}
 
       {!agreement && preview?.canCreate && (
         <AgreementForm negotiationId={negotiationId} onSubmit={handleSave} busy={busy === "save"} />
       )}
 
       {!agreement && !preview?.canCreate && (
-        <div className="rounded-2xl border border-[#DCE8E5] bg-white p-10 text-center shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
-          <span className="material-symbols-outlined text-4xl text-[#4F8588]" aria-hidden="true">schedule</span>
-          <h2 className="mt-4 text-xl font-black text-[#183F41]">Đang chờ người bán tạo thỏa thuận</h2>
-          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[#68807F]">Người bán sẽ điền các điều khoản hai bên đã thống nhất. Bạn có thể xem, chỉnh sửa hoặc xác nhận sau khi form được gửi.</p>
+        <div className="rounded-2xl border border-border bg-white p-10 text-center shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+          <span className="material-symbols-outlined text-4xl text-primary" aria-hidden="true">schedule</span>
+          <h2 className="mt-4 text-xl font-black text-text">Đang chờ người bán tạo thỏa thuận</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-textLight">Người bán sẽ điền các điều khoản hai bên đã thống nhất. Bạn có thể xem, chỉnh sửa hoặc xác nhận sau khi form được gửi.</p>
         </div>
       )}
 
@@ -390,43 +390,43 @@ const AgreementPage = () => {
         <AgreementSummary agreement={agreement} />
 
         {agreement.agreementType === AGREEMENT_TYPE.INSPECTION && agreement.agreementStatus === AGREEMENT_STATUS.CONFIRMED && (
-          <div className="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-800">
+          <div className="mt-5 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm leading-6 text-primary">
             Thỏa thuận có lịch kiểm định. Bạn có thể theo dõi lịch và check-in tại mục <Link to="/lich-hen" className="font-black underline">Lịch hẹn</Link>. Chức năng ghi nhận kết quả đạt/không đạt sẽ được bổ sung khi backend cung cấp API.
           </div>
         )}
 
-        <div className="mt-5 flex flex-wrap justify-end gap-3 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
-          {canEdit && <button type="button" onClick={() => setEditing(true)} className="rounded-lg border border-[#4F8588] px-5 py-3 text-sm font-black text-[#285E62] hover:bg-[#F1F7F5]">Chỉnh sửa thỏa thuận</button>}
-          {preview?.canConfirm && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("accept", () => agreementApi.accept(agreement.agreementId, agreement?.agreementDetails?.revision), "Bạn đã xác nhận thỏa thuận.")} className="rounded-lg bg-[#4F8588] px-5 py-3 text-sm font-black text-white hover:bg-[#356A70] disabled:opacity-50">{busy === "accept" ? "Đang xác nhận..." : "Xác nhận thỏa thuận"}</button>}
-          {canRequestEdit && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("request-edit", () => agreementApi.requestEdit(agreement.agreementId), "Đã mở lại thỏa thuận. Hai bên cần xác nhận lại sau khi chỉnh sửa.")} className="rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm font-black text-amber-800 hover:bg-amber-100 disabled:opacity-50">Yêu cầu chỉnh sửa</button>}
+        <div className="mt-5 flex flex-wrap justify-end gap-3 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+          {canEdit && <button type="button" onClick={() => setEditing(true)} className="rounded-lg border border-primary px-5 py-3 text-sm font-black text-primary hover:bg-primary/10">Chỉnh sửa thỏa thuận</button>}
+          {preview?.canConfirm && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("accept", () => agreementApi.accept(agreement.agreementId, agreement?.agreementDetails?.revision), "Bạn đã xác nhận thỏa thuận.")} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:opacity-50">{busy === "accept" ? "Đang xác nhận..." : "Xác nhận thỏa thuận"}</button>}
+          {canRequestEdit && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("request-edit", () => agreementApi.requestEdit(agreement.agreementId), "Đã mở lại thỏa thuận. Hai bên cần xác nhận lại sau khi chỉnh sửa.")} className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-black text-warning hover:bg-warning/20 disabled:opacity-50">Yêu cầu chỉnh sửa</button>}
         </div>
 
         {canPay && (
-          <section className="mt-5 rounded-2xl border border-[#C9DDED] bg-gradient-to-r from-white to-[#F1F7FC] p-5 shadow-[0_10px_30px_rgba(47,111,159,0.07)] sm:p-6">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#2F6F9F]">Bước tiếp theo</p>
-            <h2 className="mt-1 text-lg font-black text-[#183F41]">Thanh toán để tiếp tục</h2>
-            <p className="mt-2 text-sm leading-6 text-[#68807F]">Tổng giá trị thỏa thuận: <strong className="text-[#B33A32]">{formatCurrency(agreement.totalAmount)}</strong>. Số tiền cần thanh toán chính xác sẽ được hiển thị trên PayOS theo hình thức đặt cọc hoặc toàn phần đã chọn.</p>
+          <section className="mt-5 rounded-2xl border border-border bg-gradient-to-r from-white to-background p-5 shadow-[0_10px_30px_rgba(23,40,48,0.07)] sm:p-6">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">Bước tiếp theo</p>
+            <h2 className="mt-1 text-lg font-black text-text">Thanh toán để tiếp tục</h2>
+            <p className="mt-2 text-sm leading-6 text-textLight">Tổng giá trị thỏa thuận: <strong className="text-error">{formatCurrency(agreement.totalAmount)}</strong>. Số tiền cần thanh toán chính xác sẽ được hiển thị trên PayOS theo hình thức đặt cọc hoặc toàn phần đã chọn.</p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <button type="button" onClick={handlePayOs} disabled={Boolean(busy)} className="rounded-lg bg-[#2F6F9F] px-5 py-3 text-sm font-black text-white hover:bg-[#245B84] disabled:opacity-50">{busy === "payos" ? "Đang tạo liên kết..." : "Thanh toán qua PayOS"}</button>
-              <button type="button" onClick={handleWalletPayment} disabled={Boolean(busy)} className="rounded-lg border border-[#4F8588] bg-white px-5 py-3 text-sm font-black text-[#285E62] hover:bg-[#F1F7F5] disabled:opacity-50">{busy === "wallet" ? "Đang thanh toán..." : "Thanh toán bằng ví"}</button>
-              <button type="button" onClick={checkPayment} className="rounded-lg border border-[#CDDED9] bg-white px-5 py-3 text-sm font-bold text-[#68807F] hover:bg-[#F7FAF9]">Kiểm tra trạng thái</button>
+              <button type="button" onClick={handlePayOs} disabled={Boolean(busy)} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:opacity-50">{busy === "payos" ? "Đang tạo liên kết..." : "Thanh toán qua PayOS"}</button>
+              <button type="button" onClick={handleWalletPayment} disabled={Boolean(busy)} className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary hover:bg-primary/10 disabled:opacity-50">{busy === "wallet" ? "Đang thanh toán..." : "Thanh toán bằng ví"}</button>
+              <button type="button" onClick={checkPayment} className="rounded-lg border border-border bg-white px-5 py-3 text-sm font-bold text-textLight hover:bg-background">Kiểm tra trạng thái</button>
             </div>
-            {paymentStatus && <p className="mt-3 text-sm font-bold text-[#285E62]">Trạng thái thanh toán: {paymentStatus}</p>}
+            {paymentStatus && <p className="mt-3 text-sm font-bold text-primary">Trạng thái thanh toán: {paymentStatus}</p>}
           </section>
         )}
 
         {order && (
-          <section className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 sm:p-6">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Đơn hàng đã được tạo</p>
-            <h2 className="mt-2 text-xl font-black text-emerald-900">{order.orderCode || order.orderId}</h2>
-            <div className="mt-4 grid gap-3 text-sm text-emerald-900 sm:grid-cols-3">
+          <section className="mt-5 rounded-2xl border border-success/30 bg-success/10 p-5 sm:p-6">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-success">Đơn hàng đã được tạo</p>
+            <h2 className="mt-2 text-xl font-black text-success">{order.orderCode || order.orderId}</h2>
+            <div className="mt-4 grid gap-3 text-sm text-success sm:grid-cols-3">
               <p>Đã thanh toán: <strong>{formatCurrency(order.amountPaid)}</strong></p>
               <p>Còn lại: <strong>{formatCurrency(order.amountRemaining)}</strong></p>
               <p>Số lượng: <strong>{order.quantity}</strong></p>
             </div>
             <Link
               to={`/don-hang/${order.orderId}`}
-              className="mt-5 inline-flex rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-black text-white hover:bg-emerald-800"
+              className="mt-5 inline-flex rounded-xl bg-success px-5 py-2.5 text-sm font-black text-white hover:bg-success/90"
             >
               Xem chi tiết đơn hàng
             </Link>

@@ -142,13 +142,13 @@ const AddressSelector = ({ id, label, value, onChange, error, required, inputCla
   };
 
   return (
-    <fieldset className="rounded-xl border border-[#DCE8E5] bg-[#FBFDFC] p-4">
-      <legend className="px-1 text-sm font-bold text-[#183F41]">
-        {label} {required && <span className="text-red-600">*</span>}
+    <fieldset className="rounded-xl border border-border bg-background p-4">
+      <legend className="px-1 text-sm font-bold text-text">
+        {label} {required && <span className="text-error">*</span>}
       </legend>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-xs font-bold text-[#526F6E]">
+        <label className="text-xs font-bold text-textLight">
           Tỉnh/Thành phố
           <select
             id={`${id}-province`}
@@ -167,7 +167,7 @@ const AddressSelector = ({ id, label, value, onChange, error, required, inputCla
           </select>
         </label>
 
-        <label className="text-xs font-bold text-[#526F6E]">
+        <label className="text-xs font-bold text-textLight">
           Phường/Xã
           <select
             id={`${id}-ward`}
@@ -189,7 +189,7 @@ const AddressSelector = ({ id, label, value, onChange, error, required, inputCla
         </label>
       </div>
 
-      <label className="mt-3 block text-xs font-bold text-[#526F6E]">
+      <label className="mt-3 block text-xs font-bold text-textLight">
         Địa chỉ chi tiết
         <input
           id={`${id}-detail`}
@@ -202,12 +202,12 @@ const AddressSelector = ({ id, label, value, onChange, error, required, inputCla
       </label>
 
       {value && !provinceCode && (
-        <p className="mt-2 text-xs text-[#68807F]">
-          Địa chỉ hiện tại: <span className="font-semibold text-[#183F41]">{value}</span>
+        <p className="mt-2 text-xs text-textLight">
+          Địa chỉ hiện tại: <span className="font-semibold text-text">{value}</span>
         </p>
       )}
-      {loadError && <p className="mt-2 text-xs font-semibold text-red-600">{loadError}</p>}
-      {error && <p className="mt-2 text-xs font-semibold text-red-600">{error}</p>}
+      {loadError && <p className="mt-2 text-xs font-semibold text-error">{loadError}</p>}
+      {error && <p className="mt-2 text-xs font-semibold text-error">{error}</p>}
     </fieldset>
   );
 };
