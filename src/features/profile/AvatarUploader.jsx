@@ -210,10 +210,10 @@ export default function AvatarUploader({
               displayName ||
               "người dùng"
             }`}
-            className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-[0_8px_24px_rgba(24,63,65,0.14)]"
+            className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-[0_8px_24px_rgba(23,40,48,0.14)]"
           />
         ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#4F8588] to-[#2F6F9F] text-3xl font-black text-white shadow-[0_8px_24px_rgba(24,63,65,0.14)]">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-black text-white shadow-[0_8px_24px_rgba(23,40,48,0.14)]">
             {fallbackInitial}
           </div>
         )}
@@ -221,7 +221,7 @@ export default function AvatarUploader({
         <label
           htmlFor="profile-avatar-input"
           title="Thay đổi ảnh đại diện"
-          className={`absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#4F8588] text-white shadow transition hover:bg-[#356A70] ${
+          className={`absolute bottom-0 right-0 flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-primary text-white shadow transition hover:bg-primary/90 ${
             isUploading
               ? "pointer-events-none opacity-60"
               : "cursor-pointer"
@@ -254,7 +254,7 @@ export default function AvatarUploader({
             type="button"
             onClick={resetSelection}
             disabled={isUploading}
-            className="rounded-lg border border-[#9FBFBA] px-3 py-1.5 text-xs font-bold text-[#526E6D] hover:bg-[#F5F9F8] disabled:opacity-60"
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-bold text-textLight hover:bg-background disabled:opacity-60"
           >
             Hủy
           </button>
@@ -263,7 +263,7 @@ export default function AvatarUploader({
             type="button"
             onClick={handleUpload}
             disabled={isUploading}
-            className="rounded-lg bg-[#4F8588] px-3 py-1.5 text-xs font-black text-white hover:bg-[#356A70] disabled:opacity-60"
+            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-black text-white hover:bg-primary/90 disabled:opacity-60"
           >
             {isUploading
               ? "ĐANG TẢI..."
@@ -272,7 +272,7 @@ export default function AvatarUploader({
         </div>
       )}
 
-      <p className="mt-2 text-center text-[11px] text-[#829796]">
+      <p className="mt-2 text-center text-[11px] text-textLight">
         JPG, PNG hoặc WEBP; tối đa
         5MB
       </p>
@@ -280,7 +280,7 @@ export default function AvatarUploader({
       {error && (
         <p
           role="alert"
-          className="mt-2 text-center text-xs text-red-600"
+          className="mt-2 text-center text-xs text-error"
         >
           {error}
         </p>

@@ -11,28 +11,28 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const VERIFICATION_STATUS_META = {
   unverified: {
     label: "Chưa xác minh giấy tờ",
-    badgeClass: "bg-slate-100 text-slate-700",
-    panelClass: "border-slate-200 bg-slate-50 text-slate-800",
+    badgeClass: "bg-textLight/10 text-textLight",
+    panelClass: "border-border bg-background text-text",
   },
   pending: {
     label: "Đang chờ kiểm duyệt giấy tờ",
-    badgeClass: "bg-orange-50 text-orange-700",
-    panelClass: "border-orange-200 bg-orange-50 text-orange-800",
+    badgeClass: "bg-warning/10 text-warning",
+    panelClass: "border-warning/30 bg-warning/10 text-warning",
   },
   verified: {
     label: "Đã xác minh giấy tờ",
-    badgeClass: "bg-green-50 text-green-700",
-    panelClass: "border-green-200 bg-green-50 text-green-800",
+    badgeClass: "bg-success/10 text-success",
+    panelClass: "border-success/30 bg-success/10 text-success",
   },
   rejected: {
     label: "Giấy tờ bị từ chối",
-    badgeClass: "bg-red-50 text-red-700",
-    panelClass: "border-red-200 bg-red-50 text-red-800",
+    badgeClass: "bg-error/10 text-error",
+    panelClass: "border-error/30 bg-error/10 text-error",
   },
   unknown: {
     label: "Chưa xác định trạng thái",
-    badgeClass: "bg-slate-100 text-slate-700",
-    panelClass: "border-slate-200 bg-slate-50 text-slate-800",
+    badgeClass: "bg-textLight/10 text-textLight",
+    panelClass: "border-border bg-background text-text",
   },
 };
 
@@ -130,11 +130,11 @@ const ProfileField = ({
     <div>
       <label
         htmlFor={id}
-        className="mb-1.5 block text-xs font-black text-[#607B7A]"
+        className="mb-1.5 block text-xs font-black text-textLight"
       >
         {label}
 
-        {required && <span className="text-red-500"> *</span>}
+        {required && <span className="text-error"> *</span>}
       </label>
 
       <input
@@ -149,8 +149,8 @@ const ProfileField = ({
         placeholder={placeholder}
         className={`w-full rounded-xl border px-3 py-3 text-sm outline-none transition ${
           readOnly
-            ? "cursor-default border-[#E1EAE8] bg-[#F5F8F7] text-[#526E6D]"
-            : "border-[#CDDED9] bg-white text-[#183436] focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
+            ? "cursor-default border-border bg-background text-textLight"
+            : "border-border bg-white text-text focus:border-primary focus:ring-4 focus:ring-primary/10"
         }`}
       />
     </div>
@@ -160,9 +160,9 @@ const ProfileField = ({
 const IdentityImage = ({ label, imageUrl, emptyMessage }) => {
   return (
     <div>
-      <p className="mb-2 text-xs font-black text-[#607B7A]">{label}</p>
+      <p className="mb-2 text-xs font-black text-textLight">{label}</p>
 
-      <div className="flex h-44 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[#C9DBD7] bg-[#F5F8F7] p-2">
+      <div className="flex h-44 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-background p-2">
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -170,7 +170,7 @@ const IdentityImage = ({ label, imageUrl, emptyMessage }) => {
             className="h-full w-full object-contain"
           />
         ) : (
-          <div className="text-center text-slate-400">
+          <div className="text-center text-textLight">
             <span className="material-symbols-outlined text-4xl">image</span>
 
             <p className="mt-1 text-sm">{emptyMessage}</p>
@@ -196,10 +196,10 @@ const IdentityFileInput = ({ id, label, name, onChange, previewUrl }) => {
         type="file"
         accept="image/jpeg,image/png,image/webp"
         onChange={onChange}
-        className="mt-3 block w-full rounded-xl border border-[#CDDED9] bg-white text-sm text-[#68807F] file:mr-4 file:border-0 file:bg-[#E2F0ED] file:px-4 file:py-3 file:font-bold file:text-[#285E62] hover:file:bg-[#D2E8E3]"
+        className="mt-3 block w-full rounded-xl border border-border bg-white text-sm text-textLight file:mr-4 file:border-0 file:bg-primary/10 file:px-4 file:py-3 file:font-bold file:text-primary hover:file:bg-primary/20"
       />
 
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-textLight">
         Hỗ trợ JPG, PNG hoặc WEBP; tối đa 5MB.
       </p>
     </div>
@@ -654,7 +654,7 @@ export default function UserProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center text-[#4F8588]">
+      <div className="flex h-64 items-center justify-center text-primary">
         <span className="material-symbols-outlined animate-spin text-4xl">
           refresh
         </span>
@@ -668,7 +668,7 @@ export default function UserProfilePage() {
     return (
       <div
         role="alert"
-        className="rounded-md border border-red-200 bg-red-50 p-4 text-red-700"
+        className="rounded-md border border-error/30 bg-error/10 p-4 text-error"
       >
         <p className="font-bold">Không thể tải hồ sơ</p>
 
@@ -689,11 +689,11 @@ export default function UserProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 pb-14 pt-7 sm:px-6">
-      <div className="mb-6 border-b border-[#DCE8E5] pb-5">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">Tài khoản</p>
-        <h1 className="mt-2 text-3xl font-black text-[#183F41]">Quản lý hồ sơ</h1>
+      <div className="mb-6 border-b border-border pb-5">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">Tài khoản</p>
+        <h1 className="mt-2 text-3xl font-black text-text">Quản lý hồ sơ</h1>
 
-        <p className="mt-1 text-sm text-[#68807F]">
+        <p className="mt-1 text-sm text-textLight">
           Quản lý thông tin cá nhân và thông tin xác minh.
         </p>
       </div>
@@ -701,7 +701,7 @@ export default function UserProfilePage() {
       {error && (
         <div
           role="alert"
-          className="mb-5 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="mb-5 rounded-md border border-error/30 bg-error/10 px-4 py-3 text-sm text-error"
         >
           {error}
         </div>
@@ -710,7 +710,7 @@ export default function UserProfilePage() {
       {successMessage && (
         <div
           aria-live="polite"
-          className="mb-5 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+          className="mb-5 rounded-md border border-success/30 bg-success/10 px-4 py-3 text-sm text-success"
         >
           {successMessage}
         </div>
@@ -718,7 +718,7 @@ export default function UserProfilePage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[270px_minmax(0,1fr)]">
         <aside className="space-y-4">
-          <div className="flex flex-col items-center rounded-2xl border border-[#DCE8E5] bg-white p-5 text-center shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
+          <div className="flex flex-col items-center rounded-2xl border border-border bg-white p-5 text-center shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
             <AvatarUploader
               avatarUrl={profile.avatarUrl}
               displayName={profile.fullName || profile.username}
@@ -726,14 +726,14 @@ export default function UserProfilePage() {
               onUpdated={handleAvatarUpdated}
             />
 
-            <h2 className="mt-3 text-lg font-black text-[#183F41]">
+            <h2 className="mt-3 text-lg font-black text-text">
               {profile.fullName}
             </h2>
 
-            <p className="mb-3 text-sm text-[#68807F]">@{profile.username}</p>
+            <p className="mb-3 text-sm text-textLight">@{profile.username}</p>
 
             <div className="mb-4 flex flex-wrap justify-center gap-2">
-              <span className="rounded-full bg-[#E7F0F8] px-2.5 py-1 text-xs font-bold text-[#2F6F9F]">
+              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
                 {profile.role}
               </span>
 
@@ -744,13 +744,13 @@ export default function UserProfilePage() {
               </span>
             </div>
 
-            <div className="w-full rounded-xl border border-[#DCE8E5] bg-[#F5F9F8] p-3">
-              <p className="mb-1 text-xs font-medium text-slate-500">
+            <div className="w-full rounded-xl border border-border bg-background p-3">
+              <p className="mb-1 text-xs font-medium text-textLight">
                 Điểm uy tín
               </p>
 
-              <div className="flex items-center justify-center gap-1 text-xl font-black text-[#183F41]">
-                <span className="material-symbols-outlined text-yellow-500">
+              <div className="flex items-center justify-center gap-1 text-xl font-black text-text">
+                <span className="material-symbols-outlined text-warning">
                   star
                 </span>
 
@@ -759,14 +759,14 @@ export default function UserProfilePage() {
             </div>
           </div>
 
-          <nav className="overflow-hidden rounded-2xl border border-[#DCE8E5] bg-white shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
+          <nav className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
             <button
               type="button"
               onClick={() => handleTabChange("personal")}
               className={`flex w-full items-center gap-3 border-l-4 px-5 py-3.5 text-sm font-medium ${
                 activeTab === "personal"
-                  ? "border-[#4F8588] bg-[#F1F7F5] text-[#183F41]"
-                  : "border-transparent text-[#607B7A] hover:bg-[#F5F9F8]"
+                  ? "border-primary bg-primary/10 text-text"
+                  : "border-transparent text-textLight hover:bg-background"
               }`}
             >
               <span className="material-symbols-outlined">person</span>
@@ -776,10 +776,10 @@ export default function UserProfilePage() {
             <button
               type="button"
               onClick={() => handleTabChange("kyc")}
-              className={`flex w-full items-center gap-3 border-l-4 border-t border-slate-100 px-5 py-3.5 text-sm font-medium ${
+              className={`flex w-full items-center gap-3 border-l-4 border-t border-border px-5 py-3.5 text-sm font-medium ${
                 activeTab === "kyc"
-                  ? "border-l-[#4F8588] bg-[#F1F7F5] text-[#183F41]"
-                  : "border-l-transparent text-[#607B7A] hover:bg-[#F5F9F8]"
+                  ? "border-l-primary bg-primary/10 text-text"
+                  : "border-l-transparent text-textLight hover:bg-background"
               }`}
             >
               <span className="material-symbols-outlined">badge</span>
@@ -789,10 +789,10 @@ export default function UserProfilePage() {
             <button
               type="button"
               onClick={() => handleTabChange("bank")}
-              className={`flex w-full items-center gap-3 border-l-4 border-t border-slate-100 px-5 py-3.5 text-sm font-medium ${
+              className={`flex w-full items-center gap-3 border-l-4 border-t border-border px-5 py-3.5 text-sm font-medium ${
                 activeTab === "bank"
-                  ? "border-l-[#4F8588] bg-[#F1F7F5] text-[#183F41]"
-                  : "border-l-transparent text-[#607B7A] hover:bg-[#F5F9F8]"
+                  ? "border-l-primary bg-primary/10 text-text"
+                  : "border-l-transparent text-textLight hover:bg-background"
               }`}
             >
               <span className="material-symbols-outlined">account_balance</span>
@@ -801,11 +801,11 @@ export default function UserProfilePage() {
           </nav>
         </aside>
 
-        <section className="min-h-[400px] rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6">
+        <section className="min-h-[400px] rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6">
           {activeTab === "personal" && (
             <div>
               <div className="mb-6 flex items-center justify-between border-b pb-3">
-                <h2 className="text-lg font-black text-[#183F41]">
+                <h2 className="text-lg font-black text-text">
                   Thông tin cá nhân
                 </h2>
 
@@ -813,7 +813,7 @@ export default function UserProfilePage() {
                   <button
                     type="button"
                     onClick={handleStartEditingProfile}
-                    className="rounded-xl border border-[#4F8588] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
+                    className="rounded-xl border border-primary bg-white px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
                   >
                     Cập nhật
                   </button>
@@ -875,7 +875,7 @@ export default function UserProfilePage() {
                       type="button"
                       onClick={handleCancelEditingProfile}
                       disabled={isSavingProfile}
-                      className="rounded-xl border border-[#9FBFBA] px-5 py-2.5 text-sm font-bold text-[#526E6D] hover:bg-[#F5F9F8]"
+                      className="rounded-xl border border-border px-5 py-2.5 text-sm font-bold text-textLight hover:bg-background"
                     >
                       Hủy
                     </button>
@@ -883,7 +883,7 @@ export default function UserProfilePage() {
                     <button
                       type="submit"
                       disabled={isSavingProfile}
-                      className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70] disabled:opacity-60"
+                      className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:opacity-60"
                     >
                       {isSavingProfile ? "ĐANG LƯU..." : "LƯU THAY ĐỔI"}
                     </button>
@@ -896,7 +896,7 @@ export default function UserProfilePage() {
           {activeTab === "kyc" && (
             <div>
               <div className="mb-6 flex items-center justify-between border-b pb-3">
-                <h2 className="text-lg font-black text-[#183F41]">
+                <h2 className="text-lg font-black text-text">
                   Giấy tờ tùy thân
                 </h2>
 
@@ -904,7 +904,7 @@ export default function UserProfilePage() {
                   <button
                     type="button"
                     onClick={handleStartEditingIdentity}
-                    className="rounded-xl border border-[#4F8588] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
+                    className="rounded-xl border border-primary bg-white px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
                   >
                     Cập nhật giấy tờ
                   </button>
@@ -1043,7 +1043,7 @@ export default function UserProfilePage() {
                       type="button"
                       onClick={handleCancelEditingIdentity}
                       disabled={isSavingIdentity}
-                      className="rounded-xl border border-[#9FBFBA] px-5 py-2.5 text-sm font-bold text-[#526E6D] hover:bg-[#F5F9F8]"
+                      className="rounded-xl border border-border px-5 py-2.5 text-sm font-bold text-textLight hover:bg-background"
                     >
                       Hủy
                     </button>
@@ -1051,7 +1051,7 @@ export default function UserProfilePage() {
                     <button
                       type="submit"
                       disabled={isSavingIdentity}
-                      className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70] disabled:opacity-60"
+                      className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:opacity-60"
                     >
                       {isSavingIdentity ? "ĐANG CẬP NHẬT..." : "LƯU GIẤY TỜ"}
                     </button>
