@@ -1,5 +1,29 @@
 @import "tailwindcss";
 
+:root {
+  --color-text: #172830;
+  --color-primary: #2B5659;
+  --color-border: #BAC2C1;
+  --color-text-light: #547B7D;
+  --color-error: #7A1012;
+  --color-success: #2F765D;
+  --color-warning: #9A6418;
+  --color-background: #F8F9FA;
+  --color-white: #FFFFFF;
+}
+
+@theme {
+  --color-text: var(--color-text);
+  --color-primary: var(--color-primary);
+  --color-border: var(--color-border);
+  --color-textLight: var(--color-text-light);
+  --color-error: var(--color-error);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --color-background: var(--color-background);
+  --color-white: var(--color-white);
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -7,8 +31,8 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  background-color: #f7f8f6;
-  color: #183436;
+  background-color: var(--color-background);
+  color: var(--color-text);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -24,8 +48,8 @@ button {
 }
 
 ::selection {
-  background: #bfe0d8;
-  color: #183f41;
+  background: color-mix(in srgb, var(--color-primary) 22%, white);
+  color: var(--color-text);
 }
 
 #root {
@@ -59,37 +83,4 @@ button {
 
 .anticon > svg {
   display: block;
-}
-
-/* Đồng bộ các màn hình quản trị cũ với nhận diện HomeCycle. */
-.admin-portal .text-green-700 {
-  color: #36777a !important;
-}
-
-.admin-portal .bg-green-700,
-.admin-portal .bg-green-600 {
-  background-color: #4f8588 !important;
-}
-
-.admin-portal .border-green-700,
-.admin-portal .border-green-600 {
-  border-color: #4f8588 !important;
-}
-
-.admin-portal .bg-green-50 {
-  background-color: #eef6f4 !important;
-}
-
-.admin-portal .border-green-200,
-.admin-portal .border-green-100 {
-  border-color: #cfe1dd !important;
-}
-
-.admin-portal .hover\:bg-green-700:hover,
-.admin-portal .hover\:bg-green-600:hover {
-  background-color: #2f6f9f !important;
-}
-
-.admin-portal .hover\:text-green-700:hover {
-  color: #2f6f9f !important;
 }
