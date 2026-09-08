@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input, Button, Spin, Descriptions, Empty, Tag, Alert } from "antd";
 import {
   SearchOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
-  UserOutlined,
   IdcardOutlined,
 } from "@ant-design/icons";
 import axiosClient from "../../services/apis/axiosClient";
@@ -29,7 +28,7 @@ const VerificationPage = () => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isResizing) return;
-      const newWidth = e.clientX - 250;
+      const newWidth = e.clientX - 278;
       if (newWidth >= 300 && newWidth <= 600) {
         setSidebarWidth(newWidth);
       }
@@ -59,7 +58,7 @@ const VerificationPage = () => {
   const [globalSuccess, setGlobalSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchProfilesList = async () => {
+  const fetchProfilesList = useCallback(async () => {
     try {
       const endpoint =
         activeTab === "business"
@@ -70,12 +69,12 @@ const VerificationPage = () => {
       return (
         payload.data || payload.items || (Array.isArray(payload) ? payload : [])
       );
-    } catch (error) {
+    } catch {
       return [];
     }
-  };
+  }, [activeTab]);
 
-  const fetchProfileDetail = async (id) => {
+  const fetchProfileDetail = useCallback(async (id) => {
     const endpoint =
       activeTab === "business"
         ? `/moderator/business-profiles/${id}`
@@ -83,7 +82,7 @@ const VerificationPage = () => {
     const res = await axiosClient.get(endpoint);
     const payload = res.data !== undefined ? res.data : res;
     return payload.data || payload;
-  };
+  }, [activeTab]);
 
   const reviewProfileApi = async (id, isApproved, rejectReasonStr = "") => {
     if (activeTab === "business") {
@@ -110,15 +109,30 @@ const VerificationPage = () => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadList = async () => {
       setLoadingList(true);
+
       const data = await fetchProfilesList();
+
+      if (cancelled) return;
+
       setProfiles(data);
+      setSelectedProfileId(null);
+      setProfileDetail(null);
+      setActionState("idle");
+      setRejectReason("");
+      setActionFeedback(null);
       setLoadingList(false);
     };
+
     loadList();
-    handleResetSelection();
-  }, [activeTab]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchProfilesList]);
 
   const filteredProfiles = debouncedKeyword
     ? profiles.filter((p) => {
@@ -149,7 +163,6 @@ const VerificationPage = () => {
 
   useEffect(() => {
     if (!selectedProfileId) {
-      setProfileDetail(null);
       return;
     }
     const loadDetail = async () => {
@@ -174,7 +187,7 @@ const VerificationPage = () => {
       }
     };
     loadDetail();
-  }, [selectedProfileId]);
+  }, [selectedProfileId, fetchProfileDetail]);
 
   const handleResetSelection = (successMsg = null) => {
     setSelectedProfileId(null);
@@ -267,7 +280,7 @@ const VerificationPage = () => {
     bankName: "Tên ngân hàng",
     accountNumber: "Số tài khoản",
     accountName: "Chủ tài khoản",
-    email: "Email liên hệ",
+    email: "Thư điện tử liên hệ",
     phone: "Số điện thoại",
     address: "Địa chỉ liên hệ",
     verificationStatus: "Trạng thái xác thực",
@@ -294,7 +307,7 @@ const VerificationPage = () => {
       case "enterprise":
         return "Doanh nghiệp";
       default:
-        return status || "N/A";
+        return "Chưa xác định";
     }
   };
 
@@ -315,26 +328,26 @@ const VerificationPage = () => {
   ];
 
   return (
-    <div className="flex h-full bg-white text-gray-800 font-sans overflow-hidden">
+    <div className="flex h-full bg-white text-text font-sans overflow-hidden">
       {/* CỘT TRÁI */}
       <div
         style={{ width: `${sidebarWidth}px` }}
-        className="border-r border-gray-200 flex flex-col shrink-0 bg-gray-50/30 relative select-none"
+        className="border-r border-border flex flex-col shrink-0 bg-background/60 relative select-none"
       >
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold flex items-center gap-2">
               Hồ sơ chờ duyệt
               {!loadingList && (
-                <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">
+                <span className="bg-warning/10 text-warning text-xs px-2 py-0.5 rounded-full font-bold">
                   {filteredProfiles.length}
                 </span>
               )}
             </h2>
           </div>
-          <div className="flex border-b border-gray-200 mb-4">
+          <div className="flex border-b border-border mb-4">
             <button
-              className={`flex-1 pb-2 font-medium text-sm transition-colors ${activeTab === "personal" ? "text-[#0aa679] border-b-2 border-[#0aa679]" : "text-gray-400 hover:text-gray-600"}`}
+              className={`flex-1 pb-2 font-medium text-sm transition-colors ${activeTab === "personal" ? "text-success border-b-2 border-success" : "text-textLight hover:text-text"}`}
               onClick={() => {
                 setActiveTab("personal");
                 setSearchKeyword("");
@@ -343,7 +356,7 @@ const VerificationPage = () => {
               Cá nhân
             </button>
             <button
-              className={`flex-1 pb-2 font-medium text-sm transition-colors ${activeTab === "business" ? "text-[#0aa679] border-b-2 border-[#0aa679]" : "text-gray-400 hover:text-gray-600"}`}
+              className={`flex-1 pb-2 font-medium text-sm transition-colors ${activeTab === "business" ? "text-success border-b-2 border-success" : "text-textLight hover:text-text"}`}
               onClick={() => {
                 setActiveTab("business");
                 setSearchKeyword("");
@@ -353,9 +366,9 @@ const VerificationPage = () => {
             </button>
           </div>
           <Input
-            prefix={<SearchOutlined className="text-gray-400" />}
-            placeholder="Tìm theo tên, ID hoặc ngày..."
-            className="rounded-lg"
+            prefix={<SearchOutlined className="text-textLight" />}
+            placeholder="Tìm theo tên, mã hoặc ngày..."
+            className="rounded-lg border-border"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
           />
@@ -369,7 +382,7 @@ const VerificationPage = () => {
           ) : filteredProfiles.length === 0 ? (
             <Empty description="Không có hồ sơ phù hợp" className="mt-10" />
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-border">
               {filteredProfiles.map((p) => {
                 const currentId =
                   p.businessProfileId || p.personalProfileId || p.id;
@@ -384,17 +397,17 @@ const VerificationPage = () => {
                   <div
                     key={currentId}
                     onClick={() => setSelectedProfileId(currentId)}
-                    className={`p-4 cursor-pointer transition-colors hover:bg-gray-100 ${selectedProfileId === currentId ? "bg-green-50/50 border-l-4 border-[#0aa679]" : "border-l-4 border-transparent"}`}
+                    className={`p-4 cursor-pointer transition-colors hover:bg-background ${selectedProfileId === currentId ? "bg-success/10 border-l-4 border-success" : "border-l-4 border-transparent"}`}
                   >
-                    <h3 className="font-semibold text-[15px]">{currentName}</h3>
-                    <div className="flex justify-between items-center mt-1 text-xs text-gray-500">
+                    <h3 className="font-semibold text-[15px] text-text">{currentName}</h3>
+                    <div className="flex justify-between items-center mt-1 text-xs text-textLight">
                       <span className="truncate max-w-[150px]">
                         Mã: {currentId}
                       </span>
                       <span>
                         {p.createdAt
                           ? new Date(p.createdAt).toLocaleDateString("vi-VN")
-                          : "N/A"}
+                          : "Chưa có"}
                       </span>
                     </div>
                   </div>
@@ -406,7 +419,7 @@ const VerificationPage = () => {
 
         <div
           onMouseDown={startResizing}
-          className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-20 hover:bg-[#0aa679] ${isResizing ? "bg-[#0aa679]" : "bg-transparent"}`}
+          className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-20 hover:bg-success ${isResizing ? "bg-success" : "bg-transparent"}`}
           title="Kéo để thay đổi kích thước"
         />
       </div>
@@ -414,7 +427,7 @@ const VerificationPage = () => {
       {/* CỘT PHẢI */}
       <div className="flex-1 flex flex-col relative bg-white overflow-y-auto">
         {!selectedProfileId ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 p-8 text-center bg-slate-50">
+          <div className="flex-1 flex flex-col items-center justify-center text-textLight p-8 text-center bg-background">
             {globalSuccess && (
               <Alert
                 message={globalSuccess}
@@ -423,26 +436,26 @@ const VerificationPage = () => {
                 className="mb-6 w-full max-w-md shadow-sm"
               />
             )}
-            <IdcardOutlined className="text-6xl mb-4 text-gray-300" />
+            <IdcardOutlined className="text-6xl mb-4 text-border" />
             <p className="text-lg">
               Chọn một hồ sơ bên danh sách để bắt đầu đối chiếu dữ liệu
             </p>
           </div>
         ) : loadingDetail ? (
-          <div className="flex-1 flex items-center justify-center bg-slate-50">
+          <div className="flex-1 flex items-center justify-center bg-background">
             <Spin size="large" />
           </div>
         ) : detailError ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-red-500 bg-slate-50">
+          <div className="flex-1 flex flex-col items-center justify-center text-error bg-background">
             <CloseCircleOutlined className="text-5xl mb-3" />
             <span className="text-lg font-medium">{detailError}</span>
           </div>
         ) : profileDetail ? (
           <>
-            <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+            <div className="flex-1 overflow-y-auto p-8 bg-background/60">
               <div className="mb-6 flex justify-between items-start">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-800">
+                  <h1 className="text-2xl font-bold text-text">
                     {profileDetail.businessName ||
                       profileDetail.companyName ||
                       profileDetail.fullName ||
@@ -450,29 +463,26 @@ const VerificationPage = () => {
                       profileDetail.name ||
                       "Hồ sơ"}
                   </h1>
-                  <p className="text-gray-500 mt-1">
+                  <p className="text-textLight mt-1">
                     ID:{" "}
                     {profileDetail.businessProfileId ||
                       profileDetail.personalProfileId ||
                       profileDetail.id}
                   </p>
                 </div>
-                <Tag
-                  color="processing"
-                  className="px-3 py-1 text-sm border-none"
-                >
+                <Tag className="bg-warning/10 text-warning px-3 py-1 text-sm border-none">
                   Đang chờ duyệt
                 </Tag>
               </div>
 
               {/* Thông tin Text */}
-              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="bg-white p-6 rounded-xl border border-border shadow-sm">
                 <Descriptions
                   column={1}
                   labelStyle={{
                     width: "220px",
                     fontWeight: "600",
-                    color: "#4b5563",
+                    color: "var(--color-text-light)",
                   }}
                 >
                   {Object.entries(profileDetail).map(([key, value]) => {
@@ -546,8 +556,8 @@ const VerificationPage = () => {
               </div>
 
               {/* Thông tin Hình ảnh (Hỗ trợ cả trường riêng lẻ và mảng documents của Doanh nghiệp) */}
-              <div className="mt-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <h3 className="font-semibold text-gray-800 mb-4 border-b pb-2">
+              <div className="mt-6 bg-white p-6 rounded-xl border border-border shadow-sm">
+                <h3 className="font-semibold text-text mb-4 border-b pb-2">
                   Hình ảnh đính kèm (CCCD / Giấy phép)
                 </h3>
                 <div className="flex gap-4 flex-wrap">
@@ -567,15 +577,15 @@ const VerificationPage = () => {
                         return (
                           <div
                             key={doc.businessDocumentId}
-                            className="flex flex-col gap-1.5 p-2 border border-gray-100 rounded-lg bg-gray-50"
+                            className="flex flex-col gap-1.5 p-2 border border-border rounded-lg bg-background"
                           >
-                            <span className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                            <span className="text-xs text-textLight font-bold uppercase tracking-wider">
                               {docLabel}
                             </span>
                             <img
                               src={doc.documentUrl}
                               alt={docLabel}
-                              className="h-32 w-48 object-cover rounded shadow-sm border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                              className="h-32 w-48 object-cover rounded shadow-sm border border-border cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() =>
                                 window.open(doc.documentUrl, "_blank")
                               }
@@ -603,15 +613,15 @@ const VerificationPage = () => {
                           return (
                             <div
                               key={key}
-                              className="flex flex-col gap-1.5 p-2 border border-gray-100 rounded-lg bg-gray-50"
+                              className="flex flex-col gap-1.5 p-2 border border-border rounded-lg bg-background"
                             >
-                              <span className="text-xs text-gray-600 font-bold uppercase tracking-wider">
+                              <span className="text-xs text-textLight font-bold uppercase tracking-wider">
                                 {imgLabel}
                               </span>
                               <img
                                 src={value}
                                 alt={key}
-                                className="h-32 w-48 object-cover rounded shadow-sm border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                                className="h-32 w-48 object-cover rounded shadow-sm border border-border cursor-pointer hover:opacity-80 transition-opacity"
                                 onClick={() => window.open(value, "_blank")}
                               />
                             </div>
@@ -629,7 +639,7 @@ const VerificationPage = () => {
                           (imgKey) => imgKey.toLowerCase() === k.toLowerCase(),
                         ) && profileDetail[k],
                     ) && (
-                      <span className="text-gray-400 text-sm">
+                      <span className="text-textLight text-sm">
                         Người dùng không đính kèm hình ảnh nào.
                       </span>
                     )}
@@ -638,7 +648,7 @@ const VerificationPage = () => {
             </div>
 
             {/* INLINE ACTIONS FOOTER */}
-            <div className="bg-white border-t border-gray-200 p-4 px-8 flex flex-col z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+            <div className="bg-white border-t border-border p-4 px-8 flex flex-col z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
               {actionFeedback && (
                 <Alert
                   message={actionFeedback.text}
@@ -664,7 +674,7 @@ const VerificationPage = () => {
                     size="large"
                     icon={<CheckCircleOutlined />}
                     onClick={() => setActionState("approving")}
-                    className="w-[140px] bg-[#0aa679] hover:bg-[#088c66] border-none font-medium shadow-md"
+                    className="w-[140px] bg-success hover:bg-success/90 border-none font-medium shadow-md"
                   >
                     Duyệt hồ sơ
                   </Button>
@@ -672,8 +682,8 @@ const VerificationPage = () => {
               )}
 
               {actionState === "approving" && (
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <p className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                <div className="bg-success/10 p-4 rounded-lg border border-success/20">
+                  <p className="font-semibold text-success mb-3 flex items-center gap-2">
                     <CheckCircleOutlined /> Xác nhận duyệt hồ sơ này?
                   </p>
                   <div className="flex justify-end gap-2">
@@ -687,7 +697,7 @@ const VerificationPage = () => {
                       type="primary"
                       onClick={submitApprove}
                       loading={submitting}
-                      className="bg-[#0aa679] hover:bg-[#088c66] border-none shadow-sm"
+                      className="bg-success hover:bg-success/90 border-none shadow-sm"
                     >
                       Xác nhận duyệt
                     </Button>
@@ -696,8 +706,8 @@ const VerificationPage = () => {
               )}
 
               {actionState === "rejecting" && (
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <p className="font-semibold text-red-800 mb-2">
+                <div className="bg-error/10 p-4 rounded-lg border border-error/20">
+                  <p className="font-semibold text-error mb-2">
                     Lý do từ chối:
                   </p>
                   <Input.TextArea
@@ -725,7 +735,7 @@ const VerificationPage = () => {
                       type="primary"
                       onClick={submitReject}
                       loading={submitting}
-                      className="shadow-sm"
+                      className="bg-error hover:bg-error/90 border-none shadow-sm"
                     >
                       Xác nhận từ chối
                     </Button>
