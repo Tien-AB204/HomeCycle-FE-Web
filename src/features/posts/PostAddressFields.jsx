@@ -128,8 +128,8 @@ const PostAddressFields = ({
   return (
     <>
       <label className="block">
-        <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
-          Tỉnh/Thành phố <span className="text-red-600">*</span>
+        <span className="mb-1.5 block text-sm font-semibold text-text">
+          Tỉnh/Thành phố <span className="text-error">*</span>
         </span>
         <select
           value={provinceCode}
@@ -152,7 +152,7 @@ const PostAddressFields = ({
         {errors.city && (
           <p
             role="alert"
-            className="mt-1.5 text-xs font-semibold text-red-600"
+            className="mt-1.5 text-xs font-semibold text-error"
           >
             {errors.city}
           </p>
@@ -160,8 +160,8 @@ const PostAddressFields = ({
       </label>
 
       <label className="block">
-        <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
-          Phường/Xã <span className="text-red-600">*</span>
+        <span className="mb-1.5 block text-sm font-semibold text-text">
+          Phường/Xã <span className="text-error">*</span>
         </span>
         <select
           value={wardCode}
@@ -186,7 +186,7 @@ const PostAddressFields = ({
         {errors.ward && (
           <p
             role="alert"
-            className="mt-1.5 text-xs font-semibold text-red-600"
+            className="mt-1.5 text-xs font-semibold text-error"
           >
             {errors.ward}
           </p>
@@ -194,8 +194,8 @@ const PostAddressFields = ({
       </label>
 
       <label className="block sm:col-span-2">
-        <span className="mb-1.5 block text-sm font-semibold text-[#183F41]">
-          Địa chỉ chi tiết <span className="text-red-600">*</span>
+        <span className="mb-1.5 block text-sm font-semibold text-text">
+          Địa chỉ chi tiết <span className="text-error">*</span>
         </span>
         <input
           type="text"
@@ -209,7 +209,7 @@ const PostAddressFields = ({
         {errors.streetAddress && (
           <p
             role="alert"
-            className="mt-1.5 text-xs font-semibold text-red-600"
+            className="mt-1.5 text-xs font-semibold text-error"
           >
             {errors.streetAddress}
           </p>
@@ -219,7 +219,7 @@ const PostAddressFields = ({
       {loadError && (
         <p
           role="alert"
-          className="sm:col-span-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
+          className="sm:col-span-2 rounded-lg border border-error/20 bg-error/10 px-3 py-2 text-xs font-semibold text-error"
         >
           {loadError}
         </p>

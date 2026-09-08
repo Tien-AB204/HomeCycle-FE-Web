@@ -11,9 +11,9 @@ const ACTIONS = {
     pendingLabel: "Đang đóng...",
     successMessage: "Đã đóng bài đăng thành công.",
     buttonClassName:
-      "border border-[#7A1012] text-[#7A1012] hover:bg-[#7A1012] hover:text-white",
+      "border border-error text-error hover:bg-error hover:text-white",
     confirmClassName:
-      "bg-[#7A1012] text-white hover:bg-red-900",
+      "bg-error text-white hover:bg-error",
   },
   reactivate: {
     buttonLabel: "Kích hoạt lại",
@@ -24,9 +24,9 @@ const ACTIONS = {
     pendingLabel: "Đang kích hoạt...",
     successMessage: "Đã kích hoạt lại bài đăng thành công.",
     buttonClassName:
-      "border border-green-700 text-green-700 hover:bg-green-700 hover:text-white",
+      "border border-success text-success hover:bg-success hover:text-white",
     confirmClassName:
-      "bg-green-700 text-white hover:bg-green-800",
+      "bg-success text-white hover:bg-success",
   },
 };
 
@@ -145,8 +145,8 @@ const PostLifecycleControl = ({
               <div
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
                   actionName === "close"
-                    ? "bg-red-50 text-[#7A1012]"
-                    : "bg-green-50 text-green-700"
+                    ? "bg-error/10 text-error"
+                    : "bg-success/10 text-success"
                 }`}
               >
                 <span className="material-symbols-outlined">
@@ -159,14 +159,14 @@ const PostLifecycleControl = ({
               <div className="min-w-0">
                 <h2
                   id={titleId}
-                  className="text-lg font-bold text-[#172830]"
+                  className="text-lg font-bold text-text"
                 >
                   {action.title}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-[#547B7D]">
+                <p className="mt-2 text-sm leading-6 text-textLight">
                   {action.description}
                 </p>
-                <p className="mt-2 line-clamp-2 text-sm font-semibold text-[#172830]">
+                <p className="mt-2 line-clamp-2 text-sm font-semibold text-text">
                   {postName || "Bài đăng của bạn"}
                 </p>
               </div>
@@ -175,7 +175,7 @@ const PostLifecycleControl = ({
             {error && (
               <div
                 role="alert"
-                className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                className="mt-4 rounded-lg border border-error/20 bg-error/10 p-3 text-sm text-error"
               >
                 {error}
               </div>
@@ -186,7 +186,7 @@ const PostLifecycleControl = ({
                 type="button"
                 onClick={closeDialog}
                 disabled={isSubmitting}
-                className="rounded-md border border-[#BAC2C1] px-4 py-2.5 text-sm font-bold text-[#172830] transition hover:bg-[#f5f8f8] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md border border-border px-4 py-2.5 text-sm font-bold text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Hủy
               </button>
