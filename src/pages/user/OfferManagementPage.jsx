@@ -487,26 +487,26 @@ const OfferManagementPage = () => {
 
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-7xl px-4 pb-14 pt-7 sm:px-6">
-      <header className="flex flex-col gap-4 border-b border-[#DCE8E5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#2F6F9F]">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
             Trung tâm giao dịch
           </p>
-          <h1 className="mt-1 text-2xl font-black text-[#183F41] sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-black text-text sm:text-3xl">
             Đề nghị giá
           </h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-[#68807F]">
+          <p className="mt-1.5 max-w-2xl text-sm text-textLight">
             Quản lý đề nghị đã gửi và phản hồi đề nghị nhận được. Các cuộc trò chuyện đang diễn ra được đặt riêng tại Phòng thương lượng.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[#EAF3F8] px-3 py-1.5 text-xs font-black text-[#2F6F9F]">
+          <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black text-primary">
             {result?.totalCount ?? 0} đề nghị
           </span>
         </div>
       </header>
 
-      <div className="mt-4 rounded-xl border border-[#DCE8E5] bg-white p-1.5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
+      <div className="mt-4 rounded-xl border border-border bg-white p-1.5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
         <div
           role="tablist"
           aria-label="Phân loại đề nghị giá"
@@ -519,8 +519,8 @@ const OfferManagementPage = () => {
             onClick={() => changeTab("sent")}
             className={`rounded-lg px-4 py-2.5 text-sm font-black transition ${
               activeTab === "sent"
-                ? "bg-[#EAF3F3] text-[#285E62]"
-                : "text-[#68807F] hover:bg-[#F6F9F8] hover:text-[#183F41]"
+                ? "bg-primary/10 text-primary"
+                : "text-textLight hover:bg-background hover:text-text"
             }`}
           >
             Đề nghị đã gửi
@@ -532,8 +532,8 @@ const OfferManagementPage = () => {
             onClick={() => changeTab("received")}
             className={`rounded-lg px-4 py-2.5 text-sm font-black transition ${
               activeTab === "received"
-                ? "bg-[#EAF3F3] text-[#285E62]"
-                : "text-[#68807F] hover:bg-[#F6F9F8] hover:text-[#183F41]"
+                ? "bg-primary/10 text-primary"
+                : "text-textLight hover:bg-background hover:text-text"
             }`}
           >
             Đề nghị đã nhận
@@ -544,7 +544,7 @@ const OfferManagementPage = () => {
       {successMessage && (
         <div
           role="status"
-          className="mt-5 flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-700"
+          className="mt-5 flex items-start justify-between gap-4 rounded-xl border border-success/30 bg-success/10 p-4 text-sm font-semibold text-success"
         >
           <p>{successMessage}</p>
           <button
@@ -559,7 +559,7 @@ const OfferManagementPage = () => {
       )}
 
       {isLoading && (
-        <div role="status" className="mt-5 rounded-2xl border border-[#DCE8E5] bg-white p-12 text-center text-[#68807F] shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
+        <div role="status" className="mt-5 rounded-2xl border border-border bg-white p-12 text-center text-textLight shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
           <span className="material-symbols-outlined animate-spin text-3xl">
             refresh
           </span>
@@ -570,12 +570,12 @@ const OfferManagementPage = () => {
       )}
 
       {listError && !isLoading && (
-        <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <p className="font-semibold text-red-700">{listError}</p>
+        <div role="alert" className="mt-5 rounded-xl border border-error/30 bg-error/10 p-8 text-center">
+          <p className="font-semibold text-error">{listError}</p>
           <button
             type="button"
             onClick={refreshList}
-            className="mt-4 rounded-lg bg-[#B33A32] px-4 py-2 text-sm font-bold text-white"
+            className="mt-4 rounded-lg bg-error px-4 py-2 text-sm font-bold text-white"
           >
             Thử lại
           </button>
@@ -583,14 +583,14 @@ const OfferManagementPage = () => {
       )}
 
       {!isLoading && !listError && offers.length === 0 && (
-        <div className="mt-5 rounded-2xl border border-dashed border-[#9FBFBA] bg-white px-6 py-14 text-center shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
-          <span className="material-symbols-outlined text-5xl text-[#4F8588]" aria-hidden="true">handshake</span>
-          <h2 className="mt-4 text-lg font-bold text-[#183F41]">
+        <div className="mt-5 rounded-2xl border border-dashed border-border bg-white px-6 py-14 text-center shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+          <span className="material-symbols-outlined text-5xl text-primary" aria-hidden="true">handshake</span>
+          <h2 className="mt-4 text-lg font-bold text-text">
             {activeTab === "sent"
               ? "Bạn chưa gửi đề nghị nào"
               : "Bạn chưa nhận được đề nghị nào"}
           </h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#68807F]">
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-textLight">
             {activeTab === "sent"
               ? "Khám phá các tin đăng bán và gửi mức giá phù hợp cho người bán."
               : "Các đề nghị từ người quan tâm đến bài đăng của bạn sẽ xuất hiện tại đây."}
@@ -598,7 +598,7 @@ const OfferManagementPage = () => {
           {activeTab === "sent" && (
             <Link
               to="/tin-dang-ban"
-              className="mt-5 inline-flex rounded-xl bg-[#4F8588] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#356A70]"
+              className="mt-5 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90"
             >
               Khám phá tin đăng bán
             </Link>
@@ -608,8 +608,8 @@ const OfferManagementPage = () => {
 
       {!isLoading && !listError && offers.length > 0 && (
         <>
-          <div className="mt-5 overflow-hidden rounded-2xl border border-[#DCE8E5] bg-white shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
-            <div className="hidden grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] items-center gap-4 bg-[#F3F7F6] px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#68807F] md:grid">
+          <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-white shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+            <div className="hidden grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] items-center gap-4 bg-background px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-textLight md:grid">
               <span>Đối tác</span>
               <span>Giá đề nghị</span>
               <span>Số lượng</span>
@@ -617,7 +617,7 @@ const OfferManagementPage = () => {
               <span>Thời gian</span>
               <span className="sr-only">Thao tác</span>
             </div>
-            <div className="divide-y divide-[#E3ECE9]">
+            <div className="divide-y divide-border">
             {offers.map((offer) => {
               const statusMeta = getOfferStatusMeta(offer.offerStatus);
               const otherPartyName =
@@ -632,7 +632,7 @@ const OfferManagementPage = () => {
               return (
                 <article
                   key={offer.offerId}
-                  className="grid gap-4 px-5 py-4 transition hover:bg-[#F8FBFA] md:grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] md:items-center"
+                  className="grid gap-4 px-5 py-4 transition hover:bg-background md:grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] md:items-center"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                       {otherPartyAvatar ? (
@@ -642,26 +642,26 @@ const OfferManagementPage = () => {
                           className="h-10 w-10 shrink-0 rounded-full object-cover"
                         />
                       ) : (
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#4F8588] font-black text-white">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary font-black text-white">
                           {otherPartyName?.charAt(0).toUpperCase() || "H"}
                         </span>
                       )}
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-[#68807F]">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-textLight">
                           {activeTab === "sent" ? "Gửi đến" : "Nhận từ"}
                         </p>
-                        <p className="truncate font-bold text-[#183F41]">
+                        <p className="truncate font-bold text-text">
                           {otherPartyName}
                         </p>
                       </div>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#789092] md:hidden">Giá đề nghị</p>
-                    <p className="mt-0.5 text-base font-black text-[#B33A32]">{formatCurrency(offer.offerPrice)}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-textLight md:hidden">Giá đề nghị</p>
+                    <p className="mt-0.5 text-base font-black text-error">{formatCurrency(offer.offerPrice)}</p>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#789092] md:hidden">Số lượng</p>
-                    <p className="mt-0.5 font-black text-[#183F41]">{offer.offerQuantity}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-textLight md:hidden">Số lượng</p>
+                    <p className="mt-0.5 font-black text-text">{offer.offerQuantity}</p>
                   </div>
                   <div>
                     <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusMeta.className}`}>
@@ -669,14 +669,14 @@ const OfferManagementPage = () => {
                     </span>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#789092] md:hidden">Thời gian</p>
-                    <p className="mt-0.5 text-xs font-medium text-[#68807F]">{formatDate(offer.createdAt)}</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-textLight md:hidden">Thời gian</p>
+                    <p className="mt-0.5 text-xs font-medium text-textLight">{formatDate(offer.createdAt)}</p>
                   </div>
                   <div className="flex md:justify-end">
                     <button
                       type="button"
                       onClick={() => setSelectedOfferId(offer.offerId)}
-                      className="rounded-lg border border-[#4F8588] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#4F8588] hover:text-white"
+                      className="rounded-lg border border-primary bg-white px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary hover:text-white"
                     >
                       Xem chi tiết
                     </button>
@@ -687,8 +687,8 @@ const OfferManagementPage = () => {
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-2xl border border-[#DCE8E5] bg-white p-4 sm:flex-row">
-            <p className="text-sm font-medium text-[#68807F]">
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border bg-white p-4 sm:flex-row">
+            <p className="text-sm font-medium text-textLight">
               Trang {result?.pageNumber ?? pageNumber} / {Math.max(result?.totalPages ?? 1, 1)}
             </p>
             <div className="flex gap-2">
@@ -696,7 +696,7 @@ const OfferManagementPage = () => {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage - 1)}
                 disabled={!result?.hasPreviousPage}
-                className="rounded-xl border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5] disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang trước
               </button>
@@ -704,7 +704,7 @@ const OfferManagementPage = () => {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage + 1)}
                 disabled={!result?.hasNextPage}
-                className="rounded-xl border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5] disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang sau
               </button>
