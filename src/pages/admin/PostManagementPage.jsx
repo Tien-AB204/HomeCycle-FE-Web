@@ -22,23 +22,23 @@ const STATUS_OPTIONS = [
 const STATUS_META = {
   draft: {
     label: "Bản nháp",
-    className: "border-slate-200 bg-slate-50 text-slate-700",
+    className: "border-border bg-textLight/10 text-textLight",
   },
   active: {
     label: "Đang hoạt động",
-    className: "border-green-200 bg-green-50 text-green-700",
+    className: "border-success/20 bg-success/10 text-success",
   },
   suspended: {
     label: "Đã đình chỉ",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/20 bg-warning/10 text-warning",
   },
   closed: {
     label: "Đã đóng",
-    className: "border-gray-300 bg-gray-100 text-gray-700",
+    className: "border-border bg-background text-textLight",
   },
   deleted: {
     label: "Đã xóa",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/20 bg-error/10 text-error",
   },
 };
 
@@ -48,7 +48,7 @@ const normalizeValue = (value) =>
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
     label: status || "Chưa xác định",
-    className: "border-gray-200 bg-gray-50 text-gray-600",
+    className: "border-border bg-background text-textLight",
   };
 
 const getPostTypeMeta = (postType) => {
@@ -57,8 +57,8 @@ const getPostTypeMeta = (postType) => {
   return {
     label: isBuyPost ? "Tin thu mua" : "Tin đăng bán",
     className: isBuyPost
-      ? "border-violet-200 bg-violet-50 text-violet-700"
-      : "border-sky-200 bg-sky-50 text-sky-700",
+      ? "border-success/30 bg-success/10 text-success"
+      : "border-primary/30 bg-primary/10 text-primary",
   };
 };
 
@@ -293,22 +293,22 @@ export default function PostManagementPage() {
   return (
     <section className="space-y-6 p-4 sm:p-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-green-700">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           Quản trị nội dung
         </p>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">
+        <h1 className="mt-1 text-2xl font-bold text-text">
           Quản lý bài đăng
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-textLight">
           Theo dõi bài đăng bán, tin thu mua và xử lý nội dung không phù hợp.
         </p>
       </header>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_190px_190px_auto]">
           <label className="relative block">
             <span className="sr-only">Lọc nhanh bài đăng trong trang</span>
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
               search
             </span>
             <input
@@ -319,7 +319,7 @@ export default function PostManagementPage() {
                 setPageNumber(1);
               }}
               placeholder="Tên sản phẩm, mã bài, mã chủ sở hữu..."
-              className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+              className="w-full rounded-lg border border-border py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
             />
           </label>
 
@@ -330,7 +330,7 @@ export default function PostManagementPage() {
               setPageNumber(1);
             }}
             aria-label="Lọc theo loại bài đăng"
-            className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className="rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
           >
             {POST_TYPE_OPTIONS.map((option) => (
               <option key={option.value || "all"} value={option.value}>
@@ -346,7 +346,7 @@ export default function PostManagementPage() {
               setPageNumber(1);
             }}
             aria-label="Lọc theo trạng thái bài đăng"
-            className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className="rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value || "all"} value={option.value}>
@@ -359,7 +359,7 @@ export default function PostManagementPage() {
             type="button"
             onClick={resetFilters}
             disabled={!hasFilters}
-            className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-textLight transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
           >
             Xóa bộ lọc
           </button>
@@ -369,7 +369,7 @@ export default function PostManagementPage() {
       {successMessage && (
         <div
           role="status"
-          className="flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-700"
+          className="flex items-start justify-between gap-4 rounded-xl border border-success/20 bg-success/10 p-4 text-sm font-semibold text-success"
         >
           <span>{successMessage}</span>
           <button
@@ -386,7 +386,7 @@ export default function PostManagementPage() {
       {isLoading && (
         <div
           role="status"
-          className="flex min-h-64 items-center justify-center rounded-xl border border-gray-100 bg-white text-green-700 shadow-sm"
+          className="flex min-h-64 items-center justify-center rounded-xl border border-border bg-white text-primary shadow-sm"
         >
           <span className="material-symbols-outlined animate-spin text-3xl">
             refresh
@@ -400,18 +400,18 @@ export default function PostManagementPage() {
       {!isLoading && listState.error && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-8 text-center"
+          className="rounded-xl border border-error/20 bg-error/10 p-8 text-center"
         >
-          <h2 className="font-bold text-red-800">
+          <h2 className="font-bold text-error">
             Không thể tải danh sách bài đăng
           </h2>
-          <p className="mt-2 text-sm text-red-700">{listState.error}</p>
+          <p className="mt-2 text-sm text-error">{listState.error}</p>
           <button
             type="button"
             onClick={() =>
               setRequestVersion((currentVersion) => currentVersion + 1)
             }
-            className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+            className="mt-4 rounded-lg bg-error px-4 py-2 text-sm font-semibold text-white transition hover:bg-error"
           >
             Thử lại
           </button>
@@ -419,14 +419,14 @@ export default function PostManagementPage() {
       )}
 
       {!isLoading && !listState.error && filteredPosts.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <span className="material-symbols-outlined text-5xl text-gray-300">
+        <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center shadow-sm">
+          <span className="material-symbols-outlined text-5xl text-border">
             inventory_2
           </span>
-          <h2 className="mt-3 font-bold text-gray-800">
+          <h2 className="mt-3 font-bold text-text">
             Không tìm thấy bài đăng
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-textLight">
             {hasFilters
               ? "Không có bài đăng nào trong hệ thống phù hợp bộ lọc."
               : "Hệ thống chưa có bài đăng nào trong trang này."}
@@ -435,7 +435,7 @@ export default function PostManagementPage() {
             <button
               type="button"
               onClick={resetFilters}
-              className="mt-4 rounded-lg border border-gray-200 px-4 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50"
+              className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-bold text-text hover:bg-background"
             >
               Xóa bộ lọc
             </button>
@@ -445,7 +445,7 @@ export default function PostManagementPage() {
 
       {!isLoading && !listState.error && visiblePosts.length > 0 && (
         <>
-          <div className="hidden overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm md:block">
+          <div className="hidden overflow-x-auto rounded-xl border border-border bg-white shadow-sm md:block">
             <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-sm">
               <colgroup>
                 <col className="w-[31%]" />
@@ -457,7 +457,7 @@ export default function PostManagementPage() {
                 <col className="w-[12%]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                <tr className="border-b border-border bg-background text-xs uppercase tracking-wide text-textLight">
                   <th className="px-4 py-3 font-semibold">Bài đăng</th>
                   <th className="px-4 py-3 font-semibold">Loại tin</th>
                   <th className="px-4 py-3 font-semibold">Giá</th>
@@ -469,7 +469,7 @@ export default function PostManagementPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {visiblePosts.map((post) => {
                   const thumbnailUrl = getThumbnailUrl(post);
                   const statusMeta = getStatusMeta(post.status);
@@ -479,11 +479,11 @@ export default function PostManagementPage() {
                   return (
                     <tr
                       key={post.postId}
-                      className="transition hover:bg-gray-50/70"
+                      className="transition hover:bg-background/70"
                     >
                       <td className="px-4 py-4">
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100 text-gray-300">
+                          <div className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-textLight">
                             {thumbnailUrl ? (
                               <img
                                 src={thumbnailUrl}
@@ -497,12 +497,12 @@ export default function PostManagementPage() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="line-clamp-2 font-bold leading-5 text-gray-900">
+                            <p className="line-clamp-2 font-bold leading-5 text-text">
                               {post.productName || "Bài đăng chưa có tên"}
                             </p>
                             <p
                               title={post.ownerId}
-                              className="mt-1 truncate text-xs text-gray-500"
+                              className="mt-1 truncate text-xs text-textLight"
                             >
                               Mã chủ sở hữu: {post.ownerId || "—"}
                             </p>
@@ -512,16 +512,16 @@ export default function PostManagementPage() {
                       <td className="px-4 py-4">
                         <Badge meta={postTypeMeta} />
                       </td>
-                      <td className="whitespace-nowrap px-4 py-4 font-bold text-green-700">
+                      <td className="whitespace-nowrap px-4 py-4 font-bold text-text">
                         {formatCurrency(post.basePrice)}
                       </td>
-                      <td className="px-4 py-4 text-gray-600">
+                      <td className="px-4 py-4 text-textLight">
                         {post.remainingQuantity ?? 0}/{post.quantity ?? 0}
                       </td>
                       <td className="px-4 py-4">
                         <Badge meta={statusMeta} />
                       </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-gray-500">
+                      <td className="whitespace-nowrap px-4 py-4 text-textLight">
                         {formatDate(post.createdAt)}
                       </td>
                       <td className="px-4 py-4">
@@ -530,7 +530,7 @@ export default function PostManagementPage() {
                             type="button"
                             onClick={() => setSelectedPost(post)}
                             title="Xem chi tiết"
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition hover:border-green-600 hover:bg-green-50 hover:text-green-700"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-textLight transition hover:border-primary hover:bg-primary/5 hover:text-primary"
                           >
                             <span className="material-symbols-outlined text-[19px]">
                               visibility
@@ -545,7 +545,7 @@ export default function PostManagementPage() {
                                 ? "Bài đăng đã bị xóa"
                                 : "Xóa bài đăng"
                             }
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-300"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-error/20 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-border"
                           >
                             <span className="material-symbols-outlined text-[19px]">
                               delete
@@ -570,10 +570,10 @@ export default function PostManagementPage() {
               return (
                 <article
                   key={post.postId}
-                  className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+                  className="rounded-xl border border-border bg-white p-4 shadow-sm"
                 >
                   <div className="flex gap-3">
-                    <div className="flex h-20 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100 text-gray-300">
+                    <div className="flex h-20 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-border">
                       {thumbnailUrl ? (
                         <img
                           src={thumbnailUrl}
@@ -587,10 +587,10 @@ export default function PostManagementPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="line-clamp-2 font-bold text-gray-900">
+                      <h2 className="line-clamp-2 font-bold text-text">
                         {post.productName || "Bài đăng chưa có tên"}
                       </h2>
-                      <p className="mt-1 font-bold text-green-700">
+                      <p className="mt-1 font-bold text-text">
                         {formatCurrency(post.basePrice)}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -600,16 +600,16 @@ export default function PostManagementPage() {
                     </div>
                   </div>
 
-                  <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4 text-xs">
+                  <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs">
                     <div>
-                      <dt className="text-gray-400">Số lượng còn lại</dt>
-                      <dd className="mt-1 font-semibold text-gray-700">
+                      <dt className="text-textLight">Số lượng còn lại</dt>
+                      <dd className="mt-1 font-semibold text-text">
                         {post.remainingQuantity ?? 0}/{post.quantity ?? 0}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-400">Ngày tạo</dt>
-                      <dd className="mt-1 font-semibold text-gray-700">
+                      <dt className="text-textLight">Ngày tạo</dt>
+                      <dd className="mt-1 font-semibold text-text">
                         {formatDate(post.createdAt)}
                       </dd>
                     </div>
@@ -619,7 +619,7 @@ export default function PostManagementPage() {
                     <button
                       type="button"
                       onClick={() => setSelectedPost(post)}
-                      className="rounded-lg border border-green-700 px-3 py-2.5 text-sm font-bold text-green-700"
+                      className="rounded-lg border border-primary px-3 py-2.5 text-sm font-bold text-primary"
                     >
                       Xem chi tiết
                     </button>
@@ -627,7 +627,7 @@ export default function PostManagementPage() {
                       type="button"
                       onClick={() => openDeleteConfirmation(post)}
                       disabled={isDeleted}
-                      className="rounded-lg border border-red-700 px-3 py-2.5 text-sm font-bold text-red-700 disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400"
+                      className="rounded-lg border border-error px-3 py-2.5 text-sm font-bold text-error disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-textLight"
                     >
                       {isDeleted ? "Đã xóa" : "Xóa bài"}
                     </button>
@@ -637,8 +637,8 @@ export default function PostManagementPage() {
             })}
           </div>
 
-          <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm sm:flex-row">
-            <p className="text-sm text-gray-500">
+          <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 shadow-sm sm:flex-row">
+            <p className="text-sm text-textLight">
               Trang {pageNumber} / {totalFilteredPages} · Hiển thị{" "}
               {filteredPosts.length}/{posts.length} bài đăng
             </p>
@@ -647,7 +647,7 @@ export default function PostManagementPage() {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage - 1)}
                 disabled={pageNumber <= 1}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang trước
               </button>
@@ -655,7 +655,7 @@ export default function PostManagementPage() {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage + 1)}
                 disabled={pageNumber >= totalFilteredPages}
-                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang sau
               </button>
@@ -689,21 +689,21 @@ export default function PostManagementPage() {
             className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-700">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-error/10 text-error">
                 <span className="material-symbols-outlined">delete_forever</span>
               </div>
               <div className="min-w-0">
                 <h2
                   id="admin-delete-post-title"
-                  className="text-lg font-bold text-gray-900"
+                  className="text-lg font-bold text-text"
                 >
                   Xóa bài đăng khỏi hệ thống?
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-500">
+                <p className="mt-2 text-sm leading-6 text-textLight">
                   Thao tác này xóa vĩnh viễn dữ liệu bài đăng và không thể hoàn
                   tác. Chỉ tiếp tục khi nội dung thực sự cần bị loại bỏ.
                 </p>
-                <p className="mt-2 line-clamp-2 text-sm font-bold text-gray-800">
+                <p className="mt-2 line-clamp-2 text-sm font-bold text-text">
                   {pendingDelete.productName || "Bài đăng HomeCycle"}
                 </p>
               </div>
@@ -712,7 +712,7 @@ export default function PostManagementPage() {
             {deleteError && (
               <div
                 role="alert"
-                className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm leading-5 text-red-700"
+                className="mt-4 rounded-lg border border-error/20 bg-error/10 p-3 text-sm leading-5 text-error"
               >
                 {deleteError}
               </div>
@@ -723,7 +723,7 @@ export default function PostManagementPage() {
                 type="button"
                 onClick={closeDeleteConfirmation}
                 disabled={deleteBusy}
-                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-text transition hover:bg-background disabled:opacity-50"
               >
                 Hủy
               </button>
@@ -731,7 +731,7 @@ export default function PostManagementPage() {
                 type="button"
                 onClick={handleDelete}
                 disabled={deleteBusy}
-                className="inline-flex min-w-32 items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-w-32 items-center justify-center gap-2 rounded-lg bg-error px-4 py-2.5 text-sm font-bold text-white transition hover:bg-error disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {deleteBusy && (
                   <span className="material-symbols-outlined animate-spin text-[18px]">
