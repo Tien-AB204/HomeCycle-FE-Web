@@ -23,31 +23,31 @@ const NEGOTIATION_STATUS_BY_NUMBER = Object.freeze({
 const NEGOTIATION_STATUS_META = Object.freeze({
   open: {
     label: "Đang thương lượng",
-    className: "border-blue-200 bg-blue-50 text-blue-700",
+    className: "border-primary/30 bg-primary/10 text-primary",
   },
   agreed: {
     label: "Đã thống nhất",
-    className: "border-green-200 bg-green-50 text-green-700",
+    className: "border-success/30 bg-success/10 text-success",
   },
   agreementpending: {
     label: "Chờ xác nhận thỏa thuận",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
   completed: {
     label: "Đã hoàn tất",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    className: "border-success/30 bg-success/10 text-success",
   },
   closed: {
     label: "Đã đóng",
-    className: "border-slate-200 bg-slate-100 text-slate-600",
+    className: "border-border bg-textLight/10 text-textLight",
   },
   expired: {
     label: "Đã hết hạn",
-    className: "border-orange-200 bg-orange-50 text-orange-700",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
   cancelled: {
     label: "Đã hủy",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/30 bg-error/10 text-error",
   },
 });
 
@@ -61,19 +61,19 @@ export const MESSAGE_TYPE = Object.freeze({
 const OFFER_STATUS_META = Object.freeze({
   pending: {
     label: "Đang chờ phản hồi",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
   accepted: {
     label: "Đã chấp nhận",
-    className: "border-green-200 bg-green-50 text-green-700",
+    className: "border-success/30 bg-success/10 text-success",
   },
   rejected: {
     label: "Đã từ chối",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/30 bg-error/10 text-error",
   },
   superseded: {
     label: "Đã có đề xuất mới",
-    className: "border-slate-200 bg-slate-100 text-slate-500",
+    className: "border-border bg-textLight/10 text-textLight",
   },
 });
 
@@ -92,7 +92,7 @@ export const getNegotiationStatusMeta = (status) => {
   return (
     NEGOTIATION_STATUS_META[key] || {
       label: normalizedStatus || "Chưa xác định",
-      className: "border-gray-200 bg-gray-50 text-gray-600",
+      className: "border-border bg-textLight/10 text-textLight",
     }
   );
 };
@@ -103,7 +103,7 @@ export const getProposalStatusMeta = (status) => {
   return (
     OFFER_STATUS_META[normalizedStatus.toLowerCase()] || {
       label: normalizedStatus || "Chưa xác định",
-      className: "border-gray-200 bg-gray-50 text-gray-600",
+      className: "border-border bg-textLight/10 text-textLight",
     }
   );
 };
