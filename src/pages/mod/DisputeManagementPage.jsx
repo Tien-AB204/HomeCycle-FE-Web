@@ -1342,46 +1342,141 @@ const DisputeManagementPage = () => {
               />
             </div>
 
-            <div className="mt-6 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-sm">
-              <h3 className="mb-4 text-base font-black text-[#183F41]">
-                Nội dung tranh chấp
-              </h3>
-              <Descriptions bordered column={1} size="small">
-                <Descriptions.Item label="Loại tranh chấp">
-                  {optionLabel(CATEGORY_OPTIONS, detail.category, "category")}
-                </Descriptions.Item>
-                <Descriptions.Item label="Đối tượng">
-                  {optionLabel(
-                    TARGET_TYPE_OPTIONS,
-                    detail.target?.targetType,
-                    "targetType",
+                <Tag
+                  style={{
+                    color:
+                      detailStatus.color,
+                    background:
+                      detailStatus.background,
+                    borderColor:
+                      detailStatus.color,
+                  }}
+                >
+                  {
+                    detailStatus.label
+                  }
+                </Tag>
+              </div>
+
+              {actionFeedback && (
+                <Alert
+                  className="mb-5"
+                  showIcon
+                  type={
+                    actionFeedback.type
+                  }
+                  message={
+                    actionFeedback.message
+                  }
+                  closable
+                  onClose={() =>
+                    setActionFeedback(
+                      null,
+                    )
+                  }
+                />
+              )}
+
+              {unsupportedDecisionTarget && (
+                <Alert
+                  className="mb-5"
+                  type="warning"
+                  showIcon
+                  icon={
+                    <WarningOutlined />
+                  }
+                  message="Loại đối tượng tranh chấp này hiện chưa hỗ trợ thao tác kết luận hoặc từ chối."
+                />
+              )}
+
+              <div className="mb-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-base font-black text-text">
+                    Thao tác kiểm duyệt
+                  </h3>
+
+                  {loadingDetail && (
+                    <Spin size="small" />
                   )}
-                </Descriptions.Item>
-                <Descriptions.Item label="ID đối tượng">
-                  {detail.target?.targetId || "N/A"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Mô tả">
-                  <span className="whitespace-pre-wrap">
-                    {detail.description || "Không có mô tả"}
-                  </span>
-                </Descriptions.Item>
-                <Descriptions.Item label="Ngày gửi">
-                  {formatDateTime(detail.createdAt)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Cập nhật lần cuối">
-                  {formatDateTime(detail.updatedAt)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Thời gian giải quyết">
-                  {formatDateTime(detail.resolvedAt)}
-                </Descriptions.Item>
-                <Descriptions.Item label="Moderator phụ trách">
-                  {detail.moderatorId || "Chưa có"}
-                </Descriptions.Item>
-                <Descriptions.Item label="Ghi chú Moderator">
-                  {detail.moderatorNote || "Chưa có ghi chú"}
-                </Descriptions.Item>
-              </Descriptions>
-            </div>
+                </div>
+
+                {hasModeratorAction ? (
+                  <div className="flex flex-wrap gap-2">
+                    {canClaim && (
+                      <Button
+                        type="primary"
+                        onClick={() =>
+                          openActionModal(
+                            "claim",
+                          )
+                        }
+                      >
+                        Tiếp nhận tranh chấp
+                      </Button>
+                    )}
+
+                    {canResolve && (
+                      <Button
+                        type="primary"
+                        onClick={() =>
+                          openActionModal(
+                            "resolve",
+                          )
+                        }
+                      >
+                        Đưa ra kết luận
+                      </Button>
+                    )}
+
+                    {canReject && (
+                      <Button
+                        onClick={() =>
+                          openActionModal(
+                            "reject",
+                          )
+                        }
+                        style={{
+                          borderColor:
+                            "#7A1012",
+                          color:
+                            "#7A1012",
+                        }}
+                      >
+                        Từ chối tranh chấp
+                      </Button>
+                    )}
+
+                    {canVerifyReturn && (
+                      <Button
+                        type="primary"
+                        onClick={() =>
+                          openActionModal(
+                            "verify-return",
+                          )
+                        }
+                      >
+                        Xác minh hoàn trả
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-textLight">
+                    Hiện không có thao tác kiểm duyệt nào được hệ thống cho phép đối với trạng thái này.
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {renderUserCard(
+                  "Người gửi",
+                  detail.sender,
+                )}
+
+                {renderUserCard(
+                  "Người bị khiếu nại",
+                  detail.targetUser,
+                )}
+              </div>
 
             {order && (
               <div className="mt-6 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-sm">
@@ -1452,10 +1547,145 @@ const DisputeManagementPage = () => {
                 </Image.PreviewGroup>
               )}
             </div>
+          ) : null}
+        </section>
+      </div>
+
+      <Modal
+        open={Boolean(actionMode)}
+        title={modalTitle}
+        okText={modalOkText}
+        cancelText="Hủy"
+        confirmLoading={submittingAction}
+        maskClosable={!submittingAction}
+        keyboard={!submittingAction}
+        closable={!submittingAction}
+        okButtonProps={{
+          disabled:
+            !noteIsValid ||
+            submittingAction,
+          ...(actionMode === "reject"
+            ? {
+                style: {
+                  background: "#7A1012",
+                  borderColor: "#7A1012",
+                  color: "#FFFFFF",
+                  opacity:
+                    !noteIsValid ||
+                    submittingAction
+                      ? 0.6
+                      : 1,
+                },
+              }
+            : {}),
+        }}
+        onCancel={closeActionModal}
+        onOk={() => {
+          void performAction();
+        }}
+      >
+        {actionMode === "claim" && (
+          <Alert
+            type="info"
+            showIcon
+            message="Sau khi tiếp nhận, tranh chấp sẽ được gán cho tài khoản kiểm duyệt hiện tại."
+          />
+        )}
+
+        {actionMode ===
+          "resolve" && (
+          <>
+            <p className="mb-2 font-semibold text-text">
+              Kết luận
+            </p>
+
+            <Radio.Group
+              className="mb-4 flex flex-col gap-2"
+              value={
+                resolutionOutcome
+              }
+              onChange={(event) =>
+                setResolutionOutcome(
+                  event.target
+                    .value,
+                )
+              }
+            >
+              <Radio value="BuyerFavored">
+                Có lợi cho người mua
+              </Radio>
+
+              <Radio value="SellerFavored">
+                Có lợi cho người bán
+              </Radio>
+            </Radio.Group>
+          </>
+        )}
+
+        {actionMode ===
+          "verify-return" && (
+          <>
+            <p className="mb-2 font-semibold text-text">
+              Kết quả xác minh
+            </p>
+
+            <Radio.Group
+              className="mb-4 flex flex-col gap-2"
+              value={
+                returnCompleted
+              }
+              onChange={(event) =>
+                setReturnCompleted(
+                  event.target
+                    .value,
+                )
+              }
+            >
+              <Radio value={true}>
+                Đã hoàn trả đầy đủ
+              </Radio>
+
+              <Radio value={false}>
+                Chưa hoàn trả đầy đủ
+              </Radio>
+            </Radio.Group>
+          </>
+        )}
+
+        {actionNeedsNote && (
+          <div>
+            <p className="mb-2 font-semibold text-text">
+              Ghi chú kiểm duyệt
+            </p>
+
+            <TextArea
+              value={actionNote}
+              onChange={(event) =>
+                setActionNote(
+                  event.target.value,
+                )
+              }
+              rows={5}
+              maxLength={2000}
+              placeholder="Nhập kết luận rõ ràng, tối thiểu 10 ký tự..."
+            />
+
+            <div className="mt-1 text-right text-xs text-textLight">
+              {actionNote.length} / 2000
+            </div>
+
+            {trimmedActionNote.length >
+              0 &&
+              trimmedActionNote.length <
+                10 && (
+                <p className="mt-2 text-sm text-[#7A1012]">
+                  Ghi chú phải có ít nhất 10 ký tự.
+                </p>
+              )}
           </div>
-        ) : null}
-      </section>
-    </div>
+        )}
+      </Modal>
+    </>
   );
 };
 
