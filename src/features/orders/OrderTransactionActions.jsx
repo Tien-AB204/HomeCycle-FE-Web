@@ -176,13 +176,13 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
 
   return (
     <>
-      <section className="mt-5 rounded-xl border border-[#DCE8E5] bg-white p-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-        <div className="border-b border-[#E3ECE9] pb-4">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#2F6F9F]">
+      <section className="mt-5 rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+        <div className="border-b border-border pb-4">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
             Thao tác giao dịch
           </p>
 
-          <h2 className="mt-1 text-lg font-black text-[#183F41]">
+          <h2 className="mt-1 text-lg font-black text-text">
             Xác nhận giao nhận & tranh chấp
           </h2>
         </div>
@@ -190,7 +190,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
         {notice && (
           <div
             role="status"
-            className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"
+            className="mt-4 rounded-xl border border-success/20 bg-success/10 px-4 py-3 text-sm font-semibold text-success"
           >
             {notice}
           </div>
@@ -199,14 +199,14 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
         {error && (
           <div
             role="alert"
-            className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+            className="mt-4 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm font-semibold text-error"
           >
             {error}
           </div>
         )}
 
         {loadingAgreement && (
-          <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-[#68807F]">
+          <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-textLight">
             <span
               className="material-symbols-outlined animate-spin text-lg"
               aria-hidden="true"
@@ -218,19 +218,19 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
         )}
 
         {!loadingAgreement && hasAnyConfirmationAction && (
-          <div className="mt-4 rounded-xl bg-[#F8FBFA] p-4">
-            <h3 className="text-sm font-black text-[#183F41]">
+          <div className="mt-4 rounded-xl bg-background p-4">
+            <h3 className="text-sm font-black text-text">
               Xác nhận giao nhận
             </h3>
 
             {showSellerConfirmation && (
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-bold text-[#183F41]">
+                  <p className="text-sm font-bold text-text">
                     Xác nhận đã bàn giao
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-[#68807F]">
+                  <p className="mt-1 text-xs leading-5 text-textLight">
                     Chỉ xác nhận sau khi hai bên đã check-in tại lịch hẹn thu
                     gom.
                   </p>
@@ -240,7 +240,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
                   type="button"
                   disabled={Boolean(busy) || sellerAlreadyConfirmed}
                   onClick={confirmHandover}
-                  className="shrink-0 rounded-lg bg-[#4F8588] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busy === "handover"
                     ? "Đang xác nhận..."
@@ -255,16 +255,16 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
               <div
                 className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${
                   showSellerConfirmation
-                    ? "mt-4 border-t border-[#DCE8E5] pt-4"
+                    ? "mt-4 border-t border-border pt-4"
                     : "mt-3"
                 }`}
               >
                 <div>
-                  <p className="text-sm font-bold text-[#183F41]">
+                  <p className="text-sm font-bold text-text">
                     Xác nhận đã nhận hàng
                   </p>
 
-                  <p className="mt-1 text-xs leading-5 text-[#68807F]">
+                  <p className="mt-1 text-xs leading-5 text-textLight">
                     {isGhnDelivery
                       ? "Với GHN, chỉ xác nhận sau khi hệ thống vận chuyển ghi nhận giao hàng thành công."
                       : "Hai bên phải hoàn thành check-in lịch hẹn trước khi xác nhận nhận sản phẩm."}
@@ -275,7 +275,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
                   type="button"
                   disabled={Boolean(busy)}
                   onClick={confirmReceived}
-                  className="shrink-0 rounded-lg bg-[#2F6F9F] px-4 py-2.5 text-sm font-black text-white transition hover:bg-[#245A82] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busy === "received"
                     ? "Đang xác nhận..."
@@ -286,14 +286,14 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
           </div>
         )}
 
-        <div className="mt-4 rounded-xl border border-orange-100 bg-orange-50/50 p-4">
+        <div className="mt-4 rounded-xl border border-warning/20 bg-warning/10/50 p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-sm font-black text-[#183F41]">
+              <h3 className="text-sm font-black text-text">
                 Tranh chấp giao dịch
               </h3>
 
-              <p className="mt-1 text-xs leading-5 text-[#68807F]">
+              <p className="mt-1 text-xs leading-5 text-textLight">
                 {detail?.dispute?.hasActiveDispute
                   ? "Đơn hàng đang có một tranh chấp được xử lý."
                   : canCreateDispute
@@ -305,7 +305,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
             {detail?.dispute?.hasActiveDispute && latestDisputeId && (
               <Link
                 to={`/tranh-chap/${latestDisputeId}`}
-                className="shrink-0 rounded-lg border border-orange-300 bg-white px-4 py-2.5 text-center text-sm font-black text-orange-700 transition hover:bg-orange-50"
+                className="shrink-0 rounded-lg border border-warning/30 bg-white px-4 py-2.5 text-center text-sm font-black text-warning transition hover:bg-warning/10"
               >
                 Xem tranh chấp
               </Link>
@@ -320,7 +320,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
                   setNotice("");
                   setDisputeOpen(true);
                 }}
-                className="shrink-0 rounded-lg border border-orange-500 bg-white px-4 py-2.5 text-sm font-black text-orange-700 transition hover:bg-orange-50 disabled:opacity-50"
+                className="shrink-0 rounded-lg border border-warning bg-white px-4 py-2.5 text-sm font-black text-warning transition hover:bg-warning/10 disabled:opacity-50"
               >
                 Tạo tranh chấp
               </button>
@@ -328,7 +328,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
           </div>
 
           {detail?.dispute?.hasActiveDispute && !latestDisputeId && (
-            <p className="mt-3 text-xs font-semibold text-orange-700">
+            <p className="mt-3 text-xs font-semibold text-warning">
               Backend đã ghi nhận tranh chấp nhưng chưa trả mã tranh chấp để mở
               trang chi tiết.
             </p>

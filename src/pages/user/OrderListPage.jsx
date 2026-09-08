@@ -66,7 +66,7 @@ const ProductThumbnail = ({ item }) => {
 
   if (!item.thumbnailUrl || hasImageError) {
     return (
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-[#EAF3F3] text-[#4F8588]">
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
         <span className="material-symbols-outlined text-2xl" aria-hidden="true">
           inventory_2
         </span>
@@ -166,31 +166,31 @@ const OrderListPage = () => {
 
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-7xl px-4 pb-14 pt-7 sm:px-6">
-      <header className="flex flex-col gap-4 border-b border-[#DCE8E5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#2F6F9F]">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
             Quản lý giao dịch
           </p>
-          <h1 className="mt-1 text-2xl font-black text-[#183F41] sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-black text-text sm:text-3xl">
             Đơn hàng của tôi
           </h1>
-          <p className="mt-1.5 text-sm text-[#68807F]">
+          <p className="mt-1.5 text-sm text-textLight">
             Theo dõi tập trung đơn mua, đơn bán và tiến độ thanh toán.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-[#EAF3F8] px-3 py-1.5 text-xs font-black text-[#2F6F9F]">
+          <span className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-black text-primary">
             {buyerCount} đơn mua
           </span>
-          <span className="rounded-full bg-[#EAF5F1] px-3 py-1.5 text-xs font-black text-[#356A70]">
+          <span className="rounded-full bg-textLight/10 px-3 py-1.5 text-xs font-black text-success">
             {sellerCount} đơn bán
           </span>
           <button
             type="button"
             onClick={refreshOrders}
             disabled={state.loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#4F8588] bg-white px-3 py-1.5 text-xs font-black text-[#285E62] transition hover:bg-[#F1F7F5] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-white px-3 py-1.5 text-xs font-black text-primary transition hover:bg-primary/10 disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-base" aria-hidden="true">
               refresh
@@ -200,11 +200,11 @@ const OrderListPage = () => {
         </div>
       </header>
 
-      <div className="mt-4 grid gap-2 rounded-xl border border-[#DCE8E5] bg-white p-3 shadow-[0_8px_24px_rgba(24,63,65,0.04)] md:grid-cols-[minmax(280px,1fr)_220px_auto]">
+      <div className="mt-4 grid gap-2 rounded-xl border border-border bg-white p-3 shadow-[0_8px_24px_rgba(23,40,48,0.04)] md:grid-cols-[minmax(280px,1fr)_220px_auto]">
         <label className="relative min-w-0">
           <span className="sr-only">Tìm đơn hàng</span>
           <span
-            className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-[#789092]"
+            className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-textLight"
             aria-hidden="true"
           >
             search
@@ -213,14 +213,14 @@ const OrderListPage = () => {
             value={keyword}
             onChange={(event) => updateFilter(setKeyword, event.target.value)}
             placeholder="Tìm theo mã đơn hoặc tên sản phẩm..."
-            className="w-full rounded-lg border border-[#CDDED9] bg-[#FBFDFC] py-2.5 pl-10 pr-3 text-sm text-[#183F41] outline-none focus:border-[#4F8588] focus:bg-white"
+            className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-text outline-none focus:border-primary focus:bg-white"
           />
         </label>
 
         <select
           value={status}
           onChange={(event) => updateFilter(setStatus, event.target.value)}
-          className="rounded-lg border border-[#CDDED9] bg-white px-3 py-2 text-sm font-bold text-[#68807F] outline-none focus:border-[#4F8588]"
+          className="rounded-lg border border-border bg-white px-3 py-2 text-sm font-bold text-textLight outline-none focus:border-primary"
         >
           {ORDER_STATUS_OPTIONS.map((option) => (
             <option key={String(option.value)} value={option.value}>
@@ -237,7 +237,7 @@ const OrderListPage = () => {
               setStatus("");
               setPageNumber(1);
             }}
-            className="rounded-lg px-3 py-2 text-sm font-bold text-[#2F6F9F] transition hover:bg-[#F1F7F5]"
+            className="rounded-lg px-3 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
           >
             Đặt lại
           </button>
@@ -245,32 +245,32 @@ const OrderListPage = () => {
       </div>
 
       {state.loading && (
-        <div className="mt-4 rounded-xl border border-[#DCE8E5] bg-white p-12 text-center font-semibold text-[#68807F]">
+        <div className="mt-4 rounded-xl border border-border bg-white p-12 text-center font-semibold text-textLight">
           Đang tải đơn hàng...
         </div>
       )}
 
       {state.error && (
-        <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+        <div role="alert" className="mt-4 rounded-xl border border-error/30 bg-error/10 p-4 text-sm font-semibold text-error">
           {state.error}
         </div>
       )}
 
       {!state.loading && !state.error && filteredItems.length === 0 && (
-        <div className="mt-4 rounded-xl border border-[#DCE8E5] bg-white p-12 text-center shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-          <span className="material-symbols-outlined text-5xl text-[#4F8588]" aria-hidden="true">
+        <div className="mt-4 rounded-xl border border-border bg-white p-12 text-center shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+          <span className="material-symbols-outlined text-5xl text-primary" aria-hidden="true">
             receipt_long
           </span>
-          <h2 className="mt-3 font-black text-[#183F41]">Chưa có đơn hàng phù hợp</h2>
-          <p className="mt-1 text-sm text-[#68807F]">
+          <h2 className="mt-3 font-black text-text">Chưa có đơn hàng phù hợp</h2>
+          <p className="mt-1 text-sm text-textLight">
             Đơn hàng sẽ xuất hiện sau khi giao dịch được xác nhận và thanh toán.
           </p>
         </div>
       )}
 
       {!state.loading && !state.error && filteredItems.length > 0 && (
-        <div className="mt-4 overflow-hidden rounded-xl border border-[#DCE8E5] bg-white shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-          <div className="hidden grid-cols-[minmax(220px,1.25fr)_85px_140px_minmax(190px,0.95fr)_120px_125px_104px] items-center gap-3 bg-[#F3F7F6] px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#68807F] lg:grid">
+        <div className="mt-4 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+          <div className="hidden grid-cols-[minmax(220px,1.25fr)_85px_140px_minmax(190px,0.95fr)_120px_125px_104px] items-center gap-3 bg-background px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-textLight lg:grid">
             <span>Đơn hàng</span>
             <span>Vai trò</span>
             <span>Giá trị</span>
@@ -280,7 +280,7 @@ const OrderListPage = () => {
             <span className="sr-only">Thao tác</span>
           </div>
 
-          <div className="divide-y divide-[#E3ECE9]">
+          <div className="divide-y divide-border">
             {pageItems.map((item) => {
               const orderStatus = getOrderStatusMeta(item.orderStatus);
               const paymentStatus = getPaymentDisplayMeta(item);
@@ -289,32 +289,32 @@ const OrderListPage = () => {
               return (
                 <article
                   key={`${item.orderId}-${item.viewPerspective}`}
-                  className="grid gap-3 px-5 py-4 transition hover:bg-[#F8FBFA] lg:grid-cols-[minmax(220px,1.25fr)_85px_140px_minmax(190px,0.95fr)_120px_125px_104px] lg:items-center"
+                  className="grid gap-3 px-5 py-4 transition hover:bg-background lg:grid-cols-[minmax(220px,1.25fr)_85px_140px_minmax(190px,0.95fr)_120px_125px_104px] lg:items-center"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <ProductThumbnail item={item} />
                     <div className="min-w-0">
-                      <h2 className="truncate text-sm font-black text-[#183F41]">{productName}</h2>
-                      <p className="mt-1 truncate text-xs font-bold text-[#789092]">
+                      <h2 className="truncate text-sm font-black text-text">{productName}</h2>
+                      <p className="mt-1 truncate text-xs font-bold text-textLight">
                         {item.orderCode || "Mã đơn chưa cập nhật"} · SL {item.quantity || 0}
                       </p>
                     </div>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[#789092] lg:hidden">Vai trò</p>
-                    <span className="text-xs font-black text-[#285E62]">{item.viewPerspectiveLabel}</span>
+                    <p className="text-[11px] font-bold uppercase text-textLight lg:hidden">Vai trò</p>
+                    <span className="text-xs font-black text-primary">{item.viewPerspectiveLabel}</span>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[#789092] lg:hidden">Giá trị</p>
-                    <p className="text-sm font-black text-[#B93832]">{formatCurrency(item.finalTotalAmount)}</p>
+                    <p className="text-[11px] font-bold uppercase text-textLight lg:hidden">Giá trị</p>
+                    <p className="text-sm font-black text-error">{formatCurrency(item.finalTotalAmount)}</p>
                   </div>
 
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[#789092] lg:hidden">Tiến độ thanh toán</p>
-                    <p className="text-xs font-bold text-[#356A70]">Đã trả {formatCurrency(item.amountPaid)}</p>
-                    <p className="mt-1 text-xs text-[#789092]">Còn lại {formatCurrency(item.amountRemaining)}</p>
+                    <p className="text-[11px] font-bold uppercase text-textLight lg:hidden">Tiến độ thanh toán</p>
+                    <p className="text-xs font-bold text-success">Đã trả {formatCurrency(item.amountPaid)}</p>
+                    <p className="mt-1 text-xs text-textLight">Còn lại {formatCurrency(item.amountRemaining)}</p>
                   </div>
 
                   <div>
@@ -332,7 +332,7 @@ const OrderListPage = () => {
                   <div className="lg:text-right">
                     <Link
                       to={`/don-hang/${item.orderId}`}
-                      className="inline-flex rounded-lg border border-[#4F8588] bg-white px-4 py-2 text-sm font-black text-[#285E62] transition hover:bg-[#4F8588] hover:text-white"
+                      className="inline-flex rounded-lg border border-primary bg-white px-4 py-2 text-sm font-black text-primary transition hover:bg-primary hover:text-white"
                     >
                       Chi tiết
                     </Link>
@@ -350,16 +350,16 @@ const OrderListPage = () => {
             type="button"
             disabled={currentPage <= 1}
             onClick={() => setPageNumber(currentPage - 1)}
-            className="rounded-lg border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-bold text-primary disabled:cursor-not-allowed disabled:opacity-40"
           >
             Trước
           </button>
-          <span className="text-sm font-bold text-[#68807F]">Trang {currentPage}/{totalPages}</span>
+          <span className="text-sm font-bold text-textLight">Trang {currentPage}/{totalPages}</span>
           <button
             type="button"
             disabled={currentPage >= totalPages}
             onClick={() => setPageNumber(currentPage + 1)}
-            className="rounded-lg border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-bold text-primary disabled:cursor-not-allowed disabled:opacity-40"
           >
             Sau
           </button>

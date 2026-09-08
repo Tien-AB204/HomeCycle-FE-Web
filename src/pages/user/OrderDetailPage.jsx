@@ -37,10 +37,10 @@ const getErrorMessage = (error) =>
 
 const DetailRow = ({ label, children }) => (
   <div className="grid gap-1 py-3 sm:grid-cols-[170px_1fr] sm:items-center">
-    <dt className="text-xs font-bold uppercase tracking-wide text-[#789092]">
+    <dt className="text-xs font-bold uppercase tracking-wide text-textLight">
       {label}
     </dt>
-    <dd className="break-words text-sm font-bold text-[#183F41]">
+    <dd className="break-words text-sm font-bold text-text">
       {children || "—"}
     </dd>
   </div>
@@ -51,15 +51,15 @@ const ServiceRow = ({ icon, title, description, tone = "default" }) => (
     <span
       className={`material-symbols-outlined flex h-10 w-10 items-center justify-center rounded-lg ${
         tone === "warning"
-          ? "bg-orange-50 text-orange-700"
-          : "bg-[#EAF3F3] text-[#4F8588]"
+          ? "bg-warning/10 text-warning"
+          : "bg-primary/10 text-primary"
       }`}
       aria-hidden="true"
     >
       {icon}
     </span>
-    <h3 className="text-sm font-black text-[#183F41]">{title}</h3>
-    <p className="text-sm leading-6 text-[#68807F]">{description}</p>
+    <h3 className="text-sm font-black text-text">{title}</h3>
+    <p className="text-sm leading-6 text-textLight">{description}</p>
   </div>
 );
 
@@ -68,7 +68,7 @@ const OrderProductImage = ({ src, alt }) => {
 
   if (!src || hasError) {
     return (
-      <div className="flex h-36 w-full shrink-0 items-center justify-center rounded-xl bg-[#EAF3F3] text-[#4F8588] sm:w-40">
+      <div className="flex h-36 w-full shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:w-40">
         <span className="material-symbols-outlined text-5xl" aria-hidden="true">
           inventory_2
         </span>
@@ -143,7 +143,7 @@ const OrderDetailPage = () => {
   if (state.loading) {
     return (
       <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-6xl px-4 py-8 sm:px-6">
-        <div className="rounded-xl border border-[#DCE8E5] bg-white p-14 text-center font-semibold text-[#68807F]">
+        <div className="rounded-xl border border-border bg-white p-14 text-center font-semibold text-textLight">
           <span
             className="material-symbols-outlined animate-spin text-3xl"
             aria-hidden="true"
@@ -159,20 +159,20 @@ const OrderDetailPage = () => {
   if (state.error || !state.detail?.order) {
     return (
       <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-4xl px-4 py-8 sm:px-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+        <div className="rounded-xl border border-error/30 bg-error/10 p-8 text-center">
           <span
-            className="material-symbols-outlined text-4xl text-red-700"
+            className="material-symbols-outlined text-4xl text-error"
             aria-hidden="true"
           >
             error
           </span>
-          <h1 className="mt-3 text-xl font-black text-red-800">
+          <h1 className="mt-3 text-xl font-black text-error">
             Không thể mở đơn hàng
           </h1>
-          <p className="mt-2 text-sm text-red-700">{state.error}</p>
+          <p className="mt-2 text-sm text-error">{state.error}</p>
           <Link
             to="/don-hang"
-            className="mt-5 inline-flex rounded-lg bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white"
+            className="mt-5 inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white"
           >
             Quay lại danh sách
           </Link>
@@ -250,7 +250,7 @@ const OrderDetailPage = () => {
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-6xl px-4 pb-14 pt-7 sm:px-6">
       <Link
         to="/don-hang"
-        className="inline-flex items-center gap-1 text-sm font-bold text-[#2F6F9F] transition hover:text-[#183F41]"
+        className="inline-flex items-center gap-1 text-sm font-bold text-primary transition hover:text-text"
       >
         <span className="material-symbols-outlined text-lg" aria-hidden="true">
           arrow_back
@@ -258,12 +258,12 @@ const OrderDetailPage = () => {
         Danh sách đơn hàng
       </Link>
 
-      <header className="mt-4 flex flex-col gap-4 border-b border-[#DCE8E5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mt-4 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#2F6F9F]">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
             Chi tiết đơn hàng
           </p>
-          <h1 className="mt-1 truncate text-2xl font-black text-[#183F41] sm:text-3xl">
+          <h1 className="mt-1 truncate text-2xl font-black text-text sm:text-3xl">
             {displayCode}
           </h1>
         </div>
@@ -283,32 +283,32 @@ const OrderDetailPage = () => {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.65fr)]">
         <div className="space-y-5">
-          <section className="rounded-xl border border-[#DCE8E5] bg-white p-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
+          <section className="rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
             <div className="flex flex-col gap-5 sm:flex-row">
               <OrderProductImage src={detail.thumbnailUrl} alt={productName} />
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-black uppercase tracking-[0.14em] text-[#4F8588]">
+                <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
                   Sản phẩm giao dịch
                 </p>
-                <h2 className="mt-1.5 text-xl font-black text-[#183F41]">
+                <h2 className="mt-1.5 text-xl font-black text-text">
                   {productName}
                 </h2>
                 {detail.postDescription &&
                   detail.postDescription !== productName && (
-                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#68807F]">
+                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-textLight">
                       {detail.postDescription}
                     </p>
                   )}
                 <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                  <p className="text-[#68807F]">
+                  <p className="text-textLight">
                     Số lượng:{" "}
-                    <strong className="text-[#183F41]">
+                    <strong className="text-text">
                       {order.quantity || 0}
                     </strong>
                   </p>
-                  <p className="text-[#68807F]">
+                  <p className="text-textLight">
                     Đối tác:{" "}
-                    <strong className="text-[#183F41]">
+                    <strong className="text-text">
                       {detail.counterpartyName || "Người dùng HomeCycle"}
                     </strong>
                   </p>
@@ -317,11 +317,11 @@ const OrderDetailPage = () => {
             </div>
           </section>
 
-          <section className="rounded-xl border border-[#DCE8E5] bg-white px-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-            <div className="border-b border-[#E3ECE9] py-4">
-              <h2 className="font-black text-[#183F41]">Thông tin giao dịch</h2>
+          <section className="rounded-xl border border-border bg-white px-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+            <div className="border-b border-border py-4">
+              <h2 className="font-black text-text">Thông tin giao dịch</h2>
             </div>
-            <dl className="divide-y divide-[#E3ECE9]">
+            <dl className="divide-y divide-border">
               <DetailRow label="Ngày tạo">
                 {formatDate(order.createdAt)}
               </DetailRow>
@@ -341,27 +341,27 @@ const OrderDetailPage = () => {
           </section>
         </div>
 
-        <aside className="h-fit rounded-xl border border-[#DCE8E5] bg-white p-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)] lg:sticky lg:top-5">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#4F8588]">
+        <aside className="h-fit rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] lg:sticky lg:top-5">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
             Tổng thanh toán
           </p>
-          <p className="mt-2 text-3xl font-black text-[#B93832]">
+          <p className="mt-2 text-3xl font-black text-error">
             {formatCurrency(order.finalTotalAmount)}
           </p>
           {Number(order.originalTotalAmount) !==
             Number(order.finalTotalAmount) && (
-            <p className="mt-1 text-sm text-[#789092] line-through">
+            <p className="mt-1 text-sm text-textLight line-through">
               {formatCurrency(order.originalTotalAmount)}
             </p>
           )}
 
-          <div className="mt-5 h-2 overflow-hidden rounded-full bg-[#E3ECE9]">
+          <div className="mt-5 h-2 overflow-hidden rounded-full bg-border/30">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#4F8588] to-[#2F6F9F] transition-all"
+              className="h-full rounded-full bg-primary transition-all"
               style={{ width: `${paymentPercent}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between gap-3 text-xs font-bold text-[#68807F]">
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs font-bold text-textLight">
             <span>
               {isFullyPaid
                 ? "Đã thanh toán đủ"
@@ -370,16 +370,16 @@ const OrderDetailPage = () => {
             <span>{Math.round(paymentPercent)}%</span>
           </div>
 
-          <dl className="mt-5 divide-y divide-[#E3ECE9] border-y border-[#E3ECE9]">
+          <dl className="mt-5 divide-y divide-border border-y border-border">
             <div className="flex items-center justify-between gap-4 py-3 text-sm">
-              <dt className="text-[#68807F]">Đã thanh toán</dt>
-              <dd className="font-black text-[#356A70]">
+              <dt className="text-textLight">Đã thanh toán</dt>
+              <dd className="font-black text-success">
                 {formatCurrency(order.amountPaid)}
               </dd>
             </div>
             <div className="flex items-center justify-between gap-4 py-3 text-sm">
-              <dt className="text-[#68807F]">Còn lại</dt>
-              <dd className="font-black text-[#183F41]">
+              <dt className="text-textLight">Còn lại</dt>
+              <dd className="font-black text-text">
                 {formatCurrency(order.amountRemaining)}
               </dd>
             </div>
@@ -389,7 +389,7 @@ const OrderDetailPage = () => {
             {order.postId && (
               <Link
                 to={`/posts/${order.postId}`}
-                className="rounded-lg border border-[#4F8588] px-4 py-2.5 text-center text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5]"
+                className="rounded-lg border border-primary px-4 py-2.5 text-center text-sm font-black text-primary transition hover:bg-primary/10"
               >
                 Xem bài đăng
               </Link>
@@ -397,7 +397,7 @@ const OrderDetailPage = () => {
             {order.agreementId && (
               <Link
                 to={`/thoa-thuan/${order.agreementId}`}
-                className="rounded-lg border border-[#4F8588] px-4 py-2.5 text-center text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5]"
+                className="rounded-lg border border-primary px-4 py-2.5 text-center text-sm font-black text-primary transition hover:bg-primary/10"
               >
                 Xem thỏa thuận
               </Link>
@@ -405,7 +405,7 @@ const OrderDetailPage = () => {
             {detail.negotiationId && (
               <Link
                 to={`/thuong-luong/${detail.negotiationId}`}
-                className="rounded-lg bg-[#4F8588] px-4 py-2.5 text-center text-sm font-black text-white transition hover:bg-[#356A70]"
+                className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-black text-white transition hover:bg-primary/90"
               >
                 Mở phòng thương lượng
               </Link>
@@ -420,11 +420,11 @@ const OrderDetailPage = () => {
         onRefresh={() => setVersion((current) => current + 1)}
       />
 
-      <section className="mt-5 rounded-xl border border-[#DCE8E5] bg-white px-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-        <div className="border-b border-[#E3ECE9] py-4">
-          <h2 className="font-black text-[#183F41]">Theo dõi sau giao dịch</h2>
+      <section className="mt-5 rounded-xl border border-border bg-white px-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+        <div className="border-b border-border py-4">
+          <h2 className="font-black text-text">Theo dõi sau giao dịch</h2>
         </div>
-        <div className="divide-y divide-[#E3ECE9]">
+        <div className="divide-y divide-border">
           <ServiceRow
             icon="local_shipping"
             title="Giao nhận"
