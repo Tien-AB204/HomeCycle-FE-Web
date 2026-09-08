@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
   Link,
   useLocation,
@@ -93,18 +93,18 @@ const LoginPage = () => {
   return (
     <div className="w-full animate-fade-in">
       <div className="mb-7">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">
           Chào mừng trở lại
         </p>
-        <h2 className="mt-2 text-3xl font-black text-[#183F41]">
+        <h2 className="mt-2 text-3xl font-black text-text">
           Đăng nhập vào tài khoản của bạn
         </h2>
-        <p className="mt-2 text-sm leading-6 text-[#68807F]">
+        <p className="mt-2 text-sm leading-6 text-textLight">
           Tiếp tục quản lý tin đăng, thương lượng và các giao dịch của bạn.
         </p>
 
         {returnPath && (
-          <p className="mt-4 rounded-xl border border-[#B9D3CF] bg-[#EEF6F4] px-4 py-3 text-sm font-medium text-[#315F63]">
+          <p className="mt-4 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-primary">
             Vui lòng đăng nhập để tiếp tục thao tác bạn vừa chọn.
           </p>
         )}
@@ -115,7 +115,7 @@ const LoginPage = () => {
         className="space-y-5"
       >
         {errorMessage && (
-          <div role="alert" className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div role="alert" className="flex items-start gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error">
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">error</span>
             <p className="leading-5">{errorMessage}</p>
           </div>
@@ -123,13 +123,13 @@ const LoginPage = () => {
         <div>
           <label
             htmlFor="login-email"
-            className="mb-1.5 block text-xs font-black tracking-wide text-[#526E6D]"
+            className="mb-1.5 block text-xs font-black tracking-wide text-textLight"
           >
             ĐỊA CHỈ EMAIL
           </label>
 
           <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-slate-400">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
               mail
             </span>
 
@@ -144,7 +144,7 @@ const LoginPage = () => {
                 setErrorMessage("");
               }}
               placeholder="Nhập địa chỉ email của bạn..."
-              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-10 pr-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
+              className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
             />
           </div>
         </div>
@@ -152,7 +152,7 @@ const LoginPage = () => {
         <div>
           <label
             htmlFor="login-password"
-            className="mb-1.5 block text-xs font-black tracking-wide text-[#526E6D]"
+            className="mb-1.5 block text-xs font-black tracking-wide text-textLight"
           >
             MẬT KHẨU
           </label>
@@ -173,7 +173,7 @@ const LoginPage = () => {
                 setErrorMessage("");
               }}
               placeholder="Nhập mật khẩu của bạn..."
-              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 pr-10 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
+              className="w-full rounded-xl border border-border bg-background px-3 py-3 pr-10 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
             />
 
             <button
@@ -189,7 +189,7 @@ const LoginPage = () => {
                   ? "Ẩn mật khẩu"
                   : "Hiện mật khẩu"
               }
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-textLight hover:text-textLight"
             >
               <span className="material-symbols-outlined text-[20px]">
                 {showPassword
@@ -202,7 +202,7 @@ const LoginPage = () => {
           <div className="mt-2 flex justify-end">
             <Link
               to="/auth/forgot-password"
-              className="text-xs font-bold text-[#2F6F9F] hover:underline"
+              className="text-xs font-bold text-primary hover:underline"
             >
               Quên mật khẩu?
             </Link>
@@ -212,7 +212,7 @@ const LoginPage = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white shadow-sm transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-xl bg-primary py-3 font-black text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading
             ? "ĐANG ĐĂNG NHẬP..."
@@ -220,16 +220,16 @@ const LoginPage = () => {
         </button>
 
         <div className="relative flex items-center justify-center py-2">
-          <hr className="w-full border-slate-200" />
+          <hr className="w-full border-border" />
 
-          <span className="absolute bg-white px-3 text-xs font-medium text-slate-400">
+          <span className="absolute bg-white px-3 text-xs font-medium text-textLight">
             HOẶC TIẾP TỤC VỚI
           </span>
         </div>
 
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#9FBFBA] bg-white py-3 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-white py-3 text-sm font-bold text-primary transition hover:bg-background"
         >
           <img
             src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -240,11 +240,11 @@ const LoginPage = () => {
         </button>
       </form>
 
-      <div className="mt-7 border-t border-[#E2ECE9] pt-5 text-center text-sm text-[#68807F]">
+      <div className="mt-7 border-t border-border pt-5 text-center text-sm text-textLight">
         Bạn chưa có tài khoản?{" "}
         <Link
           to="/auth/register"
-          className="font-bold text-[#2F6F9F] hover:underline"
+          className="font-bold text-primary hover:underline"
         >
           Đăng ký tài khoản
         </Link>
