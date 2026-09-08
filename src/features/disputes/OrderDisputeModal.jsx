@@ -283,20 +283,20 @@ const OrderDisputeModal = ({
         aria-labelledby="order-dispute-title"
         className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-[#DCE8E5] px-5 py-4 sm:px-6">
+        <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-700">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-warning">
               Báo cáo vấn đề giao dịch
             </p>
 
             <h2
               id="order-dispute-title"
-              className="mt-1 text-xl font-black text-[#183F41]"
+              className="mt-1 text-xl font-black text-text"
             >
               Tạo tranh chấp
             </h2>
 
-            <p className="mt-1 text-sm text-[#68807F]">
+            <p className="mt-1 text-sm text-textLight">
               {productName ||
                 "Sản phẩm trong đơn hàng"}
             </p>
@@ -307,7 +307,7 @@ const OrderDisputeModal = ({
             onClick={onClose}
             disabled={submitting}
             aria-label="Đóng"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-[#68807F] transition hover:bg-[#F1F7F5] disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-textLight transition hover:bg-primary/10 disabled:opacity-50"
           >
             <span
               className="material-symbols-outlined"
@@ -325,7 +325,7 @@ const OrderDisputeModal = ({
           <div>
             <label
               htmlFor="dispute-category"
-              className="text-sm font-black text-[#183F41]"
+              className="text-sm font-black text-text"
             >
               Lý do tranh chấp
             </label>
@@ -339,7 +339,7 @@ const OrderDisputeModal = ({
                 setSubmitError("");
               }}
               disabled={submitting}
-              className="mt-2 w-full rounded-xl border border-[#CDDED9] bg-white px-3 py-3 text-sm font-semibold text-[#183F41] outline-none focus:border-[#4F8588]"
+              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-3 text-sm font-semibold text-text outline-none focus:border-primary"
             >
               <option value="">
                 Chọn lý do tranh chấp
@@ -362,12 +362,12 @@ const OrderDisputeModal = ({
             <div className="flex items-center justify-between gap-3">
               <label
                 htmlFor="dispute-description"
-                className="text-sm font-black text-[#183F41]"
+                className="text-sm font-black text-text"
               >
                 Mô tả sự việc
               </label>
 
-              <span className="text-xs font-semibold text-[#789092]">
+              <span className="text-xs font-semibold text-textLight">
                 {description.length}/2000
               </span>
             </div>
@@ -384,22 +384,22 @@ const OrderDisputeModal = ({
                 setSubmitError("");
               }}
               placeholder="Mô tả rõ vấn đề, thời điểm xảy ra và nội dung bạn muốn hệ thống xem xét..."
-              className="mt-2 w-full resize-y rounded-xl border border-[#CDDED9] bg-white px-3 py-3 text-sm leading-6 text-[#183F41] outline-none focus:border-[#4F8588]"
+              className="mt-2 w-full resize-y rounded-xl border border-border bg-white px-3 py-3 text-sm leading-6 text-text outline-none focus:border-primary"
             />
           </div>
 
           <div>
-            <p className="text-sm font-black text-[#183F41]">
+            <p className="text-sm font-black text-text">
               Ảnh bằng chứng
             </p>
 
-            <p className="mt-1 text-xs leading-5 text-[#68807F]">
+            <p className="mt-1 text-xs leading-5 text-textLight">
               Bắt buộc từ 3 đến 5 ảnh. Mỗi ảnh
               tối đa 5MB, định dạng JPG, JPEG,
               PNG hoặc WEBP.
             </p>
 
-            <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#9FBFBA] bg-[#F8FBFA] px-4 py-5 text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5]">
+            <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-5 text-sm font-black text-primary transition hover:bg-primary/10">
               <span
                 className="material-symbols-outlined"
                 aria-hidden="true"
@@ -428,7 +428,7 @@ const OrderDisputeModal = ({
                   ({ file, url }, index) => (
                     <div
                       key={`${file.name}-${file.lastModified}`}
-                      className="overflow-hidden rounded-xl border border-[#DCE8E5] bg-white"
+                      className="overflow-hidden rounded-xl border border-border bg-white"
                     >
                       <img
                         src={url}
@@ -438,11 +438,11 @@ const OrderDisputeModal = ({
 
                       <div className="flex items-center justify-between gap-3 p-3">
                         <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-[#183F41]">
+                          <p className="truncate text-xs font-bold text-text">
                             {file.name}
                           </p>
 
-                          <p className="mt-0.5 text-[11px] text-[#789092]">
+                          <p className="mt-0.5 text-[11px] text-textLight">
                             {formatFileSize(
                               file.size,
                             )}
@@ -455,7 +455,7 @@ const OrderDisputeModal = ({
                           onClick={() =>
                             removeFile(index)
                           }
-                          className="shrink-0 rounded-lg p-1.5 text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                          className="shrink-0 rounded-lg p-1.5 text-error transition hover:bg-error/10 disabled:opacity-50"
                           aria-label={`Xóa ảnh ${file.name}`}
                         >
                           <span
@@ -472,7 +472,7 @@ const OrderDisputeModal = ({
               </div>
             )}
 
-            <p className="mt-2 text-xs font-bold text-[#68807F]">
+            <p className="mt-2 text-xs font-bold text-textLight">
               Đã chọn {evidenceImages.length}/
               {MAX_IMAGES} ảnh
             </p>
@@ -481,7 +481,7 @@ const OrderDisputeModal = ({
           {fieldError && (
             <div
               role="alert"
-              className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
+              className="rounded-xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm font-semibold text-warning"
             >
               {fieldError}
             </div>
@@ -490,18 +490,18 @@ const OrderDisputeModal = ({
           {submitError && (
             <div
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+              className="rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm font-semibold text-error"
             >
               {submitError}
             </div>
           )}
 
-          <div className="flex flex-col-reverse gap-2 border-t border-[#E3ECE9] pt-5 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
             <button
               type="button"
               disabled={submitting}
               onClick={onClose}
-              className="rounded-xl border border-[#9FBFBA] bg-white px-5 py-2.5 text-sm font-black text-[#285E62] disabled:opacity-50"
+              className="rounded-xl border border-border bg-white px-5 py-2.5 text-sm font-black text-primary disabled:opacity-50"
             >
               Hủy
             </button>
@@ -509,7 +509,7 @@ const OrderDisputeModal = ({
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-black text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-warning px-5 py-2.5 text-sm font-black text-white transition hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting && (
                 <span
