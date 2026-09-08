@@ -1,7 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Alert,
   Button,
+  DatePicker,
   Descriptions,
   Empty,
   Image,
@@ -17,6 +24,9 @@ import {
   WarningOutlined,
 } from "@ant-design/icons";
 import axiosClient from "../../services/apis/axiosClient";
+
+const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
 const STATUS_OPTIONS = [
   { value: 0, label: "Chờ xử lý" },
@@ -388,114 +398,334 @@ const getActionFlag = (
 };
 
 const DisputeManagementPage = () => {
-  const [disputes, setDisputes] = useState([]);
-  const [loadingList, setLoadingList] = useState(false);
-  const [listError, setListError] = useState(null);
+  const [disputes, setDisputes] =
+    useState([]);
+  const [loadingList, setLoadingList] =
+    useState(false);
+  const [listError, setListError] =
+    useState(null);
 
-  const [selectedDisputeId, setSelectedDisputeId] = useState(null);
-  const [detail, setDetail] = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [detailError, setDetailError] = useState(null);
+  const [
+    selectedDisputeId,
+    setSelectedDisputeId,
+  ] = useState(null);
+  const [detail, setDetail] =
+    useState(null);
+  const [
+    loadingDetail,
+    setLoadingDetail,
+  ] = useState(false);
+  const [detailError, setDetailError] =
+    useState(null);
 
-  const [keywordInput, setKeywordInput] = useState("");
-  const [keyword, setKeyword] = useState("");
-  const [status, setStatus] = useState(undefined);
-  const [category, setCategory] = useState(undefined);
-  const [targetType, setTargetType] = useState(undefined);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [totalCount, setTotalCount] = useState(0);
+  const [keywordInput, setKeywordInput] =
+    useState("");
+  const [keyword, setKeyword] =
+    useState("");
+  const [status, setStatus] =
+    useState(undefined);
+  const [category, setCategory] =
+    useState(undefined);
+  const [targetType, setTargetType] =
+    useState(undefined);
+  const [dateRange, setDateRange] =
+    useState(null);
 
-  const listParams = useMemo(
-    () => ({
+  const [pageNumber, setPageNumber] =
+    useState(1);
+  const [pageSize, setPageSize] =
+    useState(10);
+  const [totalCount, setTotalCount] =
+    useState(0);
+
+  const [sidebarWidth, setSidebarWidth] =
+    useState(420);
+  const [isResizing, setIsResizing] =
+    useState(false);
+  const resizeSessionRef = useRef(null);
+
+  const [actionMode, setActionMode] =
+    useState(null);
+  const [actionNote, setActionNote] =
+    useState("");
+  const [
+    resolutionOutcome,
+    setResolutionOutcome,
+  ] = useState("BuyerFavored");
+  const [
+    returnCompleted,
+    setReturnCompleted,
+  ] = useState(true);
+  const [
+    submittingAction,
+    setSubmittingAction,
+  ] = useState(false);
+  const [
+    actionFeedback,
+    setActionFeedback,
+  ] = useState(null);
+
+  const listParams = useMemo(() => {
+    const fromDate =
+      dateRange?.[0]
+        ?.startOf("day")
+        .toISOString();
+
+    const toDate =
+      dateRange?.[1]
+        ?.endOf("day")
+        .toISOString();
+
+    return {
       pageNumber,
       pageSize,
-      ...(keyword ? { keyword } : {}),
-      ...(status !== undefined ? { status } : {}),
-      ...(category !== undefined ? { category } : {}),
-      ...(targetType !== undefined ? { targetType } : {}),
-    }),
-    [pageNumber, pageSize, keyword, status, category, targetType],
+      ...(keyword
+        ? { keyword }
+        : {}),
+      ...(status !== undefined
+        ? { status }
+        : {}),
+      ...(category !== undefined
+        ? { category }
+        : {}),
+      ...(targetType !== undefined
+        ? { targetType }
+        : {}),
+      ...(fromDate
+        ? { fromDate }
+        : {}),
+      ...(toDate
+        ? { toDate }
+        : {}),
+    };
+  }, [
+    pageNumber,
+    pageSize,
+    keyword,
+    status,
+    category,
+    targetType,
+    dateRange,
+  ]);
+
+  const fetchDisputes = useCallback(
+    async () => {
+      setLoadingList(true);
+      setListError(null);
+
+      try {
+        const response =
+          await axiosClient.get(
+            "/moderator/disputes",
+            {
+              params: listParams,
+            },
+          );
+
+        const paged =
+          extractPagedData(response);
+
+        setDisputes(paged.items);
+        setTotalCount(
+          paged.totalCount,
+        );
+
+        if (
+          paged.pageNumber !==
+          pageNumber
+        ) {
+          setPageNumber(
+            paged.pageNumber,
+          );
+        }
+
+        if (
+          paged.pageSize !== pageSize
+        ) {
+          setPageSize(
+            paged.pageSize,
+          );
+        }
+      } catch {
+        setDisputes([]);
+        setTotalCount(0);
+        setListError(
+          "Không thể tải danh sách tranh chấp. Vui lòng thử lại.",
+        );
+      } finally {
+        setLoadingList(false);
+      }
+    },
+    [
+      listParams,
+      pageNumber,
+      pageSize,
+    ],
   );
 
-  const fetchDisputes = async () => {
-    setLoadingList(true);
-    setListError(null);
-
-    try {
-      const response = await axiosClient.get("/moderator/disputes", {
-        params: listParams,
-      });
-      const paged = extractPagedData(response);
-      setDisputes(paged.items);
-      setTotalCount(paged.totalCount);
-
-      if (paged.pageNumber !== pageNumber) {
-        setPageNumber(paged.pageNumber);
-      }
-      if (paged.pageSize !== pageSize) {
-        setPageSize(paged.pageSize);
+  const fetchDetail = useCallback(
+    async (disputeId) => {
+      if (!disputeId) {
+        return null;
       }
 
-      if (
-        selectedDisputeId &&
-        !paged.items.some((item) => item.disputeId === selectedDisputeId)
-      ) {
-        setSelectedDisputeId(null);
-        setDetail(null);
-      }
-    } catch (error) {
-      setDisputes([]);
-      setTotalCount(0);
-      setListError(
-        error?.response?.data?.message || "Không thể tải danh sách tranh chấp.",
-      );
-    } finally {
-      setLoadingList(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDisputes();
-  }, [listParams]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setPageNumber(1);
-      setKeyword(keywordInput.trim());
-    }, 350);
-
-    return () => clearTimeout(timeoutId);
-  }, [keywordInput]);
-
-  useEffect(() => {
-    if (!selectedDisputeId) {
-      setDetail(null);
-      setDetailError(null);
-      return;
-    }
-
-    const fetchDetail = async () => {
       setLoadingDetail(true);
       setDetailError(null);
 
       try {
-        const response = await axiosClient.get(
-          `/moderator/disputes/${selectedDisputeId}`,
-        );
-        setDetail(response?.data ?? response ?? null);
-      } catch (error) {
-        setDetail(null);
+        const response =
+          await axiosClient.get(
+            `/moderator/disputes/${disputeId}`,
+          );
+
+        const nextDetail =
+          response?.data ??
+          response ??
+          null;
+
+        setDetail(nextDetail);
+
+        return nextDetail;
+      } catch {
         setDetailError(
-          error?.response?.data?.message || "Không thể tải chi tiết tranh chấp.",
+          "Không thể tải chi tiết tranh chấp. Vui lòng thử lại.",
         );
+
+        return null;
       } finally {
         setLoadingDetail(false);
       }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const timeoutId =
+      window.setTimeout(() => {
+        void fetchDisputes();
+      }, 0);
+
+    return () =>
+      window.clearTimeout(timeoutId);
+  }, [fetchDisputes]);
+
+  useEffect(() => {
+    if (!selectedDisputeId) {
+      return undefined;
+    }
+
+    const timeoutId =
+      window.setTimeout(() => {
+        void fetchDetail(
+          selectedDisputeId,
+        );
+      }, 0);
+
+    return () =>
+      window.clearTimeout(timeoutId);
+  }, [
+    selectedDisputeId,
+    fetchDetail,
+  ]);
+
+  useEffect(() => {
+    const timeoutId =
+      window.setTimeout(() => {
+        setPageNumber(1);
+        setKeyword(
+          keywordInput.trim(),
+        );
+      }, 350);
+
+    return () =>
+      window.clearTimeout(timeoutId);
+  }, [keywordInput]);
+
+  useEffect(() => {
+    if (!isResizing) {
+      return undefined;
+    }
+
+    const handleMouseMove = (
+      event,
+    ) => {
+      const session =
+        resizeSessionRef.current;
+
+      if (!session) {
+        return;
+      }
+
+      const delta =
+        event.clientX -
+        session.startX;
+
+      const nextWidth =
+        session.startWidth + delta;
+
+      setSidebarWidth(
+        Math.min(
+          600,
+          Math.max(300, nextWidth),
+        ),
+      );
     };
 
-    fetchDetail();
-  }, [selectedDisputeId]);
+    const handleMouseUp = () => {
+      resizeSessionRef.current =
+        null;
+      setIsResizing(false);
+    };
+
+    window.addEventListener(
+      "mousemove",
+      handleMouseMove,
+    );
+
+    window.addEventListener(
+      "mouseup",
+      handleMouseUp,
+    );
+
+    return () => {
+      window.removeEventListener(
+        "mousemove",
+        handleMouseMove,
+      );
+
+      window.removeEventListener(
+        "mouseup",
+        handleMouseUp,
+      );
+    };
+  }, [isResizing]);
+
+  const startResizing = (event) => {
+    event.preventDefault();
+
+    resizeSessionRef.current = {
+      startX: event.clientX,
+      startWidth: sidebarWidth,
+    };
+
+    setIsResizing(true);
+  };
+
+  const refreshSelected = async () => {
+    const tasks = [
+      fetchDisputes(),
+    ];
+
+    if (selectedDisputeId) {
+      tasks.push(
+        fetchDetail(
+          selectedDisputeId,
+        ),
+      );
+    }
+
+    await Promise.all(tasks);
+  };
 
   const clearFilters = () => {
     setKeywordInput("");
@@ -503,6 +733,7 @@ const DisputeManagementPage = () => {
     setStatus(undefined);
     setCategory(undefined);
     setTargetType(undefined);
+    setDateRange(null);
     setPageNumber(1);
   };
 
