@@ -1613,40 +1613,184 @@ const DisputeManagementPage = () => {
                 </Descriptions>
               </div>
 
-            <div className="mt-6 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-sm">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h3 className="text-base font-black text-[#183F41]">Bằng chứng</h3>
-                <span className="text-xs font-bold text-[#78908E]">
-                  {evidenceImages.length} tệp
-                </span>
-              </div>
+              {order && (
+                <>
+                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Thông tin đơn hàng liên quan
+                    </h3>
 
-              {evidenceImages.length === 0 ? (
-                <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có ảnh bằng chứng" />
-              ) : (
-                <Image.PreviewGroup>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                    {evidenceImages.map((media) => (
-                      <div
-                        key={media.mediaId || media.url}
-                        className="overflow-hidden rounded-xl border border-[#DCE8E5] bg-[#F8FBFA]"
-                      >
-                        <Image
-                          src={media.url}
-                          alt={media.fileName || "Bằng chứng tranh chấp"}
-                          className="h-40 w-full object-cover"
-                          width="100%"
-                        />
-                        <div className="p-2">
-                          <p className="truncate text-xs font-bold text-[#536B69]">
-                            {media.fileName || "Ảnh bằng chứng"}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Mã đơn hàng">
+                        {order.orderCode ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mã định danh đơn hàng">
+                        {order.orderId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Sản phẩm">
+                        {order.productName ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Số lượng">
+                        {order.quantity ??
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Tổng tiền">
+                        {formatMoney(
+                          order.finalTotalAmount,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái đơn">
+                        {getOrderStatusLabel(
+                          order.orderStatus,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái thanh toán">
+                        {getPaymentStatusLabel(
+                          order.paymentStatus,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Hạn tạo tranh chấp">
+                        {formatDateTime(
+                          order.disputeDeadlineUtc,
+                        )}
+                      </Descriptions.Item>
+                    </Descriptions>
                   </div>
-                </Image.PreviewGroup>
+
+                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Tiến trình hoàn trả
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Người mua xác nhận đã trả hàng">
+                        {formatDateTime(
+                          order.buyerReturnConfirmedAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người bán xác nhận đã nhận lại hàng">
+                        {formatDateTime(
+                          order.sellerReturnReceivedAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Hạn phản hồi hoàn trả">
+                        {formatDateTime(
+                          order.returnDueAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Thời gian hoàn trả hoàn tất">
+                        {formatDateTime(
+                          order.returnedAt,
+                        )}
+                      </Descriptions.Item>
+                    </Descriptions>
+
+                    {normalizeEnumValue(
+                      detail.status,
+                      "status",
+                    ) === 5 &&
+                      order.returnDueAt && (
+                        <Alert
+                          className="mt-4"
+                          type="warning"
+                          showIcon
+                          message={`Đang chờ quy trình hoàn trả. Mốc hiện tại: ${formatDateTime(
+                            order.returnDueAt,
+                          )}.`}
+                        />
+                      )}
+                  </div>
+                </>
               )}
+
+              <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <h3 className="text-base font-black text-text">
+                    Bằng chứng
+                  </h3>
+
+                  <span className="text-xs font-bold text-textLight">
+                    {
+                      evidenceImages.length
+                    }{" "}
+                    tệp
+                  </span>
+                </div>
+
+                {evidenceImages.length ===
+                0 ? (
+                  <Empty
+                    image={
+                      Empty.PRESENTED_IMAGE_SIMPLE
+                    }
+                    description="Không có ảnh bằng chứng"
+                  />
+                ) : (
+                  <Image.PreviewGroup>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                      {evidenceImages.map(
+                        (media) => (
+                          <div
+                            key={
+                              media.mediaId ||
+                              media.url
+                            }
+                            className="overflow-hidden rounded-xl border border-border bg-background"
+                          >
+                            <Image
+                              src={
+                                media.url
+                              }
+                              alt={
+                                media.fileName ||
+                                "Bằng chứng tranh chấp"
+                              }
+                              className="h-40 w-full object-cover"
+                              width="100%"
+                            />
+
+                            <div className="p-2">
+                              <p className="truncate text-xs font-bold text-textLight">
+                                {media.fileName ||
+                                  "Ảnh bằng chứng"}
+                              </p>
+                            </div>
+                          </div>
+                        ),
+                      )}
+                    </div>
+                  </Image.PreviewGroup>
+                )}
+              </div>
             </div>
           ) : null}
         </section>
