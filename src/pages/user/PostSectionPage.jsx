@@ -65,14 +65,14 @@ const PostSectionPage = ({ postType }) => {
         <div className="mx-auto mb-5 w-full max-w-7xl px-4 sm:px-6">
           <div
             role="status"
-            className="flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+            className="flex items-start justify-between gap-4 rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-success"
           >
             <p className="font-semibold">{successMessage}</p>
             <button
               type="button"
               onClick={dismissSuccessMessage}
               aria-label="Đóng thông báo"
-              className="shrink-0 font-black text-green-800"
+              className="shrink-0 font-black text-success"
             >
               ×
             </button>

@@ -29,37 +29,37 @@ const STATUS_META = {
   active: {
     label: "Đang hoạt động",
     className:
-      "border-green-200 bg-green-50 text-green-700",
+      "border-success/30 bg-success/10 text-success",
   },
   pending: {
     label: "Chờ duyệt",
     className:
-      "border-amber-200 bg-amber-50 text-amber-700",
+      "border-warning/30 bg-warning/10 text-warning",
   },
   suspended: {
     label: "Tạm ẩn",
     className:
-      "border-gray-200 bg-gray-100 text-gray-600",
+      "border-border bg-textLight/10 text-textLight",
   },
   closed: {
     label: "Đã đóng",
     className:
-      "border-slate-300 bg-slate-100 text-slate-700",
+      "border-border bg-textLight/10 text-textLight",
   },
   rejected: {
     label: "Bị từ chối",
     className:
-      "border-red-200 bg-red-50 text-red-700",
+      "border-error/30 bg-error/10 text-error",
   },
   expired: {
     label: "Hết hạn",
     className:
-      "border-orange-200 bg-orange-50 text-orange-700",
+      "border-warning/30 bg-warning/10 text-warning",
   },
   completed: {
     label: "Đã hoàn tất",
     className:
-      "border-blue-200 bg-blue-50 text-blue-700",
+      "border-primary/30 bg-primary/10 text-primary",
   },
 };
 
@@ -118,7 +118,7 @@ const getStatusMeta = (status) => {
     STATUS_META[normalizedStatus] || {
       label: status || "Chưa xác định",
       className:
-        "border-gray-200 bg-gray-50 text-gray-600",
+        "border-border bg-textLight/10 text-textLight",
     }
   );
 };
@@ -133,8 +133,8 @@ const getPostImage = (post) => {
 
 const MyPostsLoading = () => {
   return (
-    <div role="status" className="rounded-2xl border border-[#dceae7] bg-white p-10 text-center text-[#547B7D] shadow-sm">
-      <ReloadOutlined className="animate-spin text-3xl text-[#4f8588]" />
+    <div role="status" className="rounded-2xl border border-border bg-white p-10 text-center text-textLight shadow-sm">
+      <ReloadOutlined className="animate-spin text-3xl text-primary" />
       <p className="mt-2 text-sm font-semibold">
         Đang tải bài đăng của bạn...
       </p>
@@ -253,23 +253,23 @@ const MyPostsPage = ({ expectedPostType }) => {
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pb-8 sm:px-6">
-      <header className="mb-6 flex flex-col gap-4 border-b border-[#dce8e5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mb-6 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#2f6f9f]">
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">
             Quản lý bài đăng
           </p>
-          <h1 className="mt-1 text-2xl font-black text-[#183f41] sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-black text-text sm:text-3xl">
             {normalizedExpectedPostType === MARKETPLACE_POST_TYPES.SELL
               ? "Tin đăng bán của tôi"
               : "Tin thu mua của tôi"}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#6f8886]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-textLight">
             Theo dõi trạng thái và cập nhật nội dung các bài đăng của bạn.
           </p>
         </div>
         <Link
           to="/bai-dang/tao-moi"
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#2f6f9f] px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#245b84]"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-primary/90"
         >
           <PlusOutlined /> {createPostLabel}
         </Link>
@@ -278,7 +278,7 @@ const MyPostsPage = ({ expectedPostType }) => {
       {actionMessage && (
         <div
           role="status"
-          className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+          className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-success"
         >
           <p className="font-semibold">
             {actionMessage}
@@ -287,7 +287,7 @@ const MyPostsPage = ({ expectedPostType }) => {
             type="button"
             onClick={() => setActionMessage("")}
             aria-label="Đóng thông báo"
-            className="shrink-0 font-black text-green-800"
+            className="shrink-0 font-black text-success"
           >
             ×
           </button>
@@ -299,12 +299,12 @@ const MyPostsPage = ({ expectedPostType }) => {
       {error && !isLoading && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-8 text-center"
+          className="rounded-xl border border-error/30 bg-error/10 p-8 text-center"
         >
-          <h2 className="text-lg font-bold text-red-800">
+          <h2 className="text-lg font-bold text-error">
             Không thể tải {postTypeLabel} của bạn
           </h2>
-          <p className="mt-2 text-sm text-red-700">
+          <p className="mt-2 text-sm text-error">
             {error}
           </p>
           <button
@@ -314,7 +314,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                 (currentVersion) => currentVersion + 1,
               )
             }
-            className="mt-5 rounded-md bg-[#7A1012] px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+            className="mt-5 rounded-md bg-error px-4 py-2 text-sm font-semibold text-white transition hover:bg-error/90"
           >
             Thử lại
           </button>
@@ -322,17 +322,17 @@ const MyPostsPage = ({ expectedPostType }) => {
       )}
 
       {!isLoading && !error && posts.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[#a9c9c3] bg-white px-6 py-12 text-center shadow-sm">
+        <div className="rounded-2xl border border-dashed border-border bg-white px-6 py-12 text-center shadow-sm">
           <img src={homeCycleMark} alt="" className="mx-auto h-16 w-16 rounded-2xl shadow-sm" />
-          <h2 className="mt-4 text-lg font-bold text-[#172830]">
+          <h2 className="mt-4 text-lg font-bold text-text">
             Bạn chưa có {postTypeLabel} nào
           </h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#547B7D]">
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-textLight">
             Hãy tạo bài đăng đầu tiên. Sau đó bạn có thể theo dõi trạng thái và số lượng ngay tại đây.
           </p>
           <Link
             to="/bai-dang/tao-moi"
-            className="mt-5 inline-flex rounded-xl bg-[#2f6f9f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#245b84]"
+            className="mt-5 inline-flex rounded-xl bg-primary px-5 py-3 text-sm font-bold text-white transition hover:bg-primary/90"
           >
             Tạo {postTypeLabel}
           </Link>
@@ -343,8 +343,8 @@ const MyPostsPage = ({ expectedPostType }) => {
         <>
           <div className="mb-3">
             <div>
-              <h2 className="text-lg font-black text-[#183f41]">Danh sách bài đăng</h2>
-              <p className="mt-1 text-sm text-[#78908e]">Kiểm tra hiệu lực, số lượng và cập nhật nội dung ngay tại một nơi.</p>
+              <h2 className="text-lg font-black text-text">Danh sách bài đăng</h2>
+              <p className="mt-1 text-sm text-textLight">Kiểm tra hiệu lực, số lượng và cập nhật nội dung ngay tại một nơi.</p>
             </div>
           </div>
 
@@ -356,14 +356,14 @@ const MyPostsPage = ({ expectedPostType }) => {
               return (
                 <article
                   key={post.postId}
-                  className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#d8e6e3] bg-white shadow-[0_6px_20px_rgba(24,63,65,0.05)] transition duration-300 hover:-translate-y-0.5 hover:border-[#9fc3bd] hover:shadow-[0_12px_28px_rgba(24,63,65,0.1)]"
+                  className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-[0_6px_20px_rgba(23,40,48,0.05)] transition duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_12px_28px_rgba(23,40,48,0.1)]"
                 >
-                  <div className="relative h-40 overflow-hidden bg-gradient-to-br from-[#edf5f2] to-[#e2eef7] sm:h-44 xl:h-40">
+                  <div className="relative h-40 overflow-hidden from-background to-border/15 sm:h-44 xl:h-40">
                     <div className="absolute left-2.5 top-2.5 z-10 flex max-w-[calc(100%-1.25rem)] flex-wrap gap-1.5">
                       <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold shadow-sm ${statusMeta.className}`}>
                         {statusMeta.label}
                       </span>
-                      <span className="rounded-full border border-white/80 bg-white/90 px-2 py-1 text-[10px] font-bold text-[#476765] shadow-sm backdrop-blur">
+                      <span className="rounded-full border border-white/80 bg-white/90 px-2 py-1 text-[10px] font-bold text-text shadow-sm backdrop-blur">
                         {post.productTypeName || "Chưa phân loại"}
                       </span>
                     </div>
@@ -383,14 +383,14 @@ const MyPostsPage = ({ expectedPostType }) => {
 
                   <div className="flex flex-1 flex-col p-4">
                     <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-2 min-h-10 text-base font-black leading-5 text-[#183f41]">
+                      <h3 className="line-clamp-2 min-h-10 text-base font-black leading-5 text-text">
                         {getPostName(post)}
                       </h3>
-                      <p className="mt-1.5 text-lg font-black text-[#b33a32]">
+                      <p className="mt-1.5 text-lg font-black text-error">
                         {formatCurrency(post.basePrice)}
                       </p>
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-[#f5f8f7] px-2.5 py-2 text-[11px] text-[#68817f]">
+                      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-background px-2.5 py-2 text-[11px] text-textLight">
                         <span className="inline-flex min-w-0 items-center gap-1.5">
                           <InboxOutlined /> Số lượng {getManagedPostQuantity(post)}
                         </span>
@@ -400,22 +400,22 @@ const MyPostsPage = ({ expectedPostType }) => {
                       </div>
 
                       {post.brandName && (
-                        <p className="mt-2.5 truncate text-[11px] text-[#68817f]">
-                          Thương hiệu: <strong className="text-[#183f41]">{post.brandName}</strong>
+                        <p className="mt-2.5 truncate text-[11px] text-textLight">
+                          Thương hiệu: <strong className="text-text">{post.brandName}</strong>
                         </p>
                       )}
                     </div>
 
-                    <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-[#e5eeec] pt-3">
+                    <div className="mt-3.5 grid grid-cols-2 gap-2 border-t border-border pt-3">
                       <Link
                         to={detailPath(post.postId)}
-                        className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-[#4f8588] bg-white px-2 py-2 text-[11px] font-bold text-[#2f686c] transition hover:bg-[#edf5f2]"
+                        className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg border border-primary bg-white px-2 py-2 text-[11px] font-bold text-primary transition hover:bg-primary/10"
                       >
                         <EyeOutlined /> Xem chi tiết
                       </Link>
                       <Link
                         to={editPath(post.postId)}
-                        className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg bg-[#2f6f9f] px-2 py-2 text-[11px] font-bold text-white transition hover:bg-[#245b84]"
+                        className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-2 py-2 text-[11px] font-bold text-white transition hover:bg-primary/90"
                       >
                         <EditOutlined /> Chỉnh sửa
                       </Link>
@@ -438,8 +438,8 @@ const MyPostsPage = ({ expectedPostType }) => {
           </div>
 
           {result && result.totalPages > 1 && (
-            <div className="mt-5 flex flex-col items-center justify-between gap-3 rounded-2xl border border-[#dceae7] bg-white px-5 py-4 shadow-sm sm:flex-row">
-              <p className="text-sm text-[#547B7D]">
+            <div className="mt-5 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border bg-white px-5 py-4 shadow-sm sm:flex-row">
+              <p className="text-sm text-textLight">
                 Trang {result.pageNumber} / {result.totalPages}
               </p>
               <div className="flex gap-2">
@@ -451,7 +451,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                     )
                   }
                   disabled={!result.hasPreviousPage}
-                  className="rounded-xl border border-[#4f8588] bg-white px-4 py-2.5 text-sm font-bold text-[#2f686c] transition hover:bg-[#edf5f2] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Trang trước
                 </button>
@@ -463,7 +463,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                     )
                   }
                   disabled={!result.hasNextPage}
-                  className="rounded-xl bg-[#2f6f9f] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#245b84] disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Trang sau
                 </button>

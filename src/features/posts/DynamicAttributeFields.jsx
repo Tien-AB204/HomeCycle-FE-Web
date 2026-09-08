@@ -5,7 +5,7 @@ const normalizeUnit = (unit) => {
 };
 
 const fieldClassName =
-  "w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3.5 py-3 text-sm text-[#183436] outline-none transition placeholder:text-[#91A4A1] hover:border-[#A9C5BF] focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10 disabled:cursor-not-allowed disabled:bg-[#EEF3F1] disabled:text-[#839492]";
+  "w-full rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-text outline-none transition placeholder:text-textLight hover:border-primary focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-background disabled:text-textLight";
 
 const DynamicAttributeFields = ({
   attributes,
@@ -22,7 +22,7 @@ const DynamicAttributeFields = ({
         {Array.from({ length: 4 }, (_, index) => (
           <div
             key={index}
-            className="h-20 animate-pulse rounded-xl bg-[#DFEAE7]"
+            className="h-20 animate-pulse rounded-xl bg-border/30"
           />
         ))}
       </div>
@@ -33,7 +33,7 @@ const DynamicAttributeFields = ({
     return (
       <div
         role="alert"
-        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        className="rounded-xl border border-error/20 bg-error/10 p-4 text-sm text-error"
       >
         {loadError}
       </div>
@@ -42,7 +42,7 @@ const DynamicAttributeFields = ({
 
   if (!Array.isArray(attributes) || attributes.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[#BFD3CE] bg-[#F7FAF9] p-5 text-sm text-[#68807F]">
+      <div className="rounded-xl border border-dashed border-border bg-background p-5 text-sm text-textLight">
         Loại sản phẩm này chưa có thuộc tính bổ sung.
       </div>
     );
@@ -69,15 +69,15 @@ const DynamicAttributeFields = ({
 
         return (
           <label key={attribute.attributeId} className="block">
-            <span className="mb-1.5 block text-sm font-bold text-[#183F41]">
+            <span className="mb-1.5 block text-sm font-bold text-text">
               {attribute.attributeName}
               {unit && (
-                <span className="font-normal text-[#68807F]">
+                <span className="font-normal text-textLight">
                   {` (${unit})`}
                 </span>
               )}
               {attribute.isRequired && (
-                <span className="ml-1 text-red-600">*</span>
+                <span className="ml-1 text-error">*</span>
               )}
             </span>
 
@@ -163,7 +163,7 @@ const DynamicAttributeFields = ({
             {error && (
               <span
                 role="alert"
-                className="mt-1 block text-xs text-red-600"
+                className="mt-1 block text-xs text-error"
               >
                 {error}
               </span>
