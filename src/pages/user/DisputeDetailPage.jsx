@@ -56,11 +56,11 @@ const DetailRow = ({
   children,
 }) => (
   <div className="grid gap-1 py-3 sm:grid-cols-[180px_1fr] sm:items-start">
-    <dt className="text-xs font-bold uppercase tracking-wide text-[#789092]">
+    <dt className="text-xs font-bold uppercase tracking-wide text-textLight">
       {label}
     </dt>
 
-    <dd className="break-words text-sm font-bold text-[#183F41]">
+    <dd className="break-words text-sm font-bold text-text">
       {children || "—"}
     </dd>
   </div>
@@ -119,7 +119,7 @@ const DisputeDetailPage = () => {
   if (state.loading) {
     return (
       <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-5xl px-4 py-8 sm:px-6">
-        <div className="rounded-xl border border-[#DCE8E5] bg-white p-14 text-center text-[#68807F]">
+        <div className="rounded-xl border border-border bg-white p-14 text-center text-textLight">
           <span
             className="material-symbols-outlined animate-spin text-3xl"
             aria-hidden="true"
@@ -141,25 +141,25 @@ const DisputeDetailPage = () => {
   ) {
     return (
       <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-4xl px-4 py-8 sm:px-6">
-        <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
+        <div className="rounded-xl border border-error/30 bg-error/10 p-8 text-center">
           <span
-            className="material-symbols-outlined text-4xl text-red-700"
+            className="material-symbols-outlined text-4xl text-error"
             aria-hidden="true"
           >
             error
           </span>
 
-          <h1 className="mt-3 text-xl font-black text-red-800">
+          <h1 className="mt-3 text-xl font-black text-error">
             Không thể mở tranh chấp
           </h1>
 
-          <p className="mt-2 text-sm text-red-700">
+          <p className="mt-2 text-sm text-error">
             {state.error}
           </p>
 
           <Link
             to="/don-hang"
-            className="mt-5 inline-flex rounded-lg bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white"
+            className="mt-5 inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white"
           >
             Quay lại đơn hàng
           </Link>
@@ -205,7 +205,7 @@ const DisputeDetailPage = () => {
             ? `/don-hang/${order.orderId}`
             : "/don-hang"
         }
-        className="inline-flex items-center gap-1 text-sm font-bold text-[#2F6F9F] transition hover:text-[#183F41]"
+        className="inline-flex items-center gap-1 text-sm font-bold text-primary transition hover:text-text"
       >
         <span
           className="material-symbols-outlined text-lg"
@@ -217,13 +217,13 @@ const DisputeDetailPage = () => {
         Quay lại đơn hàng
       </Link>
 
-      <header className="mt-4 flex flex-col gap-4 border-b border-[#DCE8E5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="mt-4 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-700">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-warning">
             Chi tiết tranh chấp
           </p>
 
-          <h1 className="mt-1 text-2xl font-black text-[#183F41] sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-black text-text sm:text-3xl">
             {order?.orderCode
               ? `Đơn ${order.orderCode}`
               : "Tranh chấp HomeCycle"}
@@ -239,14 +239,14 @@ const DisputeDetailPage = () => {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
         <div className="space-y-5">
-          <section className="rounded-xl border border-[#DCE8E5] bg-white px-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-            <div className="border-b border-[#E3ECE9] py-4">
-              <h2 className="font-black text-[#183F41]">
+          <section className="rounded-xl border border-border bg-white px-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+            <div className="border-b border-border py-4">
+              <h2 className="font-black text-text">
                 Nội dung khiếu nại
               </h2>
             </div>
 
-            <dl className="divide-y divide-[#E3ECE9]">
+            <dl className="divide-y divide-border">
               <DetailRow label="Lý do">
                 {getDisputeCategoryLabel(
                   dispute.category,
@@ -283,24 +283,24 @@ const DisputeDetailPage = () => {
               </DetailRow>
             </dl>
 
-            <div className="border-t border-[#E3ECE9] py-5">
-              <p className="text-xs font-black uppercase tracking-wide text-[#789092]">
+            <div className="border-t border-border py-5">
+              <p className="text-xs font-black uppercase tracking-wide text-textLight">
                 Mô tả
               </p>
 
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-[#183F41]">
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-text">
                 {dispute.description ||
                   "Không có mô tả."}
               </p>
             </div>
 
             {dispute.moderatorNote && (
-              <div className="border-t border-[#E3ECE9] py-5">
-                <p className="text-xs font-black uppercase tracking-wide text-[#789092]">
+              <div className="border-t border-border py-5">
+                <p className="text-xs font-black uppercase tracking-wide text-textLight">
                   Phản hồi từ Moderator
                 </p>
 
-                <p className="mt-2 whitespace-pre-wrap rounded-xl bg-[#F3F7F6] px-4 py-3 text-sm leading-6 text-[#183F41]">
+                <p className="mt-2 whitespace-pre-wrap rounded-xl bg-background px-4 py-3 text-sm leading-6 text-text">
                   {
                     dispute.moderatorNote
                   }
@@ -309,14 +309,14 @@ const DisputeDetailPage = () => {
             )}
           </section>
 
-          <section className="rounded-xl border border-[#DCE8E5] bg-white p-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-            <h2 className="font-black text-[#183F41]">
+          <section className="rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+            <h2 className="font-black text-text">
               Ảnh bằng chứng
             </h2>
 
             {evidenceImages.length ===
               0 && (
-              <p className="mt-4 text-sm text-[#68807F]">
+              <p className="mt-4 text-sm text-textLight">
                 Không có ảnh bằng chứng.
               </p>
             )}
@@ -334,7 +334,7 @@ const DisputeDetailPage = () => {
                       href={image.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="overflow-hidden rounded-xl border border-[#DCE8E5] bg-[#F8FBFA]"
+                      className="overflow-hidden rounded-xl border border-border bg-background"
                     >
                       <img
                         src={image.url}
@@ -346,7 +346,7 @@ const DisputeDetailPage = () => {
                         className="h-44 w-full object-cover transition hover:scale-[1.02]"
                       />
 
-                      <p className="truncate px-3 py-2 text-xs font-bold text-[#68807F]">
+                      <p className="truncate px-3 py-2 text-xs font-bold text-textLight">
                         {image.fileName ||
                           `Ảnh ${index + 1}`}
                       </p>
@@ -358,13 +358,13 @@ const DisputeDetailPage = () => {
           </section>
         </div>
 
-        <aside className="h-fit rounded-xl border border-[#DCE8E5] bg-white p-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)] lg:sticky lg:top-5">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#4F8588]">
+        <aside className="h-fit rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] lg:sticky lg:top-5">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
             Đơn hàng liên quan
           </p>
 
           {!order && (
-            <p className="mt-3 text-sm text-[#68807F]">
+            <p className="mt-3 text-sm text-textLight">
               Backend chưa trả thông tin
               đơn hàng liên quan.
             </p>
@@ -372,12 +372,12 @@ const DisputeDetailPage = () => {
 
           {order && (
             <>
-              <h2 className="mt-2 text-xl font-black text-[#183F41]">
+              <h2 className="mt-2 text-xl font-black text-text">
                 {order.productName ||
                   "Sản phẩm giao dịch"}
               </h2>
 
-              <p className="mt-2 text-2xl font-black text-[#B93832]">
+              <p className="mt-2 text-2xl font-black text-error">
                 {formatCurrency(
                   order.finalTotalAmount,
                 )}
@@ -397,7 +397,7 @@ const DisputeDetailPage = () => {
                 </span>
               </div>
 
-              <dl className="mt-5 divide-y divide-[#E3ECE9] border-y border-[#E3ECE9]">
+              <dl className="mt-5 divide-y divide-border border-y border-border">
                 <DetailRow label="Số lượng">
                   {order.quantity}
                 </DetailRow>
@@ -423,7 +423,7 @@ const DisputeDetailPage = () => {
 
               <Link
                 to={`/don-hang/${order.orderId}`}
-                className="mt-5 block rounded-lg bg-[#4F8588] px-4 py-2.5 text-center text-sm font-black text-white transition hover:bg-[#356A70]"
+                className="mt-5 block rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-black text-white transition hover:bg-primary/90"
               >
                 Xem đơn hàng
               </Link>
