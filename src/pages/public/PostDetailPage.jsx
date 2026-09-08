@@ -18,13 +18,14 @@ import {
   ShoppingOutlined,
 } from "@ant-design/icons";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
+import { ROLES } from "../../constants/roles";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
 import { useAuth } from "../../hooks/useAuth";
 import offerApi from "../../services/apis/offerApi";
 import postApi from "../../services/apis/postApi";
-import { getUserId } from "../../utils/authUtils";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
 import {
   getPostChangedFields,
   isConcurrencyConflict,
@@ -74,31 +75,31 @@ const PRIORITY_LEVELS = {
 const POST_STATUS_META = {
   active: {
     label: "Đang hoạt động",
-    className: "bg-green-100 text-green-700",
+    className: "bg-success/10 text-success",
   },
   closed: {
     label: "Đã đóng",
-    className: "bg-slate-100 text-slate-700",
+    className: "bg-textLight/10 text-textLight",
   },
   pending: {
     label: "Chờ duyệt",
-    className: "bg-amber-100 text-amber-700",
+    className: "bg-warning/10 text-warning",
   },
   suspended: {
     label: "Tạm ẩn",
-    className: "bg-gray-100 text-gray-600",
+    className: "bg-textLight/10 text-textLight",
   },
   rejected: {
     label: "Bị từ chối",
-    className: "bg-red-100 text-red-700",
+    className: "bg-error/10 text-error",
   },
   expired: {
     label: "Hết hạn",
-    className: "bg-orange-100 text-orange-700",
+    className: "bg-warning/10 text-warning",
   },
   completed: {
     label: "Đã hoàn tất",
-    className: "bg-blue-100 text-blue-700",
+    className: "bg-success/10 text-success",
   },
 };
 
@@ -191,7 +192,7 @@ const getPostStatusMeta = (status) => {
   return (
     POST_STATUS_META[normalizedStatus] || {
       label: status || "Chưa xác định",
-      className: "bg-gray-100 text-gray-600",
+      className: "bg-textLight/10 text-textLight",
     }
   );
 };
@@ -245,11 +246,11 @@ const getAttributeUnit = (unit) => {
 
 const DetailItem = ({ label, value }) => {
   return (
-    <div className="rounded-xl border border-[#dceae7] bg-[#f8fbfa] p-4 transition hover:border-[#b7d0cb] hover:bg-white">
-      <dt className="text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+    <div className="rounded-xl border border-border bg-background p-4 transition hover:border-primary hover:bg-white">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-textLight">
         {label}
       </dt>
-      <dd className="mt-1.5 break-words text-sm font-bold text-[#183f41]">
+      <dd className="mt-1.5 break-words text-sm font-bold text-text">
         {value ?? "—"}
       </dd>
     </div>
@@ -259,13 +260,13 @@ const DetailItem = ({ label, value }) => {
 const PostDetailLoading = () => {
   return (
     <div className="grid animate-pulse gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="h-[300px] rounded-2xl bg-[#BAC2C1]/25 sm:h-[360px] lg:h-[420px]" />
+      <div className="h-[300px] rounded-2xl bg-border/25 sm:h-[360px] lg:h-[420px]" />
       <div className="space-y-3 rounded-2xl bg-white p-5">
-        <div className="h-5 w-1/3 rounded bg-[#BAC2C1]/30" />
-        <div className="h-8 w-full rounded bg-[#BAC2C1]/30" />
-        <div className="h-8 w-2/3 rounded bg-[#BAC2C1]/25" />
-        <div className="h-24 w-full rounded bg-[#BAC2C1]/20" />
-        <div className="h-12 w-full rounded bg-[#BAC2C1]/30" />
+        <div className="h-5 w-1/3 rounded bg-border/30" />
+        <div className="h-8 w-full rounded bg-border/30" />
+        <div className="h-8 w-2/3 rounded bg-border/25" />
+        <div className="h-24 w-full rounded bg-border/20" />
+        <div className="h-12 w-full rounded bg-border/30" />
       </div>
     </div>
   );
@@ -277,6 +278,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
   const userId = getUserId(user);
+  const normalizedRole = normalizeRole(user?.role);
+  const isManager =
+    normalizedRole === ROLES.ADMIN ||
+    normalizedRole === ROLES.MODERATOR;
   const [requestVersion, setRequestVersion] =
     useState(0);
   const [selectedMediaId, setSelectedMediaId] =
@@ -446,6 +451,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
   };
 
   const handlePrimaryAction = async () => {
+    if (isManager) {
+      return;
+    }
+
     if (!isAuthenticated) {
       navigate("/auth/login", {
         state: {
@@ -494,7 +503,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
   };
 
   const handleCreateOffer = async (terms) => {
-    if (isOfferSubmitting) {
+    if (isManager || isOfferSubmitting) {
       return;
     }
 
@@ -562,17 +571,17 @@ const PostDetailPage = ({ ownerMode = false }) => {
       <div className="mb-5 flex flex-wrap items-center gap-2 text-sm">
         <Link
           to="/"
-          className="font-semibold text-[#547B7D] hover:text-[#2f6f9f]"
+          className="font-semibold text-textLight hover:text-primary"
         >
           Trang chủ
         </Link>
-        <span className="text-[#BAC2C1]">
+        <span className="text-border">
           /
         </span>
         <Link
           to={post ? listPath : "/search"}
           state={post ? listState : undefined}
-          className="font-semibold text-[#547B7D] hover:text-[#2f6f9f]"
+          className="font-semibold text-textLight hover:text-primary"
         >
           {post
             ? ownerMode
@@ -584,10 +593,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
         </Link>
         {post && (
           <>
-            <span className="text-[#BAC2C1]">
+            <span className="text-border">
               /
             </span>
-            <span className="max-w-[280px] truncate font-semibold text-[#172830]">
+            <span className="max-w-[280px] truncate font-semibold text-text">
               {post.productName}
             </span>
           </>
@@ -597,7 +606,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
       {actionMessage && (
         <div
           role="status"
-          className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm text-green-700"
+          className="mb-5 flex items-start justify-between gap-4 rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-success"
         >
           <p className="font-semibold">
             {actionMessage}
@@ -606,7 +615,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
             type="button"
             onClick={() => setActionMessage("")}
             aria-label="Đóng thông báo"
-            className="shrink-0 font-black text-green-800"
+            className="shrink-0 font-black text-success"
           >
             ×
           </button>
@@ -618,12 +627,12 @@ const PostDetailPage = ({ ownerMode = false }) => {
       {error && !isLoading && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-8 text-center"
+          className="rounded-xl border border-error/30 bg-error/10 p-8 text-center"
         >
-          <h1 className="text-xl font-bold text-red-800">
+          <h1 className="text-xl font-bold text-error">
             Không thể mở bài đăng
           </h1>
-          <p className="mt-2 text-sm text-red-700">
+          <p className="mt-2 text-sm text-error">
             {error}
           </p>
           <div className="mt-5 flex justify-center gap-3">
@@ -635,13 +644,13 @@ const PostDetailPage = ({ ownerMode = false }) => {
                     currentVersion + 1,
                 )
               }
-              className="rounded-md bg-[#7A1012] px-4 py-2 text-sm font-semibold text-white"
+              className="rounded-md bg-error px-4 py-2 text-sm font-semibold text-white"
             >
               Thử lại
             </button>
             <Link
               to="/search"
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-[#172830]"
+              className="rounded-md border border-border bg-white px-4 py-2 text-sm font-semibold text-text"
             >
               Về trang tìm kiếm
             </Link>
@@ -652,8 +661,8 @@ const PostDetailPage = ({ ownerMode = false }) => {
       {post && !isLoading && (
         <>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <section className="overflow-hidden rounded-2xl border border-[#dceae7] bg-white shadow-[0_12px_38px_rgba(24,63,65,0.07)]">
-              <div className="flex h-[300px] items-center justify-center bg-gradient-to-br from-[#edf5f2] via-[#f9fbfa] to-[#e2eef7] sm:h-[360px] lg:h-[420px]">
+            <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_12px_38px_rgba(23,40,48,0.07)]">
+              <div className="flex h-[300px] items-center justify-center bg-gradient-to-br from-background via-white to-background sm:h-[360px] lg:h-[420px]">
                 {selectedMedia?.url ? (
                   <img
                     src={selectedMedia.url}
@@ -661,7 +670,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
                     className="h-full w-full object-contain p-3 sm:p-4"
                   />
                 ) : (
-                  <div className="flex flex-col items-center text-[#547B7D]">
+                  <div className="flex flex-col items-center text-textLight">
                     <img src={homeCycleMark} alt="" className="h-16 w-16 rounded-2xl shadow-md" />
                     <p className="mt-3 font-semibold">
                       Bài đăng chưa có hình ảnh
@@ -671,7 +680,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
               </div>
 
               {medias.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto border-t border-[#BAC2C1]/30 p-3">
+                <div className="flex gap-2 overflow-x-auto border-t border-border/30 p-3">
                   {medias.map((media) => (
                     <button
                       key={media.mediaId}
@@ -686,11 +695,11 @@ const PostDetailPage = ({ ownerMode = false }) => {
                         selectedMedia?.mediaId ===
                         media.mediaId
                       }
-                      className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-[#e8eeee] transition ${
+                      className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-background transition ${
                         selectedMedia?.mediaId ===
                         media.mediaId
-                          ? "border-[#2f6f9f]"
-                          : "border-transparent hover:border-[#BAC2C1]"
+                          ? "border-primary"
+                          : "border-transparent hover:border-border"
                       }`}
                     >
                       <img
@@ -704,9 +713,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
               )}
             </section>
 
-            <aside className="h-fit rounded-2xl border border-[#dceae7] bg-white p-5 shadow-[0_12px_38px_rgba(24,63,65,0.07)] lg:sticky lg:top-24">
+            <aside className="h-fit rounded-2xl border border-border bg-white p-5 shadow-[0_12px_38px_rgba(23,40,48,0.07)] lg:sticky lg:top-24">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#183f41] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-white">
                   <ShoppingOutlined />
                   {isBuyPost
                     ? "Tin thu mua"
@@ -722,23 +731,23 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 
               </div>
 
-              <h1 className="mt-3 text-xl font-black leading-tight text-[#183f41] sm:text-2xl">
+              <h1 className="mt-3 text-xl font-black leading-tight text-text sm:text-2xl">
                 {post.productName}
               </h1>
 
-              <p className="mt-1.5 text-xs font-medium text-[#547B7D]">
+              <p className="mt-1.5 text-xs font-medium text-textLight">
                 {post.categoryName} ·{" "}
                 {post.productTypeName} ·{" "}
                 {post.brandName}
               </p>
 
-              <div className="mt-4 rounded-xl border border-[#f0d6d2] bg-[#fff7f5] p-4">
+              <div className="mt-4 rounded-xl border border-error/20 bg-error/5 p-4">
                 {isBuyPost ? (
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wide text-[#9f4038]">
+                    <p className="text-xs font-bold uppercase tracking-wide text-error">
                       Giá mua tối đa
                     </p>
-                    <p className="mt-1 text-2xl font-black text-[#b33a32]">
+                    <p className="mt-1 text-2xl font-black text-error">
                       {formatCurrency(post.basePrice)}
                     </p>
                   </div>
@@ -746,16 +755,16 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
                     {hasValidPrice(product.originalPrice) && (
                       <div className="pb-0.5">
-                        <p className="text-sm font-semibold text-[#879694] line-through decoration-[#a74334] decoration-2">
+                        <p className="text-sm font-semibold text-textLight line-through decoration-error decoration-2">
                           {formatCurrency(product.originalPrice)}
                         </p>
                       </div>
                     )}
                     <div className={hasValidPrice(product.originalPrice) ? "text-right" : ""}>
-                      <p className="text-xs font-bold uppercase tracking-wide text-[#9f4038]">
+                      <p className="text-xs font-bold uppercase tracking-wide text-error">
                         Giá bán
                       </p>
-                      <p className="mt-1 text-3xl font-black leading-none text-[#b33a32]">
+                      <p className="mt-1 text-3xl font-black leading-none text-error">
                         {formatCurrency(post.basePrice)}
                       </p>
                     </div>
@@ -764,33 +773,33 @@ const PostDetailPage = ({ ownerMode = false }) => {
               </div>
 
               <dl className="mt-4 space-y-2.5 text-sm">
-                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2.5">
-                  <dt className="flex items-center gap-2 text-[#547B7D]">
-                    <InboxOutlined className="text-[#4f8588]" />
+                <div className="flex justify-between gap-4 border-b border-border pb-2.5">
+                  <dt className="flex items-center gap-2 text-textLight">
+                    <InboxOutlined className="text-primary" />
                     Số lượng còn lại
                   </dt>
-                  <dd className="font-bold text-[#172830]">
+                  <dd className="font-bold text-text">
                     {post.remainingQuantity}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2.5">
-                  <dt className="flex items-center gap-2 text-[#547B7D]">
-                    <SafetyCertificateOutlined className="text-[#4f8588]" />
+                <div className="flex justify-between gap-4 border-b border-border pb-2.5">
+                  <dt className="flex items-center gap-2 text-textLight">
+                    <SafetyCertificateOutlined className="text-primary" />
                     Vận chuyển
                   </dt>
-                  <dd className="text-right font-semibold text-[#172830]">
+                  <dd className="text-right font-semibold text-text">
                     {getMappedValue(
                       DELIVERY_METHODS,
                       post.deliveryMethod,
                     )}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-4 border-b border-gray-100 pb-2.5">
-                  <dt className="flex items-center gap-2 text-[#547B7D]">
-                    <CalendarOutlined className="text-[#4f8588]" />
+                <div className="flex justify-between gap-4 border-b border-border pb-2.5">
+                  <dt className="flex items-center gap-2 text-textLight">
+                    <CalendarOutlined className="text-primary" />
                     Độ ưu tiên
                   </dt>
-                  <dd className="font-semibold text-[#172830]">
+                  <dd className="font-semibold text-text">
                     {getMappedValue(
                       PRIORITY_LEVELS,
                       post.priorityLevel,
@@ -798,11 +807,11 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   </dd>
                 </div>
                 <div>
-                  <dt className="flex items-center gap-2 text-[#547B7D]">
-                    <EnvironmentOutlined className="text-[#2f6f9f]" />
+                  <dt className="flex items-center gap-2 text-textLight">
+                    <EnvironmentOutlined className="text-primary" />
                     Khu vực
                   </dt>
-                  <dd className="mt-1 font-semibold text-[#172830]">
+                  <dd className="mt-1 font-semibold text-text">
                     {address ||
                       "Chưa cập nhật địa chỉ"}
                   </dd>
@@ -810,14 +819,14 @@ const PostDetailPage = ({ ownerMode = false }) => {
               </dl>
 
               {ownerMode ? (
-                <div className="mt-4 rounded-lg border border-[#BAC2C1]/45 bg-[#f5f8f8] p-3.5">
-                  <p className="text-sm leading-6 text-[#547B7D]">
+                <div className="mt-4 rounded-lg border border-border/45 bg-background p-3.5">
+                  <p className="text-sm leading-6 text-textLight">
                     Đây là bài đăng của bạn. Bạn có thể chỉnh sửa nội dung hoặc quản lý trạng thái bài đăng.
                   </p>
                   <div className="mt-3 grid gap-2">
                     <Link
                       to={`/bai-dang/chinh-sua/${encodeURIComponent(postId)}`}
-                      className="inline-flex w-full items-center justify-center rounded-xl bg-[#2f6f9f] px-4 py-3 text-sm font-bold text-white transition hover:bg-[#245b84]"
+                      className="inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white transition hover:bg-primary/90"
                     >
                       Chỉnh sửa bài đăng
                     </Link>
@@ -837,6 +846,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   type="button"
                   onClick={handlePrimaryAction}
                   disabled={
+                    isManager ||
                     isVerifyingPost ||
                     (isAuthenticated &&
                     (isBuyPost ||
@@ -845,8 +855,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
                       !hasAvailableQuantity))
                   }
                   title={
-                    !isAuthenticated
-                      ? "Đăng nhập để tiếp tục"
+                    isManager
+                      ? "Tài khoản quản trị và kiểm duyệt chỉ có quyền xem khu vực người dùng."
+                      : !isAuthenticated
+                        ? "Đăng nhập để tiếp tục"
                       : isBuyPost
                         ? "Luồng gửi bài bán sẽ được thực hiện ở bước riêng"
                         : isOwnPost
@@ -856,11 +868,13 @@ const PostDetailPage = ({ ownerMode = false }) => {
                             ? "Bài đăng hiện không nhận thêm đề nghị"
                             : "Gửi đề nghị giá cho người bán"
                   }
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#2f6f9f] px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-[#245b84] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {!isAuthenticated || (!isBuyPost && !isOwnPost && isActivePost && hasAvailableQuantity) ? <SendOutlined /> : null}
-                  {!isAuthenticated
-                    ? "Đăng nhập để tiếp tục"
+                  {!isManager && (!isAuthenticated || (!isBuyPost && !isOwnPost && isActivePost && hasAvailableQuantity)) ? <SendOutlined /> : null}
+                  {isManager
+                    ? "Chỉ xem bài đăng"
+                    : !isAuthenticated
+                      ? "Đăng nhập để tiếp tục"
                     : isBuyPost
                       ? "Gửi bài bán (sắp ra mắt)"
                       : isOwnPost
@@ -872,61 +886,61 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 </button>
               )}
 
-              <p className="mt-3 flex items-center gap-2 text-xs text-[#547B7D]">
+              <p className="mt-3 flex items-center gap-2 text-xs text-textLight">
                 <CalendarOutlined />
                 Đăng lúc {formatDate(post.createdAt)}
               </p>
             </aside>
           </div>
 
-          <section className="mt-5 grid overflow-hidden rounded-2xl border border-[#dce8e5] bg-white shadow-[0_6px_22px_rgba(24,63,65,0.04)] sm:grid-cols-3">
+          <section className="mt-5 grid overflow-hidden rounded-2xl border border-border bg-white shadow-[0_6px_22px_rgba(23,40,48,0.04)] sm:grid-cols-3">
             <div className="flex items-start gap-3 px-5 py-4">
-              <SafetyCertificateOutlined className="mt-0.5 text-lg text-[#4f8588]" />
+              <SafetyCertificateOutlined className="mt-0.5 text-lg text-primary" />
               <div>
-                <h2 className="text-sm font-black text-[#183f41]">Thông tin minh bạch</h2>
-                <p className="mt-1 text-xs leading-5 text-[#78908e]">Kiểm tra mô tả, tình trạng và thuộc tính trước khi đề nghị.</p>
+                <h2 className="text-sm font-black text-text">Thông tin minh bạch</h2>
+                <p className="mt-1 text-xs leading-5 text-textLight">Kiểm tra mô tả, tình trạng và thuộc tính trước khi đề nghị.</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 border-y border-[#e5eeec] px-5 py-4 sm:border-x sm:border-y-0">
-              <SendOutlined className="mt-0.5 text-lg text-[#2f6f9f]" />
+            <div className="flex items-start gap-3 border-y border-border px-5 py-4 sm:border-x sm:border-y-0">
+              <SendOutlined className="mt-0.5 text-lg text-primary" />
               <div>
-                <h2 className="text-sm font-black text-[#183f41]">Thương lượng trực tiếp</h2>
-                <p className="mt-1 text-xs leading-5 text-[#78908e]">Hai bên chủ động thống nhất giá, số lượng và giao nhận.</p>
+                <h2 className="text-sm font-black text-text">Thương lượng trực tiếp</h2>
+                <p className="mt-1 text-xs leading-5 text-textLight">Hai bên chủ động thống nhất giá, số lượng và giao nhận.</p>
               </div>
             </div>
             <div className="flex items-start gap-3 px-5 py-4">
-              <EnvironmentOutlined className="mt-0.5 text-lg text-[#4f8588]" />
+              <EnvironmentOutlined className="mt-0.5 text-lg text-primary" />
               <div>
-                <h2 className="text-sm font-black text-[#183f41]">Giao nhận rõ ràng</h2>
-                <p className="mt-1 text-xs leading-5 text-[#78908e]">Xem khu vực và phương thức giao nhận trước khi giao dịch.</p>
+                <h2 className="text-sm font-black text-text">Giao nhận rõ ràng</h2>
+                <p className="mt-1 text-xs leading-5 text-textLight">Xem khu vực và phương thức giao nhận trước khi giao dịch.</p>
               </div>
             </div>
           </section>
 
           <div className="mt-7 grid gap-6 lg:grid-cols-2">
-            <section className="rounded-2xl border border-[#dceae7] bg-white p-6 shadow-[0_10px_34px_rgba(24,63,65,0.06)]">
-              <h2 className="text-xl font-bold text-[#172830]">
+            <section className="rounded-2xl border border-border bg-white p-6 shadow-[0_10px_34px_rgba(23,40,48,0.06)]">
+              <h2 className="text-xl font-bold text-text">
                 Mô tả bài đăng
               </h2>
-              <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-600">
+              <p className="mt-4 whitespace-pre-line text-sm leading-7 text-textLight">
                 {post.description ||
                   "Bài đăng chưa có mô tả."}
               </p>
 
               {product.detailDescription && (
                 <>
-                  <h3 className="mt-6 font-bold text-[#172830]">
+                  <h3 className="mt-6 font-bold text-text">
                     Mô tả chi tiết sản phẩm
                   </h3>
-                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-gray-600">
+                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-textLight">
                     {product.detailDescription}
                   </p>
                 </>
               )}
             </section>
 
-            <section className="rounded-2xl border border-[#dceae7] bg-white p-6 shadow-[0_10px_34px_rgba(24,63,65,0.06)]">
-              <h2 className="text-xl font-bold text-[#172830]">
+            <section className="rounded-2xl border border-border bg-white p-6 shadow-[0_10px_34px_rgba(23,40,48,0.06)]">
+              <h2 className="text-xl font-bold text-text">
                 Thông tin sản phẩm
               </h2>
               <dl className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -991,8 +1005,8 @@ const PostDetailPage = ({ ownerMode = false }) => {
             </section>
           </div>
 
-          <section className="mt-6 rounded-2xl border border-[#dceae7] bg-white p-6 shadow-[0_10px_34px_rgba(24,63,65,0.06)]">
-            <h2 className="text-xl font-bold text-[#172830]">
+          <section className="mt-6 rounded-2xl border border-border bg-white p-6 shadow-[0_10px_34px_rgba(23,40,48,0.06)]">
+            <h2 className="text-xl font-bold text-text">
               Thuộc tính sản phẩm
             </h2>
 
@@ -1018,7 +1032,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 })}
               </dl>
             ) : (
-              <p className="mt-3 text-sm text-[#547B7D]">
+              <p className="mt-3 text-sm text-textLight">
                 Sản phẩm chưa có thuộc tính bổ
                 sung.
               </p>
@@ -1029,7 +1043,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
             <Link
               to={listPath}
               state={listState}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#4f8588] bg-white px-4 py-2.5 text-sm font-bold text-[#2f686c] transition hover:bg-[#edf5f2]"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/10"
             >
               <ArrowLeftOutlined /> Quay lại {ownerMode ? "bài đăng của tôi" : "danh sách"}
             </Link>

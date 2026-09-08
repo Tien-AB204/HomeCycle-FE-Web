@@ -139,13 +139,13 @@ const ProductCard = ({
       aria-busy={isChecking || undefined}
       onClick={handleOpenDetail}
       onKeyDown={handleCardKeyDown}
-      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-[#e0ebe8] bg-white shadow-[0_6px_22px_rgba(32,77,75,0.06)] transition duration-300 hover:-translate-y-1 hover:border-[#b9d2cc] hover:shadow-[0_16px_38px_rgba(32,77,75,0.13)] ${
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-[0_6px_22px_rgba(23,40,48,0.06)] transition duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_16px_38px_rgba(23,40,48,0.10)] ${
         postId
-          ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#5f9291] focus:ring-offset-2"
+          ? "cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           : ""
       }`}
     >
-      <div className="relative h-44 overflow-hidden bg-[#eaf1ef] sm:h-48 lg:h-44 xl:h-48">
+      <div className="relative h-44 overflow-hidden bg-background sm:h-48 lg:h-44 xl:h-48">
         {image ? (
           <img
             src={image}
@@ -154,54 +154,54 @@ const ProductCard = ({
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center bg-gradient-to-br from-[#eef5f2] to-[#d9e9e5] text-[#5f817e]">
+          <div className="flex h-full flex-col items-center justify-center bg-background text-textLight">
             <img src={homeCycleMark} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
             <span className="mt-2 text-xs font-bold">Chưa có hình ảnh</span>
           </div>
         )}
 
         {isBuyPost && (
-          <span className="absolute left-3 top-3 rounded-full bg-[#244f51] px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+          <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm">
             Đang tìm mua
           </span>
         )}
-        <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold text-[#476765] shadow-sm backdrop-blur">
+        <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold text-textLight shadow-sm backdrop-blur">
           {type}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col p-4">
         {ownerName && (
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#68807f]">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#e3f0ec] text-[10px] text-[#2d6a65]" aria-hidden="true">✓</span>
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-textLight">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background text-[10px] text-success" aria-hidden="true">✓</span>
             <span className="truncate">{ownerName}</span>
           </div>
         )}
 
-        <h3 className={`${ownerName ? "mt-2.5" : "mt-0"} line-clamp-2 min-h-10 text-sm font-black leading-5 text-[#183436] transition group-hover:text-[#2d6a65]`}>
+        <h3 className={`${ownerName ? "mt-2.5" : "mt-0"} line-clamp-2 min-h-10 text-sm font-black leading-5 text-text transition group-hover:text-primary`}>
           {name}
         </h3>
 
-        <p className="mt-1.5 line-clamp-2 min-h-9 text-[11px] leading-[18px] text-[#78908f]">
+        <p className="mt-1.5 line-clamp-2 min-h-9 text-[11px] leading-[18px] text-textLight">
           {description}
         </p>
 
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <span className="rounded-full bg-[#edf5f2] px-2.5 py-1 text-[10px] font-bold text-[#476765]">
+          <span className="rounded-full bg-background px-2.5 py-1 text-[10px] font-bold text-textLight">
             {conditionLabel}
           </span>
-          <span className="rounded-full bg-[#e7f0f5] px-2.5 py-1 text-[10px] font-bold text-[#355f73]">
+          <span className="rounded-full bg-background px-2.5 py-1 text-[10px] font-bold text-textLight">
             {logisticsLabel}
           </span>
         </div>
 
-        <div className="mt-auto border-t border-[#edf2f0] pt-3">
+        <div className="mt-auto border-t border-border pt-3">
           {isBuyPost ? (
             <div>
-              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#829795]">
+              <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-textLight">
                 Giá mua dự kiến
               </p>
-              <p className="mt-0.5 text-lg font-black text-[#b33a32]">
+              <p className="mt-0.5 text-lg font-black text-error">
                 {formatPrice(price)}
               </p>
             </div>
@@ -209,17 +209,17 @@ const ProductCard = ({
             <div className="flex min-h-10 items-end justify-between gap-3">
               {hasValidPrice(originalPrice) && (
                 <div className="min-w-0 pb-0.5">
-                  <p className="truncate text-xs font-semibold text-[#8a9997] line-through decoration-[#a74334] decoration-1">
+                  <p className="truncate text-xs font-semibold text-textLight line-through decoration-error decoration-1">
                     {formatPrice(originalPrice)}
                   </p>
                 </div>
               )}
 
               <div className={`min-w-0 ${hasValidPrice(originalPrice) ? "text-right" : ""}`}>
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-[#9f4038]">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-error">
                   Giá bán
                 </p>
-                <p className="mt-0.5 truncate text-xl font-black leading-none text-[#b33a32]">
+                <p className="mt-0.5 truncate text-xl font-black leading-none text-error">
                   {formatPrice(price)}
                 </p>
               </div>
@@ -230,7 +230,7 @@ const ProductCard = ({
             type="button"
             onClick={handleActionClick}
             disabled={isChecking}
-            className="mt-3 w-full rounded-lg border border-[#5f9291] bg-white px-4 py-2 text-[11px] font-extrabold text-[#2f686c] transition hover:bg-[#3f777b] hover:text-white disabled:cursor-wait disabled:opacity-60"
+            className="mt-3 w-full rounded-lg border border-primary bg-white px-4 py-2 text-[11px] font-extrabold text-primary transition hover:bg-primary hover:text-white disabled:cursor-wait disabled:opacity-60"
           >
             {isChecking
               ? "Đang kiểm tra..."
