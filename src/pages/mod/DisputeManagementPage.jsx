@@ -872,40 +872,57 @@ const DisputeManagementPage = () => {
   ) => {
     if (!user) {
       return (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-400">
+        <div className="rounded-xl border border-dashed border-border bg-background p-4 text-sm text-textLight">
           {title}: Không có dữ liệu
         </div>
       );
     }
 
-    const initial = (user.username || "U").charAt(0).toUpperCase();
+    const initial = (
+      user.username || "?"
+    )
+      .charAt(0)
+      .toUpperCase();
 
     return (
-      <div className="rounded-xl border border-[#DCE8E5] bg-white p-4 shadow-sm">
-        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-[#78908E]">
+      <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-textLight">
           {title}
         </p>
+
         <div className="flex items-center gap-3">
           {user.avatarUrl ? (
             <img
               src={user.avatarUrl}
-              alt={user.username || title}
-              className="h-11 w-11 rounded-full border border-[#DCE8E5] object-cover"
+              alt={
+                user.username ||
+                title
+              }
+              className="h-11 w-11 rounded-full border border-border object-cover"
             />
           ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E6F2F0] font-black text-[#285E62]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(84,123,125,0.10)] font-black text-primary">
               {initial}
             </div>
           )}
+
           <div className="min-w-0">
-            <p className="truncate font-bold text-[#183F41]">
-              {user.username || "N/A"}
+            <p className="truncate font-bold text-text">
+              {user.username ||
+                "Chưa có"}
             </p>
-            <p className="truncate text-xs text-[#78908E]">
-              ID: {user.userId || "N/A"}
+
+            <p className="truncate text-xs text-textLight">
+              Mã:{" "}
+              {user.userId ||
+                "Chưa có"}
             </p>
-            <p className="mt-1 text-xs text-[#5F7472]">
-              Vai trò: {user.role ?? "N/A"}
+
+            <p className="mt-1 text-xs text-textLight">
+              Vai trò:{" "}
+              {getRoleLabel(
+                user.role,
+              )}
             </p>
           </div>
         </div>
@@ -1341,6 +1358,25 @@ const DisputeManagementPage = () => {
                 }
               />
             </div>
+          ) : detail ? (
+            <div className="mx-auto w-full max-w-6xl p-6">
+              <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-textLight">
+                    Chi tiết tranh chấp
+                  </p>
+
+                  <h2 className="mt-1 break-all text-xl font-black text-text">
+                    {detail.target?.order
+                      ?.orderCode ||
+                      `Tranh chấp ${String(
+                        detail.disputeId,
+                      ).slice(
+                        0,
+                        8,
+                      )}`}
+                  </h2>
+                </div>
 
                 <Tag
                   style={{
@@ -1478,39 +1514,104 @@ const DisputeManagementPage = () => {
                 )}
               </div>
 
-            {order && (
-              <div className="mt-6 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-sm">
-                <h3 className="mb-4 text-base font-black text-[#183F41]">
-                  Thông tin đơn hàng liên quan
+              <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                <h3 className="mb-4 text-base font-black text-text">
+                  Thông tin tranh chấp
                 </h3>
-                <Descriptions bordered column={2} size="small">
-                  <Descriptions.Item label="Mã đơn hàng">
-                    {order.orderCode || "N/A"}
+
+                <Descriptions
+                  bordered
+                  column={{
+                    xs: 1,
+                    sm: 1,
+                    md: 2,
+                  }}
+                  size="small"
+                >
+                  <Descriptions.Item label="Mã tranh chấp">
+                    {detail.disputeId ||
+                      "Chưa có"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="ID đơn hàng">
-                    {order.orderId || "N/A"}
+
+                  <Descriptions.Item label="Trạng thái">
+                    {
+                      detailStatus.label
+                    }
                   </Descriptions.Item>
-                  <Descriptions.Item label="Sản phẩm">
-                    {order.productName || "N/A"}
+
+                  <Descriptions.Item label="Loại tranh chấp">
+                    {optionLabel(
+                      CATEGORY_OPTIONS,
+                      detail.category,
+                      "category",
+                    )}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Số lượng">
-                    {order.quantity ?? "N/A"}
+
+                  <Descriptions.Item label="Đối tượng">
+                    {optionLabel(
+                      TARGET_TYPE_OPTIONS,
+                      detail.target
+                        ?.targetType,
+                      "targetType",
+                    )}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Tổng tiền">
-                    {formatMoney(order.finalTotalAmount)}
+
+                  <Descriptions.Item label="Mã đối tượng">
+                    {detail.target
+                      ?.targetId ||
+                      "Chưa có"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái đơn">
-                    {order.orderStatus ?? "N/A"}
+
+                  <Descriptions.Item label="Kết quả giải quyết">
+                    {getResolutionOutcomeLabel(
+                      detail.resolutionOutcome,
+                    )}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Trạng thái thanh toán">
-                    {order.paymentStatus ?? "N/A"}
+
+                  <Descriptions.Item label="Kiểm duyệt viên phụ trách">
+                    {detail.moderatorId ||
+                      "Chưa có"}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Hạn tạo tranh chấp">
-                    {formatDateTime(order.disputeDeadlineUtc)}
+
+                  <Descriptions.Item label="Ngày gửi">
+                    {formatDateTime(
+                      detail.createdAt,
+                    )}
+                  </Descriptions.Item>
+
+                  <Descriptions.Item label="Cập nhật lần cuối">
+                    {formatDateTime(
+                      detail.updatedAt,
+                    )}
+                  </Descriptions.Item>
+
+                  <Descriptions.Item label="Thời gian giải quyết">
+                    {formatDateTime(
+                      detail.resolvedAt,
+                    )}
+                  </Descriptions.Item>
+
+                  <Descriptions.Item
+                    label="Mô tả"
+                    span={2}
+                  >
+                    <span className="whitespace-pre-wrap">
+                      {detail.description ||
+                        "Không có mô tả"}
+                    </span>
+                  </Descriptions.Item>
+
+                  <Descriptions.Item
+                    label="Ghi chú kiểm duyệt"
+                    span={2}
+                  >
+                    <span className="whitespace-pre-wrap">
+                      {detail.moderatorNote ||
+                        "Chưa có ghi chú"}
+                    </span>
                   </Descriptions.Item>
                 </Descriptions>
               </div>
-            )}
 
             <div className="mt-6 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between gap-3">
