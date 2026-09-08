@@ -130,17 +130,17 @@ const OrderReviewSection = ({
   };
 
   return (
-    <section className="mt-5 rounded-xl border border-[#DCE8E5] bg-[#F8FBFA] p-5 shadow-[0_8px_24px_rgba(24,63,65,0.04)] sm:p-6">
-      <div className="flex flex-col gap-4 border-b border-[#DCE8E5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+    <section className="mt-5 rounded-xl border border-border bg-background p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
+      <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-[#2F6F9F]">
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
             Sau giao dịch
           </p>
-          <h2 className="mt-1 text-xl font-black text-[#183F41]">
+          <h2 className="mt-1 text-xl font-black text-text">
             Đánh giá đơn hàng
           </h2>
 
-          <p className="mt-1 text-sm text-[#68807F]">
+          <p className="mt-1 text-sm text-textLight">
             Mỗi đơn hàng chỉ được đánh giá một lần sau khi đơn hàng hoàn tất.
           </p>
         </div>
@@ -149,7 +149,7 @@ const OrderReviewSection = ({
           {items.length > 0 && (
             <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2">
               <ReviewStars value={Math.round(averageRating)} size="text-lg" />
-              <span className="text-sm font-black text-[#183F41]">
+              <span className="text-sm font-black text-text">
                 {averageRating.toFixed(1)} ·{" "}
                 {state.page?.totalCount || items.length} đánh giá
               </span>
@@ -158,7 +158,7 @@ const OrderReviewSection = ({
           {counterpartyUserId && (
             <Link
               to={`/danh-gia/nguoi-dung/${counterpartyUserId}`}
-              className="rounded-lg border border-[#4F8588] bg-white px-4 py-2 text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5]"
+              className="rounded-lg border border-primary bg-white px-4 py-2 text-sm font-black text-primary transition hover:bg-primary/10"
             >
               Uy tín đối tác
             </Link>
@@ -170,7 +170,7 @@ const OrderReviewSection = ({
                 setNotice("");
                 setModal({ mode: "create", review: null });
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#4F8588] px-4 py-2 text-sm font-black text-white transition hover:bg-[#356A70]"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-black text-white transition hover:bg-primary/90"
             >
               <span
                 className="material-symbols-outlined text-lg"
@@ -187,7 +187,7 @@ const OrderReviewSection = ({
       {notice && (
         <div
           role="status"
-          className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800"
+          className="mt-4 rounded-xl border border-success/20 bg-success/10 px-4 py-3 text-sm font-semibold text-success"
         >
           {notice}
         </div>
@@ -196,7 +196,7 @@ const OrderReviewSection = ({
       {state.error && (
         <div
           role="alert"
-          className="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 sm:flex-row sm:items-center sm:justify-between"
+          className="mt-4 flex flex-col gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm font-semibold text-error sm:flex-row sm:items-center sm:justify-between"
         >
           <span>{state.error}</span>
           <button
@@ -205,7 +205,7 @@ const OrderReviewSection = ({
               setState((current) => ({ ...current, loading: true, error: "" }));
               void loadReviews();
             }}
-            className="shrink-0 rounded-lg border border-red-300 px-3 py-1.5 text-xs font-black"
+            className="shrink-0 rounded-lg border border-error/30 px-3 py-1.5 text-xs font-black"
           >
             Thử lại
           </button>
@@ -213,7 +213,7 @@ const OrderReviewSection = ({
       )}
 
       {state.loading && (
-        <div className="py-10 text-center text-sm font-semibold text-[#68807F]">
+        <div className="py-10 text-center text-sm font-semibold text-textLight">
           <span
             className="material-symbols-outlined animate-spin text-2xl"
             aria-hidden="true"
@@ -227,13 +227,13 @@ const OrderReviewSection = ({
       {!state.loading && !state.error && items.length === 0 && (
         <div className="py-10 text-center">
           <span
-            className="material-symbols-outlined text-4xl text-[#9FBFBA]"
+            className="material-symbols-outlined text-4xl text-border"
             aria-hidden="true"
           >
             reviews
           </span>
-          <h3 className="mt-2 font-black text-[#183F41]">Chưa có đánh giá</h3>
-          <p className="mt-1 text-sm text-[#68807F]">
+          <h3 className="mt-2 font-black text-text">Chưa có đánh giá</h3>
+          <p className="mt-1 text-sm text-textLight">
             {canCreate
               ? "Hãy chia sẻ trải nghiệm của bạn về đơn hàng này."
               : blockedReason ||
@@ -280,18 +280,18 @@ const OrderReviewSection = ({
             type="button"
             disabled={!state.page.hasPreviousPage}
             onClick={() => changePage(pageNumber - 1)}
-            className="rounded-lg border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-black text-[#285E62] disabled:opacity-40"
+            className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-black text-primary disabled:opacity-40"
           >
             Trước
           </button>
-          <span className="text-sm font-bold text-[#68807F]">
+          <span className="text-sm font-bold text-textLight">
             Trang {state.page.pageNumber}/{state.page.totalPages}
           </span>
           <button
             type="button"
             disabled={!state.page.hasNextPage}
             onClick={() => changePage(pageNumber + 1)}
-            className="rounded-lg border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-black text-[#285E62] disabled:opacity-40"
+            className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-black text-primary disabled:opacity-40"
           >
             Sau
           </button>
@@ -299,7 +299,7 @@ const OrderReviewSection = ({
       )}
 
       {state.mine && !canCreate && state.mine.canEdit !== false && (
-        <p className="mt-4 rounded-lg bg-[#EAF3F8] px-4 py-3 text-xs font-semibold leading-5 text-[#2F6F9F]">
+        <p className="mt-4 rounded-lg bg-primary/10 px-4 py-3 text-xs font-semibold leading-5 text-primary">
           Bạn chỉ được chỉnh sửa đánh giá trong vòng 3 ngày kể từ khi gửi.
         </p>
       )}

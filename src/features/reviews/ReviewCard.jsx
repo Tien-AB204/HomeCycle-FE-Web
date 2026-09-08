@@ -12,7 +12,7 @@ const formatDate = (value) => {
 };
 
 const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
-  <article className="rounded-xl border border-[#DCE8E5] bg-white p-4 shadow-[0_6px_18px_rgba(24,63,65,0.035)] sm:p-5">
+  <article className="rounded-xl border border-border bg-white p-4 shadow-[0_6px_18px_rgba(23,40,48,0.035)] sm:p-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 items-center gap-3">
         {review.reviewerAvatarUrl ? (
@@ -22,22 +22,22 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
             className="h-10 w-10 shrink-0 rounded-full object-cover"
           />
         ) : (
-          <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EAF3F3] text-[#4F8588]" aria-hidden="true">
+          <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
             person
           </span>
         )}
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-sm font-black text-[#183F41]">
+            <h3 className="truncate text-sm font-black text-text">
               {review.reviewerName}
             </h3>
             {ownReview && (
-              <span className="rounded-full bg-[#EAF3F8] px-2 py-0.5 text-[10px] font-black uppercase text-[#2F6F9F]">
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase text-primary">
                 Đánh giá của bạn
               </span>
             )}
           </div>
-          <p className="mt-0.5 text-xs font-semibold text-[#789092]">
+          <p className="mt-0.5 text-xs font-semibold text-textLight">
             {formatDate(review.updatedAt || review.createdAt)}
             {review.updatedAt ? " · Đã chỉnh sửa" : ""}
           </p>
@@ -51,7 +51,7 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
             type="button"
             onClick={() => onEdit(review)}
             disabled={editing}
-            className="inline-flex items-center gap-1 rounded-lg border border-[#9FBFBA] px-3 py-1.5 text-xs font-black text-[#285E62] transition hover:bg-[#F1F7F5] disabled:opacity-50"
+            className="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-black text-primary transition hover:bg-primary/10 disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-base" aria-hidden="true">
               edit
@@ -63,11 +63,11 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
     </div>
 
     {review.comment ? (
-      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#526D6E]">
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-text">
         {review.comment}
       </p>
     ) : (
-      <p className="mt-3 text-sm italic text-[#789092]">Người dùng không để lại bình luận.</p>
+      <p className="mt-3 text-sm italic text-textLight">Người dùng không để lại bình luận.</p>
     )}
 
     {review.images.length > 0 && (
@@ -78,7 +78,7 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
             href={imageUrl}
             target="_blank"
             rel="noreferrer"
-            className="overflow-hidden rounded-lg border border-[#DCE8E5]"
+            className="overflow-hidden rounded-lg border border-border"
             aria-label={`Mở ảnh đánh giá ${index + 1}`}
           >
             <img
@@ -92,7 +92,7 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
     )}
 
     {review.editableUntil && ownReview && review.canEdit !== false && (
-      <p className="mt-3 text-xs font-semibold text-[#789092]">
+      <p className="mt-3 text-xs font-semibold text-textLight">
         Có thể chỉnh sửa đến {formatDate(review.editableUntil)}.
       </p>
     )}
