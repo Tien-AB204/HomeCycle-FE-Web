@@ -32,7 +32,7 @@ const ACCOUNT_NAVIGATION = [
 const Logo = ({ compact = false }) => {
   return (
     <span
-      className={`relative block shrink-0 overflow-hidden rounded-xl bg-[#5F9291] shadow-sm ${
+      className={`relative block shrink-0 overflow-hidden rounded-xl bg-primary shadow-sm ${
         compact ? "h-11 w-40" : "h-14 w-48"
       }`}
     >
@@ -85,7 +85,8 @@ const MainLayout = () => {
 
     return true;
   });
-  const navigationItems = isAuthenticated
+  const canUseClientAccount = isAuthenticated && !isManager;
+  const navigationItems = canUseClientAccount
     ? [...roleBasedPublicNavigation, ...ACCOUNT_NAVIGATION]
     : PUBLIC_NAVIGATION;
   const createPostLabel =
@@ -128,14 +129,14 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f7f8f6] font-sans text-[#183436]">
-      <div className="bg-[#244f51] text-white">
+    <div className="flex min-h-screen flex-col bg-background font-sans text-text">
+      <div className="bg-primary text-white">
         <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-2 text-center text-xs font-medium sm:text-sm">
           <span>Mua bán đồ cũ an toàn · Cho đồ vật một vòng đời mới</span>
         </div>
       </div>
 
-      <header className="sticky top-0 z-50 border-b border-[#dce8e4] bg-white/95 shadow-[0_4px_24px_rgba(27,73,74,0.06)] backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-border bg-white/95 shadow-[0_4px_24px_rgba(23,40,48,0.06)] backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
           <Link to="/" onClick={closeMenu} aria-label="Về trang chủ HomeCycle">
             <Logo />
@@ -143,9 +144,9 @@ const MainLayout = () => {
 
           <form
             onSubmit={handleSearch}
-            className="hidden min-w-0 flex-1 items-center overflow-hidden rounded-full border border-[#cbded9] bg-[#f4f8f6] transition focus-within:border-[#5f9291] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#5f9291]/10 md:flex"
+            className="hidden min-w-0 flex-1 items-center overflow-hidden rounded-full border border-border bg-background transition focus-within:border-primary focus-within:bg-white focus-within:ring-4 focus-within:ring-primary/10 md:flex"
           >
-            <span className="pl-5 text-[#5f7b7a]" aria-hidden="true">
+            <span className="pl-5 text-textLight" aria-hidden="true">
               ⌕
             </span>
             <label htmlFor="header-search" className="sr-only">
@@ -157,11 +158,11 @@ const MainLayout = () => {
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="Bạn muốn tìm sản phẩm gì?"
-              className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-[#183436] outline-none placeholder:text-[#78908f]"
+              className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-text outline-none placeholder:text-textLight"
             />
             <button
               type="submit"
-              className="m-1.5 rounded-full border border-[#4f8588] bg-white px-5 py-2 text-sm font-bold text-[#2f686c] transition hover:bg-[#4f8588] hover:text-white"
+              className="m-1.5 rounded-full border border-primary bg-white px-5 py-2 text-sm font-bold text-primary transition hover:bg-primary hover:text-white"
             >
               Tìm kiếm
             </button>
@@ -172,13 +173,13 @@ const MainLayout = () => {
               <>
                 <Link
                   to="/auth/login"
-                  className="rounded-full px-4 py-2.5 text-sm font-bold text-[#244f51] transition hover:bg-[#edf5f2]"
+                  className="rounded-full px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-background"
                 >
                   Đăng nhập
                 </Link>
                 <Link
                   to="/auth/register"
-                  className="rounded-full border border-[#5f9291] px-4 py-2.5 text-sm font-bold text-[#244f51] transition hover:bg-[#edf5f2]"
+                  className="rounded-full border border-primary px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-background"
                 >
                   Đăng ký
                 </Link>
@@ -188,17 +189,17 @@ const MainLayout = () => {
                 {isManager && (
                   <Link
                     to={managerPath}
-                    className="rounded-full bg-[#edf5f2] px-4 py-2.5 text-sm font-bold text-[#244f51] transition hover:bg-[#dcebe6]"
+                    className="rounded-full bg-background px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-white"
                   >
                     Trang quản trị
                   </Link>
                 )}
-                <div className="flex items-center overflow-hidden rounded-full border border-[#d7e5e2] bg-white shadow-sm">
+                <div className="flex items-center overflow-hidden rounded-full border border-border bg-white shadow-sm">
                   <Link
                     to={isManager ? managerPath : "/ho-so"}
-                    className="flex max-w-[180px] items-center gap-2 py-1.5 pl-1.5 pr-3 text-sm font-bold text-[#244f51] transition hover:bg-[#f1f6f4]"
+                    className="flex max-w-[180px] items-center gap-2 py-1.5 pl-1.5 pr-3 text-sm font-bold text-primary transition hover:bg-background"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5f9291] text-white">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white">
                       {displayInitial}
                     </span>
                     <span className="truncate">{displayName}</span>
@@ -206,7 +207,7 @@ const MainLayout = () => {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="self-stretch border-l border-[#d7e5e2] px-3 text-xs font-bold text-[#617876] transition hover:bg-red-50 hover:text-[#a74334]"
+                    className="self-stretch border-l border-border px-3 text-xs font-bold text-textLight transition hover:bg-error/10 hover:text-error"
                   >
                     Đăng xuất
                   </button>
@@ -216,12 +217,13 @@ const MainLayout = () => {
 
             <Link
               to={isAuthenticated ? "/bai-dang/tao-moi" : "/auth/login"}
+                hidden={isManager}
               state={
                 isAuthenticated
                   ? undefined
                   : { from: "/bai-dang/tao-moi" }
               }
-              className="rounded-full bg-[#4f8588] px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-[#356a70] hover:shadow-md"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-primary/90 hover:shadow-md"
             >
               ＋ {createPostLabel}
             </Link>
@@ -232,13 +234,13 @@ const MainLayout = () => {
             aria-label={isMenuOpen ? "Đóng menu" : "Mở menu"}
             aria-expanded={isMenuOpen}
             onClick={() => setIsMenuOpen((current) => !current)}
-            className="ml-auto flex h-11 w-11 items-center justify-center rounded-full border border-[#cbded9] text-xl text-[#244f51] lg:hidden"
+            className="ml-auto flex h-11 w-11 items-center justify-center rounded-full border border-border text-xl text-primary lg:hidden"
           >
             {isMenuOpen ? "×" : "☰"}
           </button>
         </div>
 
-        <nav className="hidden border-t border-[#edf2f0] lg:block">
+        <nav className="hidden border-t border-border lg:block">
           <div className="mx-auto flex max-w-7xl items-center gap-1 overflow-x-auto px-6">
             {navigationItems.map((item) => (
               <NavLink
@@ -248,8 +250,8 @@ const MainLayout = () => {
                 className={({ isActive }) =>
                   `shrink-0 border-b-2 px-4 py-3 text-sm font-bold transition ${
                     isNavigationItemActive(item, isActive)
-                      ? "border-[#4f8588] text-[#244f51]"
-                      : "border-transparent text-[#587170] hover:text-[#244f51]"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-textLight hover:text-primary"
                   }`
                 }
               >
@@ -260,8 +262,8 @@ const MainLayout = () => {
         </nav>
 
         {isMenuOpen && (
-          <div className="border-t border-[#edf2f0] bg-white px-4 py-4 shadow-xl lg:hidden">
-            <form onSubmit={handleSearch} className="flex overflow-hidden rounded-full border border-[#cbded9] bg-[#f4f8f6] md:hidden">
+          <div className="border-t border-border bg-white px-4 py-4 shadow-xl lg:hidden">
+            <form onSubmit={handleSearch} className="flex overflow-hidden rounded-full border border-border bg-background md:hidden">
               <input
                 type="search"
                 value={keyword}
@@ -269,7 +271,7 @@ const MainLayout = () => {
                 placeholder="Tìm kiếm sản phẩm..."
                 className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm outline-none"
               />
-              <button type="submit" className="border-l border-[#4f8588] bg-white px-4 text-sm font-bold text-[#2f686c] transition hover:bg-[#4f8588] hover:text-white">
+              <button type="submit" className="border-l border-primary bg-white px-4 text-sm font-bold text-primary transition hover:bg-primary hover:text-white">
                 Tìm
               </button>
             </form>
@@ -284,8 +286,8 @@ const MainLayout = () => {
                   className={({ isActive }) =>
                     `rounded-xl px-4 py-3 text-sm font-bold ${
                       isNavigationItemActive(item, isActive)
-                        ? "bg-[#e5f1ed] text-[#244f51]"
-                        : "text-[#587170] hover:bg-[#f4f8f6]"
+                        ? "bg-background text-primary"
+                        : "text-textLight hover:bg-background"
                     }`
                   }
                 >
@@ -294,37 +296,38 @@ const MainLayout = () => {
               ))}
             </nav>
 
-            <div className="mt-3 flex flex-wrap gap-2 border-t border-[#edf2f0] pt-3">
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
               {!isAuthenticated ? (
                 <>
-                  <Link to="/auth/login" onClick={closeMenu} className="rounded-full border border-[#5f9291] px-4 py-2 text-sm font-bold text-[#244f51]">
+                  <Link to="/auth/login" onClick={closeMenu} className="rounded-full border border-primary px-4 py-2 text-sm font-bold text-primary">
                     Đăng nhập
                   </Link>
-                  <Link to="/auth/register" onClick={closeMenu} className="rounded-full bg-[#244f51] px-4 py-2 text-sm font-bold text-white">
+                  <Link to="/auth/register" onClick={closeMenu} className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white">
                     Đăng ký
                   </Link>
                 </>
               ) : (
                 <>
                   {isManager && (
-                    <Link to={managerPath} onClick={closeMenu} className="rounded-full bg-[#e5f1ed] px-4 py-2 text-sm font-bold text-[#244f51]">
+                    <Link to={managerPath} onClick={closeMenu} className="rounded-full bg-background px-4 py-2 text-sm font-bold text-primary">
                       Trang quản trị
                     </Link>
                   )}
-                  <button type="button" onClick={handleLogout} className="rounded-full border border-[#cbded9] bg-white px-4 py-2 text-sm font-bold text-[#587170] transition hover:border-[#d8aaa2] hover:bg-red-50 hover:text-[#a74334]">
+                  <button type="button" onClick={handleLogout} className="rounded-full border border-border bg-white px-4 py-2 text-sm font-bold text-textLight transition hover:border-error/30 hover:bg-error/10 hover:text-error">
                     Đăng xuất
                   </button>
                 </>
               )}
               <Link
                 to={isAuthenticated ? "/bai-dang/tao-moi" : "/auth/login"}
+                hidden={isManager}
                 state={
                   isAuthenticated
                     ? undefined
                     : { from: "/bai-dang/tao-moi" }
                 }
                 onClick={closeMenu}
-                className="rounded-full bg-[#4f8588] px-4 py-2 text-sm font-bold text-white"
+                className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white"
               >
                 ＋ {createPostLabel}
               </Link>
@@ -337,13 +340,13 @@ const MainLayout = () => {
         <Outlet />
       </main>
 
-      <footer className="mt-auto border-t border-[#dbe8e4] bg-[#183f41] text-[#dbeae7]">
+      <footer className="mt-auto border-t border-border bg-primary text-white/80">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Link to="/" aria-label="Về trang chủ HomeCycle">
               <Logo compact />
             </Link>
-            <p className="mt-4 max-w-sm text-sm leading-6 text-[#bad0cc]">
+            <p className="mt-4 max-w-sm text-sm leading-6 text-white/70">
               Nền tảng kết nối mua bán đồ đã qua sử dụng, giúp giao dịch minh bạch hơn và kéo dài vòng đời của từng sản phẩm.
             </p>
           </div>
@@ -357,7 +360,7 @@ const MainLayout = () => {
             </div>
           </div>
 
-          <div>
+          <div className={isManager ? "hidden" : ""}>
             <h2 className="font-extrabold text-white">Tài khoản</h2>
             <div className="mt-4 grid gap-3 text-sm">
               <Link
@@ -397,7 +400,7 @@ const MainLayout = () => {
 
           <div>
             <h2 className="font-extrabold text-white">HomeCycle</h2>
-            <div className="mt-4 grid gap-3 text-sm text-[#bad0cc]">
+            <div className="mt-4 grid gap-3 text-sm text-white/70">
               <span>Giao dịch có thương lượng</span>
               <span>Thông tin minh bạch</span>
               <span>Tiêu dùng bền vững</span>
@@ -406,8 +409,8 @@ const MainLayout = () => {
         </div>
 
         <div className="border-t border-white/10">
-          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-[#9fbbb7] sm:flex-row sm:items-center sm:justify-between">
-            <p>© 2026 HomeCycle Marketplace. All rights reserved.</p>
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
+            <p>© 2026 HomeCycle. Mọi quyền được bảo lưu.</p>
             <p>Trao giá trị cũ · Tạo tương lai xanh</p>
           </div>
         </div>
