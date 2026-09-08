@@ -13,7 +13,9 @@ import {
   Empty,
   Image,
   Input,
+  Modal,
   Pagination,
+  Radio,
   Select,
   Spin,
   Tag,
@@ -737,7 +739,137 @@ const DisputeManagementPage = () => {
     setPageNumber(1);
   };
 
-  const renderUserCard = (title, user) => {
+  const openActionModal = (
+    mode,
+  ) => {
+    setActionMode(mode);
+    setActionNote("");
+    setResolutionOutcome(
+      "BuyerFavored",
+    );
+    setReturnCompleted(true);
+    setActionFeedback(null);
+  };
+
+  const closeActionModal = () => {
+    if (submittingAction) {
+      return;
+    }
+
+    setActionMode(null);
+    setActionNote("");
+  };
+
+  const trimmedActionNote =
+    actionNote.trim();
+
+  const actionNeedsNote =
+    actionMode === "resolve" ||
+    actionMode === "reject" ||
+    actionMode === "verify-return";
+
+  const noteIsValid =
+    !actionNeedsNote ||
+    (trimmedActionNote.length >= 10 &&
+      trimmedActionNote.length <=
+        2000);
+
+  const performAction = async () => {
+    if (
+      !selectedDisputeId ||
+      !actionMode ||
+      !noteIsValid
+    ) {
+      return;
+    }
+
+    setSubmittingAction(true);
+    setActionFeedback(null);
+
+    try {
+      let successMessage =
+        "Thao tác đã được thực hiện.";
+
+      if (actionMode === "claim") {
+        await axiosClient.post(
+          `/moderator/disputes/${selectedDisputeId}/claim`,
+        );
+
+        successMessage =
+          "Đã tiếp nhận tranh chấp.";
+      }
+
+      if (actionMode === "resolve") {
+        await axiosClient.post(
+          `/moderator/disputes/${selectedDisputeId}/resolve`,
+          {
+            resolutionOutcome,
+            moderatorNote:
+              trimmedActionNote,
+          },
+        );
+
+        successMessage =
+          "Đã ghi nhận kết luận tranh chấp.";
+      }
+
+      if (actionMode === "reject") {
+        await axiosClient.post(
+          `/moderator/disputes/${selectedDisputeId}/reject`,
+          {
+            moderatorNote:
+              trimmedActionNote,
+          },
+        );
+
+        successMessage =
+          "Đã từ chối tranh chấp.";
+      }
+
+      if (
+        actionMode ===
+        "verify-return"
+      ) {
+        await axiosClient.post(
+          `/moderator/disputes/${selectedDisputeId}/verify-return`,
+          {
+            isReturnCompleted:
+              returnCompleted,
+            moderatorNote:
+              trimmedActionNote,
+          },
+        );
+
+        successMessage =
+          "Đã xác minh tình trạng hoàn trả.";
+      }
+
+      setActionMode(null);
+      setActionNote("");
+
+      setActionFeedback({
+        type: "success",
+        message: successMessage,
+      });
+
+      await refreshSelected();
+    } catch (error) {
+      setActionFeedback({
+        type: "error",
+        message: getSafeActionError(
+          error,
+          "Không thể thực hiện thao tác. Vui lòng tải lại dữ liệu và thử lại.",
+        ),
+      });
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const renderUserCard = (
+    title,
+    user,
+  ) => {
     if (!user) {
       return (
         <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-400">
@@ -781,13 +913,97 @@ const DisputeManagementPage = () => {
     );
   };
 
-  const detailStatus = getStatusMeta(detail?.status);
-  const order = detail?.target?.order;
-  const evidenceImages = Array.isArray(detail?.evidenceImages)
-    ? [...detail.evidenceImages].sort(
-        (a, b) => (a.displayOrder || 0) - (b.displayOrder || 0),
-      )
-    : [];
+  const detailStatus =
+    getStatusMeta(detail?.status);
+
+  const order =
+    detail?.target?.order ?? null;
+
+  const evidenceImages =
+    Array.isArray(
+      detail?.evidenceImages,
+    )
+      ? [...detail.evidenceImages].sort(
+          (a, b) =>
+            (a.displayOrder || 0) -
+            (b.displayOrder || 0),
+        )
+      : [];
+
+  const actions =
+    detail?.actions ??
+    detail?.Actions ??
+    {};
+
+  const detailTargetType =
+    normalizeEnumValue(
+      detail?.target?.targetType ??
+        detail?.targetType,
+      "targetType",
+    );
+
+  const isOrderTarget =
+    detailTargetType === 2;
+
+  const canClaim =
+    getActionFlag(
+      actions,
+      "canClaimDispute",
+    );
+
+  const canResolve =
+    getActionFlag(
+      actions,
+      "canResolveDispute",
+    ) && isOrderTarget;
+
+  const canReject =
+    getActionFlag(
+      actions,
+      "canRejectDispute",
+    ) && isOrderTarget;
+
+  const canVerifyReturn =
+    getActionFlag(
+      actions,
+      "canVerifyReturn",
+    ) && isOrderTarget;
+
+  const backendOffersDecision =
+    getActionFlag(
+      actions,
+      "canResolveDispute",
+    ) ||
+    getActionFlag(
+      actions,
+      "canRejectDispute",
+    );
+
+  const unsupportedDecisionTarget =
+    backendOffersDecision &&
+    !isOrderTarget;
+
+  const hasModeratorAction =
+    canClaim ||
+    canResolve ||
+    canReject ||
+    canVerifyReturn;
+
+  const modalTitle = {
+    claim: "Tiếp nhận tranh chấp",
+    resolve:
+      "Đưa ra kết luận tranh chấp",
+    reject: "Từ chối tranh chấp",
+    "verify-return":
+      "Xác minh hoàn trả",
+  }[actionMode];
+
+  const modalOkText = {
+    claim: "Tiếp nhận",
+    resolve: "Xác nhận kết luận",
+    reject: "Từ chối tranh chấp",
+    "verify-return": "Xác minh",
+  }[actionMode];
 
   return (
     <>
