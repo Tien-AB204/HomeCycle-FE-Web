@@ -421,18 +421,18 @@ export default function ProductTypeModal({
         aria-labelledby="product-type-modal-title"
         className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
             <h3
               id="product-type-modal-title"
-              className="text-xl font-bold text-gray-800"
+              className="text-xl font-bold text-text"
             >
               {isEditing
                 ? "Chỉnh sửa loại sản phẩm"
                 : "Thêm loại sản phẩm mới"}
             </h3>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-textLight">
               {isEditing
                 ? "Cập nhật tên, mô tả và trạng thái loại sản phẩm."
                 : "Tạo ProductType cùng các thuộc tính và lựa chọn ban đầu."}
@@ -444,7 +444,7 @@ export default function ProductTypeModal({
             onClick={onClose}
             disabled={submitting}
             aria-label="Đóng cửa sổ"
-            className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md p-2 text-textLight transition hover:bg-background hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="material-symbols-outlined">
               close
@@ -461,15 +461,15 @@ export default function ProductTypeModal({
               serverError) && (
               <div
                 role="alert"
-                className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                className="whitespace-pre-line rounded-lg border border-error/20 bg-error/10 p-4 text-sm text-error"
               >
                 {clientError ||
                   serverError}
               </div>
             )}
 
-            <section className="rounded-lg border border-gray-200 p-4">
-              <h4 className="mb-4 font-semibold text-gray-800">
+            <section className="rounded-lg border border-border p-4">
+              <h4 className="mb-4 font-semibold text-text">
                 Thông tin loại sản phẩm
               </h4>
 
@@ -477,10 +477,10 @@ export default function ProductTypeModal({
                 <div>
                   <label
                     htmlFor="product-type-category"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-text"
                   >
                     Danh mục{" "}
-                    <span className="text-red-500">
+                    <span className="text-error">
                       *
                     </span>
                   </label>
@@ -496,7 +496,7 @@ export default function ProductTypeModal({
                       submitting ||
                       isEditing
                     }
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:cursor-not-allowed disabled:bg-gray-100"
+                    className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:bg-background"
                   >
                     <option value="">
                       Chọn danh mục
@@ -521,7 +521,7 @@ export default function ProductTypeModal({
                   </select>
 
                   {isEditing && (
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-textLight">
                       API hiện không hỗ trợ
                       thay đổi danh mục.
                     </p>
@@ -531,10 +531,10 @@ export default function ProductTypeModal({
                 <div>
                   <label
                     htmlFor="product-type-name"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-text"
                   >
                     Tên loại sản phẩm{" "}
-                    <span className="text-red-500">
+                    <span className="text-error">
                       *
                     </span>
                   </label>
@@ -552,17 +552,17 @@ export default function ProductTypeModal({
                     disabled={submitting}
                     maxLength={150}
                     placeholder="Ví dụ: Máy lọc không khí"
-                    className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                    className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                   />
                 </div>
 
                 <div className="md:col-span-2">
                   <label
                     htmlFor="product-type-description"
-                    className="mb-1.5 block text-sm font-medium text-gray-700"
+                    className="mb-1.5 block text-sm font-medium text-text"
                   >
                     Mô tả{" "}
-                    <span className="text-red-500">
+                    <span className="text-error">
                       *
                     </span>
                   </label>
@@ -578,13 +578,13 @@ export default function ProductTypeModal({
                     rows={3}
                     maxLength={1000}
                     placeholder="Mô tả ngắn về loại sản phẩm..."
-                    className="w-full resize-y rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                    className="w-full resize-y rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                   />
                 </div>
 
                 {isEditing && (
                   <div className="md:col-span-2">
-                    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3">
+                    <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3">
                       <input
                         type="checkbox"
                         name="isActive"
@@ -595,15 +595,15 @@ export default function ProductTypeModal({
                           handleBaseFieldChange
                         }
                         disabled={submitting}
-                        className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                       />
 
                       <span>
-                        <span className="block text-sm font-medium text-gray-700">
+                        <span className="block text-sm font-medium text-text">
                           Đang hoạt động
                         </span>
 
-                        <span className="block text-xs text-gray-500">
+                        <span className="block text-xs text-textLight">
                           Bỏ chọn để ẩn loại
                           sản phẩm khỏi hệ
                           thống.
@@ -619,11 +619,11 @@ export default function ProductTypeModal({
               <section>
                 <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
                   <div>
-                    <h4 className="font-semibold text-gray-800">
+                    <h4 className="font-semibold text-text">
                       Thuộc tính sản phẩm
                     </h4>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-textLight">
                       Hiện tại sử dụng kiểu
                       Text và lựa chọn cố
                       định OptionOnly.
@@ -636,7 +636,7 @@ export default function ProductTypeModal({
                       handleAddAttribute
                     }
                     disabled={submitting}
-                    className="flex items-center gap-1 rounded-md border border-green-600 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center gap-1 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       add
@@ -656,10 +656,10 @@ export default function ProductTypeModal({
                         key={
                           attribute.clientId
                         }
-                        className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                        className="rounded-lg border border-border bg-background p-4"
                       >
                         <div className="mb-4 flex items-center justify-between gap-3">
-                          <h5 className="font-semibold text-slate-800">
+                          <h5 className="font-semibold text-text">
                             Thuộc tính{" "}
                             {attributeIndex +
                               1}
@@ -678,7 +678,7 @@ export default function ProductTypeModal({
                                 .length <= 1
                             }
                             title="Xóa thuộc tính"
-                            className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                            className="rounded-md p-1.5 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:text-border"
                           >
                             <span className="material-symbols-outlined text-[19px]">
                               delete
@@ -690,10 +690,10 @@ export default function ProductTypeModal({
                           <div>
                             <label
                               htmlFor={`attribute-name-${attribute.clientId}`}
-                              className="mb-1.5 block text-sm font-medium text-gray-700"
+                              className="mb-1.5 block text-sm font-medium text-text"
                             >
                               Tên thuộc tính{" "}
-                              <span className="text-red-500">
+                              <span className="text-error">
                                 *
                               </span>
                             </label>
@@ -718,14 +718,14 @@ export default function ProductTypeModal({
                                 submitting
                               }
                               placeholder="Ví dụ: Công nghệ lọc"
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                             />
                           </div>
 
                           <div>
                             <label
                               htmlFor={`attribute-unit-${attribute.clientId}`}
-                              className="mb-1.5 block text-sm font-medium text-gray-700"
+                              className="mb-1.5 block text-sm font-medium text-text"
                             >
                               Đơn vị
                             </label>
@@ -750,13 +750,13 @@ export default function ProductTypeModal({
                                 submitting
                               }
                               placeholder="Có thể để trống"
-                              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                              className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                             />
                           </div>
                         </div>
 
                         <div className="mt-4 flex flex-wrap gap-5">
-                          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                          <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
                             <input
                               type="checkbox"
                               checked={
@@ -775,13 +775,13 @@ export default function ProductTypeModal({
                               disabled={
                                 submitting
                               }
-                              className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                             />
 
                             Bắt buộc nhập
                           </label>
 
-                          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+                          <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
                             <input
                               type="checkbox"
                               checked={
@@ -800,16 +800,16 @@ export default function ProductTypeModal({
                               disabled={
                                 submitting
                               }
-                              className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                             />
 
                             Cho phép lọc
                           </label>
                         </div>
 
-                        <div className="mt-5 border-t border-slate-200 pt-4">
+                        <div className="mt-5 border-t border-border pt-4">
                           <div className="mb-3 flex items-center justify-between">
-                            <p className="text-sm font-semibold text-gray-700">
+                            <p className="text-sm font-semibold text-text">
                               Các lựa chọn
                             </p>
 
@@ -823,7 +823,7 @@ export default function ProductTypeModal({
                               disabled={
                                 submitting
                               }
-                              className="flex items-center gap-1 text-sm font-medium text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <span className="material-symbols-outlined text-[17px]">
                                 add
@@ -845,7 +845,7 @@ export default function ProductTypeModal({
                                   }
                                   className="flex items-center gap-2"
                                 >
-                                  <span className="w-6 text-center text-xs font-medium text-gray-400">
+                                  <span className="w-6 text-center text-xs font-medium text-textLight">
                                     {optionIndex +
                                       1}
                                   </span>
@@ -871,7 +871,7 @@ export default function ProductTypeModal({
                                     }
                                     placeholder="Giá trị lựa chọn"
                                     aria-label={`Lựa chọn ${optionIndex + 1} của thuộc tính ${attributeIndex + 1}`}
-                                    className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                                    className="min-w-0 flex-1 rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                                   />
 
                                   <button
@@ -890,7 +890,7 @@ export default function ProductTypeModal({
                                         1
                                     }
                                     title="Xóa lựa chọn"
-                                    className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                                    className="rounded-md p-1.5 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:text-border"
                                   >
                                     <span className="material-symbols-outlined text-[18px]">
                                       close
@@ -909,12 +909,12 @@ export default function ProductTypeModal({
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-4">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
             >
               Hủy
             </button>
@@ -925,7 +925,7 @@ export default function ProductTypeModal({
                 submitting ||
                 categories.length === 0
               }
-              className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting && (
                 <span className="material-symbols-outlined animate-spin text-[18px]">
