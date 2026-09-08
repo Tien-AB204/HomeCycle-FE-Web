@@ -4,23 +4,23 @@ import adminPostApi from "../../../services/apis/adminPostApi";
 const STATUS_META = {
   draft: {
     label: "Bản nháp",
-    className: "border-slate-200 bg-slate-50 text-slate-700",
+    className: "border-border bg-textLight/10 text-textLight",
   },
   active: {
     label: "Đang hoạt động",
-    className: "border-green-200 bg-green-50 text-green-700",
+    className: "border-success/20 bg-success/10 text-success",
   },
   suspended: {
     label: "Đã đình chỉ",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/20 bg-warning/10 text-warning",
   },
   closed: {
     label: "Đã đóng",
-    className: "border-gray-300 bg-gray-100 text-gray-700",
+    className: "border-border bg-background text-textLight",
   },
   deleted: {
     label: "Đã xóa",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/20 bg-error/10 text-error",
   },
 };
 
@@ -57,7 +57,7 @@ const normalizeValue = (value) =>
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
     label: status || "Chưa xác định",
-    className: "border-gray-200 bg-gray-50 text-gray-600",
+    className: "border-border bg-background text-textLight",
   };
 
 const formatEnum = (value) => ENUM_LABELS[value] || value || "—";
@@ -144,12 +144,12 @@ const getAttributeValue = (attribute) => {
 
 const DetailRow = ({ label, value, emphasize = false }) => (
   <div className="min-w-0">
-    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+    <dt className="text-xs font-semibold uppercase tracking-wide text-textLight">
       {label}
     </dt>
     <dd
       className={`mt-1 break-words text-sm ${
-        emphasize ? "font-bold text-gray-900" : "font-medium text-gray-700"
+        emphasize ? "font-bold text-text" : "font-medium text-text"
       }`}
     >
       {value ?? "—"}
@@ -241,14 +241,14 @@ export default function AdminPostDetailModal({
         aria-labelledby="admin-post-detail-title"
         className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-gray-100 px-5 py-4 sm:px-6">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-green-700">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
               Chi tiết bài đăng
             </p>
             <h2
               id="admin-post-detail-title"
-              className="mt-1 truncate text-xl font-bold text-gray-900"
+              className="mt-1 truncate text-xl font-bold text-text"
             >
               {post?.productName ||
                 postSummary?.productName ||
@@ -259,7 +259,7 @@ export default function AdminPostDetailModal({
             type="button"
             onClick={onClose}
             aria-label="Đóng chi tiết bài đăng"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-textLight transition hover:bg-background hover:text-text"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -267,7 +267,7 @@ export default function AdminPostDetailModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5 sm:p-6">
           {isLoading && (
-            <div className="flex min-h-80 items-center justify-center text-green-700">
+            <div className="flex min-h-80 items-center justify-center text-primary">
               <span className="material-symbols-outlined animate-spin text-3xl">
                 refresh
               </span>
@@ -280,15 +280,15 @@ export default function AdminPostDetailModal({
           {!isLoading && detailState.error && (
             <div
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 p-8 text-center"
+              className="rounded-xl border border-error/20 bg-error/10 p-8 text-center"
             >
-              <span className="material-symbols-outlined text-4xl text-red-400">
+              <span className="material-symbols-outlined text-4xl text-error">
                 error
               </span>
-              <h3 className="mt-2 font-bold text-red-800">
+              <h3 className="mt-2 font-bold text-error">
                 Không thể tải chi tiết bài đăng
               </h3>
-              <p className="mt-2 text-sm text-red-700">
+              <p className="mt-2 text-sm text-error">
                 {detailState.error}
               </p>
             </div>
@@ -298,7 +298,7 @@ export default function AdminPostDetailModal({
             <div className="space-y-6">
               <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <div>
-                  <div className="aspect-[4/3] overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                  <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-background">
                     {selectedMedia?.url ? (
                       <img
                         src={selectedMedia.url}
@@ -306,7 +306,7 @@ export default function AdminPostDetailModal({
                         className="h-full w-full object-contain"
                       />
                     ) : (
-                      <div className="flex h-full flex-col items-center justify-center text-gray-300">
+                      <div className="flex h-full flex-col items-center justify-center text-textLight">
                         <span className="material-symbols-outlined text-6xl">
                           image_not_supported
                         </span>
@@ -325,10 +325,10 @@ export default function AdminPostDetailModal({
                           type="button"
                           onClick={() => setSelectedMediaIndex(index)}
                           aria-label={`Xem ảnh ${index + 1}`}
-                          className={`aspect-square overflow-hidden rounded-lg border-2 bg-gray-50 transition ${
+                          className={`aspect-square overflow-hidden rounded-lg border-2 bg-background transition ${
                             selectedMediaIndex === index
-                              ? "border-green-600"
-                              : "border-transparent hover:border-gray-300"
+                              ? "border-primary"
+                              : "border-transparent hover:border-border"
                           }`}
                         >
                           <img
@@ -352,8 +352,8 @@ export default function AdminPostDetailModal({
                     <span
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
                         isBuyPost
-                          ? "bg-violet-50 text-violet-700"
-                          : "bg-sky-50 text-sky-700"
+                          ? "bg-success/10 text-success"
+                          : "bg-primary/10 text-primary"
                       }`}
                     >
                       {isBuyPost ? "Tin thu mua" : "Tin đăng bán"}
@@ -361,15 +361,15 @@ export default function AdminPostDetailModal({
                   </div>
 
                   <div>
-                    <p className="text-sm font-semibold text-gray-500">
+                    <p className="text-sm font-semibold text-textLight">
                       {isBuyPost ? "Giá thu mua dự kiến" : "Giá bán"}
                     </p>
-                    <p className="mt-1 text-3xl font-black text-green-700">
+                    <p className="mt-1 text-3xl font-black text-text">
                       {formatCurrency(post.basePrice)}
                     </p>
                   </div>
 
-                  <dl className="grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl bg-gray-50 p-4">
+                  <dl className="grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl bg-background p-4">
                     <DetailRow label="Số lượng" value={post.quantity} />
                     <DetailRow
                       label="Còn lại"
@@ -394,10 +394,10 @@ export default function AdminPostDetailModal({
                   </dl>
 
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900">
+                    <h3 className="text-sm font-bold text-text">
                       Mô tả bài đăng
                     </h3>
-                    <p className="mt-2 whitespace-pre-line text-sm leading-6 text-gray-600">
+                    <p className="mt-2 whitespace-pre-line text-sm leading-6 text-textLight">
                       {post.description || "Bài đăng chưa có mô tả."}
                     </p>
                   </div>
@@ -405,8 +405,8 @@ export default function AdminPostDetailModal({
               </div>
 
               <div className="grid gap-4 lg:grid-cols-2">
-                <section className="rounded-xl border border-gray-100 p-5">
-                  <h3 className="font-bold text-gray-900">
+                <section className="rounded-xl border border-border p-5">
+                  <h3 className="font-bold text-text">
                     Thông tin sản phẩm
                   </h3>
                   <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4">
@@ -453,14 +453,14 @@ export default function AdminPostDetailModal({
                   </dl>
 
                   {product.detailDescription && (
-                    <p className="mt-4 border-t border-gray-100 pt-4 text-sm leading-6 text-gray-600">
+                    <p className="mt-4 border-t border-border pt-4 text-sm leading-6 text-textLight">
                       {product.detailDescription}
                     </p>
                   )}
                 </section>
 
-                <section className="rounded-xl border border-gray-100 p-5">
-                  <h3 className="font-bold text-gray-900">
+                <section className="rounded-xl border border-border p-5">
+                  <h3 className="font-bold text-text">
                     Giao nhận và hệ thống
                   </h3>
                   <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4">
@@ -493,8 +493,8 @@ export default function AdminPostDetailModal({
               </div>
 
               {attributes.length > 0 && (
-                <section className="rounded-xl border border-gray-100 p-5">
-                  <h3 className="font-bold text-gray-900">
+                <section className="rounded-xl border border-border p-5">
+                  <h3 className="font-bold text-text">
                     Thuộc tính chuyên biệt
                   </h3>
                   <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -512,11 +512,11 @@ export default function AdminPostDetailModal({
           )}
         </div>
 
-        <footer className="flex shrink-0 flex-col-reverse justify-end gap-3 border-t border-gray-100 px-5 py-4 sm:flex-row sm:px-6">
+        <footer className="flex shrink-0 flex-col-reverse justify-end gap-3 border-t border-border px-5 py-4 sm:flex-row sm:px-6">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50"
+            className="rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-text transition hover:bg-background"
           >
             Đóng
           </button>
@@ -524,7 +524,7 @@ export default function AdminPostDetailModal({
             <button
               type="button"
               onClick={() => onRequestDelete(post)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-red-800"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-error px-4 py-2.5 text-sm font-bold text-white transition hover:bg-error"
             >
               <span className="material-symbols-outlined text-[18px]">
                 delete
