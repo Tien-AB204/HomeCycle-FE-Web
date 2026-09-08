@@ -167,14 +167,14 @@ export default function BusinessServiceAreasSection({
 
       <div className="mb-7 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {serviceAreas.length === 0 ? (
-          <div className="sm:col-span-2 xl:col-span-3 rounded-2xl border border-dashed border-[#B8D0CC] bg-[#F7FAF9] px-6 py-9 text-center">
-            <span className="material-symbols-outlined text-4xl text-[#7FA9A6]">
+          <div className="sm:col-span-2 xl:col-span-3 rounded-2xl border border-dashed border-border bg-background px-6 py-9 text-center">
+            <span className="material-symbols-outlined text-4xl text-border">
               add_location_alt
             </span>
-            <p className="mt-2 font-black text-[#183F41]">
+            <p className="mt-2 font-black text-text">
               Chưa có khu vực hoạt động
             </p>
-            <p className="mt-1 text-sm text-[#68807F]">
+            <p className="mt-1 text-sm text-textLight">
               Thêm khu vực đầu tiên bằng biểu mẫu bên dưới.
             </p>
           </div>
@@ -188,10 +188,10 @@ export default function BusinessServiceAreasSection({
             return (
               <article
                 key={areaId || index}
-                className="rounded-2xl border border-[#DCE8E5] bg-[#F8FBFA] p-4"
+                className="rounded-2xl border border-border bg-background p-4"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#4F8588] shadow-sm">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
                     <span className="material-symbols-outlined text-[20px]">
                       location_on
                     </span>
@@ -202,7 +202,7 @@ export default function BusinessServiceAreasSection({
                       onClick={() =>
                         handleEdit(area)
                       }
-                      className="rounded-lg p-2 text-[#526E6D] hover:bg-white hover:text-[#2F6F9F]"
+                      className="rounded-lg p-2 text-textLight hover:bg-white hover:text-primary"
                       aria-label="Sửa khu vực"
                     >
                       <span className="material-symbols-outlined text-[19px]">
@@ -216,7 +216,7 @@ export default function BusinessServiceAreasSection({
                         setError("");
                         setSuccess("");
                       }}
-                      className="rounded-lg p-2 text-[#526E6D] hover:bg-red-50 hover:text-red-600"
+                      className="rounded-lg p-2 text-textLight hover:bg-error/10 hover:text-error"
                       aria-label="Xóa khu vực"
                     >
                       <span className="material-symbols-outlined text-[19px]">
@@ -225,11 +225,11 @@ export default function BusinessServiceAreasSection({
                     </button>
                   </div>
                 </div>
-                <h3 className="mt-3 font-black text-[#183F41]">
+                <h3 className="mt-3 font-black text-text">
                   {normalizedArea.city ||
                     "Chưa có tỉnh thành"}
                 </h3>
-                <p className="mt-1 text-sm leading-6 text-[#68807F]">
+                <p className="mt-1 text-sm leading-6 text-textLight">
                   {[
                     normalizedArea.street,
                     normalizedArea.ward,
@@ -246,10 +246,10 @@ export default function BusinessServiceAreasSection({
 
       <form
         onSubmit={handleSubmit}
-        className="rounded-2xl border border-[#DCE8E5] bg-white p-4 sm:p-5"
+        className="rounded-2xl border border-border bg-white p-4 sm:p-5"
       >
         <div className="mb-4 flex items-center justify-between gap-4">
-          <h3 className="font-black text-[#183F41]">
+          <h3 className="font-black text-text">
             {editingId
               ? "Chỉnh sửa khu vực"
               : "Thêm khu vực mới"}
@@ -258,7 +258,7 @@ export default function BusinessServiceAreasSection({
             <button
               type="button"
               onClick={resetForm}
-              className="text-sm font-bold text-[#607B7A] hover:text-[#285E62]"
+              className="text-sm font-bold text-textLight hover:text-primary"
             >
               Hủy chỉnh sửa
             </button>
@@ -288,24 +288,24 @@ export default function BusinessServiceAreasSection({
 
       {deleteTarget && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-[#102D2F]/45 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-primary/45 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-area-title"
         >
           <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white p-6 shadow-2xl">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-error/10 text-error">
               <span className="material-symbols-outlined">
                 delete_forever
               </span>
             </div>
             <h3
               id="delete-area-title"
-              className="mt-4 text-xl font-black text-[#183F41]"
+              className="mt-4 text-xl font-black text-text"
             >
               Xóa khu vực hoạt động?
             </h3>
-            <p className="mt-2 text-sm leading-6 text-[#68807F]">
+            <p className="mt-2 text-sm leading-6 text-textLight">
               Khu vực {normalizeArea(deleteTarget).city} sẽ bị xóa khỏi hồ sơ doanh nghiệp.
             </p>
             <div className="mt-6 flex justify-end gap-3">
@@ -315,7 +315,7 @@ export default function BusinessServiceAreasSection({
                   setDeleteTarget(null)
                 }
                 disabled={isSaving}
-                className="rounded-xl border border-[#B8CCC8] px-4 py-2.5 text-sm font-bold text-[#526E6D] hover:bg-[#F5F9F8] disabled:opacity-60"
+                className="rounded-xl border border-border px-4 py-2.5 text-sm font-bold text-textLight hover:bg-background disabled:opacity-60"
               >
                 Giữ lại
               </button>
@@ -323,7 +323,7 @@ export default function BusinessServiceAreasSection({
                 type="button"
                 onClick={handleDelete}
                 disabled={isSaving}
-                className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-black text-white hover:bg-red-700 disabled:opacity-60"
+                className="rounded-xl bg-error px-4 py-2.5 text-sm font-black text-white hover:bg-error disabled:opacity-60"
               >
                 {isSaving
                   ? "ĐANG XÓA..."

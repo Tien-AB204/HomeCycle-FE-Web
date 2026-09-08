@@ -14,7 +14,7 @@ const normalizeText = (value) =>
     .trim();
 
 const selectClass =
-  "w-full rounded-xl border border-[#CDDED9] bg-white px-3 py-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10 disabled:cursor-wait disabled:bg-[#F5F8F7]";
+  "w-full rounded-xl border border-border bg-white px-3 py-3 text-sm text-text outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-wait disabled:bg-background";
 
 const FieldLabel = ({
   htmlFor,
@@ -23,11 +23,11 @@ const FieldLabel = ({
 }) => (
   <label
     htmlFor={htmlFor}
-    className="mb-1.5 block text-xs font-black uppercase tracking-wide text-[#607B7A]"
+    className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight"
   >
     {children}
     {required && (
-      <span className="text-red-500">
+      <span className="text-error">
         {" "}*
       </span>
     )}
@@ -271,7 +271,7 @@ export default function BusinessAddressFields({
         {error && (
           <p
             role="alert"
-            className="mt-1.5 text-xs text-red-600"
+            className="mt-1.5 text-xs text-error"
           >
             {error}
           </p>

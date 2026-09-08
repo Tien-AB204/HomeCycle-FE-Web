@@ -1,5 +1,5 @@
 export const businessInputClass =
-  "w-full rounded-xl border border-[#CDDED9] bg-white px-3 py-3 text-sm text-[#183436] outline-none transition placeholder:text-[#9AAEAC] focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10 disabled:cursor-not-allowed disabled:bg-[#F5F8F7]";
+  "w-full rounded-xl border border-border bg-white px-3 py-3 text-sm text-text outline-none transition placeholder:text-textLight focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-background";
 
 export const BusinessField = ({
   id,
@@ -16,11 +16,11 @@ export const BusinessField = ({
     <div className={className}>
       <label
         htmlFor={id}
-        className="mb-1.5 block text-xs font-black uppercase tracking-wide text-[#607B7A]"
+        className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight"
       >
         {label}
         {required && (
-          <span className="text-red-500">
+          <span className="text-error">
             {" "}*
           </span>
         )}
@@ -50,11 +50,11 @@ export const BusinessFileField = ({
   <div>
     <label
       htmlFor={id}
-      className="mb-1.5 block text-xs font-black uppercase tracking-wide text-[#607B7A]"
+      className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight"
     >
       {label}
       {required && (
-        <span className="text-red-500">
+        <span className="text-error">
           {" "}*
         </span>
       )}
@@ -65,17 +65,17 @@ export const BusinessFileField = ({
       type="file"
       accept={accept}
       onChange={onChange}
-      className="block w-full rounded-xl border border-[#CDDED9] bg-white text-sm text-[#68807F] file:mr-4 file:border-0 file:bg-[#E2F0ED] file:px-4 file:py-3 file:font-bold file:text-[#285E62] hover:file:bg-[#D2E8E3]"
+      className="block w-full rounded-xl border border-border bg-white text-sm text-textLight file:mr-4 file:border-0 file:bg-primary/10 file:px-4 file:py-3 file:font-bold file:text-primary hover:file:bg-primary/20"
     />
 
-    <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#7A9290]">
+    <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-textLight">
       <span>{helpText}</span>
       {currentUrl && (
         <a
           href={currentUrl}
           target="_blank"
           rel="noreferrer"
-          className="font-bold text-[#2F6F9F] hover:underline"
+          className="font-bold text-primary hover:underline"
         >
           Xem tệp hiện tại
         </a>
@@ -89,18 +89,18 @@ export const BusinessSectionIntro = ({
   title,
   description,
 }) => (
-  <div className="mb-6 flex items-start gap-3 border-b border-[#DCE8E5] pb-5">
-    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#E2F0ED] text-[#285E62]">
+  <div className="mb-6 flex items-start gap-3 border-b border-border pb-5">
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
       <span className="material-symbols-outlined">
         {icon}
       </span>
     </div>
 
     <div>
-      <h2 className="text-lg font-black text-[#183F41]">
+      <h2 className="text-lg font-black text-text">
         {title}
       </h2>
-      <p className="mt-1 text-sm leading-6 text-[#68807F]">
+      <p className="mt-1 text-sm leading-6 text-textLight">
         {description}
       </p>
     </div>
@@ -115,7 +115,7 @@ export const FormMessage = ({
     {error && (
       <div
         role="alert"
-        className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+        className="mb-5 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm text-error"
       >
         {error}
       </div>
@@ -125,7 +125,7 @@ export const FormMessage = ({
       <div
         role="status"
         aria-live="polite"
-        className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+        className="mb-5 rounded-xl border border-success/20 bg-success/10 px-4 py-3 text-sm text-success"
       >
         {success}
       </div>
@@ -140,7 +140,7 @@ export const SaveButton = ({
   <button
     type="submit"
     disabled={isSaving}
-    className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
+    className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
   >
     {isSaving ? "ĐANG LƯU..." : children}
   </button>
