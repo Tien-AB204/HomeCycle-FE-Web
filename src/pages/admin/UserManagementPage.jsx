@@ -25,38 +25,38 @@ const STATUS_OPTIONS = [
 const ROLE_META = {
   personal: {
     label: "Cá nhân",
-    className: "border-sky-200 bg-sky-50 text-sky-700",
+    className: "border-primary/30 bg-primary/10 text-primary",
   },
   business: {
     label: "Doanh nghiệp",
-    className: "border-violet-200 bg-violet-50 text-violet-700",
+    className: "border-success/30 bg-success/10 text-success",
   },
   moderator: {
     label: "Kiểm duyệt viên",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/20 bg-warning/10 text-warning",
   },
   admin: {
     label: "Quản trị viên",
-    className: "border-slate-300 bg-slate-100 text-slate-700",
+    className: "border-border bg-background text-textLight",
   },
 };
 
 const STATUS_META = {
   pending: {
     label: "Chờ kích hoạt",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/20 bg-warning/10 text-warning",
   },
   active: {
     label: "Đang hoạt động",
-    className: "border-green-200 bg-green-50 text-green-700",
+    className: "border-success/20 bg-success/10 text-success",
   },
   suspended: {
     label: "Đã bị khóa",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/20 bg-error/10 text-error",
   },
   deleted: {
     label: "Đã xóa",
-    className: "border-gray-300 bg-gray-100 text-gray-600",
+    className: "border-border bg-background text-textLight",
   },
 };
 
@@ -66,13 +66,13 @@ const normalizeValue = (value) =>
 const getRoleMeta = (role) =>
   ROLE_META[normalizeValue(role)] || {
     label: role || "Chưa xác định",
-    className: "border-gray-200 bg-gray-50 text-gray-600",
+    className: "border-border bg-background text-textLight",
   };
 
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
     label: status || "Chưa xác định",
-    className: "border-gray-200 bg-gray-50 text-gray-600",
+    className: "border-border bg-background text-textLight",
   };
 
 const getErrorMessage = (error) => {
@@ -316,30 +316,30 @@ export default function UserManagementPage() {
   return (
     <section className="space-y-6 p-4 sm:p-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-green-700">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           Quản trị hệ thống
         </p>
-        <h1 className="mt-1 text-2xl font-bold text-gray-900">
+        <h1 className="mt-1 text-2xl font-bold text-text">
           Quản lý người dùng
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-textLight">
           Tìm kiếm, theo dõi trạng thái và kiểm soát quyền truy cập tài khoản.
         </p>
       </header>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
         <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_220px_220px_auto]">
           <label className="relative block">
             <span className="sr-only">Tìm kiếm người dùng</span>
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
               search
             </span>
             <input
               type="search"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
-              placeholder="Tìm theo username, email, số điện thoại..."
-              className="w-full rounded-lg border border-gray-200 py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+              placeholder="Tìm theo tên đăng nhập, thư điện tử, số điện thoại..."
+              className="w-full rounded-lg border border-border py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
             />
           </label>
 
@@ -350,7 +350,7 @@ export default function UserManagementPage() {
               setPageNumber(1);
             }}
             aria-label="Lọc theo vai trò"
-            className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className="rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
           >
             {ROLE_OPTIONS.map((option) => (
               <option key={option.value || "all"} value={option.value}>
@@ -366,7 +366,7 @@ export default function UserManagementPage() {
               setPageNumber(1);
             }}
             aria-label="Lọc theo trạng thái"
-            className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className="rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
           >
             {STATUS_OPTIONS.map((option) => (
               <option key={option.value || "all"} value={option.value}>
@@ -379,7 +379,7 @@ export default function UserManagementPage() {
             type="button"
             onClick={resetFilters}
             disabled={!hasFilters}
-            className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-textLight transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
           >
             Xóa bộ lọc
           </button>
@@ -389,7 +389,7 @@ export default function UserManagementPage() {
       {successMessage && (
         <div
           role="status"
-          className="flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-700"
+          className="flex items-start justify-between gap-4 rounded-xl border border-success/20 bg-success/10 p-4 text-sm font-semibold text-success"
         >
           <span>{successMessage}</span>
           <button
@@ -406,7 +406,7 @@ export default function UserManagementPage() {
       {isLoading && (
         <div
           role="status"
-          className="flex min-h-64 items-center justify-center rounded-xl border border-gray-100 bg-white text-green-700 shadow-sm"
+          className="flex min-h-64 items-center justify-center rounded-xl border border-border bg-white text-primary shadow-sm"
         >
           <span className="material-symbols-outlined animate-spin text-3xl">
             refresh
@@ -420,18 +420,18 @@ export default function UserManagementPage() {
       {!isLoading && listState.error && (
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-8 text-center"
+          className="rounded-xl border border-error/20 bg-error/10 p-8 text-center"
         >
-          <h2 className="font-bold text-red-800">
+          <h2 className="font-bold text-error">
             Không thể tải danh sách người dùng
           </h2>
-          <p className="mt-2 text-sm text-red-700">{listState.error}</p>
+          <p className="mt-2 text-sm text-error">{listState.error}</p>
           <button
             type="button"
             onClick={() =>
               setRequestVersion((currentVersion) => currentVersion + 1)
             }
-            className="mt-4 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800"
+            className="mt-4 rounded-lg bg-error px-4 py-2 text-sm font-semibold text-white transition hover:bg-error"
           >
             Thử lại
           </button>
@@ -439,14 +439,14 @@ export default function UserManagementPage() {
       )}
 
       {!isLoading && !listState.error && accounts.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center shadow-sm">
-          <span className="material-symbols-outlined text-5xl text-gray-300">
+        <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center shadow-sm">
+          <span className="material-symbols-outlined text-5xl text-textLight">
             group_off
           </span>
-          <h2 className="mt-3 font-bold text-gray-800">
+          <h2 className="mt-3 font-bold text-text">
             Không tìm thấy người dùng
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-textLight">
             Hãy thay đổi từ khóa hoặc điều kiện lọc hiện tại.
           </p>
         </div>
@@ -454,7 +454,7 @@ export default function UserManagementPage() {
 
       {!isLoading && !listState.error && accounts.length > 0 && (
         <>
-          <div className="hidden overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm md:block">
+          <div className="hidden overflow-x-auto rounded-xl border border-border bg-white shadow-sm md:block">
             <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-sm">
               <colgroup>
                 <col className="w-[27%]" />
@@ -466,11 +466,11 @@ export default function UserManagementPage() {
                 <col className="w-[11%]" />
               </colgroup>
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+                <tr className="border-b border-border bg-background text-xs uppercase tracking-wide text-textLight">
                   <th className="px-4 py-3 font-semibold">Người dùng</th>
                   <th className="px-4 py-3 font-semibold">Vai trò</th>
                   <th className="px-4 py-3 font-semibold">Số điện thoại</th>
-                  <th className="px-4 py-3 font-semibold">Email</th>
+                  <th className="px-4 py-3 font-semibold">Thư điện tử</th>
                   <th className="px-4 py-3 font-semibold">Trạng thái</th>
                   <th className="px-4 py-3 font-semibold">Ngày tạo</th>
                   <th className="px-4 py-3 text-right font-semibold">
@@ -478,7 +478,7 @@ export default function UserManagementPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {accounts.map((account) => {
                   const roleMeta = getRoleMeta(account.role);
                   const statusMeta = getStatusMeta(account.status);
@@ -487,11 +487,11 @@ export default function UserManagementPage() {
                   return (
                     <tr
                       key={account.userId}
-                      className="transition hover:bg-gray-50/70"
+                      className="transition hover:bg-background/70"
                     >
                       <td className="px-4 py-4">
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-100 font-bold text-green-700">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-success/10 font-bold text-success">
                             {account.avatarUrl ? (
                               <img
                                 src={account.avatarUrl}
@@ -503,11 +503,11 @@ export default function UserManagementPage() {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate font-bold text-gray-900">
+                            <p className="truncate font-bold text-text">
                               {getDisplayName(account)}
                             </p>
-                            <p className="mt-1 truncate text-xs text-gray-500">
-                              {account.email || "Chưa có email"}
+                            <p className="mt-1 truncate text-xs text-textLight">
+                              {account.email || "Chưa có thư điện tử"}
                             </p>
                           </div>
                         </div>
@@ -515,15 +515,15 @@ export default function UserManagementPage() {
                       <td className="px-4 py-4">
                         <Badge meta={roleMeta} />
                       </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-gray-600">
+                      <td className="whitespace-nowrap px-4 py-4 text-textLight">
                         {account.phoneNumber || "—"}
                       </td>
                       <td className="px-4 py-4">
                         <span
                           className={`inline-flex items-center gap-1.5 text-xs font-semibold ${
                             account.isEmailVerified
-                              ? "text-green-700"
-                              : "text-amber-700"
+                              ? "text-success"
+                              : "text-warning"
                           }`}
                         >
                           <span className="material-symbols-outlined text-[17px]">
@@ -535,7 +535,7 @@ export default function UserManagementPage() {
                       <td className="px-4 py-4">
                         <Badge meta={statusMeta} />
                       </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-gray-500">
+                      <td className="whitespace-nowrap px-4 py-4 text-textLight">
                         {formatDate(account.createdAt)}
                       </td>
                       <td className="px-4 py-4 text-right">
@@ -544,10 +544,10 @@ export default function UserManagementPage() {
                           onClick={() => openConfirmation(account, action)}
                           disabled={action.disabled}
                           title={action.label}
-                          className={`whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
+                          className={`whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-bold transition disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-textLight ${
                             action.type === "unlock"
-                              ? "border-green-700 text-green-700 hover:bg-green-700 hover:text-white"
-                              : "border-red-700 text-red-700 hover:bg-red-700 hover:text-white"
+                              ? "border-success text-success hover:bg-success hover:text-white"
+                              : "border-error text-error hover:bg-error hover:text-white"
                           }`}
                         >
                           {action.label}
@@ -569,10 +569,10 @@ export default function UserManagementPage() {
               return (
                 <article
                   key={account.userId}
-                  className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm"
+                  className="rounded-xl border border-border bg-white p-4 shadow-sm"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-green-100 font-bold text-green-700">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-success/10 font-bold text-success">
                       {account.avatarUrl ? (
                         <img
                           src={account.avatarUrl}
@@ -584,11 +584,11 @@ export default function UserManagementPage() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h2 className="truncate font-bold text-gray-900">
+                      <h2 className="truncate font-bold text-text">
                         {getDisplayName(account)}
                       </h2>
-                      <p className="mt-1 break-all text-xs text-gray-500">
-                        {account.email || "Chưa có email"}
+                      <p className="mt-1 break-all text-xs text-textLight">
+                        {account.email || "Chưa có thư điện tử"}
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Badge meta={roleMeta} />
@@ -596,16 +596,16 @@ export default function UserManagementPage() {
                       </div>
                     </div>
                   </div>
-                  <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4 text-xs">
+                  <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs">
                     <div>
-                      <dt className="text-gray-400">Số điện thoại</dt>
-                      <dd className="mt-1 font-semibold text-gray-700">
+                      <dt className="text-textLight">Số điện thoại</dt>
+                      <dd className="mt-1 font-semibold text-text">
                         {account.phoneNumber || "—"}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-gray-400">Ngày tạo</dt>
-                      <dd className="mt-1 font-semibold text-gray-700">
+                      <dt className="text-textLight">Ngày tạo</dt>
+                      <dd className="mt-1 font-semibold text-text">
                         {formatDate(account.createdAt)}
                       </dd>
                     </div>
@@ -614,10 +614,10 @@ export default function UserManagementPage() {
                     type="button"
                     onClick={() => openConfirmation(account, action)}
                     disabled={action.disabled}
-                    className={`mt-4 w-full rounded-lg border px-3 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 ${
+                    className={`mt-4 w-full rounded-lg border px-3 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-textLight ${
                       action.type === "unlock"
-                        ? "border-green-700 text-green-700"
-                        : "border-red-700 text-red-700"
+                        ? "border-success text-success"
+                        : "border-error text-error"
                     }`}
                   >
                     {action.label}
@@ -627,8 +627,8 @@ export default function UserManagementPage() {
             })}
           </div>
 
-          <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm sm:flex-row">
-            <p className="text-sm text-gray-500">
+          <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 shadow-sm sm:flex-row">
+            <p className="text-sm text-textLight">
               Trang {listState.result?.pageNumber || pageNumber} /{" "}
               {Math.max(1, listState.result?.totalPages || 1)} · Tổng{" "}
               {listState.result?.totalCount || 0} người dùng
@@ -638,7 +638,7 @@ export default function UserManagementPage() {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage - 1)}
                 disabled={!listState.result?.hasPreviousPage}
-                className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang trước
               </button>
@@ -646,7 +646,7 @@ export default function UserManagementPage() {
                 type="button"
                 onClick={() => setPageNumber((currentPage) => currentPage + 1)}
                 disabled={!listState.result?.hasNextPage}
-                className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang sau
               </button>
@@ -675,8 +675,8 @@ export default function UserManagementPage() {
               <div
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
                   pendingAction.type === "lock"
-                    ? "bg-red-50 text-red-700"
-                    : "bg-green-50 text-green-700"
+                    ? "bg-error/10 text-error"
+                    : "bg-success/10 text-success"
                 }`}
               >
                 <span className="material-symbols-outlined">
@@ -686,18 +686,18 @@ export default function UserManagementPage() {
               <div className="min-w-0">
                 <h2
                   id="admin-user-action-title"
-                  className="text-lg font-bold text-gray-900"
+                  className="text-lg font-bold text-text"
                 >
                   {pendingAction.type === "lock"
                     ? "Khóa tài khoản?"
                     : "Mở khóa tài khoản?"}
                 </h2>
-                <p className="mt-2 text-sm leading-6 text-gray-500">
+                <p className="mt-2 text-sm leading-6 text-textLight">
                   {pendingAction.type === "lock"
                     ? "Người dùng sẽ không thể tiếp tục đăng nhập và sử dụng các chức năng yêu cầu tài khoản."
                     : "Người dùng sẽ có thể đăng nhập và sử dụng lại tài khoản."}
                 </p>
-                <p className="mt-2 truncate text-sm font-bold text-gray-800">
+                <p className="mt-2 truncate text-sm font-bold text-text">
                   {getDisplayName(pendingAction.account)}
                 </p>
               </div>
@@ -706,7 +706,7 @@ export default function UserManagementPage() {
             {actionError && (
               <div
                 role="alert"
-                className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                className="mt-4 rounded-lg border border-error/20 bg-error/10 p-3 text-sm text-error"
               >
                 {actionError}
               </div>
@@ -717,7 +717,7 @@ export default function UserManagementPage() {
                 type="button"
                 onClick={closeConfirmation}
                 disabled={actionBusy}
-                className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-text transition hover:bg-background disabled:opacity-50"
               >
                 Hủy
               </button>
@@ -727,8 +727,8 @@ export default function UserManagementPage() {
                 disabled={actionBusy}
                 className={`inline-flex min-w-32 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
                   pendingAction.type === "lock"
-                    ? "bg-red-700 hover:bg-red-800"
-                    : "bg-green-700 hover:bg-green-800"
+                    ? "bg-error hover:bg-error/90"
+                    : "bg-success hover:bg-success/90"
                 }`}
               >
                 {actionBusy && (
