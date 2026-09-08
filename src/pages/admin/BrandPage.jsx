@@ -548,14 +548,14 @@ export default function BrandPage() {
   };
 
   return (
-    <div className="m-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="m-6 rounded-xl border border-border bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-text">
             Quản lý thương hiệu
           </h2>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-textLight">
             Quản lý{" "}
             {pagination.totalCount} thương
             hiệu sản phẩm trên hệ thống
@@ -570,7 +570,7 @@ export default function BrandPage() {
           disabled={Boolean(
             deletingBrandId,
           )}
-          className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">
             add
@@ -580,18 +580,18 @@ export default function BrandPage() {
         </button>
       </div>
 
-      <section className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <section className="mb-6 rounded-lg border border-border bg-background p-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
           <div>
             <label
               htmlFor="brand-search"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-text"
             >
               Tìm kiếm thương hiệu
             </label>
 
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
                 search
               </span>
 
@@ -607,11 +607,11 @@ export default function BrandPage() {
                   setSuccessMessage("");
                 }}
                 placeholder="Nhập tên hoặc mô tả thương hiệu..."
-                className="w-full rounded-md border border-gray-300 bg-white py-2.5 pl-10 pr-10 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+                className="w-full rounded-md border border-border bg-white py-2.5 pl-10 pr-10 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
 
               {isWaitingForSearch ? (
-                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[19px] text-gray-400">
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[19px] text-textLight">
                   refresh
                 </span>
               ) : searchTerm ? (
@@ -621,7 +621,7 @@ export default function BrandPage() {
                     setSearchTerm("")
                   }
                   aria-label="Xóa từ khóa tìm kiếm"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-textLight hover:text-text"
                 >
                   <span className="material-symbols-outlined text-[19px]">
                     close
@@ -634,7 +634,7 @@ export default function BrandPage() {
           <div>
             <label
               htmlFor="brand-status-filter"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-text"
             >
               Trạng thái
             </label>
@@ -645,7 +645,7 @@ export default function BrandPage() {
               onChange={
                 handleStatusFilterChange
               }
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+              className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="all">
                 Tất cả trạng thái
@@ -671,7 +671,7 @@ export default function BrandPage() {
                 !hasInputFilters &&
                 !hasAppliedFilters
               }
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 lg:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-border bg-white px-4 py-2.5 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40 lg:w-auto"
             >
               <span className="material-symbols-outlined text-[18px]">
                 filter_alt_off
@@ -683,9 +683,9 @@ export default function BrandPage() {
         </div>
 
         {hasAppliedFilters && (
-          <p className="mt-3 text-xs text-gray-500">
+          <p className="mt-3 text-xs text-textLight">
             Tìm thấy{" "}
-            <span className="font-semibold text-gray-700">
+            <span className="font-semibold text-text">
               {pagination.totalCount}
             </span>{" "}
             thương hiệu phù hợp trên toàn hệ thống.
@@ -696,9 +696,9 @@ export default function BrandPage() {
       {successMessage && (
         <div
           role="status"
-          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 p-4"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-success/20 bg-success/10 p-4"
         >
-          <p className="text-sm text-green-700">
+          <p className="text-sm text-success">
             {successMessage}
           </p>
 
@@ -708,7 +708,7 @@ export default function BrandPage() {
               setSuccessMessage("")
             }
             aria-label="Đóng thông báo"
-            className="text-green-700 hover:text-green-900"
+            className="text-success hover:text-success/80"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -720,9 +720,9 @@ export default function BrandPage() {
       {actionError && (
         <div
           role="alert"
-          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-error/20 bg-error/10 p-4"
         >
-          <p className="whitespace-pre-line text-sm text-red-700">
+          <p className="whitespace-pre-line text-sm text-error">
             {actionError}
           </p>
 
@@ -732,7 +732,7 @@ export default function BrandPage() {
               setActionError("")
             }
             aria-label="Đóng thông báo lỗi"
-            className="text-red-700 hover:text-red-900"
+            className="text-error hover:text-error/80"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -744,16 +744,16 @@ export default function BrandPage() {
       {error && (
         <div
           role="alert"
-          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center"
+          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-error/20 bg-error/10 p-4 sm:flex-row sm:items-center"
         >
-          <p className="whitespace-pre-line text-sm text-red-700">
+          <p className="whitespace-pre-line text-sm text-error">
             {error}
           </p>
 
           <button
             type="button"
             onClick={handleRetry}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+            className="rounded-md bg-error px-4 py-2 text-sm font-medium text-white transition hover:bg-error"
           >
             Thử lại
           </button>
@@ -763,7 +763,7 @@ export default function BrandPage() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+            <tr className="border-b border-border bg-background text-xs uppercase tracking-wider text-textLight">
               <th className="w-20 p-4 font-semibold">
                 Logo
               </th>
@@ -790,12 +790,12 @@ export default function BrandPage() {
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100 text-sm">
+          <tbody className="divide-y divide-border text-sm">
             {loading ? (
               <tr>
                 <td
                   colSpan={6}
-                  className="p-10 text-center text-gray-500"
+                  className="p-10 text-center text-textLight"
                 >
                   <div
                     role="status"
@@ -820,28 +820,28 @@ export default function BrandPage() {
                 return (
                   <tr
                     key={brand.brandId}
-                    className="transition-colors hover:bg-gray-50"
+                    className="transition-colors hover:bg-background"
                   >
                     <td className="p-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#244f4d] text-lg font-bold text-white">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-lg font-bold text-white">
                         {getBrandInitial(
                           brand.brandName,
                         )}
                       </div>
                     </td>
 
-                    <td className="p-4 font-bold text-[#244f4d]">
+                    <td className="p-4 font-bold text-text">
                       {brand.brandName}
                     </td>
 
-                    <td className="max-w-[420px] p-4 text-gray-600">
+                    <td className="max-w-[420px] p-4 text-textLight">
                       <p className="line-clamp-2">
                         {brand.description ||
                           "Không có mô tả"}
                       </p>
                     </td>
 
-                    <td className="whitespace-nowrap p-4 text-gray-600">
+                    <td className="whitespace-nowrap p-4 text-textLight">
                       {formatCreatedAt(
                         brand.createdAt,
                       )}
@@ -852,8 +852,8 @@ export default function BrandPage() {
                         className={[
                           "inline-block rounded-full px-3 py-1 text-xs font-semibold",
                           brand.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600",
+                            ? "bg-success/10 text-success"
+                            : "bg-background text-textLight",
                         ].join(" ")}
                       >
                         {brand.isActive
@@ -875,7 +875,7 @@ export default function BrandPage() {
                         )}
                         title="Chỉnh sửa"
                         aria-label={`Chỉnh sửa ${brand.brandName}`}
-                        className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="rounded-md p-1.5 text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <span className="material-symbols-outlined text-[18px]">
                           edit
@@ -892,10 +892,10 @@ export default function BrandPage() {
                             : "Kích hoạt lại thương hiệu"
                         }
                         aria-label={`${brand.isActive ? "Ẩn" : "Kích hoạt lại"} ${brand.brandName}`}
-                        className={`rounded-md p-1.5 transition disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50 ${
+                        className={`rounded-md p-1.5 transition disabled:cursor-not-allowed disabled:text-border disabled:opacity-50 ${
                           brand.isActive
-                            ? "text-red-600 hover:bg-red-50"
-                            : "text-green-700 hover:bg-green-50"
+                            ? "text-error hover:bg-error/10"
+                            : "text-success hover:bg-success/10"
                         }`}
                       >
                         <span
@@ -921,7 +921,7 @@ export default function BrandPage() {
               <tr>
                 <td
                   colSpan={6}
-                  className="p-10 text-center text-gray-500"
+                  className="p-10 text-center text-textLight"
                 >
                   {hasAppliedFilters
                     ? "Không tìm thấy thương hiệu phù hợp."
@@ -936,8 +936,8 @@ export default function BrandPage() {
       {!loading &&
         !error &&
         pagination.totalCount > 0 && (
-          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-4 sm:flex-row">
-            <p className="text-sm text-gray-500">
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row">
+            <p className="text-sm text-textLight">
               Trang{" "}
               {pagination.pageNumber} /{" "}
               {Math.max(
@@ -956,7 +956,7 @@ export default function BrandPage() {
                   loading ||
                   !pagination.hasPreviousPage
                 }
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang trước
               </button>
@@ -970,7 +970,7 @@ export default function BrandPage() {
                   loading ||
                   !pagination.hasNextPage
                 }
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang sau
               </button>

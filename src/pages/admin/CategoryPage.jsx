@@ -428,14 +428,14 @@ export default function CategoryPage() {
   const hasFilters = Boolean(debouncedSearchTerm) || statusFilter !== "all";
 
   return (
-    <div className="m-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="m-6 rounded-xl border border-border bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-text">
             Danh sách danh mục
           </h2>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-textLight">
             {hasFilters
               ? `Tìm thấy ${pagination.totalCount} danh mục`
               : `Quản lý ${pagination.totalCount} danh mục hiện có trên hệ thống`}
@@ -446,7 +446,7 @@ export default function CategoryPage() {
           type="button"
           onClick={handleOpenCreateModal}
           disabled={Boolean(deletingCategoryId)}
-          className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
           Thêm danh mục mới
@@ -455,7 +455,7 @@ export default function CategoryPage() {
 
       <div className="mb-6 flex flex-col gap-3 md:flex-row">
         <div className="relative flex-1">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
             search
           </span>
 
@@ -464,7 +464,7 @@ export default function CategoryPage() {
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder="Tìm theo tên hoặc mô tả danh mục..."
-            className="w-full rounded-md border border-gray-300 py-2.5 pl-10 pr-10 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+            className="w-full rounded-md border border-border py-2.5 pl-10 pr-10 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
 
           {searchTerm && (
@@ -472,7 +472,7 @@ export default function CategoryPage() {
               type="button"
               onClick={handleClearSearch}
               aria-label="Xóa từ khóa tìm kiếm"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-textLight hover:text-text"
             >
               <span className="material-symbols-outlined text-[20px]">
                 close
@@ -484,7 +484,7 @@ export default function CategoryPage() {
         <select
           value={statusFilter}
           onChange={handleStatusChange}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+          className="rounded-md border border-border bg-white px-4 py-2.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
         >
           <option value="all">Tất cả trạng thái</option>
 
@@ -497,15 +497,15 @@ export default function CategoryPage() {
       {successMessage && (
         <div
           role="status"
-          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 p-4"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-success/20 bg-success/10 p-4"
         >
-          <p className="text-sm text-green-700">{successMessage}</p>
+          <p className="text-sm text-success">{successMessage}</p>
 
           <button
             type="button"
             onClick={() => setSuccessMessage("")}
             aria-label="Đóng thông báo"
-            className="text-green-700 hover:text-green-900"
+            className="text-success hover:text-success/80"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -515,9 +515,9 @@ export default function CategoryPage() {
       {actionError && (
         <div
           role="alert"
-          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-error/20 bg-error/10 p-4"
         >
-          <p className="whitespace-pre-line text-sm text-red-700">
+          <p className="whitespace-pre-line text-sm text-error">
             {actionError}
           </p>
 
@@ -525,7 +525,7 @@ export default function CategoryPage() {
             type="button"
             onClick={() => setActionError("")}
             aria-label="Đóng thông báo lỗi"
-            className="text-red-700 hover:text-red-900"
+            className="text-error hover:text-error/80"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
@@ -535,14 +535,14 @@ export default function CategoryPage() {
       {error && (
         <div
           role="alert"
-          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center"
+          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-error/20 bg-error/10 p-4 sm:flex-row sm:items-center"
         >
-          <p className="whitespace-pre-line text-sm text-red-700">{error}</p>
+          <p className="whitespace-pre-line text-sm text-error">{error}</p>
 
           <button
             type="button"
             onClick={handleRetry}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+            className="rounded-md bg-error px-4 py-2 text-sm font-medium text-white transition hover:bg-error"
           >
             Thử lại
           </button>
@@ -552,7 +552,7 @@ export default function CategoryPage() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+            <tr className="border-b border-border bg-background text-xs uppercase tracking-wider text-textLight">
               <th className="p-4 font-semibold">Tên danh mục</th>
 
               <th className="p-4 font-semibold">Mô tả</th>
@@ -565,10 +565,10 @@ export default function CategoryPage() {
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100 text-sm">
+          <tbody className="divide-y divide-border text-sm">
             {loading ? (
               <tr>
-                <td colSpan={5} className="p-10 text-center text-gray-500">
+                <td colSpan={5} className="p-10 text-center text-textLight">
                   <div
                     role="status"
                     className="flex items-center justify-center gap-2"
@@ -588,19 +588,19 @@ export default function CategoryPage() {
                 return (
                   <tr
                     key={category.categoryId}
-                    className="transition-colors hover:bg-gray-50"
+                    className="transition-colors hover:bg-background"
                   >
-                    <td className="p-4 font-bold text-[#244f4d]">
+                    <td className="p-4 font-bold text-text">
                       {category.categoryName}
                     </td>
 
-                    <td className="max-w-[420px] p-4 text-gray-600">
+                    <td className="max-w-[420px] p-4 text-textLight">
                       <p className="line-clamp-2">
                         {category.description || "Không có mô tả"}
                       </p>
                     </td>
 
-                    <td className="whitespace-nowrap p-4 text-gray-600">
+                    <td className="whitespace-nowrap p-4 text-textLight">
                       {formatCreatedAt(category.createdAt)}
                     </td>
 
@@ -609,8 +609,8 @@ export default function CategoryPage() {
                         className={[
                           "inline-block rounded-full px-3 py-1 text-xs font-semibold",
                           category.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-600",
+                            ? "bg-success/10 text-success"
+                            : "bg-background text-textLight",
                         ].join(" ")}
                       >
                         {category.isActive ? "Hoạt động" : "Đang ẩn"}
@@ -624,7 +624,7 @@ export default function CategoryPage() {
                         disabled={Boolean(deletingCategoryId)}
                         title="Chỉnh sửa"
                         aria-label={`Chỉnh sửa ${category.categoryName}`}
-                        className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="rounded-md p-1.5 text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         <span className="material-symbols-outlined text-[18px]">
                           edit
@@ -641,10 +641,10 @@ export default function CategoryPage() {
                             : "Kích hoạt lại danh mục"
                         }
                         aria-label={`${category.isActive ? "Ẩn" : "Kích hoạt lại"} ${category.categoryName}`}
-                        className={`rounded-md p-1.5 transition disabled:cursor-not-allowed disabled:text-gray-300 disabled:opacity-50 ${
+                        className={`rounded-md p-1.5 transition disabled:cursor-not-allowed disabled:text-border disabled:opacity-50 ${
                           category.isActive
-                            ? "text-red-600 hover:bg-red-50"
-                            : "text-green-700 hover:bg-green-50"
+                            ? "text-error hover:bg-error/10"
+                            : "text-success hover:bg-success/10"
                         }`}
                       >
                         <span
@@ -666,7 +666,7 @@ export default function CategoryPage() {
               })
             ) : (
               <tr>
-                <td colSpan={5} className="p-10 text-center text-gray-500">
+                <td colSpan={5} className="p-10 text-center text-textLight">
                   {hasFilters
                     ? "Không tìm thấy danh mục phù hợp."
                     : "Chưa có danh mục nào."}
@@ -678,8 +678,8 @@ export default function CategoryPage() {
       </div>
 
       {!loading && !error && pagination.totalCount > 0 && (
-        <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-4 sm:flex-row">
-          <p className="text-sm text-gray-500">
+        <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row">
+          <p className="text-sm text-textLight">
             Trang {pagination.pageNumber} / {Math.max(pagination.totalPages, 1)}
           </p>
 
@@ -688,7 +688,7 @@ export default function CategoryPage() {
               type="button"
               onClick={handlePreviousPage}
               disabled={loading || !pagination.hasPreviousPage}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
             >
               Trang trước
             </button>
@@ -697,7 +697,7 @@ export default function CategoryPage() {
               type="button"
               onClick={handleNextPage}
               disabled={loading || !pagination.hasNextPage}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
             >
               Trang sau
             </button>
