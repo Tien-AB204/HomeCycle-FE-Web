@@ -19,23 +19,23 @@ export const APPOINTMENT_STATUS = Object.freeze({
 const APPOINTMENT_STATUS_META = Object.freeze({
   [APPOINTMENT_STATUS.PENDING]: {
     label: "Đang chờ",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
   [APPOINTMENT_STATUS.CONFIRMED]: {
     label: "Đã xác nhận",
-    className: "border-blue-200 bg-blue-50 text-blue-700",
+    className: "border-primary/30 bg-primary/10 text-primary",
   },
   [APPOINTMENT_STATUS.COMPLETED]: {
     label: "Đã hoàn tất",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    className: "border-success/30 bg-success/10 text-success",
   },
   [APPOINTMENT_STATUS.CANCELLED]: {
     label: "Đã hủy",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/30 bg-error/10 text-error",
   },
   [APPOINTMENT_STATUS.MISSED]: {
     label: "Đã lỡ hẹn",
-    className: "border-slate-200 bg-slate-100 text-slate-600",
+    className: "border-border bg-textLight/10 text-textLight",
   },
 });
 
@@ -51,6 +51,6 @@ export const APPOINTMENT_STATUS_OPTIONS = Object.freeze([
 export const getAppointmentStatusMeta = (status) => {
   return APPOINTMENT_STATUS_META[Number(status)] || {
     label: "Chưa xác định",
-    className: "border-gray-200 bg-gray-50 text-gray-600",
+    className: "border-border bg-textLight/10 text-textLight",
   };
 };

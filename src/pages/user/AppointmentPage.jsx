@@ -99,18 +99,18 @@ const loadAppointmentSource = async ({
 };
 
 const CheckInStatus = ({ label, checkedAt }) => (
-  <div className="flex items-start gap-3 border-b border-[#E3ECE9] py-3 last:border-b-0">
+  <div className="flex items-start gap-3 border-b border-border py-3 last:border-b-0">
     <span
       className={`material-symbols-outlined mt-0.5 text-xl ${
-        checkedAt ? "text-green-600" : "text-[#9AAEAB]"
+        checkedAt ? "text-success" : "text-textLight"
       }`}
       aria-hidden="true"
     >
       {checkedAt ? "check_circle" : "radio_button_unchecked"}
     </span>
     <div>
-      <p className="text-sm font-black text-[#183F41]">{label}</p>
-      <p className="mt-0.5 text-xs text-[#68807F]">
+      <p className="text-sm font-black text-text">{label}</p>
+      <p className="mt-0.5 text-xs text-textLight">
         {checkedAt ? `Đã check-in lúc ${formatDate(checkedAt)}` : "Chưa check-in"}
       </p>
     </div>
@@ -190,20 +190,20 @@ const AppointmentDetailModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#183F41]/70 p-4 backdrop-blur-[2px]"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-primary/70 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="appointment-detail-title"
     >
-      <div className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-[#DCE8E5] bg-white shadow-[0_24px_70px_rgba(24,63,65,0.25)]">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-[#DCE8E5] bg-white px-5 py-4">
+      <div className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-white shadow-[0_24px_70px_rgba(23,40,48,0.25)]">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-white px-5 py-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#4F8588]">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
               Chi tiết lịch hẹn
             </p>
             <h2
               id="appointment-detail-title"
-              className="mt-1 text-lg font-black text-[#183F41]"
+              className="mt-1 text-lg font-black text-text"
             >
               {getAppointmentTypeLabel(isInspection)}
             </h2>
@@ -212,7 +212,7 @@ const AppointmentDetailModal = ({
             type="button"
             onClick={onClose}
             aria-label="Đóng chi tiết lịch hẹn"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F1F7F5] text-[#4F8588] transition hover:bg-[#E3EFEC]"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20"
           >
             <span className="material-symbols-outlined" aria-hidden="true">
               close
@@ -222,7 +222,7 @@ const AppointmentDetailModal = ({
 
         <div className="p-5 sm:p-6">
           {state.loading && (
-            <div className="py-12 text-center text-[#68807F]" role="status">
+            <div className="py-12 text-center text-textLight" role="status">
               <span
                 className="material-symbols-outlined animate-spin text-3xl"
                 aria-hidden="true"
@@ -234,13 +234,13 @@ const AppointmentDetailModal = ({
           )}
 
           {state.error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">
+            <div className="mb-4 rounded-xl border border-error/30 bg-error/10 p-3 text-sm font-semibold text-error">
               {state.error}
             </div>
           )}
 
           {notice && (
-            <div className="mb-4 rounded-xl border border-green-200 bg-green-50 p-3 text-sm font-semibold text-green-700">
+            <div className="mb-4 rounded-xl border border-success/30 bg-success/10 p-3 text-sm font-semibold text-success">
               {notice}
             </div>
           )}
@@ -253,29 +253,29 @@ const AppointmentDetailModal = ({
                 >
                   {statusMeta.label}
                 </span>
-                <span className="text-xs font-semibold text-[#68807F]">
+                <span className="text-xs font-semibold text-textLight">
                   {perspective === APPOINTMENT_PERSPECTIVE.BUYER
                     ? "Người mua"
                     : "Người bán"}
                 </span>
               </div>
 
-              <dl className="mt-5 divide-y divide-[#E3ECE9] rounded-xl border border-[#DCE8E5] bg-[#FBFDFC] px-4">
+              <dl className="mt-5 divide-y divide-border rounded-xl border border-border bg-background px-4">
                 <div className="grid gap-1 py-3 sm:grid-cols-[135px_1fr]">
-                  <dt className="text-xs font-bold uppercase tracking-wide text-[#789092]">
+                  <dt className="text-xs font-bold uppercase tracking-wide text-textLight">
                     Thời gian
                   </dt>
-                  <dd className="font-bold text-[#183F41]">
+                  <dd className="font-bold text-text">
                     {formatDate(
                       specialized.inspectionDate || specialized.collectionDate,
                     )}
                   </dd>
                 </div>
                 <div className="grid gap-1 py-3 sm:grid-cols-[135px_1fr]">
-                  <dt className="text-xs font-bold uppercase tracking-wide text-[#789092]">
+                  <dt className="text-xs font-bold uppercase tracking-wide text-textLight">
                     Địa điểm
                   </dt>
-                  <dd className="font-bold text-[#183F41]">
+                  <dd className="font-bold text-text">
                     {specialized.inspectionAddress ||
                       specialized.pickupAddress ||
                       "—"}
@@ -283,20 +283,20 @@ const AppointmentDetailModal = ({
                 </div>
                 {specialized.deliveryAddress && (
                   <div className="grid gap-1 py-3 sm:grid-cols-[135px_1fr]">
-                    <dt className="text-xs font-bold uppercase tracking-wide text-[#789092]">
+                    <dt className="text-xs font-bold uppercase tracking-wide text-textLight">
                       Địa chỉ nhận
                     </dt>
-                    <dd className="font-bold text-[#183F41]">
+                    <dd className="font-bold text-text">
                       {specialized.deliveryAddress}
                     </dd>
                   </div>
                 )}
                 {specialized.deliveryMethod && (
                   <div className="grid gap-1 py-3 sm:grid-cols-[135px_1fr]">
-                    <dt className="text-xs font-bold uppercase tracking-wide text-[#789092]">
+                    <dt className="text-xs font-bold uppercase tracking-wide text-textLight">
                       Giao nhận
                     </dt>
-                    <dd className="font-bold text-[#183F41]">
+                    <dd className="font-bold text-text">
                       {specialized.deliveryMethod}
                     </dd>
                   </div>
@@ -304,10 +304,10 @@ const AppointmentDetailModal = ({
               </dl>
 
               <section className="mt-5">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#2F6F9F]">
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
                   Tiến trình check-in
                 </p>
-                <div className="mt-2 rounded-xl border border-[#DCE8E5] px-4">
+                <div className="mt-2 rounded-xl border border-border px-4">
                   <CheckInStatus
                     label="Người mua"
                     checkedAt={base.buyerCheckAt}
@@ -320,24 +320,24 @@ const AppointmentDetailModal = ({
               </section>
 
               {isInspection && (
-                <p className="mt-4 rounded-xl border border-[#C9DDED] bg-[#F1F7FC] p-3.5 text-sm leading-6 text-[#285E7C]">
+                <p className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-sm leading-6 text-primary">
                   Lịch kiểm định được hoàn tất sau khi cả hai bên xác nhận
                   check-in.
                 </p>
               )}
 
-              <div className="mt-6 flex justify-end border-t border-[#E3ECE9] pt-5">
+              <div className="mt-6 flex justify-end border-t border-border pt-5">
                 {canCheckIn ? (
                   <button
                     type="button"
                     onClick={handleCheckIn}
                     disabled={busy}
-                    className="rounded-lg bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70] disabled:opacity-50"
+                    className="rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:opacity-50"
                   >
                     {busy ? "Đang check-in..." : "Xác nhận check-in"}
                   </button>
                 ) : (
-                  <span className="rounded-lg bg-[#F1F7F5] px-4 py-2.5 text-sm font-bold text-[#68807F]">
+                  <span className="rounded-lg bg-primary/10 px-4 py-2.5 text-sm font-bold text-textLight">
                     {isCurrentUserCheckedIn
                       ? "Bạn đã check-in"
                       : "Không thể check-in"}
@@ -445,29 +445,29 @@ const AppointmentPage = () => {
 
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-7xl px-4 pb-14 pt-7 sm:px-6">
-      <header className="flex flex-col gap-4 border-b border-[#DCE8E5] pb-5 sm:flex-row sm:items-end sm:justify-between">
+      <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#2F6F9F]">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
             Lịch giao dịch
           </p>
-          <h1 className="mt-1 text-2xl font-black text-[#183F41] sm:text-3xl">
+          <h1 className="mt-1 text-2xl font-black text-text sm:text-3xl">
             Lịch hẹn của tôi
           </h1>
-          <p className="mt-1.5 text-sm text-[#68807F]">
+          <p className="mt-1.5 text-sm text-textLight">
             Tất cả lịch kiểm định và thu gom trong giao dịch mua, bán của bạn.
           </p>
         </div>
         <div className="flex flex-wrap gap-2 text-xs font-black">
-          <span className="rounded-full bg-[#EAF3F8] px-3 py-1.5 text-[#2F6F9F]">
+          <span className="rounded-full bg-primary/10 px-3 py-1.5 text-primary">
             {inspectionCount} lịch kiểm định
           </span>
-          <span className="rounded-full bg-[#EAF5F1] px-3 py-1.5 text-[#356A70]">
+          <span className="rounded-full bg-textLight/10 px-3 py-1.5 text-textLight">
             {collectionCount} lịch thu gom
           </span>
         </div>
       </header>
 
-      <div className="mt-4 rounded-xl border border-[#DCE8E5] bg-white p-3 shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
+      <div className="mt-4 rounded-xl border border-border bg-white p-3 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
         <div className="grid gap-2 md:grid-cols-[minmax(260px,1fr)_210px_auto]">
           <form
             onSubmit={(event) => {
@@ -479,7 +479,7 @@ const AppointmentPage = () => {
             <label className="relative min-w-0 flex-1">
               <span className="sr-only">Tìm theo tên đối tác</span>
               <span
-                className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-[#789092]"
+                className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-textLight"
                 aria-hidden="true"
               >
                 search
@@ -488,12 +488,12 @@ const AppointmentPage = () => {
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="Tìm theo tên đối tác..."
-                className="w-full rounded-lg border border-[#CDDED9] bg-[#FBFDFC] py-2.5 pl-10 pr-3 text-sm text-[#183F41] outline-none focus:border-[#4F8588] focus:bg-white"
+                className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-text outline-none focus:border-primary focus:bg-white"
             />
             </label>
             <button
               type="submit"
-              className="rounded-lg border border-[#4F8588] bg-white px-4 py-2 text-sm font-bold text-[#285E62] transition hover:bg-[#F1F7F5]"
+              className="rounded-lg border border-primary bg-white px-4 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
             >
               Tìm
             </button>
@@ -502,7 +502,7 @@ const AppointmentPage = () => {
           <select
             value={status}
             onChange={(event) => changeFilter(setStatus, event.target.value)}
-            className="rounded-lg border border-[#CDDED9] bg-white px-3 py-2 text-sm font-bold text-[#68807F] outline-none focus:border-[#4F8588]"
+            className="rounded-lg border border-border bg-white px-3 py-2 text-sm font-bold text-textLight outline-none focus:border-primary"
           >
             {APPOINTMENT_STATUS_OPTIONS.map((option) => (
               <option key={String(option.value)} value={option.value}>
@@ -521,7 +521,7 @@ const AppointmentPage = () => {
                 setStatus("");
                 setPageNumber(1);
               }}
-              className="rounded-lg px-3 py-2 text-sm font-bold text-[#2F6F9F] transition hover:bg-[#F1F7F5]"
+              className="rounded-lg px-3 py-2 text-sm font-bold text-primary transition hover:bg-primary/10"
             >
               Đặt lại
             </button>
@@ -530,34 +530,34 @@ const AppointmentPage = () => {
       </div>
 
       {state.loading && (
-        <div className="mt-5 rounded-2xl border border-[#DCE8E5] bg-white p-12 text-center font-semibold text-[#68807F]">
+        <div className="mt-5 rounded-2xl border border-border bg-white p-12 text-center font-semibold text-textLight">
           Đang tải lịch hẹn...
         </div>
       )}
 
       {state.error && (
-        <div className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+        <div className="mt-5 rounded-xl border border-error/30 bg-error/10 p-4 text-sm font-semibold text-error">
           {state.error}
         </div>
       )}
 
       {!state.loading && !state.error && state.items.length === 0 && (
-        <div className="mt-5 rounded-2xl border border-[#DCE8E5] bg-white p-12 text-center shadow-[0_10px_30px_rgba(24,63,65,0.05)]">
+        <div className="mt-5 rounded-2xl border border-border bg-white p-12 text-center shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
           <span
-            className="material-symbols-outlined text-5xl text-[#4F8588]"
+            className="material-symbols-outlined text-5xl text-primary"
             aria-hidden="true"
           >
             event_busy
           </span>
-          <h2 className="mt-3 font-black text-[#183F41]">
+          <h2 className="mt-3 font-black text-text">
             Chưa có lịch hẹn phù hợp
           </h2>
         </div>
       )}
 
       {!state.loading && !state.error && state.items.length > 0 && (
-        <div className="mt-4 overflow-hidden rounded-xl border border-[#DCE8E5] bg-white shadow-[0_8px_24px_rgba(24,63,65,0.04)]">
-          <div className="hidden grid-cols-[minmax(190px,1.15fr)_90px_165px_minmax(180px,1fr)_120px_110px_104px] items-center gap-3 bg-[#F3F7F6] px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-[#68807F] lg:grid">
+        <div className="mt-4 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+          <div className="hidden grid-cols-[minmax(190px,1.15fr)_90px_165px_minmax(180px,1fr)_120px_110px_104px] items-center gap-3 bg-background px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-textLight lg:grid">
             <span>Lịch hẹn</span>
             <span>Vai trò</span>
             <span>Thời gian</span>
@@ -566,7 +566,7 @@ const AppointmentPage = () => {
             <span>Trạng thái</span>
             <span className="sr-only">Thao tác</span>
           </div>
-          <div className="divide-y divide-[#E3ECE9]">
+          <div className="divide-y divide-border">
             {pageItems.map((item) => {
               const meta = getAppointmentStatusMeta(item.appointmentStatus);
               const isChecked =
@@ -583,50 +583,50 @@ const AppointmentPage = () => {
               return (
                 <article
                   key={`${item.appointmentId}-${item.viewPerspective}-${item.viewType}`}
-                  className="grid gap-3 px-5 py-4 transition hover:bg-[#F8FBFA] lg:grid-cols-[minmax(190px,1.15fr)_90px_165px_minmax(180px,1fr)_120px_110px_104px] lg:items-center"
+                  className="grid gap-3 px-5 py-4 transition hover:bg-background lg:grid-cols-[minmax(190px,1.15fr)_90px_165px_minmax(180px,1fr)_120px_110px_104px] lg:items-center"
                 >
                   <div className="min-w-0">
                     <span
                       className={`inline-flex rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wide ${
                         item.viewType === APPOINTMENT_TYPE.INSPECTION
-                          ? "bg-[#EAF3F8] text-[#2F6F9F]"
-                          : "bg-[#EAF5F1] text-[#356A70]"
+                          ? "bg-primary/10 text-primary"
+                          : "bg-textLight/10 text-textLight"
                       }`}
                     >
                       {item.viewTypeLabel}
                     </span>
-                    <h2 className="mt-1.5 truncate text-sm font-black text-[#183F41]">
+                    <h2 className="mt-1.5 truncate text-sm font-black text-text">
                       {item.counterpartyName || "Người dùng HomeCycle"}
                     </h2>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[#789092] lg:hidden">
+                    <p className="text-[11px] font-bold uppercase text-textLight lg:hidden">
                       Vai trò
                     </p>
-                    <span className="text-xs font-black text-[#285E62]">
+                    <span className="text-xs font-black text-primary">
                       {item.viewPerspectiveLabel}
                     </span>
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-[#789092] lg:hidden">
+                    <p className="text-[11px] font-bold uppercase text-textLight lg:hidden">
                       Thời gian
                     </p>
-                    <p className="text-sm font-semibold text-[#183F41]">
+                    <p className="text-sm font-semibold text-text">
                       {formatDate(appointmentDate)}
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[11px] font-bold uppercase text-[#789092] lg:hidden">
+                    <p className="text-[11px] font-bold uppercase text-textLight lg:hidden">
                       Địa điểm
                     </p>
-                    <p className="truncate text-sm text-[#68807F]" title={appointmentAddress}>
+                    <p className="truncate text-sm text-textLight" title={appointmentAddress}>
                       {appointmentAddress}
                     </p>
                   </div>
                   <div>
                     <span
                       className={`inline-flex items-center gap-1.5 text-xs font-bold ${
-                        isChecked ? "text-green-700" : "text-[#789092]"
+                        isChecked ? "text-success" : "text-textLight"
                       }`}
                     >
                       <span
@@ -649,7 +649,7 @@ const AppointmentPage = () => {
                     <button
                       type="button"
                       onClick={() => openDetail(item)}
-                      className="rounded-lg border border-[#4F8588] bg-white px-4 py-2 text-sm font-black text-[#285E62] transition hover:bg-[#4F8588] hover:text-white"
+                      className="rounded-lg border border-primary bg-white px-4 py-2 text-sm font-black text-primary transition hover:bg-primary hover:text-white"
                     >
                       Chi tiết
                     </button>
@@ -667,18 +667,18 @@ const AppointmentPage = () => {
             type="button"
             disabled={currentPage <= 1}
             onClick={() => setPageNumber(currentPage - 1)}
-            className="rounded-lg border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] disabled:opacity-40"
+            className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-bold text-primary disabled:opacity-40"
           >
             Trước
           </button>
-          <span className="text-sm font-bold text-[#68807F]">
+          <span className="text-sm font-bold text-textLight">
             Trang {currentPage}/{totalPages}
           </span>
           <button
             type="button"
             disabled={currentPage >= totalPages}
             onClick={() => setPageNumber(currentPage + 1)}
-            className="rounded-lg border border-[#9FBFBA] bg-white px-4 py-2 text-sm font-bold text-[#285E62] disabled:opacity-40"
+            className="rounded-lg border border-border bg-white px-4 py-2 text-sm font-bold text-primary disabled:opacity-40"
           >
             Sau
           </button>
