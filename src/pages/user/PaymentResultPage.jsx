@@ -66,9 +66,9 @@ const PaymentResultPage = () => {
 
   return (
     <section className="mx-auto flex min-h-[65vh] w-full max-w-2xl items-center px-4 py-10 sm:px-6">
-      <div className="w-full rounded-2xl border border-[#DCE8E5] bg-white p-7 text-center shadow-[0_16px_42px_rgba(24,63,65,0.09)] sm:p-10">
+      <div className="w-full rounded-2xl border border-border bg-white p-7 text-center shadow-[0_16px_42px_rgba(23,40,48,0.09)] sm:p-10">
         <span
-          className={`material-symbols-outlined text-5xl ${completed ? "text-green-600" : cancelled ? "text-[#B33A32]" : "text-[#2F6F9F]"}`}
+          className={`material-symbols-outlined text-5xl ${completed ? "text-success" : cancelled ? "text-error" : "text-primary"}`}
           aria-hidden="true"
         >
           {completed
@@ -80,10 +80,10 @@ const PaymentResultPage = () => {
                 : "sync"}
         </span>
 
-        <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-[#4F8588]">
+        <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-primary">
           Kết quả thanh toán
         </p>
-        <h1 className="mt-2 text-2xl font-black text-[#183F41]">
+        <h1 className="mt-2 text-2xl font-black text-text">
           {completed
             ? "Thanh toán thành công"
             : cancelled
@@ -93,7 +93,7 @@ const PaymentResultPage = () => {
                 : "PayOS đã ghi nhận thanh toán"}
         </h1>
 
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-[#68807F]">
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-textLight">
           {completed
             ? "HomeCycle đã ghi nhận khoản thanh toán và cập nhật dữ liệu giao dịch."
             : cancelled
@@ -104,7 +104,7 @@ const PaymentResultPage = () => {
         </p>
 
         {state.error && (
-          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm leading-6 text-amber-800">
+          <div className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-left text-sm leading-6 text-warning">
             <strong>
               Thanh toán đã được PayOS ghi nhận nhưng backend chưa đồng bộ xong.
             </strong>
@@ -115,7 +115,7 @@ const PaymentResultPage = () => {
         )}
 
         {state.order && (
-          <div className="mt-5 rounded-xl border border-green-200 bg-green-50 p-4 text-left text-sm text-green-900">
+          <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4 text-left text-sm text-success">
             <p>
               <strong>Mã đơn hàng:</strong>{" "}
               {state.order.orderCode || state.order.orderId}
@@ -127,7 +127,7 @@ const PaymentResultPage = () => {
         )}
 
         {!agreementId && (
-          <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          <p className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
             Không tìm thấy thông tin phiên thanh toán để đối chiếu. Bạn có thể vào danh sách đơn hàng để kiểm tra trạng thái giao dịch.
           </p>
         )}
@@ -136,7 +136,7 @@ const PaymentResultPage = () => {
           {state.order?.orderId && (
             <Link
               to={`/don-hang/${state.order.orderId}`}
-              className="rounded-lg bg-[#4F8588] px-5 py-3 text-sm font-black text-white transition hover:bg-[#356A70]"
+              className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90"
             >
               Xem đơn hàng
             </Link>
@@ -144,7 +144,7 @@ const PaymentResultPage = () => {
 
           <Link
             to="/"
-            className="rounded-lg border border-[#4F8588] bg-white px-5 py-3 text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5]"
+            className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary transition hover:bg-primary/10"
           >
             Về trang chủ
           </Link>
