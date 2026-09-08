@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   SearchOutlined,
   LoadingOutlined,
   WarningOutlined,
   FileTextOutlined,
   StopOutlined,
-  ReloadOutlined,
   InfoCircleOutlined,
   AppstoreOutlined,
   EnvironmentOutlined,
@@ -15,6 +14,66 @@ import { postApi } from "../../services/apis/postApi";
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
 
+const MODERATOR_FUNCTIONALITY_LABELS = {
+  "0": "Hoạt động hoàn hảo",
+  fullyfunctional: "Hoạt động hoàn hảo",
+
+  "1": "Hoạt động một phần",
+  partiallyfunctional: "Hoạt động một phần",
+
+  "2": "Không hoạt động",
+  nonfunctional: "Không hoạt động",
+};
+
+const MODERATOR_DAMAGE_LABELS = {
+  "0": "Không hư hỏng",
+  none: "Không hư hỏng",
+
+  "1": "Hư hại thẩm mỹ",
+  cosmeticdamage: "Hư hại thẩm mỹ",
+
+  "2": "Hư hại nhẹ",
+  minordamage: "Hư hại nhẹ",
+
+  "3": "Hư hại trung bình",
+  moderatedamage: "Hư hại trung bình",
+
+  "4": "Hư hại nặng",
+  severedamage: "Hư hại nặng",
+
+  "5": "Tổn thất toàn bộ",
+  totalloss: "Tổn thất toàn bộ",
+};
+
+const normalizeModeratorProductEnum = (value) =>
+  String(value ?? "")
+    .trim()
+    .replace(/[\s_-]+/g, "")
+    .toLowerCase();
+
+const getModeratorFunctionalityLabel = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "Chưa cập nhật";
+  }
+
+  return (
+    MODERATOR_FUNCTIONALITY_LABELS[
+      normalizeModeratorProductEnum(value)
+    ] || "Chưa xác định"
+  );
+};
+
+const getModeratorDamageLabel = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "Chưa cập nhật";
+  }
+
+  return (
+    MODERATOR_DAMAGE_LABELS[
+      normalizeModeratorProductEnum(value)
+    ] || "Chưa xác định"
+  );
+};
 const PostModerationPage = () => {
   const [posts, setPosts] = useState([]);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -38,7 +97,7 @@ const PostModerationPage = () => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (!isResizing) return;
-      const newWidth = e.clientX - 250; // Trừ sidebar menu chính
+      const newWidth = e.clientX - 278; // Trừ sidebar menu chính
       if (newWidth >= 300 && newWidth <= 600) {
         setSidebarWidth(newWidth);
       }
@@ -65,22 +124,26 @@ const PostModerationPage = () => {
   // =========================================================================
   // API EFFECTS
   // =========================================================================
-  useEffect(() => {
-    fetchPosts();
-  }, []); // Chỉ gọi API 1 lần lúc đầu để lấy full list về client
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setIsLoadingList(true);
     try {
       const response = await postApi.getAll({ pageNumber: 1, pageSize: 50 });
       const postList = response?.items || [];
       setPosts(postList);
-    } catch (error) {
+    } catch {
       setPosts([]);
     } finally {
       setIsLoadingList(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchPosts();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchPosts]);
 
   // --- LỌC CLIENT-SIDE (Hỗ trợ tìm theo tên, mô tả VÀ ID bài đăng) ---
   const filteredPosts = debouncedSearchQuery
@@ -165,27 +228,6 @@ const PostModerationPage = () => {
     }
   };
 
-  const handleMockRestore = async () => {
-    setIsProcessing(true);
-    setActionFeedback(null);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSelectedPost(null);
-      setGlobalFeedback({
-        type: "success",
-        text: "Đã mở lại bài đăng thành công (Mock)!",
-      });
-      fetchPosts();
-    } catch (error) {
-      setActionFeedback({
-        type: "error",
-        text: "Lỗi máy chủ. Vui lòng thử lại sau.",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   // =========================================================================
   // UI HELPERS
   // =========================================================================
@@ -193,19 +235,19 @@ const PostModerationPage = () => {
     switch (status?.toUpperCase()) {
       case "ACTIVE":
         return (
-          <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-xs font-semibold border border-emerald-200">
+          <span className="text-success bg-success/10 px-2 py-0.5 rounded text-xs font-semibold border border-success/20">
             Hoạt động
           </span>
         );
       case "SUSPENDED":
         return (
-          <span className="text-red-600 bg-red-50 px-2 py-0.5 rounded text-xs font-semibold border border-red-200">
+          <span className="text-error bg-error/10 px-2 py-0.5 rounded text-xs font-semibold border border-error/20">
             Bị đình chỉ
           </span>
         );
       case "CLOSED":
         return (
-          <span className="text-gray-600 bg-gray-100 px-2 py-0.5 rounded text-xs font-semibold border border-gray-300">
+          <span className="text-textLight bg-textLight/10 px-2 py-0.5 rounded text-xs font-semibold border border-border">
             Đã đóng
           </span>
         );
@@ -217,8 +259,8 @@ const PostModerationPage = () => {
         );
       default:
         return (
-          <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded text-xs font-semibold">
-            {status || "N/A"}
+          <span className="text-textLight bg-background px-2 py-0.5 rounded text-xs font-semibold">
+            {status || "Chưa có"}
           </span>
         );
     }
@@ -235,40 +277,40 @@ const PostModerationPage = () => {
       {/* CỘT TRÁI (CÓ RESIZE & SEARCH ID) */}
       <div
         style={{ width: `${sidebarWidth}px` }}
-        className="border-r border-gray-200 flex flex-col bg-white shrink-0 relative select-none"
+        className="border-r border-border flex flex-col bg-white shrink-0 relative select-none"
       >
-        <div className="p-4 flex justify-between items-center border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+        <div className="p-4 flex justify-between items-center border-b border-border">
+          <h2 className="text-lg font-bold text-text flex items-center gap-2">
             Quản lý Bài đăng
             {!isLoadingList && (
-              <span className="bg-blue-100 text-blue-600 text-xs py-0.5 px-2 rounded-full font-bold">
+              <span className="bg-warning/10 text-warning text-xs py-0.5 px-2 rounded-full font-bold">
                 {filteredPosts.length}
               </span>
             )}
           </h2>
         </div>
 
-        <div className="p-4 pb-2 border-b border-gray-100 bg-gray-50/50">
+        <div className="p-4 pb-2 border-b border-border bg-background/60">
           <div className="relative mb-2">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên sản phẩm hoặc ID..."
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 outline-none transition-shadow"
+              placeholder="Tìm theo tên sản phẩm hoặc mã..."
+              className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-lg focus:ring-1 focus:ring-primary outline-none transition-shadow"
             />
-            <SearchOutlined className="absolute left-3 top-2.5 text-gray-400" />
+            <SearchOutlined className="absolute left-3 top-2.5 text-textLight" />
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-gray-50/30">
+        <div className="flex-1 overflow-y-auto bg-background/60">
           {isLoadingList ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-400">
-              <LoadingOutlined className="text-3xl mb-2 text-blue-500" />
+            <div className="flex flex-col items-center justify-center h-full text-textLight">
+              <LoadingOutlined className="text-3xl mb-2 text-primary" />
               <p className="text-sm">Đang tải danh sách...</p>
             </div>
           ) : filteredPosts.length === 0 ? (
-            <div className="p-8 text-center text-gray-400 text-sm">
+            <div className="p-8 text-center text-textLight text-sm">
               Không tìm thấy bài đăng nào.
             </div>
           ) : (
@@ -282,21 +324,21 @@ const PostModerationPage = () => {
                 <div
                   key={currentId}
                   onClick={() => handleSelectPost(currentId)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer transition-all ${isSelected ? "bg-blue-50/50 border-l-4 border-l-blue-500" : "hover:bg-gray-100 border-l-4 border-l-transparent"}`}
+                  className={`p-4 border-b border-border cursor-pointer transition-all ${isSelected ? "bg-primary/10 border-l-4 border-l-primary" : "hover:bg-primary/5 border-l-4 border-l-transparent"}`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <h3
-                      className={`font-semibold text-sm line-clamp-2 ${isSelected ? "text-blue-600" : "text-gray-800"}`}
+                      className={`font-semibold text-sm line-clamp-2 ${isSelected ? "text-primary" : "text-text"}`}
                     >
                       {post.postType === "Buy" ? (
-                        <span className="text-rose-600 mr-1">[Thu mua]</span>
+                        <span className="text-error mr-1">[Thu mua]</span>
                       ) : (
-                        <span className="text-[#0aa679] mr-1">[Bán]</span>
+                        <span className="text-success mr-1">[Bán]</span>
                       )}
                       {getPostTitle(post)}
                     </h3>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-gray-500 mt-1.5">
+                  <div className="flex justify-between items-center text-xs text-textLight mt-1.5">
                     {renderStatus(post.status)}
                     <span>
                       {post.createdAt
@@ -313,15 +355,15 @@ const PostModerationPage = () => {
         {/* Thanh kéo chuột resize */}
         <div
           onMouseDown={startResizing}
-          className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-20 hover:bg-[#0aa679] ${isResizing ? "bg-[#0aa679]" : "bg-transparent"}`}
+          className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-20 hover:bg-success ${isResizing ? "bg-success" : "bg-transparent"}`}
           title="Kéo để thay đổi kích thước"
         />
       </div>
 
       {/* CỘT PHẢI */}
-      <div className="flex-1 flex flex-col bg-white overflow-hidden border-l border-gray-200">
+      <div className="flex-1 flex flex-col bg-white overflow-hidden border-l border-border">
         {!selectedPost && !isLoadingDetail ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-slate-50 p-8 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center text-textLight bg-background p-8 text-center">
             {globalFeedback && (
               <Alert
                 message={globalFeedback.text}
@@ -330,40 +372,40 @@ const PostModerationPage = () => {
                 className="mb-6 w-full max-w-md"
               />
             )}
-            <FileTextOutlined className="text-6xl text-gray-300 mb-4" />
+            <FileTextOutlined className="text-6xl text-border mb-4" />
             <p className="text-lg">
               Chọn một bài đăng bên danh sách để xem chi tiết
             </p>
           </div>
         ) : isLoadingDetail ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 bg-slate-50">
-            <LoadingOutlined className="text-5xl text-blue-500 mb-4" />
+          <div className="flex-1 flex flex-col items-center justify-center text-textLight bg-background">
+            <LoadingOutlined className="text-5xl text-primary mb-4" />
             <p className="text-lg">Đang truy xuất dữ liệu chi tiết...</p>
           </div>
         ) : detailError ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-red-500 bg-slate-50">
+          <div className="flex-1 flex flex-col items-center justify-center text-error bg-background">
             <WarningOutlined className="text-5xl mb-3" />
             <span className="text-lg font-medium">{detailError}</span>
           </div>
         ) : selectedPost ? (
           <>
             {/* Header */}
-            <div className="px-8 py-5 border-b border-gray-200 bg-white shadow-sm z-10 flex justify-between items-center">
+            <div className="px-8 py-5 border-b border-border bg-white shadow-sm z-10 flex justify-between items-center">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-bold text-white ${selectedPost.postType === "Buy" ? "bg-rose-500" : "bg-[#0aa679]"}`}
+                    className={`px-2 py-0.5 rounded text-xs font-bold text-white ${selectedPost.postType === "Buy" ? "bg-error" : "bg-success"}`}
                   >
                     {selectedPost.postType === "Buy" ? "THU MUA" : "ĐĂNG BÁN"}
                   </span>
-                  <h1 className="text-2xl font-bold text-gray-900">
+                  <h1 className="text-2xl font-bold text-text">
                     {getPostTitle(selectedPost)}
                   </h1>
                 </div>
-                <p className="text-sm text-gray-500 flex items-center gap-2 mt-1">
+                <p className="text-sm text-textLight flex items-center gap-2 mt-1">
                   <FileTextOutlined /> Mã bài đăng:{" "}
-                  <strong className="text-gray-700">
-                    {selectedPost.postId || selectedPost.id || "N/A"}
+                  <strong className="text-text">
+                    {selectedPost.postId || selectedPost.id || "Chưa có"}
                   </strong>
                 </p>
               </div>
@@ -371,18 +413,18 @@ const PostModerationPage = () => {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+            <div className="flex-1 overflow-y-auto p-8 bg-background/60">
               <div className="max-w-4xl mx-auto space-y-6">
                 {/* Thông tin cơ bản */}
-                <section className="bg-white p-7 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-base font-bold text-gray-900 mb-5 pb-3 border-b flex items-center gap-2">
-                    <InfoCircleOutlined className="text-blue-500" /> Thông tin
+                <section className="bg-white p-7 rounded-xl shadow-sm border border-border">
+                  <h3 className="text-base font-bold text-text mb-5 pb-3 border-b flex items-center gap-2">
+                    <InfoCircleOutlined className="text-primary" /> Thông tin
                     cơ bản
                   </h3>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm">
                     <div>
-                      <span className="block text-gray-500 mb-1">Giá trị</span>
-                      <span className="font-bold text-lg text-rose-600">
+                      <span className="block text-textLight mb-1">Giá trị</span>
+                      <span className="font-bold text-lg text-primary">
                         {selectedPost.basePrice
                           ? selectedPost.basePrice.toLocaleString("vi-VN") +
                             " đ"
@@ -390,39 +432,39 @@ const PostModerationPage = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="block text-gray-500 mb-1">
+                      <span className="block text-textLight mb-1">
                         Ngày đăng
                       </span>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-text">
                         {selectedPost.createdAt
                           ? new Date(selectedPost.createdAt).toLocaleString(
                               "vi-VN",
                             )
-                          : "N/A"}
+                          : "Chưa có"}
                       </span>
                     </div>
-                    <div className="col-span-2 my-1 border-t border-dashed border-gray-200"></div>
+                    <div className="col-span-2 my-1 border-t border-dashed border-border"></div>
                     <div className="col-span-2">
-                      <span className="block text-gray-500 mb-1">
+                      <span className="block text-textLight mb-1">
                         Mô tả bài đăng
                       </span>
-                      <p className="font-medium text-gray-900 whitespace-pre-wrap leading-relaxed">
+                      <p className="font-medium text-text whitespace-pre-wrap leading-relaxed">
                         {selectedPost.description || "Không có mô tả"}
                       </p>
                     </div>
                     {selectedPost.product?.detailDescription && (
                       <div className="col-span-2">
-                        <span className="block text-gray-500 mb-1">
+                        <span className="block text-textLight mb-1">
                           Mô tả chi tiết sản phẩm
                         </span>
-                        <p className="font-medium text-gray-900 whitespace-pre-wrap leading-relaxed">
+                        <p className="font-medium text-text whitespace-pre-wrap leading-relaxed">
                           {selectedPost.product.detailDescription}
                         </p>
                       </div>
                     )}
                     {selectedPost.medias && selectedPost.medias.length > 0 && (
                       <div className="col-span-2 mt-2">
-                        <span className="block text-gray-500 mb-2">
+                        <span className="block text-textLight mb-2">
                           Hình ảnh đính kèm ({selectedPost.medias.length})
                         </span>
                         <div className="flex gap-3 overflow-x-auto pb-2">
@@ -430,8 +472,8 @@ const PostModerationPage = () => {
                             <img
                               key={idx}
                               src={img.url || img.mediaUrl || img}
-                              alt="post_image"
-                              className="h-32 w-32 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                              alt="Ảnh bài đăng"
+                              className="h-32 w-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() =>
                                 window.open(
                                   img.url || img.mediaUrl || img,
@@ -447,54 +489,53 @@ const PostModerationPage = () => {
                 </section>
 
                 {/* Phân loại */}
-                <section className="bg-white p-7 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="text-base font-bold text-gray-900 mb-5 pb-3 border-b flex items-center gap-2">
-                    <AppstoreOutlined className="text-blue-500" /> Phân loại &
+                <section className="bg-white p-7 rounded-xl shadow-sm border border-border">
+                  <h3 className="text-base font-bold text-text mb-5 pb-3 border-b flex items-center gap-2">
+                    <AppstoreOutlined className="text-primary" /> Phân loại &
                     Tình trạng
                   </h3>
                   <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm">
                     <div className="col-span-2 md:col-span-1">
-                      <span className="block text-gray-500 mb-1">
+                      <span className="block text-textLight mb-1">
                         Danh mục - Ngành hàng
                       </span>
-                      <span className="font-medium text-gray-900">
-                        {selectedPost.categoryName || "N/A"}{" "}
+                      <span className="font-medium text-text">
+                        {selectedPost.categoryName || "Chưa có"}{" "}
                         {selectedPost.productTypeName
                           ? `> ${selectedPost.productTypeName}`
                           : ""}
                       </span>
                     </div>
                     <div className="col-span-2 md:col-span-1">
-                      <span className="block text-gray-500 mb-1">
+                      <span className="block text-textLight mb-1">
                         Thương hiệu
                       </span>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-text">
                         {selectedPost.brandName || "Chưa cập nhật"}
                       </span>
                     </div>
                     <div className="col-span-2 md:col-span-1">
-                      <span className="block text-gray-500 mb-1">
+                      <span className="block text-textLight mb-1">
                         Tình trạng hoạt động
                       </span>
-                      <span className="font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                        {selectedPost.product?.functionalityStatus ||
-                          "Chưa cập nhật"}
+                      <span className="font-medium text-textLight bg-background px-2 py-0.5 rounded">
+                        {getModeratorFunctionalityLabel(selectedPost.product?.functionalityStatus)}
                       </span>
                     </div>
                     <div className="col-span-2 md:col-span-1">
-                      <span className="block text-gray-500 mb-1">
+                      <span className="block text-textLight mb-1">
                         Mức độ hư hỏng (Ngoại hình)
                       </span>
-                      <span className="font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded">
-                        {selectedPost.product?.damageLevel || "Chưa cập nhật"}
+                      <span className="font-medium text-warning bg-warning/10 px-2 py-0.5 rounded">
+                        {getModeratorDamageLabel(selectedPost.product?.damageLevel)}
                       </span>
                     </div>
-                    <div className="col-span-2 my-1 border-t border-dashed border-gray-200"></div>
+                    <div className="col-span-2 my-1 border-t border-dashed border-border"></div>
                     <div className="col-span-2">
-                      <span className="block text-gray-500 mb-1 flex items-center gap-1">
+                      <span className="block text-textLight mb-1 flex items-center gap-1">
                         <EnvironmentOutlined /> Khu vực giao dịch
                       </span>
-                      <span className="font-medium text-gray-900">
+                      <span className="font-medium text-text">
                         {[
                           selectedPost.streetAddress,
                           selectedPost.ward,
@@ -510,9 +551,9 @@ const PostModerationPage = () => {
                 {/* Thuộc tính */}
                 {selectedPost.product?.attributeValues &&
                   selectedPost.product.attributeValues.length > 0 && (
-                    <section className="bg-white p-7 rounded-xl shadow-sm border border-gray-200">
-                      <h3 className="text-base font-bold text-gray-900 mb-5 pb-3 border-b flex items-center gap-2">
-                        <AppstoreOutlined className="text-blue-500" /> Thông số
+                    <section className="bg-white p-7 rounded-xl shadow-sm border border-border">
+                      <h3 className="text-base font-bold text-text mb-5 pb-3 border-b flex items-center gap-2">
+                        <AppstoreOutlined className="text-primary" /> Thông số
                         kỹ thuật
                       </h3>
                       <div className="grid grid-cols-2 gap-x-8 gap-y-4 text-sm">
@@ -527,16 +568,16 @@ const PostModerationPage = () => {
                             return (
                               <div
                                 key={idx}
-                                className="bg-gray-50 p-3 rounded-lg border border-gray-100"
+                                className="bg-background p-3 rounded-lg border border-border"
                               >
-                                <span className="block text-gray-500 mb-1 text-xs">
+                                <span className="block text-textLight mb-1 text-xs">
                                   {attr.attributeName}
                                 </span>
-                                <span className="font-semibold text-gray-900">
+                                <span className="font-semibold text-text">
                                   {attr.valueText ||
                                     attr.valueNumber ||
                                     attr.optionValue ||
-                                    "N/A"}
+                                    "Chưa có"}
                                   {unitText}
                                 </span>
                               </div>
@@ -550,7 +591,7 @@ const PostModerationPage = () => {
             </div>
 
             {/* INLINE ACTIONS FOOTER */}
-            <div className="px-8 py-5 border-t border-gray-200 bg-white flex flex-col gap-3 z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+            <div className="px-8 py-5 border-t border-border bg-white flex flex-col gap-3 z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
               {actionFeedback && (
                 <Alert
                   message={actionFeedback.text}
@@ -570,20 +611,12 @@ const PostModerationPage = () => {
                       <StopOutlined /> Đình chỉ bài đăng
                     </Button>
                   )}
-                  {selectedPost.status?.toUpperCase() === "SUSPENDED" && (
-                    <Button
-                      onClick={() => setActionState("restoring")}
-                      className="font-semibold flex items-center gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
-                    >
-                      <ReloadOutlined /> Mở lại bài đăng (Mock)
-                    </Button>
-                  )}
                 </div>
               )}
 
               {actionState === "suspending" && (
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <p className="font-semibold text-red-800 mb-2 flex items-center gap-2">
+                <div className="bg-error/10 p-4 rounded-lg border border-error/20">
+                  <p className="font-semibold text-error mb-2 flex items-center gap-2">
                     <WarningOutlined /> Lý do đình chỉ:
                   </p>
                   <Input.TextArea
@@ -618,29 +651,6 @@ const PostModerationPage = () => {
                 </div>
               )}
 
-              {actionState === "restoring" && (
-                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
-                  <p className="font-semibold text-emerald-800 mb-3 flex items-center gap-2">
-                    <WarningOutlined /> Bạn có chắc muốn MỞ LẠI bài đăng này?
-                  </p>
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      onClick={() => setActionState("idle")}
-                      disabled={isProcessing}
-                    >
-                      Hủy
-                    </Button>
-                    <Button
-                      type="primary"
-                      onClick={handleMockRestore}
-                      loading={isProcessing}
-                      className="bg-emerald-600 hover:bg-emerald-700 border-none"
-                    >
-                      Xác nhận mở lại
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
           </>
         ) : null}
