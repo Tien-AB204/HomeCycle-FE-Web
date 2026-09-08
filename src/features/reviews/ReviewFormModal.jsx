@@ -65,7 +65,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0D292B]/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-primary/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="review-modal-title"
@@ -75,14 +75,14 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
     >
       <form
         onSubmit={handleSubmit}
-        className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-[#DCE8E5] bg-white shadow-2xl"
+        className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-white shadow-2xl"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-[#E3ECE9] px-5 py-4 sm:px-6">
+        <header className="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-[#2F6F9F]">
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
               Giao dịch HomeCycle
             </p>
-            <h2 id="review-modal-title" className="mt-1 text-xl font-black text-[#183F41]">
+            <h2 id="review-modal-title" className="mt-1 text-xl font-black text-text">
               {mode === "edit" ? "Chỉnh sửa đánh giá" : "Đánh giá đơn hàng"}
             </h2>
           </div>
@@ -90,7 +90,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="material-symbols-outlined rounded-lg p-1.5 text-[#68807F] transition hover:bg-[#F1F7F5] disabled:opacity-50"
+            className="material-symbols-outlined rounded-lg p-1.5 text-textLight transition hover:bg-primary/10 disabled:opacity-50"
             aria-label="Đóng"
           >
             close
@@ -99,35 +99,35 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
 
         <div className="space-y-5 px-5 py-5 sm:px-6">
           <fieldset>
-            <legend className="text-sm font-black text-[#183F41]">
-              Mức độ hài lòng <span className="text-red-600">*</span>
+            <legend className="text-sm font-black text-text">
+              Mức độ hài lòng <span className="text-error">*</span>
             </legend>
             <div className="mt-2 flex items-center gap-3">
               <ReviewStars value={rating} onChange={setRating} size="text-4xl" />
-              <span className="text-sm font-bold text-[#68807F]">
+              <span className="text-sm font-bold text-textLight">
                 {rating ? `${rating}/5 sao` : "Chưa chọn"}
               </span>
             </div>
           </fieldset>
 
           <label className="block">
-            <span className="text-sm font-black text-[#183F41]">Chia sẻ trải nghiệm</span>
+            <span className="text-sm font-black text-text">Chia sẻ trải nghiệm</span>
             <textarea
               value={comment}
               onChange={(event) => setComment(event.target.value)}
               rows={5}
               placeholder="Sản phẩm, giao tiếp và quá trình giao nhận của đơn hàng như thế nào?"
-              className="mt-2 w-full resize-y rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-4 py-3 text-sm leading-6 text-[#183F41] outline-none transition focus:border-[#4F8588] focus:bg-white"
+              className="mt-2 w-full resize-y rounded-xl border border-border bg-background px-4 py-3 text-sm leading-6 text-text outline-none transition focus:border-primary focus:bg-white"
             />
           </label>
 
           {mode === "create" && (
             <div>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-black text-[#183F41]">Ảnh đính kèm</span>
-                <span className="text-xs font-bold text-[#789092]">Tối đa 3 ảnh</span>
+                <span className="text-sm font-black text-text">Ảnh đính kèm</span>
+                <span className="text-xs font-bold text-textLight">Tối đa 3 ảnh</span>
               </div>
-              <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[#9FBFBA] bg-[#F8FBFA] px-4 py-4 text-sm font-black text-[#285E62] transition hover:bg-[#EEF6F3]">
+              <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-4 text-sm font-black text-primary transition hover:bg-primary/10">
                 <span className="material-symbols-outlined" aria-hidden="true">add_photo_alternate</span>
                 Chọn ảnh
                 <input
@@ -154,7 +154,7 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
                         onClick={() =>
                           setImages((current) => current.filter((_, itemIndex) => itemIndex !== index))
                         }
-                        className="material-symbols-outlined absolute right-1 top-1 rounded-full bg-[#183F41]/80 p-1 text-base text-white"
+                        className="material-symbols-outlined absolute right-1 top-1 rounded-full bg-primary/80 p-1 text-base text-white"
                         aria-label={`Xóa ảnh ${index + 1}`}
                       >
                         close
@@ -167,31 +167,31 @@ const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {
           )}
 
           {mode === "edit" && review?.images?.length > 0 && (
-            <p className="rounded-lg bg-[#F1F7F5] p-3 text-xs font-semibold leading-5 text-[#68807F]">
+            <p className="rounded-lg bg-primary/10 p-3 text-xs font-semibold leading-5 text-textLight">
               Chỉ được chỉnh sửa số sao và bình luận. Ảnh đã gửi sẽ được giữ nguyên.
             </p>
           )}
 
           {error && (
-            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            <div role="alert" className="rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm font-semibold text-error">
               {error}
             </div>
           )}
         </div>
 
-        <footer className="flex flex-col-reverse gap-2 border-t border-[#E3ECE9] px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
+        <footer className="flex flex-col-reverse gap-2 border-t border-border px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="rounded-lg border border-[#9FBFBA] px-5 py-2.5 text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5] disabled:opacity-50"
+            className="rounded-lg border border-border px-5 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10 disabled:opacity-50"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && (
               <span className="material-symbols-outlined animate-spin text-lg" aria-hidden="true">

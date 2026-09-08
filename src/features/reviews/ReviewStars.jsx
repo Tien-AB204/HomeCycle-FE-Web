@@ -22,7 +22,7 @@ const ReviewStars = ({
             <span
               key={star}
               className={`material-symbols-outlined ${size} ${
-                active ? "text-amber-400" : "text-[#C8D7D3]"
+                active ? "text-warning" : "text-border"
               }`}
               aria-hidden="true"
               style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
@@ -40,8 +40,8 @@ const ReviewStars = ({
             aria-checked={Number(value) === star}
             aria-label={`${star} sao`}
             onClick={() => onChange(star)}
-            className={`material-symbols-outlined ${size} rounded transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2F6F9F] ${
-              active ? "text-amber-400" : "text-[#C8D7D3] hover:text-amber-300"
+            className={`material-symbols-outlined ${size} rounded transition hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              active ? "text-warning" : "text-border hover:text-warning/80"
             }`}
             style={{ fontVariationSettings: active ? "'FILL' 1" : "'FILL' 0" }}
           >
