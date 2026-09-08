@@ -790,205 +790,340 @@ const DisputeManagementPage = () => {
     : [];
 
   return (
-    <div className="flex h-full min-h-0 bg-[#F4F7F6] text-[#183436]">
-      <section className="flex w-[420px] shrink-0 flex-col border-r border-[#DCE8E5] bg-white">
-        <div className="border-b border-[#E6EFED] p-4">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#2F6F9F]">
-                Moderator
-              </p>
-              <h1 className="text-xl font-black text-[#183F41]">
-                Quản lý tranh chấp
-              </h1>
-            </div>
-            <div className="rounded-full bg-[#E6F2F0] px-3 py-1 text-xs font-black text-[#285E62]">
-              {totalCount}
-            </div>
-          </div>
-
-          <Input
-            value={keywordInput}
-            onChange={(event) => setKeywordInput(event.target.value)}
-            prefix={<SearchOutlined className="text-gray-400" />}
-            placeholder="Tìm mã, người dùng, đơn hàng..."
-            allowClear
-          />
-
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <Select
-              allowClear
-              placeholder="Trạng thái"
-              value={status}
-              options={STATUS_OPTIONS}
-              onChange={(value) => {
-                setStatus(value);
-                setPageNumber(1);
-              }}
-            />
-            <Select
-              allowClear
-              placeholder="Đối tượng"
-              value={targetType}
-              options={TARGET_TYPE_OPTIONS}
-              onChange={(value) => {
-                setTargetType(value);
-                setPageNumber(1);
-              }}
-            />
-            <Select
-              allowClear
-              className="col-span-2"
-              placeholder="Loại tranh chấp"
-              value={category}
-              options={CATEGORY_OPTIONS}
-              onChange={(value) => {
-                setCategory(value);
-                setPageNumber(1);
-              }}
-            />
-          </div>
-
-          <div className="mt-3 flex items-center justify-between">
-            <Button type="link" onClick={clearFilters} className="px-0 text-[#5F7472]">
-              Xóa bộ lọc
-            </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchDisputes}
-              loading={loadingList}
-            >
-              Làm mới
-            </Button>
-          </div>
-        </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          {listError && (
-            <Alert
-              type="error"
-              showIcon
-              message={listError}
-              className="m-4"
-            />
-          )}
-
-          {loadingList && disputes.length === 0 ? (
-            <div className="flex h-full items-center justify-center p-10">
-              <Spin />
-            </div>
-          ) : disputes.length === 0 ? (
-            <Empty description="Không có tranh chấp phù hợp" className="mt-14" />
-          ) : (
-            <div className="divide-y divide-[#EDF3F1]">
-              {disputes.map((item) => {
-                const statusMeta = getStatusMeta(item.status);
-                const isSelected = selectedDisputeId === item.disputeId;
-
-                return (
-                  <button
-                    type="button"
-                    key={item.disputeId}
-                    onClick={() => setSelectedDisputeId(item.disputeId)}
-                    className={`w-full border-l-4 p-4 text-left transition ${
-                      isSelected
-                        ? "border-[#285E62] bg-[#EFF6F4]"
-                        : "border-transparent bg-white hover:bg-[#F8FBFA]"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-bold text-[#183F41]">
-                          {item.orderCode || `Tranh chấp ${String(item.disputeId).slice(0, 8)}`}
-                        </p>
-                        <p className="mt-1 truncate text-xs text-[#78908E]">
-                          Người gửi: {item.senderUsername || "N/A"}
-                        </p>
-                      </div>
-                      <Tag color={statusMeta.color} className="m-0 shrink-0">
-                        {statusMeta.label}
-                      </Tag>
-                    </div>
-
-                    <p className="mt-3 line-clamp-2 text-sm leading-5 text-[#536B69]">
-                      {item.description || "Không có mô tả"}
-                    </p>
-
-                    <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-[#78908E]">
-                      <span>
-                        {optionLabel(
-                          CATEGORY_OPTIONS,
-                          item.category,
-                          "category",
-                        )}
-                      </span>
-                      <span>{formatDateTime(item.createdAt)}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="border-t border-[#E6EFED] bg-white p-3">
-          <Pagination
-            current={pageNumber}
-            pageSize={pageSize}
-            total={totalCount}
-            showSizeChanger
-            pageSizeOptions={[10, 20, 50, 100]}
-            size="small"
-            onChange={(page, size) => {
-              setPageNumber(size !== pageSize ? 1 : page);
-              setPageSize(size);
-            }}
-          />
-        </div>
-      </section>
-
-      <section className="min-w-0 flex-1 overflow-y-auto">
-        {!selectedDisputeId ? (
-          <div className="flex h-full min-h-[520px] flex-col items-center justify-center p-8 text-center text-[#78908E]">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E6F2F0] text-[#285E62]">
-              <WarningOutlined className="text-3xl" />
-            </div>
-            <h2 className="text-lg font-black text-[#183F41]">Chi tiết tranh chấp</h2>
-            <p className="mt-2 max-w-md text-sm">
-              Chọn một tranh chấp ở danh sách bên trái để xem thông tin người gửi,
-              đối tượng liên quan và bằng chứng.
-            </p>
-          </div>
-        ) : loadingDetail ? (
-          <div className="flex h-full min-h-[520px] items-center justify-center">
-            <Spin size="large" />
-          </div>
-        ) : detailError ? (
-          <div className="p-6">
-            <Alert type="error" showIcon message={detailError} />
-          </div>
-        ) : detail ? (
-          <div className="mx-auto max-w-6xl p-6 lg:p-8">
-            <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <>
+      <div className="flex h-full min-h-0 bg-background text-text">
+        <section
+          style={{
+            width: `${sidebarWidth}px`,
+          }}
+          className="relative flex shrink-0 select-none flex-col border-r border-border bg-white"
+        >
+          <div className="border-b border-border p-4">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#2F6F9F]">
-                  Chi tiết tranh chấp
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-primary">
+                  Kiểm duyệt
                 </p>
-                <h2 className="mt-1 text-2xl font-black text-[#183F41]">
-                  {order?.orderCode || `#${String(detail.disputeId).slice(0, 8)}`}
-                </h2>
-                <p className="mt-1 break-all text-xs text-[#78908E]">
-                  ID: {detail.disputeId}
-                </p>
+
+                <h1 className="text-xl font-black text-text">
+                  Quản lý tranh chấp
+                </h1>
               </div>
-              <Tag color={detailStatus.color} className="m-0 px-3 py-1 text-sm font-bold">
-                {detailStatus.label}
-              </Tag>
+
+              <div className="rounded-full bg-[rgba(84,123,125,0.10)] px-3 py-1 text-xs font-black text-primary">
+                {totalCount}
+              </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {renderUserCard("Người gửi tranh chấp", detail.sender)}
-              {renderUserCard("Người bị phản ánh", detail.targetUser)}
+            <Input
+              value={keywordInput}
+              onChange={(event) =>
+                setKeywordInput(
+                  event.target.value,
+                )
+              }
+              prefix={
+                <SearchOutlined className="text-textLight" />
+              }
+              placeholder="Tìm mã, người dùng, đơn hàng..."
+              allowClear
+            />
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Select
+                allowClear
+                placeholder="Trạng thái"
+                value={status}
+                options={
+                  STATUS_OPTIONS
+                }
+                onChange={(value) => {
+                  setStatus(value);
+                  setPageNumber(1);
+                }}
+              />
+
+              <Select
+                allowClear
+                placeholder="Đối tượng"
+                value={targetType}
+                options={
+                  TARGET_TYPE_OPTIONS
+                }
+                onChange={(value) => {
+                  setTargetType(value);
+                  setPageNumber(1);
+                }}
+              />
+
+              <Select
+                allowClear
+                className="col-span-2"
+                placeholder="Loại tranh chấp"
+                value={category}
+                options={
+                  CATEGORY_OPTIONS
+                }
+                onChange={(value) => {
+                  setCategory(value);
+                  setPageNumber(1);
+                }}
+              />
+
+              <RangePicker
+                className="col-span-2 w-full"
+                value={dateRange}
+                onChange={(values) => {
+                  setDateRange(values);
+                  setPageNumber(1);
+                }}
+                placeholder={[
+                  "Từ ngày",
+                  "Đến ngày",
+                ]}
+                format="DD/MM/YYYY"
+                allowClear
+              />
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <Button
+                type="link"
+                onClick={clearFilters}
+                className="px-0 text-textLight"
+              >
+                Xóa bộ lọc
+              </Button>
+
+              <Button
+                icon={
+                  <ReloadOutlined />
+                }
+                onClick={() => {
+                  void refreshSelected();
+                }}
+                loading={
+                  loadingList ||
+                  loadingDetail
+                }
+              >
+                Làm mới
+              </Button>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {listError && (
+              <Alert
+                type="error"
+                showIcon
+                message={listError}
+                className="m-4"
+              />
+            )}
+
+            {loadingList &&
+            disputes.length === 0 ? (
+              <div className="flex h-full items-center justify-center p-10">
+                <Spin />
+              </div>
+            ) : disputes.length ===
+              0 ? (
+              <Empty
+                description="Không có tranh chấp phù hợp"
+                className="mt-14"
+              />
+            ) : (
+              <div className="divide-y divide-border">
+                {disputes.map(
+                  (item) => {
+                    const statusMeta =
+                      getStatusMeta(
+                        item.status,
+                      );
+
+                    const isSelected =
+                      selectedDisputeId ===
+                      item.disputeId;
+
+                    return (
+                      <button
+                        type="button"
+                        key={
+                          item.disputeId
+                        }
+                        onClick={() => {
+                          setDetail(null);
+                          setDetailError(
+                            null,
+                          );
+                          setActionFeedback(
+                            null,
+                          );
+                          setSelectedDisputeId(
+                            item.disputeId,
+                          );
+                        }}
+                        className={`w-full border-l-4 p-4 text-left transition ${
+                          isSelected
+                            ? "border-primary bg-[rgba(84,123,125,0.10)]"
+                            : "border-transparent bg-white hover:bg-background"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-bold text-text">
+                              {item.orderCode ||
+                                `Tranh chấp ${String(
+                                  item.disputeId,
+                                ).slice(
+                                  0,
+                                  8,
+                                )}`}
+                            </p>
+
+                            <p className="mt-1 truncate text-xs text-textLight">
+                              Người gửi:{" "}
+                              {item.senderUsername ||
+                                "Chưa có"}
+                            </p>
+                          </div>
+
+                          <Tag
+                            className="m-0 shrink-0"
+                            style={{
+                              color:
+                                statusMeta.color,
+                              background:
+                                statusMeta.background,
+                              borderColor:
+                                statusMeta.color,
+                            }}
+                          >
+                            {
+                              statusMeta.label
+                            }
+                          </Tag>
+                        </div>
+
+                        <p className="mt-3 line-clamp-2 text-sm leading-5 text-textLight">
+                          {item.description ||
+                            "Không có mô tả"}
+                        </p>
+
+                        {item.resolutionOutcome && (
+                          <p className="mt-2 text-xs font-semibold text-primary">
+                            Kết quả:{" "}
+                            {getResolutionOutcomeLabel(
+                              item.resolutionOutcome,
+                            )}
+                          </p>
+                        )}
+
+                        {item.returnDueAt && (
+                          <p className="mt-1 text-xs text-[#9A6418]">
+                            Hạn hoàn trả:{" "}
+                            {formatDateTime(
+                              item.returnDueAt,
+                            )}
+                          </p>
+                        )}
+
+                        <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-textLight">
+                          <span>
+                            {optionLabel(
+                              CATEGORY_OPTIONS,
+                              item.category,
+                              "category",
+                            )}
+                          </span>
+
+                          <span>
+                            {formatDateTime(
+                              item.createdAt,
+                            )}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-border p-3">
+            <Pagination
+              current={pageNumber}
+              pageSize={pageSize}
+              total={totalCount}
+              showSizeChanger
+              size="small"
+              onChange={(
+                nextPage,
+                nextSize,
+              ) => {
+                setPageNumber(
+                  nextPage,
+                );
+                setPageSize(
+                  nextSize,
+                );
+              }}
+              showTotal={(total) =>
+                `Tổng ${total} tranh chấp`
+              }
+            />
+          </div>
+
+          <div
+            onMouseDown={
+              startResizing
+            }
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Thay đổi độ rộng danh sách tranh chấp"
+            title="Kéo để thay đổi độ rộng danh sách"
+            className={`absolute right-0 top-0 z-20 h-full w-1.5 cursor-col-resize transition-colors ${
+              isResizing
+                ? "bg-primary/50"
+                : "bg-transparent hover:bg-primary/40"
+            }`}
+          />
+        </section>
+
+        <section className="min-w-0 flex-1 overflow-y-auto">
+          {!selectedDisputeId ? (
+            <div className="flex h-full items-center justify-center p-8">
+              <Empty description="Chọn một tranh chấp để xem chi tiết" />
+            </div>
+          ) : loadingDetail &&
+            !detail ? (
+            <div className="flex h-full items-center justify-center">
+              <Spin size="large" />
+            </div>
+          ) : detailError &&
+            !detail ? (
+            <div className="p-6">
+              <Alert
+                type="error"
+                showIcon
+                message={
+                  detailError
+                }
+                action={
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      void fetchDetail(
+                        selectedDisputeId,
+                      );
+                    }}
+                  >
+                    Thử lại
+                  </Button>
+                }
+              />
             </div>
 
             <div className="mt-6 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-sm">
