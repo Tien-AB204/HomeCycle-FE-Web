@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AppstoreOutlined,
   CheckCircleOutlined,
@@ -47,19 +47,19 @@ const CATEGORIES = [
     name: "Điện máy",
     description: "Thiết bị nhà bếp và điện gia dụng",
     icon: ThunderboltOutlined,
-    className: "bg-[#e6f3ef] text-[#255b57]",
+    className: "border border-border bg-white text-success",
   },
   {
     name: "Nội thất",
     description: "Bàn ghế, giường tủ cho mọi không gian",
     icon: AppstoreOutlined,
-    className: "bg-[#f5f0e6] text-[#765b32]",
+    className: "border border-border bg-white text-warning",
   },
   {
     name: "Đồ sinh hoạt",
     description: "Đồ dùng tiện ích cho gia đình",
     icon: HomeOutlined,
-    className: "bg-[#e2eef7] text-[#2f6f9f]",
+    className: "border border-border bg-white text-primary",
   },
 ];
 
@@ -88,30 +88,30 @@ const LoadingCards = ({ count }) => {
   return Array.from({ length: count }, (_, index) => (
     <div
       key={index}
-      className="overflow-hidden rounded-2xl border border-[#e1ebe8] bg-white shadow-sm"
+      className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
     >
-      <div className="h-44 animate-pulse bg-[#e8efed] sm:h-48 lg:h-44 xl:h-48" />
+      <div className="h-44 animate-pulse bg-background sm:h-48 lg:h-44 xl:h-48" />
       <div className="space-y-3 p-4">
-        <div className="h-3 w-1/3 animate-pulse rounded-full bg-[#dce7e4]" />
-        <div className="h-5 w-4/5 animate-pulse rounded-full bg-[#dce7e4]" />
-        <div className="h-4 w-full animate-pulse rounded-full bg-[#edf2f0]" />
-        <div className="h-10 w-full animate-pulse rounded-xl bg-[#edf2f0]" />
+        <div className="h-3 w-1/3 animate-pulse rounded-full bg-border/40" />
+        <div className="h-5 w-4/5 animate-pulse rounded-full bg-border/40" />
+        <div className="h-4 w-full animate-pulse rounded-full bg-background" />
+        <div className="h-10 w-full animate-pulse rounded-xl bg-background" />
       </div>
     </div>
   ));
 };
 
 const EmptyPosts = ({ message }) => (
-  <div className="col-span-full rounded-2xl border border-dashed border-[#aac6bf] bg-white px-6 py-12 text-center">
-    <p className="text-sm font-semibold text-[#587170]">{message}</p>
+  <div className="col-span-full rounded-2xl border border-dashed border-border bg-white px-6 py-12 text-center">
+    <p className="text-sm font-semibold text-textLight">{message}</p>
   </div>
 );
 
 const BusinessSurveyPrompt = () => (
   <section className="pb-12">
-    <div className="grid gap-5 rounded-[2rem] border border-[#cfe1dc] bg-gradient-to-br from-[#edf7f3] via-white to-[#eaf2f8] p-6 shadow-[0_12px_36px_rgba(32,77,75,0.08)] sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-8">
+    <div className="grid gap-5 rounded-[2rem] border border-border bg-gradient-to-br from-background via-white to-background p-6 shadow-[0_12px_36px_rgba(23,40,48,0.06)] sm:grid-cols-[auto_1fr_auto] sm:items-center sm:p-8">
       <span
-        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dceee9] text-[#2f686c]"
+        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-background text-primary"
         aria-hidden="true"
       >
         <span className="material-symbols-outlined text-[30px]">
@@ -119,19 +119,19 @@ const BusinessSurveyPrompt = () => (
         </span>
       </span>
       <div>
-        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#4f8588]">
+        <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">
           Dành riêng cho doanh nghiệp
         </p>
-        <h2 className="mt-2 text-xl font-black leading-snug text-[#183436] sm:text-2xl">
+        <h2 className="mt-2 text-xl font-black leading-snug text-text sm:text-2xl">
           Hãy thực hiện khảo sát để hệ thống đề xuất cho bạn những sản phẩm phù hợp
         </h2>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-[#68807f]">
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-textLight">
           Chọn khu vực, loại sản phẩm và tình trạng hàng hóa doanh nghiệp quan tâm.
         </p>
       </div>
       <Link
         to="/ho-so?tab=survey"
-        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#244f51] px-5 py-3 text-sm font-black text-white transition hover:bg-[#356a70] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#244f51]"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <span className="material-symbols-outlined text-[18px]">
           tune
@@ -166,31 +166,31 @@ const HomepageSearch = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-7 flex max-w-2xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_18px_50px_rgba(30,78,77,0.16)] sm:flex-row"
+      className="mt-7 flex max-w-2xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_18px_50px_rgba(23,40,48,0.10)] sm:flex-row"
     >
       <label htmlFor="homepage-search-keyword" className="sr-only">
         Từ khóa tìm kiếm
       </label>
       <div className="flex min-w-0 flex-1 items-center">
-        <span className="pl-4 text-xl text-[#66817f]" aria-hidden="true">⌕</span>
+        <span className="pl-4 text-xl text-textLight" aria-hidden="true">⌕</span>
         <input
           id="homepage-search-keyword"
           ref={keywordInputRef}
           type="search"
           placeholder="Tìm tên sản phẩm, thương hiệu..."
-          className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-[#183436] outline-none placeholder:text-[#78908f]"
+          className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-text outline-none placeholder:text-textLight"
         />
       </div>
       <button
         type="submit"
-        className="rounded-xl border border-[#4f8588] bg-white px-6 py-3 text-sm font-extrabold text-[#2f686c] transition hover:bg-[#4f8588] hover:text-white"
+        className="rounded-xl border border-primary bg-white px-6 py-3 text-sm font-extrabold text-primary transition hover:bg-primary hover:text-white"
       >
         Tìm kiếm
       </button>
       <button
         type="button"
         onClick={() => navigateToSearch(true)}
-        className="rounded-xl border border-[#bfd3ce] px-4 py-3 text-sm font-bold text-[#244f51] transition hover:bg-[#edf5f2]"
+        className="rounded-xl border border-border px-4 py-3 text-sm font-bold text-primary transition hover:bg-background"
       >
         Bộ lọc
       </button>
@@ -201,17 +201,17 @@ const HomepageSearch = () => {
 const SectionHeader = ({ eyebrow, title, description, to }) => (
   <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#4f8588]">
+      <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">
         {eyebrow}
       </p>
-      <h2 className="mt-2 text-2xl font-black tracking-tight text-[#183436] sm:text-3xl">
+      <h2 className="mt-2 text-2xl font-black tracking-tight text-text sm:text-3xl">
         {title}
       </h2>
-      <p className="mt-2 max-w-2xl text-sm leading-6 text-[#68807f]">{description}</p>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-textLight">{description}</p>
     </div>
     <NavLink
       to={to}
-      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#5f9291] bg-white px-4 py-2 text-sm font-extrabold text-[#2f686c] transition hover:bg-[#4f8588] hover:text-white"
+      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary bg-white px-4 py-2 text-sm font-extrabold text-primary transition hover:bg-primary hover:text-white"
     >
       Xem tất cả <span aria-hidden="true">→</span>
     </NavLink>
@@ -569,32 +569,32 @@ const Homepage = () => {
 
   return (
     <div className="overflow-hidden pb-20">
-      <section className="relative bg-gradient-to-br from-[#e4f1f0] via-[#f3f8f7] to-[#e9f1f6]">
-        <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-[#8db7c4]/25 blur-3xl" />
-        <div className="absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-[#77aaa4]/20 blur-3xl" />
-        <div className="absolute left-[38%] top-1/3 h-72 w-72 rounded-full bg-[#f5f0e6]/80 blur-3xl" />
+      <section className="relative bg-gradient-to-br from-background via-white to-background">
+        <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-success/10 blur-3xl" />
+        <div className="absolute left-[38%] top-1/3 h-72 w-72 rounded-full bg-warning/10 blur-3xl" />
 
         <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-20">
           <div>
-            <span className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-[#34716c] shadow-sm">
+            <span className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-primary shadow-sm">
               {isAuthenticated
                 ? `Xin chào, ${displayName}`
                 : "Marketplace đồ cũ cho gia đình"}
             </span>
-            <h1 className="mt-6 max-w-3xl text-4xl font-black leading-[1.08] tracking-[-0.035em] text-[#183f41] sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 max-w-3xl text-4xl font-black leading-[1.08] tracking-[-0.035em] text-text sm:text-5xl lg:text-6xl">
               {isAuthenticated ? (
                 <>
                   Sẵn sàng cho
-                  <span className="block text-[#2f6f9f]">giao dịch tiếp theo?</span>
+                  <span className="block text-primary">giao dịch tiếp theo?</span>
                 </>
               ) : (
                 <>
                   Đồ cũ trao tay,
-                  <span className="block text-[#2f6f9f]">giá trị ở lại.</span>
+                  <span className="block text-primary">giá trị ở lại.</span>
                 </>
               )}
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-[#587170] sm:text-lg">
+            <p className="mt-5 max-w-2xl text-base leading-7 text-textLight sm:text-lg">
               {isAuthenticated
                 ? isBusinessUser
                   ? "Tìm nguồn hàng phù hợp, quản lý nhu cầu thu mua và tiếp tục các phiên thương lượng của doanh nghiệp tại một nơi."
@@ -606,13 +606,13 @@ const Homepage = () => {
           </div>
 
           <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:ml-auto">
-            <div className="absolute inset-8 rotate-6 rounded-[2.5rem] bg-[#79a7ad]" />
-            <div className="relative rounded-[2.5rem] border border-white/80 bg-white/90 p-6 shadow-[0_30px_80px_rgba(30,78,77,0.18)] backdrop-blur sm:p-8">
+            <div className="absolute inset-8 rotate-6 rounded-[2.5rem] bg-primary/20" />
+            <div className="relative rounded-[2.5rem] border border-white/80 bg-white/90 p-6 shadow-[0_30px_80px_rgba(23,40,48,0.12)] backdrop-blur sm:p-8">
               <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-[#66817f]">
+                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-textLight">
                   {isAuthenticated ? "Khu vực của bạn" : "HomeCycle hôm nay"}
                 </p>
-                <p className="mt-2 text-3xl font-black text-[#183f41]">
+                <p className="mt-2 text-3xl font-black text-text">
                   {isAuthenticated
                     ? isBusinessUser
                       ? "Thu mua chủ động"
@@ -624,25 +624,25 @@ const Homepage = () => {
               <div className="mt-7 grid grid-cols-2 gap-3">
                 <Link
                   to={isAuthenticated ? managedPostPath : "/tin-dang-ban"}
-                  className="rounded-2xl bg-[#f5f0e6] p-5 transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="rounded-2xl border border-border bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <ShoppingOutlined className="text-3xl text-[#356f6c]" aria-hidden="true" />
-                  <p className="mt-4 font-black text-[#244f51]">
+                  <ShoppingOutlined className="text-3xl text-primary" aria-hidden="true" />
+                  <p className="mt-4 font-black text-text">
                     {isAuthenticated ? managedPostLabel : "Tin đăng bán"}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-[#68807f]">
+                  <p className="mt-1 text-xs leading-5 text-textLight">
                     {isAuthenticated ? "Theo dõi và cập nhật bài đăng của bạn." : "Đăng sản phẩm và nhận đề nghị phù hợp."}
                   </p>
                 </Link>
                 <Link
                   to={isAuthenticated ? "/lich-hen" : "/tin-thu-mua"}
-                  className="rounded-2xl bg-[#e2eef7] p-5 transition hover:-translate-y-0.5 hover:shadow-md"
+                  className="rounded-2xl border border-border bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <SearchOutlined className="text-3xl text-[#2f6f9f]" aria-hidden="true" />
-                  <p className="mt-4 font-black text-[#2f6f9f]">
+                  <SearchOutlined className="text-3xl text-success" aria-hidden="true" />
+                  <p className="mt-4 font-black text-text">
                     {isAuthenticated ? "Lịch hẹn" : "Tin thu mua"}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-[#627b87]">
+                  <p className="mt-1 text-xs leading-5 text-textLight">
                     {isAuthenticated ? "Kiểm tra các lịch kiểm định và thu gom." : "Kết nối đúng người đang cần sản phẩm."}
                   </p>
                 </Link>
@@ -650,12 +650,12 @@ const Homepage = () => {
 
               <Link
                 to={isAuthenticated ? "/don-hang" : "/auth/register"}
-                className="mt-3 block rounded-2xl bg-[#183f41] p-5 text-white transition hover:bg-[#24575a]"
+                className="mt-3 block rounded-2xl bg-primary p-5 text-white transition hover:bg-primary/90"
               >
                 <p className="text-sm font-black">
                   {isAuthenticated ? "Đơn hàng của tôi" : "Thương lượng trực tiếp"}
                 </p>
-                <p className="mt-1 text-xs leading-5 text-[#c7dcda]">
+                <p className="mt-1 text-xs leading-5 text-white/75">
                   {isAuthenticated ? "Theo dõi thanh toán và tiến trình các đơn hàng." : "Hai bên chủ động thống nhất giá, số lượng và cách giao nhận."}
                 </p>
               </Link>
@@ -664,19 +664,19 @@ const Homepage = () => {
         </div>
       </section>
 
-      <section className="border-y border-[#e2ebe8] bg-white">
-        <div className="mx-auto grid max-w-7xl divide-y divide-[#e2ebe8] px-6 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+      <section className="border-y border-border bg-white">
+        <div className="mx-auto grid max-w-7xl divide-y divide-border px-6 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {BENEFITS.map((benefit) => {
             const BenefitIcon = benefit.icon;
 
             return (
               <div key={benefit.title} className="flex items-center gap-4 py-5 sm:justify-center sm:px-5">
-                <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-[#e6f3ef] text-xl text-[#2d6a65]" aria-hidden="true">
+                <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-background text-xl text-success" aria-hidden="true">
                   <BenefitIcon />
                 </span>
                 <div>
-                  <p className="font-extrabold text-[#244f51]">{benefit.title}</p>
-                  <p className="text-xs text-[#78908f]">{benefit.description}</p>
+                  <p className="font-extrabold text-text">{benefit.title}</p>
+                  <p className="text-xs text-textLight">{benefit.description}</p>
                 </div>
               </div>
             );
@@ -688,10 +688,10 @@ const Homepage = () => {
         <section className="py-14">
           <div className="mb-6 flex items-end justify-between">
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#4f8588]">Danh mục nổi bật</p>
-              <h2 className="mt-2 text-2xl font-black text-[#183436] sm:text-3xl">Khám phá theo nhu cầu</h2>
+              <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">Danh mục nổi bật</p>
+              <h2 className="mt-2 text-2xl font-black text-text sm:text-3xl">Khám phá theo nhu cầu</h2>
             </div>
-            <Link to="/search?showFilter=1" className="hidden rounded-full border border-[#5f9291] bg-white px-4 py-2 text-sm font-extrabold text-[#2f686c] transition hover:bg-[#4f8588] hover:text-white sm:inline-flex">
+            <Link to="/search?showFilter=1" className="hidden rounded-full border border-primary bg-white px-4 py-2 text-sm font-extrabold text-primary transition hover:bg-primary hover:text-white sm:inline-flex">
               Tất cả danh mục →
             </Link>
           </div>
@@ -720,9 +720,9 @@ const Homepage = () => {
         </section>
 
         {error && (
-          <div role="alert" className="mb-8 flex flex-col items-start justify-between gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center">
-            <p className="text-sm font-medium text-red-700">{error}</p>
-            <button type="button" onClick={handleRetry} className="rounded-full bg-[#a74334] px-5 py-2 text-sm font-bold text-white hover:bg-[#823126]">
+          <div role="alert" className="mb-8 flex flex-col items-start justify-between gap-3 rounded-2xl border border-error/20 bg-error/10 p-4 sm:flex-row sm:items-center">
+            <p className="text-sm font-medium text-error">{error}</p>
+            <button type="button" onClick={handleRetry} className="rounded-full bg-error px-5 py-2 text-sm font-bold text-white hover:bg-error/90">
               Thử lại
             </button>
           </div>
@@ -738,7 +738,7 @@ const Homepage = () => {
           (surveyLoading ||
             hasBusinessSurvey) && (
             <section className="pb-12">
-              <div className="overflow-hidden rounded-[2rem] border border-[#cfe1dc] bg-gradient-to-br from-[#edf7f3] via-white to-[#eaf2f8] p-5 shadow-[0_12px_36px_rgba(32,77,75,0.08)] sm:p-7">
+              <div className="overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-background via-white to-background p-5 shadow-[0_12px_36px_rgba(23,40,48,0.06)] sm:p-7">
                 <SectionHeader
                   eyebrow="Dành riêng cho doanh nghiệp"
                   title="Nguồn hàng phù hợp khảo sát"
@@ -749,7 +749,7 @@ const Homepage = () => {
                 {recommendationNotice && (
                   <div
                     role="alert"
-                    className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900"
+                    className="mb-5 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm font-semibold text-warning"
                   >
                     {recommendationNotice}
                   </div>
@@ -781,7 +781,7 @@ const Homepage = () => {
                 <div className="mt-5 flex justify-end">
                   <Link
                     to="/ho-so?tab=survey"
-                    className="inline-flex items-center gap-2 rounded-full bg-[#244f51] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356a70]"
+                    className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90"
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       tune
@@ -814,7 +814,7 @@ const Homepage = () => {
         </section>
       </div>
 
-      <section className="bg-[#edf4f1] py-16">
+      <section className="bg-background py-16">
         <div className="mx-auto max-w-6xl px-6">
           <SectionHeader
             eyebrow="Đồ cũ còn tốt"
@@ -837,16 +837,16 @@ const Homepage = () => {
       </section>
 
       <section className="mx-auto max-w-7xl px-6 pt-16">
-        <div className="grid overflow-hidden rounded-[2rem] bg-[#183f41] text-white lg:grid-cols-[1fr_auto]">
+        <div className="grid overflow-hidden rounded-[2rem] bg-primary text-white lg:grid-cols-[1fr_auto]">
           <div className="p-8 sm:p-10">
-            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-[#91c5bd]">Bắt đầu với HomeCycle</p>
+            <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-white/70">Bắt đầu với HomeCycle</p>
             <h2 className="mt-3 text-3xl font-black tracking-tight">Đừng để món đồ tốt bị lãng phí.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#c7dcda]">Đăng tin trong vài bước, kết nối đúng đối tác và cùng xây dựng thói quen tiêu dùng tuần hoàn.</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">Đăng tin trong vài bước, kết nối đúng đối tác và cùng xây dựng thói quen tiêu dùng tuần hoàn.</p>
           </div>
-          <div className="flex items-center bg-[#23585a] px-8 py-8 lg:px-10">
+          <div className="flex items-center bg-primary/90 px-8 py-8 lg:px-10">
             <Link
               to={isAuthenticated ? "/bai-dang/tao-moi" : "/auth/register"}
-              className="rounded-full border border-white bg-white px-7 py-3.5 text-sm font-extrabold text-[#244f51] transition hover:bg-[#dcebe8]"
+              className="rounded-full border border-white bg-white px-7 py-3.5 text-sm font-extrabold text-primary transition hover:bg-background"
             >
               Đăng tin ngay →
             </Link>

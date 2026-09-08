@@ -203,7 +203,7 @@ const sortPosts = (posts, sortMode) => {
 
 const MarketplaceMark = ({ className = "" }) => (
   <span
-    className={`block overflow-hidden rounded-2xl bg-[#5f9291] shadow-md ${className}`}
+    className={`block overflow-hidden rounded-2xl bg-primary shadow-md ${className}`}
     aria-hidden="true"
   >
     <img
@@ -220,14 +220,14 @@ const SearchLoading = () => {
     (_, index) => (
       <div
         key={index}
-        className="overflow-hidden rounded-2xl border border-[#dceae7] bg-white shadow-[0_8px_26px_rgba(24,63,65,0.06)]"
+        className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_8px_26px_rgba(23,40,48,0.06)]"
       >
-        <div className="h-48 animate-pulse bg-[#BAC2C1]/20" />
+        <div className="h-48 animate-pulse bg-border/20" />
         <div className="space-y-3 p-4">
-          <div className="h-3 w-1/3 animate-pulse rounded bg-[#BAC2C1]/30" />
-          <div className="h-5 w-4/5 animate-pulse rounded bg-[#BAC2C1]/30" />
-          <div className="h-4 w-full animate-pulse rounded bg-[#BAC2C1]/20" />
-          <div className="h-9 w-full animate-pulse rounded bg-[#BAC2C1]/20" />
+          <div className="h-3 w-1/3 animate-pulse rounded bg-border/30" />
+          <div className="h-5 w-4/5 animate-pulse rounded bg-border/30" />
+          <div className="h-4 w-full animate-pulse rounded bg-border/20" />
+          <div className="h-9 w-full animate-pulse rounded bg-border/20" />
         </div>
       </div>
     ),
@@ -790,17 +790,17 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:py-10">
-      <section className="relative mb-4 overflow-hidden rounded-2xl border border-[#d8e8e5] bg-gradient-to-r from-[#edf6f3] via-white to-[#e8f1f8] p-5 shadow-[0_8px_28px_rgba(24,63,65,0.06)] sm:p-7">
-        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#2f6f9f]/10" />
+      <section className="relative mb-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-r from-background via-white to-background p-5 shadow-[0_8px_28px_rgba(23,40,48,0.06)] sm:p-7">
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10" />
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
-          <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.2em] text-[#2f6f9f]">
+          <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.2em] text-primary">
             <AppstoreOutlined /> HomeCycle Marketplace
           </p>
-          <h1 className="mt-2 text-2xl font-black text-[#183f41] sm:text-[28px]">
+          <h1 className="mt-2 text-2xl font-black text-text sm:text-[28px]">
             {pageTitle}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#647f7d]">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-textLight">
             {recommendationMode
               ? "Chỉ hiển thị tin bán đồng thời khớp loại sản phẩm và tỉnh thành doanh nghiệp đã chọn trong khảo sát."
               : fixedPostType === "SELL"
@@ -814,7 +814,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             <button
               type="button"
               onClick={handleToggleFilter}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#2f6f9f] bg-white px-4 py-2.5 text-sm font-bold text-[#2f6f9f] shadow-sm transition hover:bg-[#2f6f9f] hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-bold text-primary shadow-sm transition hover:bg-primary hover:text-white"
             >
               <FilterOutlined />
               {isFilterOpen ? "Ẩn bộ lọc" : "Hiện bộ lọc"}
@@ -829,15 +829,15 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
 
       <div className="flex flex-col gap-6 lg:flex-row">
         {isFilterOpen && (
-          <aside className="h-fit w-full shrink-0 rounded-2xl border border-[#dceae7] bg-white p-5 shadow-[0_10px_32px_rgba(24,63,65,0.06)] lg:sticky lg:top-24 lg:w-72">
+          <aside className="h-fit w-full shrink-0 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_32px_rgba(23,40,48,0.06)] lg:sticky lg:top-24 lg:w-72">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-black text-[#183f41]">
-                <FilterOutlined className="text-[#2f6f9f]" /> Bộ lọc
+              <h2 className="flex items-center gap-2 font-black text-text">
+                <FilterOutlined className="text-primary" /> Bộ lọc
               </h2>
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#2f6f9f] hover:text-[#183f41]"
+                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-text"
               >
                 <ReloadOutlined /> Đặt lại
               </button>
@@ -846,7 +846,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             <div className="space-y-5">
               {!fixedPostType && (
                 <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
                     Loại bài đăng
                   </span>
                   <select
@@ -857,7 +857,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                         event.target.value,
                       )
                     }
-                    className="w-full rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm text-[#183f41] outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                   >
                     <option value="">
                       Tất cả bài đăng
@@ -873,13 +873,13 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
               )}
 
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
                   Danh mục
                 </span>
                 <select
                   value={filters.categoryId}
                   onChange={handleCategoryChange}
-                  className="w-full rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm text-[#183f41] outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                 >
                   <option value="">
                     Tất cả danh mục
@@ -898,7 +898,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
               </label>
 
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
                   Loại sản phẩm
                 </span>
                 <select
@@ -913,7 +913,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                     !filters.categoryId ||
                     isLoadingProductTypes
                   }
-                  className="w-full rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm text-[#183f41] outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15 disabled:cursor-not-allowed disabled:bg-gray-100"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:bg-background"
                 >
                   <option value="">
                     {isLoadingProductTypes
@@ -940,7 +940,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
               </label>
 
               <div>
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
                   Khoảng giá
                 </span>
                 <div className="grid grid-cols-2 gap-2">
@@ -955,7 +955,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                       )
                     }
                     placeholder="Từ"
-                    className="min-w-0 rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                    className="min-w-0 rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                   />
                   <input
                     type="number"
@@ -968,13 +968,13 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                       )
                     }
                     placeholder="Đến"
-                    className="min-w-0 rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                    className="min-w-0 rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                   />
                 </div>
               </div>
 
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
                   Thành phố
                 </span>
                 <input
@@ -987,12 +987,12 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                     )
                   }
                   placeholder="Ví dụ: Hồ Chí Minh"
-                  className="w-full rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                 />
               </label>
 
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
                   Vận chuyển
                 </span>
                 <select
@@ -1003,7 +1003,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                       event.target.value,
                     )
                   }
-                  className="w-full rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm text-[#183f41] outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                 >
                   <option value="">
                     Tất cả hình thức
@@ -1022,7 +1022,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
               </label>
 
               <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[#547B7D]">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
                   Độ ưu tiên
                 </span>
                 <select
@@ -1033,7 +1033,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                       event.target.value,
                     )
                   }
-                  className="w-full rounded-xl border border-[#d6e5e2] bg-[#fbfdfc] px-3 py-2.5 text-sm text-[#183f41] outline-none transition focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
                 >
                   <option value="">
                     Tất cả mức độ
@@ -1055,9 +1055,9 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
         )}
 
         <section className="min-w-0 flex-1">
-          <div className="mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-[#dceae7] bg-white px-5 py-4 shadow-[0_8px_26px_rgba(24,63,65,0.05)] sm:flex-row sm:items-center">
+          <div className="mb-5 flex flex-col justify-between gap-4 rounded-2xl border border-border bg-white px-5 py-4 shadow-[0_8px_26px_rgba(23,40,48,0.05)] sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-lg font-black text-[#183f41]">
+              <h2 className="text-lg font-black text-text">
                 {keyword
                   ? `Kết quả cho “${keyword}”`
                   : pageTitle}
@@ -1066,7 +1066,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#2f6f9f] hover:text-[#183f41]"
+                  className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-text"
                 >
                   <ReloadOutlined /> Xóa {activeFilterCount} bộ lọc đang chọn
                 </button>
@@ -1074,12 +1074,12 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             </div>
             <div className="flex flex-col gap-2 sm:items-end">
               {!isLoading && result && (
-                <span className="rounded-full bg-[#e2eef7] px-3 py-1 text-sm font-bold text-[#2f6f9f]">
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
                   {result.totalCount} kết quả
                 </span>
               )}
               <label className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-[#547B7D]">
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-textLight">
                   <SortAscendingOutlined /> Sắp xếp:
                 </span>
                 <select
@@ -1089,7 +1089,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                       event.target.value,
                     )
                   }
-                  className="rounded-xl border border-[#cbdeda] bg-white px-3 py-2 text-sm font-semibold text-[#183f41] outline-none focus:border-[#4f8588] focus:ring-2 focus:ring-[#4f8588]/15"
+                  className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                 >
                   {SORT_OPTIONS.map((option) => (
                     <option
@@ -1107,7 +1107,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
           {error && (
             <div
               role="alert"
-              className="rounded-lg border border-red-200 bg-red-50 p-5 text-sm text-red-700"
+              className="rounded-lg border border-error/30 bg-error/10 p-5 text-sm text-error"
             >
               {error}
             </div>
@@ -1116,7 +1116,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
           {recommendationNotice && recommendationMode && (
             <div
               role="alert"
-              className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-900"
+              className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm font-semibold text-warning"
             >
               {recommendationNotice}
             </div>
@@ -1142,14 +1142,14 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                 />
               ))
             ) : !error ? (
-              <div className="col-span-full rounded-2xl border border-dashed border-[#a9c9c3] bg-white px-6 py-16 text-center shadow-sm">
+              <div className="col-span-full rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center shadow-sm">
                 <MarketplaceMark className="mx-auto h-16 w-16 text-4xl" />
-                <h3 className="mt-3 font-bold text-[#172830]">
+                <h3 className="mt-3 font-bold text-text">
                   {recommendationMode
                     ? "Chưa có tin bán phù hợp khảo sát"
                     : "Không tìm thấy bài đăng phù hợp"}
                 </h3>
-                <p className="mt-1 text-sm text-[#547B7D]">
+                <p className="mt-1 text-sm text-textLight">
                   {recommendationMode
                     ? "Bạn có thể cập nhật khảo sát hoặc thử lại khi có tin đăng mới."
                     : "Hãy thử từ khóa hoặc bộ lọc khác."}
@@ -1161,8 +1161,8 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
           {!isLoading &&
             !error &&
             result?.totalCount > 0 && (
-              <div className="mt-7 flex flex-col items-center justify-between gap-3 rounded-2xl border border-[#dceae7] bg-white px-5 py-4 shadow-sm sm:flex-row">
-                <p className="text-sm text-[#547B7D]">
+              <div className="mt-7 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border bg-white px-5 py-4 shadow-sm sm:flex-row">
+                <p className="text-sm text-textLight">
                   Trang {result.pageNumber} /{" "}
                   {Math.max(
                     result.totalPages,
@@ -1184,7 +1184,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                     disabled={
                       !result.hasPreviousPage
                     }
-                    className="rounded-xl border border-[#4f8588] bg-white px-4 py-2.5 text-sm font-bold text-[#2f686c] transition hover:bg-[#edf5f2] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Trang trước
                   </button>
@@ -1197,7 +1197,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                       )
                     }
                     disabled={!result.hasNextPage}
-                    className="rounded-xl bg-[#2f6f9f] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#245b84] disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Trang sau
                   </button>
