@@ -777,14 +777,14 @@ export default function ProductTypePage() {
   };
 
   return (
-    <div className="m-6 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+    <div className="m-6 rounded-xl border border-border bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-text">
             Loại sản phẩm & Thuộc tính
           </h2>
 
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-textLight">
             {hasAppliedFilters
               ? `Tìm thấy ${pagination.totalCount} loại sản phẩm phù hợp`
               : `Quản lý ${pagination.totalCount} loại sản phẩm hiện có trên hệ thống`}
@@ -805,7 +805,7 @@ export default function ProductTypePage() {
               ? "Chưa tải được danh sách danh mục"
               : "Thêm loại sản phẩm mới"
           }
-          className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">
             add
@@ -815,18 +815,18 @@ export default function ProductTypePage() {
         </button>
       </div>
 
-      <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <div className="mb-6 rounded-lg border border-border bg-background p-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(180px,1fr)_minmax(160px,0.8fr)_auto]">
           <div>
             <label
               htmlFor="product-type-search"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-text"
             >
               Tìm kiếm
             </label>
 
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-gray-400">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
                 search
               </span>
 
@@ -838,7 +838,7 @@ export default function ProductTypePage() {
                   handleSearchTermChange
                 }
                 placeholder="Tìm theo tên loại sản phẩm..."
-                className="w-full rounded-md border border-gray-300 bg-white py-2.5 pl-10 pr-10 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600"
+                className="w-full rounded-md border border-border bg-white py-2.5 pl-10 pr-10 text-sm focus:border-primary focus:outline-none focus:ring-primary"
               />
 
               {searchTerm && (
@@ -846,7 +846,7 @@ export default function ProductTypePage() {
                   type="button"
                   onClick={handleClearKeyword}
                   aria-label="Xóa từ khóa tìm kiếm"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-textLight hover:text-text"
                 >
                   <span className="material-symbols-outlined text-[20px]">
                     close
@@ -856,7 +856,7 @@ export default function ProductTypePage() {
             </div>
 
             {isWaitingForSearch && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-textLight">
                 Đang chờ bạn nhập xong...
               </p>
             )}
@@ -865,7 +865,7 @@ export default function ProductTypePage() {
           <div>
             <label
               htmlFor="product-type-category-filter"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-text"
             >
               Danh mục
             </label>
@@ -880,7 +880,7 @@ export default function ProductTypePage() {
                 loading ||
                 isLoadingProductTypeDetails
               }
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:cursor-not-allowed disabled:bg-gray-100"
+              className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-primary disabled:cursor-not-allowed disabled:bg-background"
             >
               <option value="">
                 Tất cả danh mục
@@ -904,7 +904,7 @@ export default function ProductTypePage() {
           <div>
             <label
               htmlFor="product-type-status-filter"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-text"
             >
               Trạng thái
             </label>
@@ -919,7 +919,7 @@ export default function ProductTypePage() {
                 loading ||
                 isLoadingProductTypeDetails
               }
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:cursor-not-allowed disabled:bg-gray-100"
+              className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-primary disabled:cursor-not-allowed disabled:bg-background"
             >
               <option value="all">
                 Tất cả trạng thái
@@ -944,7 +944,7 @@ export default function ProductTypePage() {
                 isLoadingProductTypeDetails ||
                 !hasInputFilters
               }
-              className="flex w-full items-center justify-center gap-1 rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-40 lg:w-auto"
+              className="flex w-full items-center justify-center gap-1 rounded-md border border-border bg-white px-4 py-2.5 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40 lg:w-auto"
             >
               <span className="material-symbols-outlined text-[18px]">
                 filter_alt_off
@@ -959,9 +959,9 @@ export default function ProductTypePage() {
       {successMessage && (
         <div
           role="status"
-          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 p-4"
+          className="mb-6 flex items-center justify-between gap-3 rounded-lg border border-success/20 bg-success/10 p-4"
         >
-          <p className="text-sm text-green-700">
+          <p className="text-sm text-success">
             {successMessage}
           </p>
 
@@ -971,7 +971,7 @@ export default function ProductTypePage() {
               setSuccessMessage("")
             }
             aria-label="Đóng thông báo"
-            className="text-green-700 hover:text-green-900"
+            className="text-success hover:text-success/80"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -983,15 +983,15 @@ export default function ProductTypePage() {
       {actionError && (
         <div
           role="alert"
-          className="mb-6 flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4"
+          className="mb-6 flex items-start justify-between gap-3 rounded-lg border border-error/20 bg-error/10 p-4"
         >
           <div>
-            <p className="text-sm font-medium text-red-700">
+            <p className="text-sm font-medium text-error">
               Không thể tải chi tiết loại sản
               phẩm.
             </p>
 
-            <p className="mt-1 whitespace-pre-line text-xs text-red-600">
+            <p className="mt-1 whitespace-pre-line text-xs text-error">
               {actionError}
             </p>
           </div>
@@ -1002,7 +1002,7 @@ export default function ProductTypePage() {
               setActionError("")
             }
             aria-label="Đóng thông báo lỗi"
-            className="text-red-700 hover:text-red-900"
+            className="text-error hover:text-error/80"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -1014,15 +1014,15 @@ export default function ProductTypePage() {
       {categoryError && (
         <div
           role="alert"
-          className="mb-6 flex items-start justify-between gap-3 rounded-lg border border-yellow-200 bg-yellow-50 p-4"
+          className="mb-6 flex items-start justify-between gap-3 rounded-lg border border-warning/20 bg-warning/10 p-4"
         >
           <div>
-            <p className="text-sm text-yellow-800">
+            <p className="text-sm text-warning">
               Không thể tải đầy đủ dữ liệu
               danh mục.
             </p>
 
-            <p className="mt-1 text-xs text-yellow-700">
+            <p className="mt-1 text-xs text-warning">
               {categoryError}
             </p>
           </div>
@@ -1033,7 +1033,7 @@ export default function ProductTypePage() {
               setCategoryError("")
             }
             aria-label="Đóng cảnh báo"
-            className="text-yellow-700 hover:text-yellow-900"
+            className="text-warning hover:text-warning/80"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -1045,16 +1045,16 @@ export default function ProductTypePage() {
       {error && (
         <div
           role="alert"
-          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center"
+          className="mb-6 flex flex-col items-start justify-between gap-3 rounded-lg border border-error/20 bg-error/10 p-4 sm:flex-row sm:items-center"
         >
-          <p className="whitespace-pre-line text-sm text-red-700">
+          <p className="whitespace-pre-line text-sm text-error">
             {error}
           </p>
 
           <button
             type="button"
             onClick={handleRetry}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+            className="rounded-md bg-error px-4 py-2 text-sm font-medium text-white transition hover:bg-error"
           >
             Thử lại
           </button>
@@ -1064,7 +1064,7 @@ export default function ProductTypePage() {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-xs uppercase tracking-wider text-gray-500">
+            <tr className="border-b border-border bg-background text-xs uppercase tracking-wider text-textLight">
               <th className="p-4 font-semibold">
                 Tên loại SP
               </th>
@@ -1091,12 +1091,12 @@ export default function ProductTypePage() {
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100 text-sm">
+          <tbody className="divide-y divide-border text-sm">
             {loading ? (
               <tr>
                 <td
                   colSpan={6}
-                  className="p-10 text-center text-gray-500"
+                  className="p-10 text-center text-textLight"
                 >
                   <div
                     role="status"
@@ -1131,16 +1131,16 @@ export default function ProductTypePage() {
                       key={
                         productType.productTypeId
                       }
-                      className="transition-colors hover:bg-gray-50"
+                      className="transition-colors hover:bg-background"
                     >
-                      <td className="p-4 font-bold text-[#244f4d]">
+                      <td className="p-4 font-bold text-text">
                         {
                           productType.productTypeName
                         }
                       </td>
 
                       <td
-                        className="p-4 font-medium text-gray-600"
+                        className="p-4 font-medium text-textLight"
                         title={
                           productType.categoryId
                         }
@@ -1150,14 +1150,14 @@ export default function ProductTypePage() {
                           "Không xác định"}
                       </td>
 
-                      <td className="max-w-[420px] p-4 text-gray-600">
+                      <td className="max-w-[420px] p-4 text-textLight">
                         <p className="line-clamp-2">
                           {productType.description ||
                             "Không có mô tả"}
                         </p>
                       </td>
 
-                      <td className="whitespace-nowrap p-4 text-gray-600">
+                      <td className="whitespace-nowrap p-4 text-textLight">
                         {formatCreatedAt(
                           productType.createdAt,
                         )}
@@ -1168,8 +1168,8 @@ export default function ProductTypePage() {
                           className={[
                             "inline-block rounded-full px-3 py-1 text-xs font-semibold",
                             productType.isActive
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-600",
+                              ? "bg-success/10 text-success"
+                              : "bg-background text-textLight",
                           ].join(" ")}
                         >
                           {productType.isActive
@@ -1192,7 +1192,7 @@ export default function ProductTypePage() {
                           }
                           title="Quản lý thuộc tính và tùy chọn"
                           aria-label={`Quản lý thuộc tính ${productType.productTypeName}`}
-                          className="rounded-md p-1.5 text-[#244f4d] transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-md p-1.5 text-text transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <span className="material-symbols-outlined text-[18px]">
                             settings
@@ -1216,7 +1216,7 @@ export default function ProductTypePage() {
                               : "Chỉnh sửa loại sản phẩm"
                           }
                           aria-label={`Chỉnh sửa ${productType.productTypeName}`}
-                          className="rounded-md p-1.5 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-md p-1.5 text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <span
                             className={[
@@ -1245,7 +1245,7 @@ export default function ProductTypePage() {
                           }
                           title="Xóa hoặc ẩn loại sản phẩm"
                           aria-label={`Xóa hoặc ẩn ${productType.productTypeName}`}
-                          className="rounded-md p-1.5 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-md p-1.5 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           <span className="material-symbols-outlined text-[18px]">
                             visibility_off
@@ -1260,7 +1260,7 @@ export default function ProductTypePage() {
               <tr>
                 <td
                   colSpan={6}
-                  className="p-10 text-center text-gray-500"
+                  className="p-10 text-center text-textLight"
                 >
                   {hasAppliedFilters
                     ? "Không tìm thấy loại sản phẩm phù hợp."
@@ -1275,8 +1275,8 @@ export default function ProductTypePage() {
       {!loading &&
         !error &&
         pagination.totalCount > 0 && (
-          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-gray-100 pt-4 sm:flex-row">
-            <p className="text-sm text-gray-500">
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-border pt-4 sm:flex-row">
+            <p className="text-sm text-textLight">
               Trang {pagination.pageNumber} /{" "}
               {Math.max(
                 pagination.totalPages,
@@ -1295,7 +1295,7 @@ export default function ProductTypePage() {
                   isLoadingProductTypeDetails ||
                   !pagination.hasPreviousPage
                 }
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang trước
               </button>
@@ -1309,7 +1309,7 @@ export default function ProductTypePage() {
                   isLoadingProductTypeDetails ||
                   !pagination.hasNextPage
                 }
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang sau
               </button>
@@ -1356,7 +1356,7 @@ export default function ProductTypePage() {
             className="w-full max-w-md rounded-xl bg-white shadow-2xl"
           >
             <div className="p-6">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-error/10 text-error">
                 <span className="material-symbols-outlined">
                   warning
                 </span>
@@ -1364,18 +1364,18 @@ export default function ProductTypePage() {
 
               <h3
                 id="delete-product-type-title"
-                className="text-lg font-bold text-gray-900"
+                className="text-lg font-bold text-text"
               >
                 Xác nhận xóa/ẩn loại sản phẩm
               </h3>
 
               <p
                 id="delete-product-type-description"
-                className="mt-3 text-sm leading-6 text-gray-600"
+                className="mt-3 text-sm leading-6 text-textLight"
               >
                 Bạn có chắc chắn muốn xóa hoặc
                 ẩn loại sản phẩm{" "}
-                <strong className="text-gray-900">
+                <strong className="text-text">
                   “
                   {
                     deletingProductType.productTypeName
@@ -1385,7 +1385,7 @@ export default function ProductTypePage() {
                 ?
               </p>
 
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs text-textLight">
                 Loại sản phẩm có thể không còn
                 xuất hiện trong danh sách sau
                 thao tác này.
@@ -1394,21 +1394,21 @@ export default function ProductTypePage() {
               {deleteError && (
                 <div
                   role="alert"
-                  className="mt-4 whitespace-pre-line rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                  className="mt-4 whitespace-pre-line rounded-lg border border-error/20 bg-error/10 p-3 text-sm text-error"
                 >
                   {deleteError}
                 </div>
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-3 rounded-b-xl border-t border-gray-200 bg-gray-50 px-6 py-4">
+            <div className="flex items-center justify-end gap-3 rounded-b-xl border-t border-border bg-background px-6 py-4">
               <button
                 type="button"
                 onClick={
                   handleCloseDeleteDialog
                 }
                 disabled={isDeleting}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Hủy
               </button>
@@ -1417,7 +1417,7 @@ export default function ProductTypePage() {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex items-center gap-2 rounded-md bg-error px-4 py-2 text-sm font-medium text-white transition hover:bg-error disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isDeleting && (
                   <span className="material-symbols-outlined animate-spin text-[18px]">

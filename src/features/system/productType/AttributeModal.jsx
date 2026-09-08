@@ -268,18 +268,18 @@ export default function AttributeModal({
         aria-labelledby="attribute-modal-title"
         className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
           <div>
             <h3
               id="attribute-modal-title"
-              className="text-xl font-bold text-gray-800"
+              className="text-xl font-bold text-text"
             >
               {isEditing
                 ? "Chỉnh sửa thuộc tính"
                 : "Thêm thuộc tính mới"}
             </h3>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-textLight">
               {isEditing
                 ? "Cập nhật cấu hình thuộc tính. Các tùy chọn được quản lý riêng."
                 : "Tạo thuộc tính cùng các tùy chọn ban đầu."}
@@ -291,7 +291,7 @@ export default function AttributeModal({
             onClick={onClose}
             disabled={submitting}
             aria-label="Đóng cửa sổ"
-            className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md p-2 text-textLight transition hover:bg-background hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="material-symbols-outlined">
               close
@@ -308,7 +308,7 @@ export default function AttributeModal({
               serverError) && (
               <div
                 role="alert"
-                className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                className="whitespace-pre-line rounded-lg border border-error/20 bg-error/10 p-4 text-sm text-error"
               >
                 {clientError ||
                   serverError}
@@ -318,10 +318,10 @@ export default function AttributeModal({
             <div>
               <label
                 htmlFor="attribute-name"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-sm font-medium text-text"
               >
                 Tên thuộc tính{" "}
-                <span className="text-red-500">
+                <span className="text-error">
                   *
                 </span>
               </label>
@@ -339,7 +339,7 @@ export default function AttributeModal({
                 disabled={submitting}
                 maxLength={150}
                 placeholder="Ví dụ: Kích thước màn hình"
-                className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
               />
             </div>
 
@@ -347,7 +347,7 @@ export default function AttributeModal({
               <div>
                 <label
                   htmlFor="attribute-data-type"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-sm font-medium text-text"
                 >
                   Kiểu dữ liệu
                 </label>
@@ -357,14 +357,14 @@ export default function AttributeModal({
                   type="text"
                   value={form.dataType}
                   disabled
-                  className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2.5 text-sm text-gray-600"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-textLight"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="attribute-input-mode"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-sm font-medium text-text"
                 >
                   Chế độ nhập
                 </label>
@@ -374,17 +374,17 @@ export default function AttributeModal({
                   type="text"
                   value={form.inputMode}
                   disabled
-                  className="w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2.5 text-sm text-gray-600"
+                  className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-textLight"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="attribute-display-order"
-                  className="mb-1.5 block text-sm font-medium text-gray-700"
+                  className="mb-1.5 block text-sm font-medium text-text"
                 >
                   Thứ tự{" "}
-                  <span className="text-red-500">
+                  <span className="text-error">
                     *
                   </span>
                 </label>
@@ -402,7 +402,7 @@ export default function AttributeModal({
                     handleFieldChange
                   }
                   disabled={submitting}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                  className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                 />
               </div>
             </div>
@@ -410,7 +410,7 @@ export default function AttributeModal({
             <div>
               <label
                 htmlFor="attribute-unit"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-sm font-medium text-text"
               >
                 Đơn vị
               </label>
@@ -426,12 +426,12 @@ export default function AttributeModal({
                 disabled={submitting}
                 maxLength={50}
                 placeholder="Ví dụ: inch, W, kg hoặc để trống"
-                className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
               />
             </div>
 
-            <div className="flex flex-wrap gap-5 rounded-lg border border-gray-200 p-4">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <div className="flex flex-wrap gap-5 rounded-lg border border-border p-4">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
                 <input
                   type="checkbox"
                   name="isRequired"
@@ -442,13 +442,13 @@ export default function AttributeModal({
                     handleFieldChange
                   }
                   disabled={submitting}
-                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                 />
 
                 Bắt buộc nhập
               </label>
 
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-text">
                 <input
                   type="checkbox"
                   name="isFilterable"
@@ -459,7 +459,7 @@ export default function AttributeModal({
                     handleFieldChange
                   }
                   disabled={submitting}
-                  className="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-600"
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                 />
 
                 Cho phép lọc
@@ -467,18 +467,18 @@ export default function AttributeModal({
             </div>
 
             {isEditing ? (
-              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
                 API cập nhật Attribute không thay đổi Option. Các tùy chọn hiện tại sẽ được giữ nguyên.
               </div>
             ) : (
-              <section className="border-t border-gray-200 pt-5">
+              <section className="border-t border-border pt-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <h4 className="font-semibold text-gray-800">
+                    <h4 className="font-semibold text-text">
                       Tùy chọn ban đầu
                     </h4>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-textLight">
                       Attribute dạng OptionOnly phải có ít nhất một tùy chọn.
                     </p>
                   </div>
@@ -489,7 +489,7 @@ export default function AttributeModal({
                       handleAddOption
                     }
                     disabled={submitting}
-                    className="flex items-center gap-1 text-sm font-medium text-green-700 hover:text-green-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       add
@@ -511,7 +511,7 @@ export default function AttributeModal({
                         }
                         className="flex items-center gap-2"
                       >
-                        <span className="w-7 text-center text-xs font-medium text-gray-400">
+                        <span className="w-7 text-center text-xs font-medium text-textLight">
                           {optionIndex + 1}
                         </span>
 
@@ -538,7 +538,7 @@ export default function AttributeModal({
                               1)
                           }
                           placeholder="Nhập giá trị tùy chọn"
-                          className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                          className="min-w-0 flex-1 rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                         />
 
                         <button
@@ -559,7 +559,7 @@ export default function AttributeModal({
                             (optionIndex +
                               1)
                           }
-                          className="rounded-md p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                          className="rounded-md p-2 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:text-border"
                         >
                           <span className="material-symbols-outlined text-[18px]">
                             close
@@ -573,12 +573,12 @@ export default function AttributeModal({
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-4">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
             >
               Hủy
             </button>
@@ -586,7 +586,7 @@ export default function AttributeModal({
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting && (
                 <span className="material-symbols-outlined animate-spin text-[18px]">

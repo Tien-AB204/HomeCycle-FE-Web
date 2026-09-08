@@ -149,20 +149,20 @@ export default function OptionModal({
         aria-labelledby="option-modal-title"
         className="w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
           <div>
             <h3
               id="option-modal-title"
-              className="text-xl font-bold text-gray-800"
+              className="text-xl font-bold text-text"
             >
               {isEditing
                 ? "Chỉnh sửa tùy chọn"
                 : "Thêm tùy chọn"}
             </h3>
 
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-textLight">
               Thuộc tính:{" "}
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-text">
                 {attributeName}
               </span>
             </p>
@@ -173,7 +173,7 @@ export default function OptionModal({
             onClick={onClose}
             disabled={submitting}
             aria-label="Đóng cửa sổ"
-            className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-md p-2 text-textLight transition hover:bg-background hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span className="material-symbols-outlined">
               close
@@ -187,7 +187,7 @@ export default function OptionModal({
               serverError) && (
               <div
                 role="alert"
-                className="whitespace-pre-line rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+                className="whitespace-pre-line rounded-lg border border-error/20 bg-error/10 p-4 text-sm text-error"
               >
                 {clientError ||
                   serverError}
@@ -197,10 +197,10 @@ export default function OptionModal({
             <div>
               <label
                 htmlFor="option-value"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-sm font-medium text-text"
               >
                 Giá trị tùy chọn{" "}
-                <span className="text-red-500">
+                <span className="text-error">
                   *
                 </span>
               </label>
@@ -219,17 +219,17 @@ export default function OptionModal({
                 maxLength={150}
                 autoFocus
                 placeholder="Ví dụ: 65 inch"
-                className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
               />
             </div>
 
             <div>
               <label
                 htmlFor="option-display-order"
-                className="mb-1.5 block text-sm font-medium text-gray-700"
+                className="mb-1.5 block text-sm font-medium text-text"
               >
                 Thứ tự hiển thị{" "}
-                <span className="text-red-500">
+                <span className="text-error">
                   *
                 </span>
               </label>
@@ -247,17 +247,17 @@ export default function OptionModal({
                   handleFieldChange
                 }
                 disabled={submitting}
-                className="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 disabled:bg-gray-100"
+                className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
               />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+          <div className="flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-4">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
             >
               Hủy
             </button>
@@ -265,7 +265,7 @@ export default function OptionModal({
             <button
               type="submit"
               disabled={submitting}
-              className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitting && (
                 <span className="material-symbols-outlined animate-spin text-[18px]">

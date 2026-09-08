@@ -960,7 +960,7 @@ export default function ProductTypeAttributePage() {
 
   return (
     <div className="m-6 space-y-6">
-      <section className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-border bg-white p-6 shadow-sm">
         <div className="flex flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
           <div className="flex items-start gap-3">
             <button
@@ -968,7 +968,7 @@ export default function ProductTypeAttributePage() {
               onClick={handleBack}
               aria-label="Quay lại danh sách loại sản phẩm"
               title="Quay lại"
-              className="mt-0.5 rounded-md border border-gray-200 p-2 text-gray-600 transition hover:bg-gray-50 hover:text-gray-900"
+              className="mt-0.5 rounded-md border border-border p-2 text-textLight transition hover:bg-background hover:text-text"
             >
               <span className="material-symbols-outlined text-[20px]">
                 arrow_back
@@ -977,7 +977,7 @@ export default function ProductTypeAttributePage() {
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-800">
+                <h2 className="text-xl font-bold text-text">
                   {productType?.productTypeName ||
                     "Quản lý thuộc tính"}
                 </h2>
@@ -987,8 +987,8 @@ export default function ProductTypeAttributePage() {
                     className={[
                       "rounded-full px-2.5 py-1 text-xs font-semibold",
                       productType.isActive
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-600",
+                        ? "bg-success/10 text-success"
+                        : "bg-background text-textLight",
                     ].join(" ")}
                   >
                     {productType.isActive
@@ -998,7 +998,7 @@ export default function ProductTypeAttributePage() {
                 )}
               </div>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-textLight">
                 {productType?.description ||
                   "Xem cấu hình thuộc tính và tùy chọn của loại sản phẩm."}
               </p>
@@ -1018,7 +1018,7 @@ export default function ProductTypeAttributePage() {
                   loadingAttributeId,
                 )
               }
-              className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="material-symbols-outlined text-[18px]">
                 add
@@ -1031,7 +1031,7 @@ export default function ProductTypeAttributePage() {
               type="button"
               onClick={handleRefresh}
               disabled={loading}
-              className="flex items-center gap-2 rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span
                 className={[
@@ -1053,15 +1053,15 @@ export default function ProductTypeAttributePage() {
       {error && (
         <section
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-5"
+          className="rounded-xl border border-error/20 bg-error/10 p-5"
         >
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <p className="font-semibold text-red-800">
+              <p className="font-semibold text-error">
                 Không thể tải dữ liệu thuộc tính
               </p>
 
-              <p className="mt-1 whitespace-pre-line text-sm text-red-700">
+              <p className="mt-1 whitespace-pre-line text-sm text-error">
                 {error}
               </p>
             </div>
@@ -1069,7 +1069,7 @@ export default function ProductTypeAttributePage() {
             <button
               type="button"
               onClick={handleRefresh}
-              className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+              className="rounded-md bg-error px-4 py-2 text-sm font-medium text-white transition hover:bg-error"
             >
               Thử lại
             </button>
@@ -1080,9 +1080,9 @@ export default function ProductTypeAttributePage() {
       {actionError && (
         <section
           role="alert"
-          className="flex items-start justify-between gap-4 rounded-xl border border-red-200 bg-red-50 p-5"
+          className="flex items-start justify-between gap-4 rounded-xl border border-error/20 bg-error/10 p-5"
         >
-          <p className="whitespace-pre-line text-sm text-red-700">
+          <p className="whitespace-pre-line text-sm text-error">
             {actionError}
           </p>
 
@@ -1092,7 +1092,7 @@ export default function ProductTypeAttributePage() {
               setActionError("")
             }
             aria-label="Đóng thông báo lỗi"
-            className="text-red-600 hover:text-red-800"
+            className="text-error hover:text-error"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -1104,9 +1104,9 @@ export default function ProductTypeAttributePage() {
       {successMessage && (
         <section
           role="status"
-          className="flex items-start justify-between gap-4 rounded-xl border border-green-200 bg-green-50 p-5"
+          className="flex items-start justify-between gap-4 rounded-xl border border-success/20 bg-success/10 p-5"
         >
-          <p className="text-sm text-green-700">
+          <p className="text-sm text-success">
             {successMessage}
           </p>
 
@@ -1116,7 +1116,7 @@ export default function ProductTypeAttributePage() {
               setSuccessMessage("")
             }
             aria-label="Đóng thông báo thành công"
-            className="text-green-700 hover:text-green-900"
+            className="text-success hover:text-success/80"
           >
             <span className="material-symbols-outlined text-[20px]">
               close
@@ -1126,10 +1126,10 @@ export default function ProductTypeAttributePage() {
       )}
 
       {loading ? (
-        <section className="rounded-xl border border-gray-100 bg-white p-10 shadow-sm">
+        <section className="rounded-xl border border-border bg-white p-10 shadow-sm">
           <div
             role="status"
-            className="flex items-center justify-center gap-3 text-gray-500"
+            className="flex items-center justify-center gap-3 text-textLight"
           >
             <span className="material-symbols-outlined animate-spin">
               refresh
@@ -1143,69 +1143,69 @@ export default function ProductTypeAttributePage() {
       ) : !error ? (
         <>
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-sm text-textLight">
                 Tổng thuộc tính
               </p>
 
-              <p className="mt-2 text-2xl font-bold text-[#244f4d]">
+              <p className="mt-2 text-2xl font-bold text-text">
                 {attributes.length}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-sm text-textLight">
                 Tổng tùy chọn
               </p>
 
-              <p className="mt-2 text-2xl font-bold text-blue-700">
+              <p className="mt-2 text-2xl font-bold text-primary">
                 {totalOptions}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-sm text-textLight">
                 Thuộc tính bắt buộc
               </p>
 
-              <p className="mt-2 text-2xl font-bold text-orange-600">
+              <p className="mt-2 text-2xl font-bold text-warning">
                 {requiredAttributeCount}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
-              <p className="text-sm text-gray-500">
+            <div className="rounded-xl border border-border bg-white p-5 shadow-sm">
+              <p className="text-sm text-textLight">
                 Hỗ trợ bộ lọc
               </p>
 
-              <p className="mt-2 text-2xl font-bold text-green-700">
+              <p className="mt-2 text-2xl font-bold text-primary">
                 {filterableAttributeCount}
               </p>
             </div>
           </section>
 
-          <section className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-border bg-white p-6 shadow-sm">
             <div className="mb-5">
-              <h3 className="text-lg font-bold text-gray-800">
+              <h3 className="text-lg font-bold text-text">
                 Danh sách thuộc tính
               </h3>
 
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-textLight">
                 Các thuộc tính được sắp xếp theo thứ tự hiển thị từ API.
               </p>
             </div>
 
             {attributes.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-300 px-6 py-12 text-center">
-                <span className="material-symbols-outlined text-[42px] text-gray-300">
+              <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
+                <span className="material-symbols-outlined text-[42px] text-border">
                   tune
                 </span>
 
-                <p className="mt-3 font-medium text-gray-700">
+                <p className="mt-3 font-medium text-text">
                   Loại sản phẩm chưa có thuộc tính
                 </p>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-textLight">
                   Bấm “Thêm thuộc tính” để tạo cấu hình đầu tiên.
                 </p>
               </div>
@@ -1220,25 +1220,25 @@ export default function ProductTypeAttributePage() {
                       key={
                         attribute.attributeId
                       }
-                      className="overflow-hidden rounded-xl border border-gray-200"
+                      className="overflow-hidden rounded-xl border border-border"
                     >
-                      <div className="flex flex-col justify-between gap-4 border-b border-gray-100 bg-gray-50 px-5 py-4 sm:flex-row sm:items-center">
+                      <div className="flex flex-col justify-between gap-4 border-b border-border bg-background px-5 py-4 sm:flex-row sm:items-center">
                         <div className="flex items-center gap-3">
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#244f4d] text-sm font-bold text-white">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
                             {attribute.displayOrder ??
                               attributeIndex +
                                 1}
                           </span>
 
                           <div>
-                            <h4 className="font-bold text-gray-800">
+                            <h4 className="font-bold text-text">
                               {attribute.attributeName}
                             </h4>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className="w-fit rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                          <span className="w-fit rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                             {getInputModeLabel(
                               attribute.inputMode,
                             )}
@@ -1268,7 +1268,7 @@ export default function ProductTypeAttributePage() {
                               "Chỉnh sửa thuộc tính " +
                               attribute.attributeName
                             }
-                            className="rounded-md p-2 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-md p-2 text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             <span
                               className={[
@@ -1311,7 +1311,7 @@ export default function ProductTypeAttributePage() {
                               "Xóa thuộc tính " +
                               attribute.attributeName
                             }
-                            className="rounded-md p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                            className="rounded-md p-2 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             <span className="material-symbols-outlined text-[18px]">
                               delete
@@ -1322,30 +1322,30 @@ export default function ProductTypeAttributePage() {
 
                       <div className="p-5">
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                          <div className="rounded-lg bg-gray-50 p-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          <div className="rounded-lg bg-background p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-textLight">
                               Kiểu dữ liệu
                             </p>
 
-                            <p className="mt-1 text-sm font-semibold text-gray-700">
+                            <p className="mt-1 text-sm font-semibold text-text">
                               {attribute.dataType ||
                                 "Chưa cấu hình"}
                             </p>
                           </div>
 
-                          <div className="rounded-lg bg-gray-50 p-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          <div className="rounded-lg bg-background p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-textLight">
                               Đơn vị
                             </p>
 
-                            <p className="mt-1 text-sm font-semibold text-gray-700">
+                            <p className="mt-1 text-sm font-semibold text-text">
                               {attribute.unit ||
                                 "Không có"}
                             </p>
                           </div>
 
-                          <div className="rounded-lg bg-gray-50 p-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          <div className="rounded-lg bg-background p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-textLight">
                               Bắt buộc
                             </p>
 
@@ -1353,8 +1353,8 @@ export default function ProductTypeAttributePage() {
                               className={[
                                 "mt-1 text-sm font-semibold",
                                 attribute.isRequired
-                                  ? "text-orange-600"
-                                  : "text-gray-600",
+                                  ? "text-warning"
+                                  : "text-textLight",
                               ].join(" ")}
                             >
                               {attribute.isRequired
@@ -1363,8 +1363,8 @@ export default function ProductTypeAttributePage() {
                             </p>
                           </div>
 
-                          <div className="rounded-lg bg-gray-50 p-3">
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                          <div className="rounded-lg bg-background p-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-textLight">
                               Cho phép lọc
                             </p>
 
@@ -1372,8 +1372,8 @@ export default function ProductTypeAttributePage() {
                               className={[
                                 "mt-1 text-sm font-semibold",
                                 attribute.isFilterable
-                                  ? "text-green-700"
-                                  : "text-gray-600",
+                                  ? "text-primary"
+                                  : "text-textLight",
                               ].join(" ")}
                             >
                               {attribute.isFilterable
@@ -1383,14 +1383,14 @@ export default function ProductTypeAttributePage() {
                           </div>
                         </div>
 
-                        <div className="mt-5 border-t border-gray-100 pt-4">
+                        <div className="mt-5 border-t border-border pt-4">
                           <div className="mb-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                             <div>
-                              <h5 className="text-sm font-bold text-gray-700">
+                              <h5 className="text-sm font-bold text-text">
                                 Tùy chọn
                               </h5>
 
-                              <p className="mt-1 text-xs text-gray-500">
+                              <p className="mt-1 text-xs text-textLight">
                                 {
                                   attribute.options
                                     .length
@@ -1414,7 +1414,7 @@ export default function ProductTypeAttributePage() {
                                   loadingOptionsAttributeId,
                                 )
                               }
-                              className="flex w-fit items-center gap-1 rounded-md border border-green-600 px-3 py-2 text-sm font-medium text-green-700 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="flex w-fit items-center gap-1 rounded-md border border-primary px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               <span
                                 className={[
@@ -1437,7 +1437,7 @@ export default function ProductTypeAttributePage() {
 
                           {attribute.options
                             .length === 0 ? (
-                            <p className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                            <p className="rounded-lg bg-background px-4 py-3 text-sm text-textLight">
                               Thuộc tính này chưa có tùy chọn.
                             </p>
                           ) : (
@@ -1451,16 +1451,16 @@ export default function ProductTypeAttributePage() {
                                     key={
                                       option.optionId
                                     }
-                                    className="flex flex-col justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 sm:flex-row sm:items-center"
+                                    className="flex flex-col justify-between gap-3 rounded-lg border border-border bg-background px-4 py-3 sm:flex-row sm:items-center"
                                   >
                                     <div className="flex min-w-0 items-center gap-3">
-                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-slate-500 shadow-sm">
+                                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-textLight shadow-sm">
                                         {option.displayOrder ??
                                           optionIndex +
                                             1}
                                       </span>
 
-                                      <span className="break-words text-sm font-medium text-slate-700">
+                                      <span className="break-words text-sm font-medium text-text">
                                         {
                                           option.optionValue
                                         }
@@ -1489,7 +1489,7 @@ export default function ProductTypeAttributePage() {
                                           "Chỉnh sửa tùy chọn " +
                                           option.optionValue
                                         }
-                                        className="rounded-md p-2 text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="rounded-md p-2 text-primary transition hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40"
                                       >
                                         <span className="material-symbols-outlined text-[18px]">
                                           edit
@@ -1527,7 +1527,7 @@ export default function ProductTypeAttributePage() {
                                           "Xóa tùy chọn " +
                                           option.optionValue
                                         }
-                                        className="rounded-md p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-gray-300"
+                                        className="rounded-md p-2 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:text-border"
                                       >
                                         <span className="material-symbols-outlined text-[18px]">
                                           delete
