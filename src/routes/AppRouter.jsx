@@ -6,7 +6,7 @@ import AuthLayout from "../components/layouts/AuthLayout";
 import MainLayout from "../components/layouts/MainLayout";
 import ModLayout from "../components/layouts/ModLayout";
 
-// Public vÃ  Auth Pages
+// Public vÃ  Auth Pages
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import LoginPage from "../pages/auth/LoginPage";
 import RegisterBusinessPage from "../pages/auth/RegisterBusinessPage";
@@ -16,7 +16,7 @@ import ErrorPage from "../pages/public/ErrorPage";
 import PostDetailPage from "../pages/public/PostDetailPage";
 import SearchPage from "../pages/public/SearchPage";
 
-// Moderator Pages vÃ  Security
+// Moderator Pages vÃ  Security
 import { ROLES } from "../constants/roles";
 import DisputeManagementPage from "../pages/mod/DisputeManagementPage";
 import ModDashboardPage from "../pages/mod/ModDashboardPage";
@@ -54,7 +54,7 @@ const AppRouter = () => {
   return (
     <Routes>
       <Route path="/loi" element={<ErrorPage />} />
-      {/* Trang cÃ´ng khai vÃ  ngÆ°á»i dÃ¹ng */}
+      {/* Trang cÃ´ng khai vÃ  ngÆ°á»i dÃ¹ng */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomeRoute />} />
 
@@ -140,7 +140,7 @@ const AppRouter = () => {
         </Route>
       </Route>
 
-      {/* ÄÄƒng nháº­p vÃ  Ä‘Äƒng kÃ½ */}
+      {/* ÄÄƒng nháº­p vÃ  Ä‘Äƒng kÃ½ */}
       <Route element={<AuthLayout />}>
         <Route path="/auth/login" element={<LoginPage />} />
 
