@@ -23,6 +23,8 @@ const STATUS_OPTIONS = [
   { value: 1, label: "Đã giải quyết" },
   { value: 2, label: "Đã từ chối" },
   { value: 3, label: "Đã đóng" },
+  { value: 4, label: "Đang xử lý" },
+  { value: 5, label: "Chờ hoàn trả" },
 ];
 
 const CATEGORY_OPTIONS = [
@@ -50,6 +52,8 @@ const ENUM_NAME_TO_VALUE = {
     resolved: 1,
     rejected: 2,
     closed: 3,
+    underreview: 4,
+    awaitingreturn: 5,
   },
   category: {
     noshow: 1,
@@ -70,39 +74,225 @@ const ENUM_NAME_TO_VALUE = {
   },
 };
 
+const ROLE_LABELS = {
+  personal: "Cá nhân",
+  business: "Doanh nghiệp",
+  moderator: "Kiểm duyệt viên",
+  admin: "Quản trị viên",
+};
+
+const ORDER_STATUS_LABELS = {
+  "0": "Chờ xử lý",
+  pending: "Chờ xử lý",
+
+  "1": "Đang xử lý",
+  processing: "Đang xử lý",
+
+  "2": "Hoàn tất",
+  completed: "Hoàn tất",
+
+  "3": "Đã hủy",
+  cancelled: "Đã hủy",
+  canceled: "Đã hủy",
+
+  "4": "Đang tranh chấp",
+  disputing: "Đang tranh chấp",
+
+  "5": "Đã hoàn trả",
+  returned: "Đã hoàn trả",
+};
+
+const PAYMENT_STATUS_LABELS = {
+  "0": "Chờ thanh toán",
+  pending: "Chờ thanh toán",
+
+  "1": "Đã thanh toán",
+  completed: "Đã thanh toán",
+
+  "2": "Thanh toán thất bại",
+  failed: "Thanh toán thất bại",
+
+  "3": "Đã hoàn tiền",
+  refunded: "Đã hoàn tiền",
+
+  "4": "Đã hoàn tiền một phần",
+  partiallyrefunded: "Đã hoàn tiền một phần",
+};
+
+const RESOLUTION_OUTCOME_LABELS = {
+  "1": "Có lợi cho người mua",
+  buyerfavored: "Có lợi cho người mua",
+
+  "2": "Có lợi cho người bán",
+  sellerfavored: "Có lợi cho người bán",
+};
+
+const SAFE_ACTION_ERRORS = {
+  DISPUTE_NOT_FOUND: "Không tìm thấy tranh chấp.",
+  DISPUTE_FORBIDDEN:
+    "Bạn không có quyền thực hiện thao tác này.",
+  DISPUTE_ALREADY_CLAIMED:
+    "Tranh chấp đã được kiểm duyệt viên khác tiếp nhận.",
+  DISPUTE_CLAIM_NOT_ALLOWED:
+    "Tranh chấp hiện không thể được tiếp nhận.",
+  DISPUTE_DECISION_NOT_ALLOWED:
+    "Tranh chấp hiện chưa cho phép đưa ra kết luận.",
+  DISPUTE_NOT_ASSIGNED_MODERATOR:
+    "Bạn không phải kiểm duyệt viên đang phụ trách tranh chấp này.",
+  DISPUTE_RETURN_VERIFICATION_NOT_ALLOWED:
+    "Tranh chấp hiện chưa cho phép xác minh hoàn trả.",
+  DISPUTE_RETURN_VERIFICATION_NOT_DUE:
+    "Chưa đến thời điểm được phép xác minh hoàn trả.",
+  DISPUTE_TARGET_NOT_SUPPORTED:
+    "Loại đối tượng tranh chấp này hiện chưa hỗ trợ thao tác kết luận.",
+  "Order.NotDisputing":
+    "Đơn hàng hiện không còn ở trạng thái tranh chấp.",
+  "Order.InvalidCompletionState":
+    "Trạng thái hoàn tất của đơn hàng hiện không phù hợp.",
+};
+
+const normalizeKey = (value) =>
+  String(value ?? "")
+    .trim()
+    .replace(/[\s_-]+/g, "")
+    .toLowerCase();
+
 const normalizeEnumValue = (value, type) => {
-  if (value === null || value === undefined) return null;
-  if (typeof value === "number") return value;
-  if (/^-?\d+$/.test(String(value))) return Number(value);
-  return ENUM_NAME_TO_VALUE[type]?.[String(value).toLowerCase()] ?? value;
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
+
+  if (typeof value === "number") {
+    return value;
+  }
+
+  const text = String(value).trim();
+
+  if (/^-?\d+$/.test(text)) {
+    return Number(text);
+  }
+
+  return (
+    ENUM_NAME_TO_VALUE[type]?.[
+      normalizeKey(text)
+    ] ?? null
+  );
 };
 
 const optionLabel = (options, value, type) => {
-  const normalized = normalizeEnumValue(value, type);
-  return options.find((option) => option.value === normalized)?.label || value || "N/A";
+  const normalized = normalizeEnumValue(
+    value,
+    type,
+  );
+
+  return (
+    options.find(
+      (option) => option.value === normalized,
+    )?.label || "Chưa xác định"
+  );
 };
 
 const getStatusMeta = (status) => {
-  const normalized = normalizeEnumValue(status, "status");
+  const normalized = normalizeEnumValue(
+    status,
+    "status",
+  );
 
   switch (normalized) {
     case 0:
-      return { label: "Chờ xử lý", color: "gold" };
+      return {
+        label: "Chờ xử lý",
+        color: "#9A6418",
+        background: "rgba(154,100,24,0.10)",
+      };
+
     case 1:
-      return { label: "Đã giải quyết", color: "green" };
+      return {
+        label: "Đã giải quyết",
+        color: "#2F765D",
+        background: "rgba(47,118,93,0.10)",
+      };
+
     case 2:
-      return { label: "Đã từ chối", color: "red" };
+      return {
+        label: "Đã từ chối",
+        color: "#7A1012",
+        background: "rgba(122,16,18,0.08)",
+      };
+
     case 3:
-      return { label: "Đã đóng", color: "default" };
+      return {
+        label: "Đã đóng",
+        color: "#547B7D",
+        background: "rgba(84,123,125,0.10)",
+      };
+
+    case 4:
+      return {
+        label: "Đang xử lý",
+        color: "#2B5659",
+        background: "rgba(43,86,89,0.10)",
+      };
+
+    case 5:
+      return {
+        label: "Chờ hoàn trả",
+        color: "#9A6418",
+        background: "rgba(154,100,24,0.10)",
+      };
+
     default:
-      return { label: status ?? "N/A", color: "blue" };
+      return {
+        label: "Chưa xác định",
+        color: "#547B7D",
+        background: "rgba(84,123,125,0.10)",
+      };
   }
 };
 
+const getRoleLabel = (role) =>
+  ROLE_LABELS[normalizeKey(role)] ||
+  "Chưa xác định";
+
+const getOrderStatusLabel = (value) =>
+  ORDER_STATUS_LABELS[normalizeKey(value)] ||
+  "Chưa xác định";
+
+const getPaymentStatusLabel = (value) =>
+  PAYMENT_STATUS_LABELS[
+    normalizeKey(value)
+  ] || "Chưa xác định";
+
+const getResolutionOutcomeLabel = (value) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "Chưa có";
+  }
+
+  return (
+    RESOLUTION_OUTCOME_LABELS[
+      normalizeKey(value)
+    ] || "Chưa xác định"
+  );
+};
+
 const formatDateTime = (value) => {
-  if (!value) return "N/A";
+  if (!value) {
+    return "Chưa có";
+  }
+
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Chưa xác định";
+  }
 
   return date.toLocaleString("vi-VN", {
     hour: "2-digit",
@@ -114,14 +304,27 @@ const formatDateTime = (value) => {
 };
 
 const formatMoney = (value) => {
-  if (value === null || value === undefined || value === "") return "N/A";
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "Chưa có";
+  }
+
   const number = Number(value);
-  if (Number.isNaN(number)) return String(value);
+
+  if (Number.isNaN(number)) {
+    return "Chưa xác định";
+  }
+
   return `${number.toLocaleString("vi-VN")} ₫`;
 };
 
 const extractPagedData = (response) => {
-  const payload = response?.data ?? response ?? {};
+  const payload =
+    response?.data ?? response ?? {};
+
   const items = Array.isArray(payload?.items)
     ? payload.items
     : Array.isArray(payload)
@@ -132,8 +335,56 @@ const extractPagedData = (response) => {
     items,
     pageNumber: payload?.pageNumber || 1,
     pageSize: payload?.pageSize || 10,
-    totalCount: payload?.totalCount ?? items.length,
+    totalCount:
+      payload?.totalCount ?? items.length,
   };
+};
+
+const getErrorCode = (error) =>
+  error?.response?.data?.code ??
+  error?.response?.data?.error?.code ??
+  error?.response?.data?.Error?.Code ??
+  null;
+
+const getSafeActionError = (
+  error,
+  fallback,
+) => {
+  const code = getErrorCode(error);
+
+  if (code && SAFE_ACTION_ERRORS[code]) {
+    return SAFE_ACTION_ERRORS[code];
+  }
+
+  const status = error?.response?.status;
+
+  if (status === 404) {
+    return "Không tìm thấy dữ liệu cần xử lý.";
+  }
+
+  if (status === 403) {
+    return "Bạn không có quyền thực hiện thao tác này.";
+  }
+
+  if (status === 409) {
+    return "Dữ liệu vừa thay đổi hoặc thao tác hiện không còn hợp lệ. Vui lòng tải lại.";
+  }
+
+  return fallback;
+};
+
+const getActionFlag = (
+  actions,
+  name,
+) => {
+  const pascalName =
+    name.charAt(0).toUpperCase() +
+    name.slice(1);
+
+  return Boolean(
+    actions?.[name] ??
+      actions?.[pascalName],
+  );
 };
 
 const DisputeManagementPage = () => {
