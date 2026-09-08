@@ -29,6 +29,7 @@ import RoleRoute from "./RoleRoute";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
+import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
 import PostManagementPage from "../pages/admin/PostManagementPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
@@ -200,6 +201,8 @@ const AppRouter = () => {
           <Route path="users" element={<UserManagementPage />} />
 
           <Route path="posts" element={<PostManagementPage />} />
+
+          <Route path="policies" element={<PlatformPolicyPage />} />
         </Route>
       </Route>
       <Route path="*" element={<ErrorPage notFound />} />

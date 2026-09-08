@@ -44,6 +44,11 @@ const ADMIN_NAV_GROUPS = [
         path: "/admin/posts",
         icon: "inventory_2",
       },
+      {
+        label: "Chính sách hệ thống",
+        path: "/admin/policies",
+        icon: "policy",
+      },
     ],
   },
 ];
