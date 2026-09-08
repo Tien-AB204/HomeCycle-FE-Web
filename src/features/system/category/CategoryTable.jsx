@@ -8,7 +8,7 @@ export default function CategoryTable({
 }) {
   if (isLoading) {
     return (
-      <div className="p-8 text-center text-gray-500">
+      <div className="p-8 text-center text-textLight">
         Đang tải danh sách danh mục...
       </div>
     );
@@ -16,7 +16,7 @@ export default function CategoryTable({
 
   if (!categories || categories.length === 0) {
     return (
-      <div className="p-8 text-center text-gray-500">Chưa có danh mục nào.</div>
+      <div className="p-8 text-center text-textLight">Chưa có danh mục nào.</div>
     );
   }
 
@@ -24,7 +24,7 @@ export default function CategoryTable({
     <div className="overflow-x-auto bg-white rounded-lg shadow">
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="bg-gray-50 border-b text-sm font-semibold text-gray-600">
+          <tr className="bg-background border-b text-sm font-semibold text-textLight">
             <th className="p-4">STT</th>
             <th className="p-4">Tên danh mục</th>
             <th className="p-4">Mô tả</th>
@@ -32,20 +32,20 @@ export default function CategoryTable({
             <th className="p-4 text-center">Hành động</th>
           </tr>
         </thead>
-        <tbody className="divide-y text-sm text-gray-700">
+        <tbody className="divide-y text-sm text-text">
           {categories.map((item, index) => (
-            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={item.id} className="hover:bg-background transition-colors">
               <td className="p-4 font-medium">{index + 1}</td>
-              <td className="p-4 font-semibold text-gray-900">{item.name}</td>
-              <td className="p-4 text-gray-500 max-w-xs truncate">
+              <td className="p-4 font-semibold text-text">{item.name}</td>
+              <td className="p-4 text-textLight max-w-xs truncate">
                 {item.description || "—"}
               </td>
               <td className="p-4">
                 <span
                   className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                     item.isActive
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-600"
+                      ? "bg-success/10 text-success"
+                      : "bg-background text-textLight"
                   }`}
                 >
                   {item.isActive ? "Hoạt động" : "Ẩn"}
@@ -54,13 +54,13 @@ export default function CategoryTable({
               <td className="p-4 text-center space-x-2">
                 <button
                   onClick={() => onEdit(item)}
-                  className="px-3 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded text-xs font-medium transition"
+                  className="px-3 py-1 bg-primary/5 text-primary hover:bg-primary/10 rounded text-xs font-medium transition"
                 >
                   Sửa
                 </button>
                 <button
                   onClick={() => onDelete(item.id)}
-                  className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 rounded text-xs font-medium transition"
+                  className="px-3 py-1 bg-error/10 text-error hover:bg-error/20 rounded text-xs font-medium transition"
                 >
                   Xóa
                 </button>

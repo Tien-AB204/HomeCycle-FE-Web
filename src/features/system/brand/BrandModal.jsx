@@ -85,7 +85,7 @@ export default function BrandModal({
       >
         <h3
           id="brand-modal-title"
-          className="mb-4 text-lg font-bold text-gray-800"
+          className="mb-4 text-lg font-bold text-text"
         >
           {isEditing
             ? "Chỉnh sửa thương hiệu"
@@ -96,7 +96,7 @@ export default function BrandModal({
           serverError) && (
           <div
             role="alert"
-            className="mb-4 whitespace-pre-line rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+            className="mb-4 whitespace-pre-line rounded-lg border border-error/20 bg-error/10 p-3 text-sm text-error"
           >
             {validationError ||
               serverError}
@@ -110,10 +110,10 @@ export default function BrandModal({
           <div>
             <label
               htmlFor="brand-name"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="mb-1 block text-sm font-medium text-text"
             >
               Tên thương hiệu{" "}
-              <span className="text-red-500">
+              <span className="text-error">
                 *
               </span>
             </label>
@@ -128,14 +128,14 @@ export default function BrandModal({
               value={formData.brandName}
               onChange={handleChange}
               placeholder="Ví dụ: Samsung"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+              className="w-full rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-background"
             />
           </div>
 
           <div>
             <label
               htmlFor="brand-description"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="mb-1 block text-sm font-medium text-text"
             >
               Mô tả
             </label>
@@ -150,7 +150,7 @@ export default function BrandModal({
               }
               onChange={handleChange}
               placeholder="Mô tả ngắn về thương hiệu..."
-              className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:cursor-not-allowed disabled:bg-gray-100"
+              className="w-full resize-none rounded-lg border border-border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:bg-background"
             />
           </div>
 
@@ -159,7 +159,7 @@ export default function BrandModal({
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-textLight transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
             >
               Hủy
             </button>
@@ -167,7 +167,7 @@ export default function BrandModal({
             <button
               type="submit"
               disabled={submitting}
-              className="flex min-w-28 items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex min-w-28 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting && (
                 <span className="material-symbols-outlined animate-spin text-[18px]">
