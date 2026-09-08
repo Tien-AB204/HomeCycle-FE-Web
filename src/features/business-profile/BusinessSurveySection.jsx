@@ -109,9 +109,9 @@ const ToggleOption = ({
       disabled ? "cursor-not-allowed opacity-75" : "cursor-pointer"
     } ${
       checked
-        ? "border-[#4F8588] bg-[#EAF4F1] text-[#214F53]"
-        : `border-[#D8E5E2] bg-white text-[#607B7A] ${
-            disabled ? "" : "hover:border-[#9FBFBA]"
+        ? "border-primary bg-primary/10 text-primary"
+        : `border-border bg-white text-textLight ${
+            disabled ? "" : "hover:border-border"
           }`
     }`}
   >
@@ -120,7 +120,7 @@ const ToggleOption = ({
       checked={checked}
       onChange={onChange}
       disabled={disabled}
-      className="h-4 w-4 accent-[#4F8588]"
+      className="h-4 w-4 accent-primary"
     />
     {children}
   </label>
@@ -356,7 +356,7 @@ export default function BusinessSurveySection({
         className="space-y-7"
       >
         <fieldset>
-          <legend className="mb-3 text-sm font-black text-[#183F41]">
+          <legend className="mb-3 text-sm font-black text-text">
             Tỉnh thành mục tiêu
           </legend>
           <input
@@ -366,7 +366,7 @@ export default function BusinessSurveySection({
               setCityQuery(event.target.value)
             }
             placeholder="Tìm tỉnh / thành phố"
-            className="mb-3 w-full rounded-xl border border-[#CDDED9] px-3 py-2.5 text-sm outline-none focus:border-[#4F8588] sm:max-w-sm"
+            className="mb-3 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none focus:border-primary sm:max-w-sm"
           />
           <div className="grid max-h-56 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
             {filteredProvinces.map(
@@ -391,7 +391,7 @@ export default function BusinessSurveySection({
         </fieldset>
 
         <fieldset>
-          <legend className="mb-3 text-sm font-black text-[#183F41]">
+          <legend className="mb-3 text-sm font-black text-text">
             Mức độ hư hỏng chấp nhận
           </legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -412,7 +412,7 @@ export default function BusinessSurveySection({
         </fieldset>
 
         <fieldset>
-          <legend className="mb-3 text-sm font-black text-[#183F41]">
+          <legend className="mb-3 text-sm font-black text-text">
             Tình trạng hoạt động
           </legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -430,13 +430,13 @@ export default function BusinessSurveySection({
               ),
             )}
           </div>
-          <p className="mt-2 text-xs font-medium text-[#68807F]">
+          <p className="mt-2 text-xs font-medium text-textLight">
             Tự động xác định theo mức độ hư hỏng đã chọn để đồng bộ với bài đăng.
           </p>
         </fieldset>
 
         <fieldset>
-          <legend className="mb-3 text-sm font-black text-[#183F41]">
+          <legend className="mb-3 text-sm font-black text-text">
             Quy mô thu mua
           </legend>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -462,7 +462,7 @@ export default function BusinessSurveySection({
         </fieldset>
 
         <fieldset>
-          <legend className="mb-3 text-sm font-black text-[#183F41]">
+          <legend className="mb-3 text-sm font-black text-text">
             Loại sản phẩm quan tâm
           </legend>
           <input
@@ -474,7 +474,7 @@ export default function BusinessSurveySection({
               )
             }
             placeholder="Tìm loại sản phẩm"
-            className="mb-3 w-full rounded-xl border border-[#CDDED9] px-3 py-2.5 text-sm outline-none focus:border-[#4F8588] sm:max-w-sm"
+            className="mb-3 w-full rounded-xl border border-border px-3 py-2.5 text-sm outline-none focus:border-primary sm:max-w-sm"
           />
           <div className="grid max-h-64 grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 xl:grid-cols-3">
             {filteredProductTypes.map(
@@ -508,12 +508,12 @@ export default function BusinessSurveySection({
         </fieldset>
 
         {isLoadingOptions && (
-          <p className="text-sm text-[#68807F]">
+          <p className="text-sm text-textLight">
             Đang tải danh mục khảo sát...
           </p>
         )}
 
-        <div className="border-t border-[#E4ECEA] pt-5">
+        <div className="border-t border-border pt-5">
           <div className="flex justify-end">
             <SaveButton isSaving={isSaving}>
               LƯU KHẢO SÁT

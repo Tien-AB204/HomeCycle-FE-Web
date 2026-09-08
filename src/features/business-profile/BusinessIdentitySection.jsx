@@ -27,11 +27,11 @@ const createForm = (profile) => ({
 });
 
 const IdentityInfo = ({ label, value }) => (
-  <div className="rounded-2xl border border-[#DCE8E5] bg-[#F8FBFA] px-4 py-3.5">
-    <p className="text-xs font-black uppercase tracking-wide text-[#708987]">
+  <div className="rounded-2xl border border-border bg-background px-4 py-3.5">
+    <p className="text-xs font-black uppercase tracking-wide text-textLight">
       {label}
     </p>
-    <p className="mt-1.5 break-words text-sm font-bold text-[#183F41]">
+    <p className="mt-1.5 break-words text-sm font-bold text-text">
       {value || "Chưa cập nhật"}
     </p>
   </div>
@@ -214,13 +214,13 @@ export default function BusinessIdentitySection({
             ].map(([label, url]) => (
               <div
                 key={label}
-                className="flex items-center justify-between gap-3 rounded-2xl border border-[#DCE8E5] bg-white px-4 py-3.5"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-white px-4 py-3.5"
               >
                 <div>
-                  <p className="text-xs font-black uppercase tracking-wide text-[#708987]">
+                  <p className="text-xs font-black uppercase tracking-wide text-textLight">
                     {label}
                   </p>
-                  <p className="mt-1 text-sm font-bold text-[#183F41]">
+                  <p className="mt-1 text-sm font-bold text-text">
                     {url
                       ? "Đã lưu giấy tờ"
                       : "Chưa có giấy tờ"}
@@ -231,7 +231,7 @@ export default function BusinessIdentitySection({
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="shrink-0 text-sm font-black text-[#2F6F9F] hover:underline"
+                    className="shrink-0 text-sm font-black text-primary hover:underline"
                   >
                     Xem tệp
                   </a>
@@ -240,11 +240,11 @@ export default function BusinessIdentitySection({
             ))}
           </div>
 
-          <div className="flex justify-end border-t border-[#E4ECEA] pt-5">
+          <div className="flex justify-end border-t border-border pt-5">
             <button
               type="button"
               onClick={handleStartEditing}
-              className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70]"
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90"
             >
               CẬP NHẬT NGƯỜI ĐẠI DIỆN
             </button>
@@ -360,12 +360,12 @@ export default function BusinessIdentitySection({
           />
         </div>
 
-        <div className="flex flex-wrap justify-end gap-3 border-t border-[#E4ECEA] pt-5">
+        <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-5">
           <button
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="rounded-xl border border-[#79A3A2] bg-white px-5 py-2.5 text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-border bg-white px-5 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
             HỦY
           </button>

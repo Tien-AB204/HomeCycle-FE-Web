@@ -35,12 +35,12 @@ const BusinessInfo = ({
   className = "",
 }) => (
   <div
-    className={`rounded-2xl border border-[#DCE8E5] bg-[#F8FBFA] px-4 py-3.5 ${className}`}
+    className={`rounded-2xl border border-border bg-background px-4 py-3.5 ${className}`}
   >
-    <p className="text-xs font-black uppercase tracking-wide text-[#708987]">
+    <p className="text-xs font-black uppercase tracking-wide text-textLight">
       {label}
     </p>
-    <p className="mt-1.5 whitespace-pre-line break-words text-sm font-bold leading-6 text-[#183F41]">
+    <p className="mt-1.5 whitespace-pre-line break-words text-sm font-bold leading-6 text-text">
       {value || "Chưa cập nhật"}
     </p>
   </div>
@@ -208,12 +208,12 @@ export default function BusinessRegistrationSection({
             />
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#DCE8E5] bg-white px-4 py-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-white px-4 py-3.5">
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-[#708987]">
+              <p className="text-xs font-black uppercase tracking-wide text-textLight">
                 Giấy chứng nhận đăng ký kinh doanh
               </p>
-              <p className="mt-1 text-sm font-bold text-[#183F41]">
+              <p className="mt-1 text-sm font-bold text-text">
                 {profile.businessRegistrationCertificateUrl
                   ? "Đã lưu giấy chứng nhận"
                   : "Chưa có giấy chứng nhận"}
@@ -226,18 +226,18 @@ export default function BusinessRegistrationSection({
                 }
                 target="_blank"
                 rel="noreferrer"
-                className="text-sm font-black text-[#2F6F9F] hover:underline"
+                className="text-sm font-black text-primary hover:underline"
               >
                 Xem tệp hiện tại
               </a>
             )}
           </div>
 
-          <div className="flex justify-end border-t border-[#E4ECEA] pt-5">
+          <div className="flex justify-end border-t border-border pt-5">
             <button
               type="button"
               onClick={handleStartEditing}
-              className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white transition hover:bg-[#356A70]"
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90"
             >
               CẬP NHẬT DOANH NGHIỆP
             </button>
@@ -307,8 +307,8 @@ export default function BusinessRegistrationSection({
           />
         </div>
 
-        <div className="rounded-2xl border border-[#DCE8E5] bg-[#F8FBFA] p-4 sm:p-5">
-          <h3 className="mb-4 text-sm font-black text-[#183F41]">
+        <div className="rounded-2xl border border-border bg-background p-4 sm:p-5">
+          <h3 className="mb-4 text-sm font-black text-text">
             Địa chỉ trụ sở
           </h3>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -339,12 +339,12 @@ export default function BusinessRegistrationSection({
           }
         />
 
-        <div className="flex flex-wrap justify-end gap-3 border-t border-[#E4ECEA] pt-5">
+        <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-5">
           <button
             type="button"
             onClick={handleCancel}
             disabled={isSaving}
-            className="rounded-xl border border-[#79A3A2] bg-white px-5 py-2.5 text-sm font-black text-[#285E62] transition hover:bg-[#F1F7F5] disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border border-border bg-white px-5 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
           >
             HỦY
           </button>

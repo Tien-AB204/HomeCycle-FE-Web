@@ -87,16 +87,16 @@ const OnboardingSection = ({
   description,
   children,
 }) => (
-  <section className="rounded-3xl border border-[#DCE8E5] bg-white p-5 shadow-[0_12px_34px_rgba(24,63,65,0.06)] sm:p-7">
-    <div className="mb-6 flex items-start gap-4 border-b border-[#E4ECEA] pb-5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#4F8588] text-sm font-black text-white">
+  <section className="rounded-3xl border border-border bg-white p-5 shadow-[0_12px_34px_rgba(23,40,48,0.06)] sm:p-7">
+    <div className="mb-6 flex items-start gap-4 border-b border-border pb-5">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-sm font-black text-white">
         {number}
       </span>
       <div>
-        <h2 className="text-lg font-black text-[#183F41]">
+        <h2 className="text-lg font-black text-text">
           {title}
         </h2>
-        <p className="mt-1 text-sm leading-6 text-[#68807F]">
+        <p className="mt-1 text-sm leading-6 text-textLight">
           {description}
         </p>
       </div>
@@ -327,7 +327,7 @@ export default function BusinessOnboardingForm({
       onSubmit={handleSubmit}
       className="space-y-5"
     >
-      <div className="overflow-hidden rounded-3xl bg-gradient-to-br from-[#183F41] via-[#285E62] to-[#2F6F9F] p-6 text-white shadow-[0_18px_50px_rgba(24,63,65,0.18)] sm:p-8">
+      <div className="overflow-hidden rounded-3xl bg-primary p-6 text-white shadow-[0_18px_50px_rgba(23,40,48,0.18)] sm:p-8">
         <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
           Business onboarding
         </p>
@@ -423,7 +423,7 @@ export default function BusinessOnboardingForm({
             className="sm:col-span-2"
           />
         </div>
-        <div className="mt-6 grid grid-cols-1 gap-5 rounded-2xl bg-[#F8FBFA] p-4 sm:grid-cols-2 sm:p-5">
+        <div className="mt-6 grid grid-cols-1 gap-5 rounded-2xl bg-background p-4 sm:grid-cols-2 sm:p-5">
           <BusinessAddressFields
             idPrefix="onboarding-office"
             city={form.city}
@@ -557,9 +557,9 @@ export default function BusinessOnboardingForm({
           <div className="relative sm:col-span-2">
             <label
               htmlFor="onboarding-bank"
-              className="mb-1.5 block text-xs font-black uppercase tracking-wide text-[#607B7A]"
+              className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight"
             >
-              Ngân hàng <span className="text-red-500">*</span>
+              Ngân hàng <span className="text-error">*</span>
             </label>
             <input
               id="onboarding-bank"
@@ -589,11 +589,11 @@ export default function BusinessOnboardingForm({
                   : "Tìm MB Bank, Vietcombank..."
               }
               autoComplete="off"
-              className="w-full rounded-xl border border-[#CDDED9] bg-white px-3 py-3 text-sm outline-none focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
+              className="w-full rounded-xl border border-border bg-white px-3 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
             {isBankOpen &&
               filteredBanks.length > 0 && (
-                <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-[#DCE8E5] bg-white p-2 shadow-xl">
+                <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-border bg-white p-2 shadow-xl">
                   {filteredBanks.map((bank) => (
                     <button
                       key={bank.bin}
@@ -610,12 +610,12 @@ export default function BusinessOnboardingForm({
                         setBankQuery(bank.name);
                         setIsBankOpen(false);
                       }}
-                      className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-[#F1F7F5]"
+                      className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-primary/10"
                     >
-                      <span className="text-sm font-bold text-[#183F41]">
+                      <span className="text-sm font-bold text-text">
                         {bank.name}
                       </span>
-                      <span className="text-xs text-[#78908F]">
+                      <span className="text-xs text-textLight">
                         {bank.bin}
                       </span>
                     </button>
@@ -705,14 +705,14 @@ export default function BusinessOnboardingForm({
         </div>
       </OnboardingSection>
 
-      <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-2xl border border-[#C9DBD7] bg-white/95 p-4 shadow-[0_14px_38px_rgba(24,63,65,0.16)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm leading-6 text-[#68807F]">
+      <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-2xl border border-border bg-white/95 p-4 shadow-[0_14px_38px_rgba(23,40,48,0.16)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm leading-6 text-textLight">
           Kiểm tra kỹ thông tin trước khi gửi xét duyệt.
         </p>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-xl bg-[#4F8588] px-6 py-3 text-sm font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl bg-primary px-6 py-3 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting
             ? "ĐANG GỬI HỒ SƠ..."

@@ -57,36 +57,36 @@ const STATUS_META = {
   notsubmitted: {
     label: "Chưa gửi hồ sơ",
     className:
-      "bg-slate-100 text-slate-700",
+      "bg-textLight/10 text-textLight",
     icon: "edit_document",
   },
   unverified: {
     label: "Chưa xác minh",
     className:
-      "bg-slate-100 text-slate-700",
+      "bg-textLight/10 text-textLight",
     icon: "edit_document",
   },
   pending: {
     label: "Đang chờ xét duyệt",
     className:
-      "bg-amber-50 text-amber-700",
+      "bg-warning/10 text-warning",
     icon: "hourglass_top",
   },
   verified: {
     label: "Đã xác minh",
     className:
-      "bg-emerald-50 text-emerald-700",
+      "bg-success/10 text-success",
     icon: "verified",
   },
   approved: {
     label: "Đã xác minh",
     className:
-      "bg-emerald-50 text-emerald-700",
+      "bg-success/10 text-success",
     icon: "verified",
   },
   rejected: {
     label: "Cần bổ sung hồ sơ",
-    className: "bg-red-50 text-red-700",
+    className: "bg-error/10 text-error",
     icon: "error",
   },
 };
@@ -211,7 +211,7 @@ const getSettledValue = (result) =>
     : null;
 
 const LoadingState = () => (
-  <div className="mx-auto flex min-h-[420px] max-w-7xl flex-col items-center justify-center px-4 text-[#4F8588]">
+  <div className="mx-auto flex min-h-[420px] max-w-7xl flex-col items-center justify-center px-4 text-primary">
     <span className="material-symbols-outlined animate-spin text-5xl">
       progress_activity
     </span>
@@ -499,7 +499,7 @@ export default function BusinessProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 pb-16 pt-7 sm:px-6">
-      <div className="mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-[#183F41] via-[#285E62] to-[#2F6F9F] p-6 text-white shadow-[0_18px_50px_rgba(24,63,65,0.16)] sm:p-8">
+      <div className="mb-6 overflow-hidden rounded-3xl bg-primary p-6 text-white shadow-[0_18px_50px_rgba(23,40,48,0.16)] sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-white/65">
@@ -524,7 +524,7 @@ export default function BusinessProfilePage() {
             </div>
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15">
               <div
-                className="h-full rounded-full bg-[#BFE7D8] transition-all"
+                className="h-full rounded-full bg-success transition-all"
                 style={{
                   width: `${progress}%`,
                 }}
@@ -537,7 +537,7 @@ export default function BusinessProfilePage() {
       {error && (
         <div
           role="alert"
-          className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="mb-5 rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error"
         >
           {error}
         </div>
@@ -545,13 +545,13 @@ export default function BusinessProfilePage() {
       {success && (
         <div
           aria-live="polite"
-          className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+          className="mb-5 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success"
         >
           {success}
         </div>
       )}
       {profile.rejectReason && (
-        <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-5 rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-sm text-error">
           <strong>Yêu cầu bổ sung:</strong>{" "}
           {profile.rejectReason}
         </div>
@@ -559,7 +559,7 @@ export default function BusinessProfilePage() {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="space-y-4">
-          <div className="flex flex-col items-center rounded-3xl border border-[#DCE8E5] bg-white p-6 text-center shadow-[0_10px_30px_rgba(24,63,65,0.06)]">
+          <div className="flex flex-col items-center rounded-3xl border border-border bg-white p-6 text-center shadow-[0_10px_30px_rgba(23,40,48,0.06)]">
             <AvatarUploader
               avatarUrl={profile.avatarUrl}
               displayName={displayName}
@@ -573,10 +573,10 @@ export default function BusinessProfilePage() {
                 businessProfileApi.updateAvatar
               }
             />
-            <h2 className="mt-4 text-xl font-black text-[#183F41]">
+            <h2 className="mt-4 text-xl font-black text-text">
               {displayName}
             </h2>
-            <p className="mt-1 text-sm text-[#68807F]">
+            <p className="mt-1 text-sm text-textLight">
               @{profile.username || user?.username}
             </p>
             <span
@@ -589,7 +589,7 @@ export default function BusinessProfilePage() {
             </span>
           </div>
 
-          <nav className="overflow-hidden rounded-3xl border border-[#DCE8E5] bg-white shadow-[0_10px_30px_rgba(24,63,65,0.06)]">
+          <nav className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_10px_30px_rgba(23,40,48,0.06)]">
             {TABS.map((tab, index) => (
               <button
                 key={tab.id}
@@ -604,12 +604,12 @@ export default function BusinessProfilePage() {
                 }}
                 className={`flex w-full items-center gap-3 border-l-4 px-5 py-3.5 text-left text-sm font-bold transition ${
                   index
-                    ? "border-t border-t-[#EEF3F2]"
+                    ? "border-t border-t-border"
                     : ""
                 } ${
                   activeTab === tab.id
-                    ? "border-l-[#4F8588] bg-[#F1F7F5] text-[#183F41]"
-                    : "border-l-transparent text-[#607B7A] hover:bg-[#F7FAF9]"
+                    ? "border-l-primary bg-primary/10 text-text"
+                    : "border-l-transparent text-textLight hover:bg-background"
                 }`}
               >
                 <span className="material-symbols-outlined text-[21px]">
@@ -621,14 +621,14 @@ export default function BusinessProfilePage() {
           </nav>
         </aside>
 
-        <main className="min-h-[520px] rounded-3xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.06)] sm:p-7">
+        <main className="min-h-[520px] rounded-3xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.06)] sm:p-7">
           {activeTab === "account" && (
             <div>
-              <div className="mb-6 border-b border-[#DCE8E5] pb-5">
-                <h2 className="text-lg font-black text-[#183F41]">
+              <div className="mb-6 border-b border-border pb-5">
+                <h2 className="text-lg font-black text-text">
                   Thông tin tài khoản
                 </h2>
-                <p className="mt-1 text-sm leading-6 text-[#68807F]">
+                <p className="mt-1 text-sm leading-6 text-textLight">
                   Email được cố định theo tài khoản đăng ký. Tên đăng nhập và số điện thoại có API cập nhật riêng.
                 </p>
               </div>
@@ -637,7 +637,7 @@ export default function BusinessProfilePage() {
                 className="space-y-6"
               >
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <label className="text-xs font-black uppercase tracking-wide text-[#607B7A]">
+                  <label className="text-xs font-black uppercase tracking-wide text-textLight">
                     Tên đăng nhập
                     <input
                       name="username"
@@ -645,10 +645,10 @@ export default function BusinessProfilePage() {
                         profile.username
                       }
                       required
-                      className="mt-1.5 w-full rounded-xl border border-[#CDDED9] px-3 py-3 text-sm font-normal normal-case tracking-normal text-[#183436] outline-none focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
+                      className="mt-1.5 w-full rounded-xl border border-border px-3 py-3 text-sm font-normal normal-case tracking-normal text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
                     />
                   </label>
-                  <label className="text-xs font-black uppercase tracking-wide text-[#607B7A]">
+                  <label className="text-xs font-black uppercase tracking-wide text-textLight">
                     Số điện thoại
                     <input
                       name="phoneNumber"
@@ -657,10 +657,10 @@ export default function BusinessProfilePage() {
                         profile.phoneNumber
                       }
                       required
-                      className="mt-1.5 w-full rounded-xl border border-[#CDDED9] px-3 py-3 text-sm font-normal normal-case tracking-normal text-[#183436] outline-none focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
+                      className="mt-1.5 w-full rounded-xl border border-border px-3 py-3 text-sm font-normal normal-case tracking-normal text-text outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
                     />
                   </label>
-                  <label className="text-xs font-black uppercase tracking-wide text-[#607B7A] sm:col-span-2">
+                  <label className="text-xs font-black uppercase tracking-wide text-textLight sm:col-span-2">
                     Email đăng ký
                     <input
                       type="email"
@@ -670,14 +670,14 @@ export default function BusinessProfilePage() {
                         ""
                       }
                       readOnly
-                      className="mt-1.5 w-full cursor-default rounded-xl border border-[#E1EAE8] bg-[#F5F8F7] px-3 py-3 text-sm font-normal normal-case tracking-normal text-[#607B7A]"
+                      className="mt-1.5 w-full cursor-default rounded-xl border border-border bg-background px-3 py-3 text-sm font-normal normal-case tracking-normal text-textLight"
                     />
                   </label>
                 </div>
-                <div className="flex justify-end border-t border-[#E4ECEA] pt-5">
+                <div className="flex justify-end border-t border-border pt-5">
                   <button
                     type="submit"
-                    className="rounded-xl bg-[#4F8588] px-5 py-2.5 text-sm font-black text-white hover:bg-[#356A70]"
+                    className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white hover:bg-primary/90"
                   >
                     LƯU THÔNG TIN TÀI KHOẢN
                   </button>
