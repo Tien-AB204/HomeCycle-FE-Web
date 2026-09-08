@@ -66,8 +66,8 @@ const StepIndicator = ({ step }) => {
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold ${
                 item <= currentStep
-                  ? "bg-[#4F8588] text-white"
-                  : "bg-[#E5ECEA] text-[#78908F]"
+                  ? "bg-primary text-white"
+                  : "bg-background text-textLight"
               }`}
             >
               {item}
@@ -77,8 +77,8 @@ const StepIndicator = ({ step }) => {
               <div
                 className={`mx-2 h-0.5 w-12 ${
                   item < currentStep
-                    ? "bg-[#4F8588]"
-                    : "bg-[#E5ECEA]"
+                    ? "bg-primary"
+                    : "bg-background"
                 }`}
               />
             )}
@@ -86,7 +86,7 @@ const StepIndicator = ({ step }) => {
         ))}
       </div>
 
-      <div className="mt-2 grid grid-cols-3 text-center text-xs font-bold text-[#68807F]">
+      <div className="mt-2 grid grid-cols-3 text-center text-xs font-bold text-textLight">
         {labels.map((label) => (
           <span key={label}>
             {label}
@@ -467,12 +467,12 @@ const RegisterBusinessPage = () => {
   return (
     <div className="mx-auto w-full max-w-xl animate-fade-in">
       <div className="mb-6">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-[#2F6F9F]">Tài khoản doanh nghiệp</p>
-        <h1 className="mt-2 text-3xl font-black text-[#183F41]">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">Tài khoản doanh nghiệp</p>
+        <h1 className="mt-2 text-3xl font-black text-text">
           Đăng ký tài khoản doanh nghiệp
         </h1>
 
-        <p className="mt-2 text-sm leading-6 text-[#68807F]">
+        <p className="mt-2 text-sm leading-6 text-textLight">
           Tạo tài khoản để tìm kiếm và
           khám phá các tin đăng trên
           HomeCycle.
@@ -484,7 +484,7 @@ const RegisterBusinessPage = () => {
       {error && (
         <div
           role="alert"
-          className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="mb-4 rounded-md border border-error/30 bg-error/10 px-4 py-3 text-sm text-error"
         >
           {error}
         </div>
@@ -493,7 +493,7 @@ const RegisterBusinessPage = () => {
       {successMessage && (
         <div
           aria-live="polite"
-          className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700"
+          className="mb-4 rounded-md border border-success/30 bg-success/10 px-4 py-3 text-sm text-success"
         >
           {successMessage}
         </div>
@@ -502,21 +502,21 @@ const RegisterBusinessPage = () => {
       {step === STEPS.EMAIL && (
         <form
           onSubmit={handleSendOtp}
-          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
+          className="space-y-5 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6"
         >
           <div>
             <label
               htmlFor="business-email"
-              className="mb-1.5 block text-xs font-black text-[#526E6D]"
+              className="mb-1.5 block text-xs font-black text-textLight"
             >
               Email doanh nghiệp
-              <span className="text-red-500">
+              <span className="text-error">
                 {" "}*
               </span>
             </label>
 
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-slate-400">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
                 mail
               </span>
 
@@ -533,7 +533,7 @@ const RegisterBusinessPage = () => {
                 required
                 autoComplete="email"
                 placeholder="Nhập email doanh nghiệp"
-                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-10 pr-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
+                className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
             </div>
           </div>
@@ -541,7 +541,7 @@ const RegisterBusinessPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-primary py-3 font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction ===
             "SEND_OTP"
@@ -549,11 +549,11 @@ const RegisterBusinessPage = () => {
               : "GỬI MÃ OTP"}
           </button>
 
-          <p className="text-center text-sm text-slate-600">
+          <p className="text-center text-sm text-textLight">
             Bạn đã có tài khoản?{" "}
             <Link
               to="/auth/login"
-              className="font-bold text-[#2F6F9F] hover:underline"
+              className="font-bold text-primary hover:underline"
             >
               Đăng nhập ngay
             </Link>
@@ -564,19 +564,19 @@ const RegisterBusinessPage = () => {
       {step === STEPS.OTP && (
         <form
           onSubmit={handleVerifyOtp}
-          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
+          className="space-y-5 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6"
         >
           <div className="text-center">
-            <h2 className="text-lg font-black text-[#183F41]">
+            <h2 className="text-lg font-black text-text">
               Xác thực email
             </h2>
 
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-textLight">
               Mã OTP gồm 6 chữ số đã
               được gửi đến:
             </p>
 
-            <p className="mt-1 break-all text-sm font-black text-[#2F6F9F]">
+            <p className="mt-1 break-all text-sm font-black text-primary">
               {email}
             </p>
           </div>
@@ -584,10 +584,10 @@ const RegisterBusinessPage = () => {
           <div>
             <label
               htmlFor="business-otp"
-              className="mb-1.5 block text-xs font-black text-[#526E6D]"
+              className="mb-1.5 block text-xs font-black text-textLight"
             >
               Mã OTP
-              <span className="text-red-500">
+              <span className="text-error">
                 {" "}*
               </span>
             </label>
@@ -609,7 +609,7 @@ const RegisterBusinessPage = () => {
               }
               required
               placeholder="Nhập 6 chữ số"
-              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 text-center text-xl font-black tracking-[0.5em] text-[#183F41] outline-none transition focus:border-[#4F8588] focus:ring-4 focus:ring-[#5F9291]/10"
+              className="w-full rounded-xl border border-border bg-background px-3 py-3 text-center text-xl font-black tracking-[0.5em] text-text outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
             />
           </div>
 
@@ -619,7 +619,7 @@ const RegisterBusinessPage = () => {
               isLoading ||
               otp.length !== 6
             }
-            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-primary py-3 font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction ===
             "VERIFY_OTP"
@@ -637,7 +637,7 @@ const RegisterBusinessPage = () => {
                 isLoading ||
                 resendCooldown > 0
               }
-              className="font-bold text-[#2F6F9F] disabled:cursor-not-allowed disabled:text-slate-400"
+              className="font-bold text-primary disabled:cursor-not-allowed disabled:text-textLight"
             >
               {resendCooldown > 0
                 ? `Gửi lại OTP sau ${resendCooldown}s`
@@ -650,7 +650,7 @@ const RegisterBusinessPage = () => {
                 handleChangeEmail
               }
               disabled={isLoading}
-              className="text-[#68807F] hover:text-[#2F6F9F]"
+              className="text-textLight hover:text-primary"
             >
               Thay đổi email
             </button>
@@ -662,16 +662,16 @@ const RegisterBusinessPage = () => {
         STEPS.PASSWORD && (
         <form
           onSubmit={handleRegister}
-          className="space-y-5 rounded-2xl border border-[#DCE8E5] bg-white p-5 shadow-[0_10px_30px_rgba(24,63,65,0.05)] sm:p-6"
+          className="space-y-5 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6"
         >
           <div>
-            <h2 className="text-lg font-black text-[#183F41]">
+            <h2 className="text-lg font-black text-text">
               Tạo mật khẩu
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-textLight">
               Email{" "}
-              <span className="font-bold text-[#2F6F9F]">
+              <span className="font-bold text-primary">
                 {email}
               </span>{" "}
               đã được xác thực.
@@ -681,10 +681,10 @@ const RegisterBusinessPage = () => {
           <div>
             <label
               htmlFor="business-password"
-              className="mb-1.5 block text-xs font-black text-[#526E6D]"
+              className="mb-1.5 block text-xs font-black text-textLight"
             >
               Mật khẩu
-              <span className="text-red-500">
+              <span className="text-error">
                 {" "}*
               </span>
             </label>
@@ -708,7 +708,7 @@ const RegisterBusinessPage = () => {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="Tối thiểu 6 ký tự"
-                className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] py-3 pl-3 pr-11 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
+                className="w-full rounded-xl border border-border bg-background py-3 pl-3 pr-11 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
 
               <button
@@ -724,7 +724,7 @@ const RegisterBusinessPage = () => {
                     ? "Ẩn mật khẩu"
                     : "Hiện mật khẩu"
                 }
-                className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center text-slate-400 hover:text-[#244f4d]"
+                className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center text-textLight hover:text-primary"
               >
                 <span className="material-symbols-outlined text-[20px]">
                   {showPassword
@@ -738,10 +738,10 @@ const RegisterBusinessPage = () => {
           <div>
             <label
               htmlFor="business-confirm-password"
-              className="mb-1.5 block text-xs font-black text-[#526E6D]"
+              className="mb-1.5 block text-xs font-black text-textLight"
             >
               Xác nhận mật khẩu
-              <span className="text-red-500">
+              <span className="text-error">
                 {" "}*
               </span>
             </label>
@@ -764,11 +764,11 @@ const RegisterBusinessPage = () => {
               minLength={6}
               autoComplete="new-password"
               placeholder="Nhập lại mật khẩu"
-              className="w-full rounded-xl border border-[#CDDED9] bg-[#FBFDFC] px-3 py-3 text-sm text-[#183436] outline-none transition focus:border-[#4F8588] focus:bg-white focus:ring-4 focus:ring-[#5F9291]/10"
+              className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
             />
           </div>
 
-          <div className="rounded-xl border border-[#C8DFF0] bg-[#F0F6FB] p-4 text-xs leading-relaxed text-[#2F6F9F]">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs leading-relaxed text-primary">
             Sau khi đăng ký, bạn có thể
             tìm kiếm và xem tin ngay.
             Hoàn thiện hồ sơ doanh nghiệp
@@ -779,7 +779,7 @@ const RegisterBusinessPage = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-[#4F8588] py-3 font-black text-white transition hover:bg-[#356A70] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-xl bg-primary py-3 font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loadingAction ===
             "REGISTER"
@@ -793,7 +793,7 @@ const RegisterBusinessPage = () => {
               handleChangeEmail
             }
             disabled={isLoading}
-            className="w-full text-sm text-[#68807F] hover:text-[#2F6F9F] disabled:opacity-60"
+            className="w-full text-sm text-textLight hover:text-primary disabled:opacity-60"
           >
             Sử dụng email khác
           </button>
