@@ -22,52 +22,52 @@ export const PAYMENT_STATUS = Object.freeze({
 const ORDER_STATUS_META = Object.freeze({
   [ORDER_STATUS.PENDING]: {
     label: "Chờ xử lý",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
   [ORDER_STATUS.PROCESSING]: {
     label: "Đang xử lý",
-    className: "border-blue-200 bg-blue-50 text-blue-700",
+    className: "border-primary/30 bg-primary/10 text-primary",
   },
   [ORDER_STATUS.COMPLETED]: {
     label: "Hoàn tất",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    className: "border-success/30 bg-success/10 text-success",
   },
   [ORDER_STATUS.CANCELLED]: {
     label: "Đã hủy",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/30 bg-error/10 text-error",
   },
   [ORDER_STATUS.DISPUTING]: {
     label: "Đang tranh chấp",
-    className: "border-orange-200 bg-orange-50 text-orange-700",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
 });
 
 const PAYMENT_STATUS_META = Object.freeze({
   [PAYMENT_STATUS.PENDING]: {
     label: "Chờ thanh toán",
-    className: "border-amber-200 bg-amber-50 text-amber-700",
+    className: "border-warning/30 bg-warning/10 text-warning",
   },
   [PAYMENT_STATUS.COMPLETED]: {
     label: "Đã thanh toán",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    className: "border-success/30 bg-success/10 text-success",
   },
   [PAYMENT_STATUS.FAILED]: {
     label: "Thanh toán thất bại",
-    className: "border-red-200 bg-red-50 text-red-700",
+    className: "border-error/30 bg-error/10 text-error",
   },
   [PAYMENT_STATUS.REFUNDED]: {
     label: "Đã hoàn tiền",
-    className: "border-slate-200 bg-slate-100 text-slate-700",
+    className: "border-border bg-textLight/10 text-textLight",
   },
   [PAYMENT_STATUS.PARTIALLY_REFUNDED]: {
     label: "Đã hoàn tiền một phần",
-    className: "border-violet-200 bg-violet-50 text-violet-700",
+    className: "border-border bg-textLight/10 text-textLight",
   },
 });
 
 const UNKNOWN_STATUS_META = Object.freeze({
   label: "Chưa xác định",
-  className: "border-gray-200 bg-gray-50 text-gray-600",
+  className: "border-border bg-textLight/10 text-textLight",
 });
 
 export const getOrderStatusMeta = (status) =>
@@ -89,7 +89,7 @@ export const getPaymentDisplayMeta = (order) => {
     return {
       label: "Đã đặt cọc",
       description: "Chờ thanh toán phần còn lại",
-      className: "border-blue-200 bg-blue-50 text-blue-700",
+      className: "border-primary/30 bg-primary/10 text-primary",
     };
   }
 
