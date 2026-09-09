@@ -275,6 +275,30 @@ const labelFor = (
   const key =
     normalize(value);
 
+  if (key === "pending") {
+    if (dashboard === "payments") {
+      return "Chờ thanh toán";
+    }
+
+    if (dashboard === "orders") {
+      return "Đang chờ";
+    }
+
+    if (
+      dashboard ===
+      "business-user-status"
+    ) {
+      return "Chờ kích hoạt";
+    }
+
+    if (
+      dashboard ===
+      "business-profile-status"
+    ) {
+      return "Chờ duyệt";
+    }
+  }
+
   if (
     dashboard ===
       "appointments" &&
@@ -956,7 +980,7 @@ export default function AdminDashboardModulePage({
     field,
     options,
   ) => (
-    <label>
+    <label key={field}>
       <span className="text-xs font-black uppercase tracking-[0.11em] text-textLight">
         {label}
       </span>
@@ -1619,6 +1643,7 @@ export default function AdminDashboardModulePage({
           <DistributionPanel
             title="Trạng thái tài khoản"
             rows={data?.byUserStatus}
+            dashboard="business-user-status"
           />
 
           <DistributionPanel
@@ -1626,6 +1651,7 @@ export default function AdminDashboardModulePage({
             rows={
               data?.byProfileStatus
             }
+            dashboard="business-profile-status"
           />
 
           <DistributionPanel
@@ -1633,6 +1659,7 @@ export default function AdminDashboardModulePage({
             rows={
               data?.byBusinessModel
             }
+            dashboard="business-model"
           />
         </div>
       </>
@@ -1780,6 +1807,51 @@ export default function AdminDashboardModulePage({
             value={formatNumber(
               data
                 ?.sellingBusinessCount,
+            )}
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Thanh toán chưa phân loại"
+            value={formatNumber(
+              data
+                ?.unclassifiedPaymentCount,
+            )}
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Đơn thiếu giá trị"
+            value={formatNumber(
+              data
+                ?.ordersWithMissingAmountCount,
+            )}
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Đơn chưa phân loại"
+            value={formatNumber(
+              data
+                ?.unclassifiedOrderCount,
+            )}
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Đơn doanh nghiệp mua"
+            value={formatNumber(
+              data
+                ?.businessPurchaseOrderCount,
+            )}
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Đơn doanh nghiệp bán"
+            value={formatNumber(
+              data
+                ?.businessSalesOrderCount,
             )}
             loading={loading}
           />
