@@ -9,6 +9,7 @@ import ModLayout from "../components/layouts/ModLayout";
 // Public vÃ  Auth Pages
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import LoginPage from "../pages/auth/LoginPage";
+import ModeratorActivatePage from "../pages/auth/ModeratorActivatePage";
 import RegisterBusinessPage from "../pages/auth/RegisterBusinessPage";
 import RegisterPersonalPage from "../pages/auth/RegisterPersonalPage";
 import RegisterSelectionPage from "../pages/auth/RegisterSelectionPage";
@@ -144,6 +145,11 @@ const AppRouter = () => {
       {/* ÄÄƒng nháº­p vÃ  Ä‘Äƒng kÃ½ */}
       <Route element={<AuthLayout />}>
         <Route path="/auth/login" element={<LoginPage />} />
+
+        <Route
+          path="/moderator/activate"
+          element={<ModeratorActivatePage />}
+        />
 
         <Route path="/auth/register" element={<RegisterSelectionPage />} />
 
