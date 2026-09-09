@@ -2,12 +2,57 @@ import ManagementPortalLayout from "./ManagementPortalLayout";
 
 const ADMIN_NAV_GROUPS = [
   {
-    group: "TỔNG QUAN",
+    group: "DASHBOARD",
     items: [
       {
-        label: "Thống kê hệ thống",
+        label: "Tổng quan vận hành",
         path: "/admin/dashboard",
         icon: "space_dashboard",
+      },
+      {
+        label: "Giao dịch",
+        path: "/admin/dashboard/payments",
+        icon: "payments",
+      },
+      {
+        label: "Đơn hàng",
+        path: "/admin/dashboard/orders",
+        icon: "inventory_2",
+      },
+      {
+        label: "Lịch hẹn",
+        path: "/admin/dashboard/appointments",
+        icon: "event",
+      },
+      {
+        label: "Tranh chấp",
+        path: "/admin/dashboard/disputes",
+        icon: "gavel",
+      },
+      {
+        label: "Tổng quan người dùng",
+        path: "/admin/dashboard/users",
+        icon: "group",
+      },
+    ],
+  },
+  {
+    group: "DOANH NGHIỆP",
+    items: [
+      {
+        label: "Tổng quan doanh nghiệp",
+        path: "/admin/dashboard/businesses/overview",
+        icon: "domain",
+      },
+      {
+        label: "Nhu cầu doanh nghiệp",
+        path: "/admin/dashboard/businesses/demand",
+        icon: "query_stats",
+      },
+      {
+        label: "Hiệu quả kinh doanh",
+        path: "/admin/dashboard/businesses/performance",
+        icon: "monitoring",
       },
     ],
   },
