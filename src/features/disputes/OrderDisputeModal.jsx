@@ -7,17 +7,11 @@ import {
   ORDER_DISPUTE_CATEGORY_OPTIONS,
 } from "../../constants/disputes";
 import disputeApi from "../../services/apis/disputeApi";
+import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 
-const MIN_IMAGES = 3;
+const MIN_IMAGES = 2;
 const MAX_IMAGES = 5;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-const ALLOWED_EXTENSIONS = [
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-];
+const DISPUTE_EVIDENCE_CONTEXT = "DisputeEvidence";
 
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
@@ -52,6 +46,40 @@ const formatFileSize = (size) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+const normalizeExtensions = (extensions) =>
+  Array.from(
+    new Set(
+      (Array.isArray(extensions) ? extensions : [])
+        .map((value) => {
+          const normalized = String(value || "")
+            .trim()
+            .toLowerCase();
+
+          if (!normalized) {
+            return "";
+          }
+
+          return normalized.startsWith(".")
+            ? normalized
+            : `.${normalized}`;
+        })
+        .filter(Boolean),
+    ),
+  );
+
+const getDisputeEvidenceRule = (policy) =>
+  policy?.config?.rules?.find(
+    (rule) =>
+      String(rule?.context || "")
+        .trim()
+        .toLowerCase() ===
+      DISPUTE_EVIDENCE_CONTEXT.toLowerCase(),
+  ) || null;
+
+const isCanceledRequest = (error) =>
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
+
 const OrderDisputeModal = ({
   open,
   orderId,
@@ -66,6 +94,15 @@ const OrderDisputeModal = ({
   const [fieldError, setFieldError] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const [policyState, setPolicyState] = useState({
+    loading: true,
+    error: "",
+    rule: null,
+  });
+
+  const [policyRequestVersion, setPolicyRequestVersion] =
+    useState(0);
 
   const previewItems = useMemo(
     () =>
@@ -83,6 +120,71 @@ const OrderDisputeModal = ({
       });
     };
   }, [previewItems]);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    const loadUploadRule = async () => {
+      try {
+        const policy =
+          await publicPlatformPolicyApi.getFileUpload({
+            signal: controller.signal,
+          });
+
+        const sourceRule =
+          getDisputeEvidenceRule(policy);
+
+        const maxFileSizeBytes =
+          Number(sourceRule?.maxFileSizeBytes);
+
+        const allowedExtensions =
+          normalizeExtensions(
+            sourceRule?.allowedExtensions,
+          );
+
+        if (
+          !sourceRule ||
+          !Number.isFinite(maxFileSizeBytes) ||
+          maxFileSizeBytes <= 0 ||
+          allowedExtensions.length === 0
+        ) {
+          throw new Error(
+            "Máy chủ chưa trả quy định bằng chứng tranh chấp hợp lệ.",
+          );
+        }
+
+        setPolicyState({
+          loading: false,
+          error: "",
+          rule: {
+            ...sourceRule,
+            maxFileSizeBytes,
+            allowedExtensions,
+          },
+        });
+      } catch (error) {
+        if (!isCanceledRequest(error)) {
+          setPolicyState({
+            loading: false,
+            error:
+              error?.response?.data?.error?.message ||
+              error?.response?.data?.message ||
+              error?.message ||
+              "Không thể tải quy định bằng chứng tranh chấp.",
+            rule: null,
+          });
+        }
+      }
+    };
+
+    void loadUploadRule();
+
+    return () => controller.abort();
+  }, [open, policyRequestVersion]);
 
   useEffect(() => {
     if (!open) {
@@ -126,25 +228,43 @@ const OrderDisputeModal = ({
   }
 
   const validateFiles = (files) => {
+    if (!policyState.rule) {
+      return "Chưa tải được quy định bằng chứng tranh chấp. Vui lòng thử lại.";
+    }
+
     if (files.length > MAX_IMAGES) {
       return `Chỉ được tải tối đa ${MAX_IMAGES} ảnh bằng chứng.`;
     }
+
+    const allowedExtensions =
+      policyState.rule.allowedExtensions;
 
     for (const file of files) {
       if (file.size <= 0) {
         return `Ảnh "${file.name}" không có dữ liệu.`;
       }
 
-      if (file.size > MAX_FILE_SIZE) {
-        return `Ảnh "${file.name}" vượt quá dung lượng tối đa 5MB.`;
+      if (
+        file.size >
+        policyState.rule.maxFileSizeBytes
+      ) {
+        return `Ảnh "${file.name}" vượt quá dung lượng tối đa ${formatFileSize(
+          policyState.rule.maxFileSizeBytes,
+        )}.`;
       }
 
       if (
-        !ALLOWED_EXTENSIONS.includes(
+        !allowedExtensions.includes(
           getExtension(file.name),
         )
       ) {
-        return `Ảnh "${file.name}" không đúng định dạng. Chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.`;
+        return `Ảnh "${file.name}" không đúng định dạng. Chỉ chấp nhận ${allowedExtensions
+          .map((extension) =>
+            extension
+              .replace(/^\./, "")
+              .toUpperCase(),
+          )
+          .join(", ")}.`;
       }
     }
 
@@ -394,10 +514,52 @@ const OrderDisputeModal = ({
             </p>
 
             <p className="mt-1 text-xs leading-5 text-textLight">
-              Bắt buộc từ 3 đến 5 ảnh. Mỗi ảnh
-              tối đa 5MB, định dạng JPG, JPEG,
-              PNG hoặc WEBP.
+              Bắt buộc từ {MIN_IMAGES} đến {MAX_IMAGES} ảnh.
+              {policyState.loading &&
+                " Đang tải quy định dung lượng và định dạng từ máy chủ..."}
+
+              {!policyState.loading &&
+                policyState.rule &&
+                ` Mỗi ảnh tối đa ${formatFileSize(
+                  policyState.rule.maxFileSizeBytes,
+                )}, định dạng ${policyState.rule.allowedExtensions
+                  .map((extension) =>
+                    extension
+                      .replace(/^\./, "")
+                      .toUpperCase(),
+                  )
+                  .join(", ")}.`}
             </p>
+
+            {policyState.error && (
+              <div
+                role="alert"
+                className="mt-3 flex flex-col gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <p className="text-sm font-semibold text-error">
+                  {policyState.error}
+                </p>
+
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => {
+                    setFieldError("");
+                    setPolicyState({
+                      loading: true,
+                      error: "",
+                      rule: null,
+                    });
+                    setPolicyRequestVersion(
+                      (current) => current + 1,
+                    );
+                  }}
+                  className="shrink-0 rounded-lg border border-error/30 bg-white px-3 py-2 text-xs font-black text-error"
+                >
+                  Thử lại
+                </button>
+              </div>
+            )}
 
             <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background px-4 py-5 text-sm font-black text-primary transition hover:bg-primary/10">
               <span
@@ -414,9 +576,14 @@ const OrderDisputeModal = ({
                 multiple
                 disabled={
                   submitting ||
+                  policyState.loading ||
+                  !policyState.rule ||
                   evidenceImages.length >= MAX_IMAGES
                 }
-                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                accept={
+                  policyState.rule?.allowedExtensions.join(",") ||
+                  undefined
+                }
                 onChange={handleFilesChange}
                 className="sr-only"
               />
@@ -508,7 +675,11 @@ const OrderDisputeModal = ({
 
             <button
               type="submit"
-              disabled={submitting}
+              disabled={
+                submitting ||
+                policyState.loading ||
+                !policyState.rule
+              }
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-warning px-5 py-2.5 text-sm font-black text-white transition hover:bg-warning disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting && (
