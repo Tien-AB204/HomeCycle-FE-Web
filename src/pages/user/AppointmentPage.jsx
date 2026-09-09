@@ -6,6 +6,9 @@ import {
   APPOINTMENT_TYPE,
   getAppointmentStatusMeta,
 } from "../../constants/appointments";
+import { ROLES } from "../../constants/roles";
+import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
+import { useAuth } from "../../hooks/useAuth";
 import appointmentApi from "../../services/apis/appointmentApi";
 
 const PAGE_SIZE = 10;
@@ -353,6 +356,10 @@ const AppointmentDetailModal = ({
 };
 
 const AppointmentPage = () => {
+  const { user } = useAuth();
+  const isBusiness =
+    user?.role === ROLES.BUSINESS;
+
   const [keyword, setKeyword] = useState("");
   const [appliedKeyword, setAppliedKeyword] = useState("");
   const [status, setStatus] = useState("");
@@ -442,6 +449,66 @@ const AppointmentPage = () => {
     setSelectedId("");
     setSelectedPerspective("");
   };
+
+  if (isBusiness) {
+    return (
+      <>
+        <BusinessAppointmentCalendar
+          items={state.items}
+          loading={state.loading}
+          error={state.error}
+          keyword={keyword}
+          appliedKeyword={appliedKeyword}
+          status={status}
+          onKeywordChange={setKeyword}
+          onSearch={(nextKeyword) =>
+            changeFilter(
+              setAppliedKeyword,
+              nextKeyword,
+            )
+          }
+          onStatusChange={(nextStatus) =>
+            changeFilter(
+              setStatus,
+              nextStatus,
+            )
+          }
+          onReset={() => {
+            setState((current) => ({
+              ...current,
+              loading: true,
+              error: "",
+            }));
+            setKeyword("");
+            setAppliedKeyword("");
+            setStatus("");
+            setPageNumber(1);
+          }}
+          onOpenDetail={openDetail}
+        />
+
+        {selectedId && (
+          <AppointmentDetailModal
+            appointmentId={selectedId}
+            perspective={
+              selectedPerspective
+            }
+            onClose={closeDetail}
+            onChanged={() => {
+              setState((current) => ({
+                ...current,
+                loading: true,
+                error: "",
+              }));
+              setVersion(
+                (value) => value + 1,
+              );
+            }}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-7xl px-4 pb-14 pt-7 sm:px-6">
