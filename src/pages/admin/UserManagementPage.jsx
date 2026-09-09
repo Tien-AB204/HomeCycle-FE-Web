@@ -6,6 +6,17 @@ import { getUserId } from "../../utils/authUtils";
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_TIME = 400;
 
+const MODERATOR_USERNAME_PATTERN =
+  /^[A-Za-z0-9_]+$/;
+
+const MODERATOR_EMAIL_PATTERN =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const createEmptyModeratorForm = () => ({
+  email: "",
+  username: "",
+});
+
 const ROLE_OPTIONS = [
   { value: "", label: "Tất cả vai trò" },
   { value: "Personal", label: "Cá nhân" },
@@ -85,6 +96,13 @@ const getErrorMessage = (error) => {
     "Không thể thực hiện yêu cầu quản lý người dùng."
   );
 };
+
+const getApiErrorCode = (error) =>
+  String(
+    error?.response?.data?.code ||
+      error?.response?.data?.error?.code ||
+      "",
+  ).trim();
 
 const isCanceledRequest = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
@@ -184,6 +202,27 @@ export default function UserManagementPage() {
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [warningMessage, setWarningMessage] = useState("");
+
+  const [
+    createModeratorOpen,
+    setCreateModeratorOpen,
+  ] = useState(false);
+
+  const [
+    moderatorForm,
+    setModeratorForm,
+  ] = useState(createEmptyModeratorForm);
+
+  const [
+    moderatorErrors,
+    setModeratorErrors,
+  ] = useState({});
+
+  const [
+    moderatorBusy,
+    setModeratorBusy,
+  ] = useState(false);
 
   useEffect(() => {
     const nextKeyword = keyword.trim();
@@ -268,6 +307,224 @@ export default function UserManagementPage() {
     setPageNumber(1);
   };
 
+  const openCreateModerator = () => {
+    if (moderatorBusy) {
+      return;
+    }
+
+    setSuccessMessage("");
+    setWarningMessage("");
+    setModeratorErrors({});
+    setModeratorForm(
+      createEmptyModeratorForm(),
+    );
+    setCreateModeratorOpen(true);
+  };
+
+  const closeCreateModerator = () => {
+    if (moderatorBusy) {
+      return;
+    }
+
+    setModeratorErrors({});
+    setModeratorForm(
+      createEmptyModeratorForm(),
+    );
+    setCreateModeratorOpen(false);
+  };
+
+  const updateModeratorField = (
+    field,
+    value,
+  ) => {
+    setModeratorForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+
+    setModeratorErrors(
+      (current) => ({
+        ...current,
+        [field]: "",
+        form: "",
+      }),
+    );
+  };
+
+  const validateModerator = () => {
+    const email =
+      moderatorForm.email.trim();
+
+    const username =
+      moderatorForm.username.trim();
+
+    const errors = {};
+
+    if (!email) {
+      errors.email =
+        "Vui lòng nhập thư điện tử.";
+    } else if (
+      email.length > 255
+    ) {
+      errors.email =
+        "Thư điện tử không được vượt quá 255 ký tự.";
+    } else if (
+      !MODERATOR_EMAIL_PATTERN.test(
+        email,
+      )
+    ) {
+      errors.email =
+        "Thư điện tử không hợp lệ.";
+    }
+
+    if (!username) {
+      errors.username =
+        "Vui lòng nhập tên đăng nhập.";
+    } else if (
+      username.length > 100
+    ) {
+      errors.username =
+        "Tên đăng nhập không được vượt quá 100 ký tự.";
+    } else if (
+      !MODERATOR_USERNAME_PATTERN.test(
+        username,
+      )
+    ) {
+      errors.username =
+        "Tên đăng nhập chỉ được chứa chữ cái Latin, số và dấu gạch dưới.";
+    }
+
+    return {
+      errors,
+      payload: {
+        email,
+        username,
+      },
+    };
+  };
+
+  const handleCreateModerator =
+    async (event) => {
+      event.preventDefault();
+
+      if (moderatorBusy) {
+        return;
+      }
+
+      const {
+        errors,
+        payload,
+      } = validateModerator();
+
+      if (
+        Object.keys(errors).length > 0
+      ) {
+        setModeratorErrors(
+          errors,
+        );
+        return;
+      }
+
+      setModeratorBusy(true);
+      setModeratorErrors({});
+      setSuccessMessage("");
+      setWarningMessage("");
+
+      try {
+        await adminUserApi
+          .createModerator(
+            payload,
+          );
+
+        setCreateModeratorOpen(false);
+        setModeratorForm(
+          createEmptyModeratorForm(),
+        );
+
+        setSuccessMessage(
+          "Đã tạo tài khoản và gửi email xác nhận cho kiểm duyệt viên.",
+        );
+
+        setRequestVersion(
+          (currentVersion) =>
+            currentVersion + 1,
+        );
+      } catch (error) {
+        const code =
+          getApiErrorCode(error);
+
+        if (
+          code ===
+          "AUTH_MODERATOR_EMAIL_FAILED"
+        ) {
+          /*
+           * Backend đã tạo account Pending trước khi gửi mail.
+           * Không tự POST tạo lại.
+           */
+          setCreateModeratorOpen(
+            false,
+          );
+
+          setModeratorForm(
+            createEmptyModeratorForm(),
+          );
+
+          setModeratorErrors({});
+
+          setWarningMessage(
+            "Tài khoản kiểm duyệt viên đã được tạo nhưng email xác nhận chưa gửi được. Không tạo lại tài khoản này.",
+          );
+
+          setRequestVersion(
+            (currentVersion) =>
+              currentVersion + 1,
+          );
+
+          return;
+        }
+
+        if (
+          code ===
+          "AUTH_EMAIL_EXISTS"
+        ) {
+          setModeratorErrors({
+            email:
+              "Thư điện tử này đã được sử dụng.",
+          });
+          return;
+        }
+
+        if (
+          code ===
+          "AUTH_USERNAME_EXISTS"
+        ) {
+          setModeratorErrors({
+            username:
+              "Tên đăng nhập này đã được sử dụng.",
+          });
+          return;
+        }
+
+        if (
+          code ===
+          "AUTH_MODERATOR_CREATION_FORBIDDEN"
+        ) {
+          setModeratorErrors({
+            form:
+              "Chỉ tài khoản Admin đang hoạt động mới được tạo Moderator.",
+          });
+          return;
+        }
+
+        setModeratorErrors({
+          form:
+            "Không thể tạo tài khoản Moderator. Vui lòng kiểm tra dữ liệu và thử lại.",
+        });
+      } finally {
+        setModeratorBusy(false);
+      }
+    };
+
   const openConfirmation = (account, action) => {
     if (!action?.type || action.disabled || actionBusy) {
       return;
@@ -315,16 +572,35 @@ export default function UserManagementPage() {
 
   return (
     <section className="space-y-6 p-4 sm:p-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-          Quản trị hệ thống
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-text">
-          Quản lý người dùng
-        </h1>
-        <p className="mt-1 text-sm text-textLight">
-          Tìm kiếm, theo dõi trạng thái và kiểm soát quyền truy cập tài khoản.
-        </p>
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+            Quản trị hệ thống
+          </p>
+
+          <h1 className="mt-1 text-2xl font-bold text-text">
+            Quản lý người dùng
+          </h1>
+
+          <p className="mt-1 text-sm text-textLight">
+            Tìm kiếm, theo dõi trạng thái và kiểm soát quyền truy cập tài khoản.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={openCreateModerator}
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90"
+        >
+          <span
+            className="material-symbols-outlined text-[20px]"
+            aria-hidden="true"
+          >
+            person_add
+          </span>
+
+          Tạo kiểm duyệt viên
+        </button>
       </header>
 
       <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
@@ -395,6 +671,26 @@ export default function UserManagementPage() {
           <button
             type="button"
             onClick={() => setSuccessMessage("")}
+            aria-label="Đóng thông báo"
+            className="shrink-0 font-black"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {warningMessage && (
+        <div
+          role="status"
+          className="flex items-start justify-between gap-4 rounded-xl border border-warning/20 bg-warning/10 p-4 text-sm font-semibold leading-6 text-warning"
+        >
+          <span>{warningMessage}</span>
+
+          <button
+            type="button"
+            onClick={() =>
+              setWarningMessage("")
+            }
             aria-label="Đóng thông báo"
             className="shrink-0 font-black"
           >
@@ -653,6 +949,186 @@ export default function UserManagementPage() {
             </div>
           </div>
         </>
+      )}
+
+      {createModeratorOpen && (
+        <div
+          role="presentation"
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              closeCreateModerator();
+            }
+          }}
+          className="fixed inset-0 z-[85] flex items-center justify-center bg-black/50 p-4"
+        >
+          <form
+            onSubmit={
+              handleCreateModerator
+            }
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-moderator-title"
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+                  Tài khoản kiểm duyệt
+                </p>
+
+                <h2
+                  id="create-moderator-title"
+                  className="mt-1 text-xl font-black text-text"
+                >
+                  Tạo tài khoản kiểm duyệt viên
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-textLight">
+                  Admin chỉ tạo email và tên đăng nhập. Kiểm duyệt viên sẽ tự xác nhận email và đặt mật khẩu.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  closeCreateModerator
+                }
+                disabled={
+                  moderatorBusy
+                }
+                aria-label="Đóng"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-textLight transition hover:bg-background disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined">
+                  close
+                </span>
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <label className="block">
+                <span className="text-sm font-bold text-text">
+                  Thư điện tử
+                </span>
+
+                <span className="ml-1 text-error">
+                  *
+                </span>
+
+                <input
+                  type="email"
+                  value={
+                    moderatorForm.email
+                  }
+                  onChange={(event) =>
+                    updateModeratorField(
+                      "email",
+                      event.target.value,
+                    )
+                  }
+                  maxLength={255}
+                  autoComplete="off"
+                  disabled={
+                    moderatorBusy
+                  }
+                  placeholder="moderator@example.com"
+                  className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-background"
+                />
+
+                {moderatorErrors.email && (
+                  <span className="mt-1.5 block text-xs font-semibold text-error">
+                    {moderatorErrors.email}
+                  </span>
+                )}
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-bold text-text">
+                  Tên đăng nhập
+                </span>
+
+                <span className="ml-1 text-error">
+                  *
+                </span>
+
+                <input
+                  type="text"
+                  value={
+                    moderatorForm.username
+                  }
+                  onChange={(event) =>
+                    updateModeratorField(
+                      "username",
+                      event.target.value,
+                    )
+                  }
+                  maxLength={100}
+                  autoComplete="off"
+                  disabled={
+                    moderatorBusy
+                  }
+                  placeholder="moderator_01"
+                  className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-background"
+                />
+
+                <span className="mt-1.5 block text-xs text-textLight">
+                  Chỉ chữ cái Latin, số và dấu gạch dưới.
+                </span>
+
+                {moderatorErrors.username && (
+                  <span className="mt-1.5 block text-xs font-semibold text-error">
+                    {moderatorErrors.username}
+                  </span>
+                )}
+              </label>
+            </div>
+
+            {moderatorErrors.form && (
+              <div
+                role="alert"
+                className="mt-4 rounded-xl border border-error/20 bg-error/10 p-3 text-sm font-semibold leading-6 text-error"
+              >
+                {moderatorErrors.form}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={
+                  closeCreateModerator
+                }
+                disabled={
+                  moderatorBusy
+                }
+                className="rounded-xl border border-border px-5 py-3 text-sm font-black text-text transition hover:bg-background disabled:opacity-50"
+              >
+                Hủy
+              </button>
+
+              <button
+                type="submit"
+                disabled={
+                  moderatorBusy
+                }
+                className="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {moderatorBusy && (
+                  <span className="material-symbols-outlined animate-spin text-[19px]">
+                    progress_activity
+                  </span>
+                )}
+
+                {moderatorBusy
+                  ? "Đang tạo..."
+                  : "Tạo tài khoản"}
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
       {pendingAction && (
