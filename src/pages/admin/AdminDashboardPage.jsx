@@ -6,117 +6,80 @@ import {
 import { Link } from "react-router-dom";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 
-const ROLE_OPTIONS = [
+const GROUP_OPTIONS = [
   {
-    value: "",
-    label: "Tất cả vai trò",
+    value: "Day",
+    label: "Theo ngày",
   },
   {
-    value: "Personal",
-    label: "Cá nhân",
+    value: "Week",
+    label: "Theo tuần",
   },
   {
-    value: "Business",
-    label: "Doanh nghiệp",
-  },
-  {
-    value: "Moderator",
-    label: "Kiểm duyệt viên",
-  },
-  {
-    value: "Admin",
-    label: "Quản trị viên",
+    value: "Month",
+    label: "Theo tháng",
   },
 ];
 
-const ROLE_META = [
+const METRIC_META = [
   {
-    value: "Personal",
-    label: "Cá nhân",
-    className: "text-[#2f6f70]",
+    key: "payments",
+    label: "Giao dịch",
+    description: "Bản ghi thanh toán",
+    icon: "payments",
   },
   {
-    value: "Business",
-    label: "Doanh nghiệp",
-    className: "text-[#72a6a1]",
-  },
-  {
-    value: "Moderator",
-    label: "Kiểm duyệt viên",
-    className: "text-[#d1a34b]",
-  },
-  {
-    value: "Admin",
-    label: "Quản trị viên",
-    className: "text-[#7e8790]",
-  },
-];
-
-const STATUS_META = [
-  {
-    value: "Pending",
-    label: "Chờ kích hoạt",
-    className: "bg-[#d1a34b]",
-  },
-  {
-    value: "Active",
-    label: "Đang hoạt động",
-    className: "bg-[#4f8b78]",
-  },
-  {
-    value: "Suspended",
-    label: "Đã khóa",
-    className: "bg-[#b95c5c]",
-  },
-  {
-    value: "Deleted",
-    label: "Đã xóa",
-    className: "bg-[#8b929a]",
-  },
-];
-
-const PERIOD_OPTIONS = [
-  7,
-  14,
-  30,
-  60,
-  90,
-];
-
-const FORECAST_OPTIONS = [
-  7,
-  14,
-  30,
-];
-
-const QUICK_ACTIONS = [
-  {
-    title: "Quản lý người dùng",
-    description:
-      "Kiểm soát trạng thái và quyền truy cập tài khoản.",
-    path: "/admin/users",
-    icon: "manage_accounts",
-  },
-  {
-    title: "Quản lý bài đăng",
-    description:
-      "Theo dõi nội dung đang có trên thị trường.",
-    path: "/admin/posts",
+    key: "orders",
+    label: "Đơn hàng",
+    description: "Đơn hàng toàn hệ thống",
     icon: "inventory_2",
   },
   {
-    title: "Chính sách hệ thống",
-    description:
-      "Quản lý các quy tắc vận hành nền tảng.",
-    path: "/admin/policies",
-    icon: "policy",
+    key: "appointments",
+    label: "Lịch hẹn",
+    description: "Lịch kiểm định và thu gom",
+    icon: "event",
+  },
+  {
+    key: "disputes",
+    label: "Tranh chấp",
+    description: "Tranh chấp toàn hệ thống",
+    icon: "gavel",
   },
 ];
+
+const DISPUTE_STATUS_META = {
+  pending: {
+    label: "Chờ xử lý",
+    className: "bg-warning",
+  },
+  resolved: {
+    label: "Đã giải quyết",
+    className: "bg-success",
+  },
+  rejected: {
+    label: "Đã từ chối",
+    className: "bg-error",
+  },
+  closed: {
+    label: "Đã đóng",
+    className: "bg-textLight",
+  },
+  underreview: {
+    label: "Đang xem xét",
+    className: "bg-primary",
+  },
+  awaitingreturn: {
+    label: "Đang chờ hoàn trả",
+    className: "bg-primary/60",
+  },
+};
 
 const normalize = (value) =>
   String(value || "")
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 
 const formatNumber = (value) =>
   new Intl.NumberFormat(
@@ -127,28 +90,23 @@ const formatDecimal = (value) =>
   new Intl.NumberFormat(
     "vi-VN",
     {
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 1,
     },
   ).format(Number(value) || 0);
 
-const formatDateShort = (value) => {
-  const date =
-    new Date(value);
-
-  if (
-    !value ||
-    Number.isNaN(date.getTime())
-  ) {
+const formatDate = (value) => {
+  if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat(
-    "vi-VN",
-    {
-      day: "2-digit",
-      month: "2-digit",
-    },
-  ).format(date);
+  const parts =
+    String(value).split("-");
+
+  if (parts.length !== 3) {
+    return "—";
+  }
+
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
 const formatDateTime = (value) => {
@@ -165,20 +123,138 @@ const formatDateTime = (value) => {
   return new Intl.DateTimeFormat(
     "vi-VN",
     {
-      hour: "2-digit",
-      minute: "2-digit",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone:
+        "Asia/Ho_Chi_Minh",
     },
   ).format(date);
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  error?.message ||
-  "Không thể tải dữ liệu tổng quan quản trị.";
+const validateRange = (
+  from,
+  to,
+) => {
+  if (
+    Boolean(from) !==
+    Boolean(to)
+  ) {
+    return "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.";
+  }
+
+  if (!from && !to) {
+    return "";
+  }
+
+  const fromDate =
+    new Date(
+      `${from}T00:00:00Z`,
+    );
+
+  const toDate =
+    new Date(
+      `${to}T00:00:00Z`,
+    );
+
+  if (
+    Number.isNaN(
+      fromDate.getTime(),
+    ) ||
+    Number.isNaN(
+      toDate.getTime(),
+    )
+  ) {
+    return "Khoảng thời gian không hợp lệ.";
+  }
+
+  const days =
+    Math.round(
+      (
+        toDate.getTime() -
+        fromDate.getTime()
+      ) /
+        86400000,
+    );
+
+  if (
+    days < 1 ||
+    days > 366
+  ) {
+    return "Khoảng thời gian phải từ 1 đến 366 ngày.";
+  }
+
+  return "";
+};
+
+const getTrendPresentation = (
+  trend,
+  metricKey,
+) => {
+  const direction =
+    normalize(
+      trend?.direction,
+    );
+
+  const growth =
+    trend?.growthPercent;
+
+  const hasGrowth =
+    growth !== null &&
+    growth !== undefined;
+
+  const growthText =
+    hasGrowth
+      ? `${formatDecimal(
+          Math.abs(
+            Number(growth),
+          ),
+        )}%`
+      : "chưa có tỷ lệ";
+
+  if (
+    direction ===
+    "increasing"
+  ) {
+    return {
+      icon: "trending_up",
+      label:
+        hasGrowth
+          ? `Tăng ${growthText}`
+          : "Đang tăng",
+      className:
+        metricKey ===
+        "disputes"
+          ? "text-error"
+          : "text-primary",
+    };
+  }
+
+  if (
+    direction ===
+    "decreasing"
+  ) {
+    return {
+      icon:
+        "trending_down",
+      label:
+        hasGrowth
+          ? `Giảm ${growthText}`
+          : "Đang giảm",
+      className:
+        metricKey ===
+        "disputes"
+          ? "text-success"
+          : "text-warning",
+    };
+  }
+
+  return {
+    icon: "trending_flat",
+    label: "Ổn định",
+    className:
+      "text-textLight",
+  };
+};
 
 const LoadingBlock = ({
   className = "",
@@ -191,589 +267,25 @@ const LoadingBlock = ({
   />
 );
 
-const StatusBarChart = ({
-  rows,
-  loading,
-}) => {
-  const maxValue =
-    Math.max(
-      1,
-      ...rows.map(
-        (item) => item.count,
-      ),
-    );
-
-  if (loading) {
-    return (
-      <div className="flex h-72 items-end justify-around gap-4 px-4 pb-2">
-        {STATUS_META.map(
-          (item) => (
-            <LoadingBlock
-              key={item.value}
-              className="h-44 w-16 sm:w-20"
-            />
-          ),
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto">
-      <div className="flex h-72 min-w-[500px] items-end justify-around gap-5 border-b border-border px-4 pt-8">
-        {rows.map((item) => {
-          const height =
-            item.count > 0
-              ? Math.max(
-                  8,
-                  (item.count /
-                    maxValue) *
-                    100,
-                )
-              : 2;
-
-          return (
-            <div
-              key={item.value}
-              className="flex h-full min-w-24 flex-1 flex-col items-center justify-end"
-            >
-              <span className="mb-2 text-lg font-black text-text">
-                {formatNumber(
-                  item.count,
-                )}
-              </span>
-
-              <div
-                className={[
-                  "w-full max-w-20 rounded-t-xl transition-all duration-300",
-                  item.className,
-                ].join(" ")}
-                style={{
-                  height:
-                    `${height}%`,
-                }}
-              />
-
-              <span className="mt-3 min-h-10 text-center text-xs font-bold leading-5 text-textLight">
-                {item.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const RoleDonutChart = ({
-  rows,
-  total,
-  loading,
-}) => {
-  if (loading) {
-    return (
-      <div className="grid gap-6 sm:grid-cols-[220px_1fr] sm:items-center">
-        <LoadingBlock className="mx-auto h-48 w-48 rounded-full" />
-
-        <div className="space-y-4">
-          {ROLE_META.map(
-            (item) => (
-              <LoadingBlock
-                key={item.value}
-                className="h-8 w-full"
-              />
-            ),
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  const segments =
-    rows.map(
-      (item, index) => {
-        const percent =
-          total > 0
-            ? (item.count /
-                total) *
-              100
-            : 0;
-
-        const offset =
-          rows
-            .slice(0, index)
-            .reduce(
-              (
-                sum,
-                previousItem,
-              ) =>
-                sum +
-                (
-                  total > 0
-                    ? (
-                        previousItem.count /
-                        total
-                      ) * 100
-                    : 0
-                ),
-              0,
-            );
-
-        return {
-          ...item,
-          percent,
-          offset,
-        };
-      },
-    );
-
-  return (
-    <div className="grid gap-7 sm:grid-cols-[220px_1fr] sm:items-center">
-      <div className="relative mx-auto h-52 w-52">
-        <svg
-          viewBox="0 0 120 120"
-          className="h-full w-full -rotate-90"
-          role="img"
-          aria-label="Biểu đồ cơ cấu vai trò người dùng"
-        >
-          <circle
-            cx="60"
-            cy="60"
-            r="44"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="16"
-            className="text-background"
-          />
-
-          {segments.map(
-            (item) =>
-              item.percent > 0 && (
-                <circle
-                  key={item.value}
-                  cx="60"
-                  cy="60"
-                  r="44"
-                  fill="none"
-                  pathLength="100"
-                  stroke="currentColor"
-                  strokeWidth="16"
-                  strokeDasharray={`${item.percent} ${100 - item.percent}`}
-                  strokeDashoffset={
-                    -item.offset
-                  }
-                  className={
-                    item.className
-                  }
-                >
-                  <title>
-                    {`${item.label}: ${formatNumber(
-                      item.count,
-                    )} (${formatDecimal(
-                      item.percent,
-                    )}%)`}
-                  </title>
-                </circle>
-              ),
-          )}
-        </svg>
-
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-black text-text">
-            {formatNumber(total)}
-          </span>
-
-          <span className="mt-1 text-xs font-bold text-textLight">
-            tài khoản
-          </span>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {rows.map((item) => {
-          const percent =
-            total > 0
-              ? (item.count /
-                  total) *
-                100
-              : 0;
-
-          return (
-            <div
-              key={item.value}
-              className="flex items-center justify-between gap-4 rounded-xl bg-background px-3 py-3"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <span
-                  className={[
-                    "h-3 w-3 shrink-0 rounded-full bg-current",
-                    item.className,
-                  ].join(" ")}
-                />
-
-                <span className="truncate text-sm font-bold text-text">
-                  {item.label}
-                </span>
-              </div>
-
-              <div className="text-right">
-                <p className="text-sm font-black text-text">
-                  {formatNumber(
-                    item.count,
-                  )}
-                </p>
-
-                <p className="text-xs text-textLight">
-                  {formatDecimal(
-                    percent,
-                  )}
-                  %
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-const RegistrationLineChart = ({
-  rows,
-  loading,
-}) => {
-  const chart =
-    useMemo(() => {
-      const width = 1000;
-      const height = 260;
-      const left = 58;
-      const right = 24;
-      const top = 20;
-      const bottom = 42;
-
-      const usableWidth =
-        width - left - right;
-
-      const usableHeight =
-        height - top - bottom;
-
-      const maxValue =
-        Math.max(
-          1,
-          ...rows.map(
-            (item) =>
-              Number(
-                item.count,
-              ) || 0,
-          ),
-        );
-
-      const points =
-        rows.map(
-          (item, index) => {
-            const count =
-              Number(
-                item.count,
-              ) || 0;
-
-            const x =
-              rows.length <= 1
-                ? left +
-                  usableWidth / 2
-                : left +
-                  (index /
-                    (rows.length -
-                      1)) *
-                    usableWidth;
-
-            const y =
-              top +
-              usableHeight -
-              (count /
-                maxValue) *
-                usableHeight;
-
-            return {
-              ...item,
-              count,
-              x,
-              y,
-            };
-          },
-        );
-
-      const tickIndexes =
-        rows.length === 0
-          ? []
-          : Array.from(
-              new Set([
-                0,
-                Math.round(
-                  (rows.length -
-                    1) *
-                    0.25,
-                ),
-                Math.round(
-                  (rows.length -
-                    1) *
-                    0.5,
-                ),
-                Math.round(
-                  (rows.length -
-                    1) *
-                    0.75,
-                ),
-                rows.length - 1,
-              ]),
-            );
-
-      return {
-        width,
-        height,
-        left,
-        right,
-        top,
-        bottom,
-        usableHeight,
-        maxValue,
-        points,
-        tickIndexes,
-      };
-    }, [rows]);
-
-  if (loading) {
-    return (
-      <div className="h-[300px] rounded-xl bg-background p-6">
-        <LoadingBlock className="h-full w-full" />
-      </div>
-    );
-  }
-
-  if (rows.length === 0) {
-    return (
-      <div className="flex h-[300px] items-center justify-center rounded-xl bg-background text-sm font-semibold text-textLight">
-        Chưa có dữ liệu đăng ký trong kỳ này.
-      </div>
-    );
-  }
-
-  const polyline =
-    chart.points
-      .map(
-        (point) =>
-          `${point.x},${point.y}`,
-      )
-      .join(" ");
-
-  const currentPeriodStartIndex =
-    Math.floor(
-      rows.length / 2,
-    );
-
-  const currentPeriodStart =
-    chart.points[
-      currentPeriodStartIndex
-    ];
-
-  const previousPeriodEnd =
-    chart.points[
-      Math.max(
-        0,
-        currentPeriodStartIndex - 1,
-      )
-    ];
-
-  const periodBoundaryX =
-    currentPeriodStart &&
-    previousPeriodEnd
-      ? (
-          currentPeriodStart.x +
-          previousPeriodEnd.x
-        ) / 2
-      : null;
-
-  const gridValues = [
-    chart.maxValue,
-    chart.maxValue / 2,
-    0,
-  ];
-
-  return (
-    <div className="overflow-x-auto">
-      <svg
-        viewBox={`0 0 ${chart.width} ${chart.height}`}
-        className="h-[300px] min-w-[720px] w-full"
-        role="img"
-        aria-label="Biểu đồ đường số lượng đăng ký mới theo ngày"
-      >
-        {gridValues.map(
-          (value, index) => {
-            const y =
-              chart.top +
-              (index /
-                (gridValues.length -
-                  1)) *
-                chart.usableHeight;
-
-            return (
-              <g
-                key={`${value}-${index}`}
-              >
-                <line
-                  x1={chart.left}
-                  x2={
-                    chart.width -
-                    chart.right
-                  }
-                  y1={y}
-                  y2={y}
-                  stroke="currentColor"
-                  className="text-border"
-                  strokeDasharray="4 6"
-                />
-
-                <text
-                  x={chart.left - 12}
-                  y={y + 4}
-                  textAnchor="end"
-                  fill="currentColor"
-                  className="text-[11px] text-textLight"
-                >
-                  {formatNumber(
-                    value,
-                  )}
-                </text>
-              </g>
-            );
-          },
-        )}
-
-        {periodBoundaryX !== null && (
-          <>
-            <line
-              x1={periodBoundaryX}
-              x2={periodBoundaryX}
-              y1={chart.top}
-              y2={
-                chart.height -
-                chart.bottom
-              }
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeDasharray="7 7"
-              className="text-warning"
-            />
-
-            <text
-              x={
-                (
-                  chart.left +
-                  periodBoundaryX
-                ) / 2
-              }
-              y={chart.top + 13}
-              textAnchor="middle"
-              fill="currentColor"
-              className="text-[12px] font-bold text-textLight"
-            >
-              Kỳ trước
-            </text>
-
-            <text
-              x={
-                (
-                  periodBoundaryX +
-                  chart.width -
-                  chart.right
-                ) / 2
-              }
-              y={chart.top + 13}
-              textAnchor="middle"
-              fill="currentColor"
-              className="text-[12px] font-bold text-primary"
-            >
-              Kỳ hiện tại
-            </text>
-          </>
-        )}
-
-        <polyline
-          points={polyline}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-primary"
-        />
-
-        {chart.points.map(
-          (point) => (
-            <circle
-              key={point.date}
-              cx={point.x}
-              cy={point.y}
-              r="4.5"
-              fill="white"
-              stroke="currentColor"
-              strokeWidth="3"
-              className="text-primary"
-            >
-              <title>
-                {`${formatDateShort(
-                  point.date,
-                )}: ${formatNumber(
-                  point.count,
-                )} đăng ký`}
-              </title>
-            </circle>
-          ),
-        )}
-
-        {chart.tickIndexes.map(
-          (index) => {
-            const point =
-              chart.points[index];
-
-            if (!point) {
-              return null;
-            }
-
-            return (
-              <text
-                key={`${point.date}-${index}`}
-                x={point.x}
-                y={
-                  chart.height -
-                  10
-                }
-                textAnchor="middle"
-                fill="currentColor"
-                className="text-[11px] text-textLight"
-              >
-                {formatDateShort(
-                  point.date,
-                )}
-              </text>
-            );
-          },
-        )}
-      </svg>
-    </div>
-  );
-};
-
 export default function AdminDashboardPage() {
-  const [role, setRole] =
-    useState("");
+  const [draft, setDraft] =
+    useState({
+      from: "",
+      to: "",
+      groupBy: "Day",
+    });
 
-  const [days, setDays] =
-    useState(30);
+  const [filters, setFilters] =
+    useState({
+      from: "",
+      to: "",
+      groupBy: "Day",
+    });
 
   const [
-    forecastDays,
-    setForecastDays,
-  ] = useState(7);
+    filterError,
+    setFilterError,
+  ] = useState("");
 
   const [
     requestVersion,
@@ -783,13 +295,17 @@ export default function AdminDashboardPage() {
   const [state, setState] =
     useState({
       requestKey: "",
-      overview: null,
-      trend: null,
+      data: null,
       error: "",
     });
 
   const requestKey =
-    `${role}:${days}:${forecastDays}:${requestVersion}`;
+    [
+      filters.from,
+      filters.to,
+      filters.groupBy,
+      requestVersion,
+    ].join(":");
 
   useEffect(() => {
     const controller =
@@ -797,42 +313,30 @@ export default function AdminDashboardPage() {
 
     let active = true;
 
-    Promise.all([
-      adminDashboardApi
-        .getUserOverview({
-          role:
-            role || undefined,
-          signal:
-            controller.signal,
-        }),
+    adminDashboardApi
+      .getOperationOverview({
+        from:
+          filters.from ||
+          undefined,
+        to:
+          filters.to ||
+          undefined,
+        groupBy:
+          filters.groupBy,
+        signal:
+          controller.signal,
+      })
+      .then((data) => {
+        if (!active) {
+          return;
+        }
 
-      adminDashboardApi
-        .getRegistrationTrend({
-          role:
-            role || undefined,
-          days,
-          forecastDays,
-          signal:
-            controller.signal,
-        }),
-    ])
-      .then(
-        ([
-          overview,
-          trend,
-        ]) => {
-          if (!active) {
-            return;
-          }
-
-          setState({
-            requestKey,
-            overview,
-            trend,
-            error: "",
-          });
-        },
-      )
+        setState({
+          requestKey,
+          data,
+          error: "",
+        });
+      })
       .catch((error) => {
         if (
           !active ||
@@ -846,12 +350,9 @@ export default function AdminDashboardPage() {
 
         setState({
           requestKey,
-          overview: null,
-          trend: null,
+          data: null,
           error:
-            getErrorMessage(
-              error,
-            ),
+            "Không thể tải dữ liệu tổng quan vận hành lúc này.",
         });
       });
 
@@ -860,130 +361,124 @@ export default function AdminDashboardPage() {
       controller.abort();
     };
   }, [
-    days,
-    forecastDays,
+    filters.from,
+    filters.groupBy,
+    filters.to,
     requestKey,
-    role,
   ]);
 
   const loading =
     state.requestKey !==
     requestKey;
 
-  const overview =
-    state.overview;
+  const data =
+    state.data;
 
-  const trend =
-    state.trend;
-
-  const statusRows =
-    useMemo(() => {
-      const source =
-        Object.fromEntries(
-          (
-            overview?.byStatus ||
-            []
-          ).map(
-            (item) => [
-              normalize(
-                item.status,
-              ),
-              Number(
-                item.count,
-              ) || 0,
-            ],
-          ),
-        );
-
-      return STATUS_META.map(
-        (item) => ({
-          ...item,
-          count:
-            source[
-              normalize(
-                item.value,
-              )
-            ] || 0,
-        }),
-      );
-    }, [overview]);
-
-  const roleRows =
-    useMemo(() => {
-      const source =
-        Object.fromEntries(
-          (
-            overview?.byRole ||
-            []
-          ).map(
-            (item) => [
-              normalize(
-                item.role,
-              ),
-              Number(
-                item.count,
-              ) || 0,
-            ],
-          ),
-        );
-
-      return ROLE_META.map(
-        (item) => ({
-          ...item,
-          count:
-            source[
-              normalize(
-                item.value,
-              )
-            ] || 0,
-        }),
-      );
-    }, [overview]);
-
-  const totalRoleAccounts =
-    roleRows.reduce(
-      (sum, item) =>
-        sum + item.count,
-      0,
-    );
-
-  const dailyRegistrations =
+  const metrics =
     useMemo(
       () =>
+        METRIC_META.map(
+          (meta) => ({
+            ...meta,
+            metric:
+              data?.[
+                meta.key
+              ] || null,
+          }),
+        ),
+      [data],
+    );
+
+  const disputeRows =
+    useMemo(() => {
+      const rows =
         Array.isArray(
-          trend?.dailyRegistrations,
+          data?.disputeCurrentStatusCounts,
         )
-          ? trend.dailyRegistrations
-          : [],
-      [trend],
-    );
+          ? data.disputeCurrentStatusCounts
+          : [];
 
-  const direction =
-    normalize(
-      trend?.direction,
-    );
+      return rows.map(
+        (item) => {
+          const meta =
+            DISPUTE_STATUS_META[
+              normalize(
+                item.key ||
+                  item.label,
+              )
+            ] || {
+              label:
+                "Trạng thái khác",
+              className:
+                "bg-textLight",
+            };
 
-  const directionMeta =
-    direction === "increasing"
-      ? {
-          label: "Đang tăng",
-          icon: "trending_up",
-          className:
-            "text-success",
-        }
-      : direction === "decreasing"
-        ? {
-            label: "Đang giảm",
-            icon: "trending_down",
+          return {
+            ...item,
+            displayLabel:
+              meta.label,
             className:
-              "text-error",
-          }
-        : {
-            label: "Ổn định",
-            icon: "trending_flat",
-            className:
-              "text-primary",
+              meta.className,
+            count:
+              Number(
+                item.count,
+              ) || 0,
+            percentage:
+              Number(
+                item.percentage,
+              ) || 0,
           };
+        },
+      );
+    }, [data]);
+
+  const submitFilters = (
+    event,
+  ) => {
+    event.preventDefault();
+
+    const message =
+      validateRange(
+        draft.from,
+        draft.to,
+      );
+
+    if (message) {
+      setFilterError(message);
+      return;
+    }
+
+    setFilterError("");
+
+    setFilters({
+      ...draft,
+    });
+
+    setRequestVersion(
+      (current) =>
+        current + 1,
+    );
+  };
+
+  const resetFilters = () => {
+    const next = {
+      from: "",
+      to: "",
+      groupBy: "Day",
+    };
+
+    setDraft(next);
+    setFilters(next);
+    setFilterError("");
+
+    setRequestVersion(
+      (current) =>
+        current + 1,
+    );
+  };
+
+  const period =
+    data?.period;
 
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
@@ -997,137 +492,214 @@ export default function AdminDashboardPage() {
             </p>
 
             <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-              Tổng quan người dùng
+              Tổng quan vận hành
             </h2>
 
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
-              Theo dõi cơ cấu tài khoản,
-              trạng thái và xu hướng đăng ký
-              bằng số liệu tổng hợp trực tiếp từ máy chủ.
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
+              Theo dõi giao dịch, đơn hàng, lịch hẹn
+              và tranh chấp bằng số liệu tổng hợp
+              hiện tại của hệ thống.
             </p>
 
             {!loading &&
-              overview?.generatedAtUtc && (
+              data?.generatedAtUtc && (
                 <p className="mt-3 text-xs font-semibold text-white/60">
                   Cập nhật lúc{" "}
                   {formatDateTime(
-                    overview.generatedAtUtc,
+                    data.generatedAtUtc,
                   )}
                 </p>
               )}
           </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              setRequestVersion(
-                (current) =>
-                  current + 1,
-              )
-            }
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              refresh
-            </span>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/admin/dashboard/users"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                group
+              </span>
+              Tổng quan người dùng
+            </Link>
 
-            Làm mới
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                setRequestVersion(
+                  (current) =>
+                    current + 1,
+                )
+              }
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                refresh
+              </span>
+              Làm mới
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)] sm:flex-row sm:items-end">
-        <label className="flex-1">
-          <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Vai trò
-          </span>
+      <form
+        onSubmit={submitFilters}
+        className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]"
+      >
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+          <label>
+            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+              Từ ngày
+            </span>
 
-          <select
-            value={role}
-            onChange={(event) =>
-              setRole(
-                event.target.value,
-              )
-            }
-            className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {ROLE_OPTIONS.map(
-              (option) => (
-                <option
-                  key={
-                    option.value
-                  }
-                  value={
-                    option.value
-                  }
-                >
-                  {option.label}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
+            <input
+              type="date"
+              value={draft.from}
+              onChange={(event) =>
+                setDraft(
+                  (current) => ({
+                    ...current,
+                    from:
+                      event.target
+                        .value,
+                  }),
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
+            />
+          </label>
 
-        <label className="flex-1">
-          <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Kỳ thống kê
-          </span>
+          <label>
+            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+              Đến ngày
+            </span>
 
-          <select
-            value={days}
-            onChange={(event) =>
-              setDays(
-                Number(
-                  event.target.value,
+            <input
+              type="date"
+              value={draft.to}
+              onChange={(event) =>
+                setDraft(
+                  (current) => ({
+                    ...current,
+                    to:
+                      event.target
+                        .value,
+                  }),
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
+            />
+
+            <span className="mt-1 block text-[11px] text-textLight">
+              Ngày kết thúc không được tính vào kỳ.
+            </span>
+          </label>
+
+          <label>
+            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+              Nhóm dữ liệu
+            </span>
+
+            <select
+              value={
+                draft.groupBy
+              }
+              onChange={(event) =>
+                setDraft(
+                  (current) => ({
+                    ...current,
+                    groupBy:
+                      event.target
+                        .value,
+                  }),
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
+            >
+              {GROUP_OPTIONS.map(
+                (option) => (
+                  <option
+                    key={
+                      option.value
+                    }
+                    value={
+                      option.value
+                    }
+                  >
+                    {option.label}
+                  </option>
                 ),
-              )
-            }
-            className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {PERIOD_OPTIONS.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value} ngày
-                </option>
-              ),
-            )}
-          </select>
-        </label>
+              )}
+            </select>
+          </label>
 
-        <label className="flex-1">
-          <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Ước tính tiếp theo
-          </span>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:opacity-90"
+            >
+              Áp dụng
+            </button>
 
-          <select
-            value={
-              forecastDays
-            }
-            onChange={(event) =>
-              setForecastDays(
-                Number(
-                  event.target.value,
-                ),
-              )
-            }
-            className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {FORECAST_OPTIONS.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value} ngày
-                </option>
-              ),
-            )}
-          </select>
-        </label>
-      </div>
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-black text-text transition hover:bg-background"
+            >
+              Mặc định
+            </button>
+          </div>
+        </div>
+
+        {filterError && (
+          <p className="mt-3 text-sm font-semibold text-error">
+            {filterError}
+          </p>
+        )}
+      </form>
+
+      {!loading &&
+        period && (
+          <div className="flex flex-col gap-2 rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Kỳ hiện tại:{" "}
+              <strong className="text-text">
+                {formatDate(
+                  period.from,
+                )}
+              </strong>
+              {" → trước "}
+              <strong className="text-text">
+                {formatDate(
+                  period.toExclusive,
+                )}
+              </strong>
+            </span>
+
+            <span>
+              Kỳ trước bắt đầu{" "}
+              <strong className="text-text">
+                {formatDate(
+                  period.previousFrom,
+                )}
+              </strong>
+              {" · UTC+7"}
+            </span>
+          </div>
+        )}
+
+      {!loading &&
+        period?.isPartialPeriod && (
+          <div className="flex items-start gap-3 rounded-xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-text">
+            <span className="material-symbols-outlined text-warning">
+              info
+            </span>
+
+            <span>
+              Dữ liệu kỳ hiện tại chưa hoàn tất.
+            </span>
+          </div>
+        )}
 
       {state.error &&
         !loading && (
@@ -1155,280 +727,198 @@ export default function AdminDashboardPage() {
         )}
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Tổng tài khoản
-          </p>
+        {metrics.map(
+          ({
+            key,
+            label,
+            description,
+            icon,
+            metric,
+          }) => {
+            const trend =
+              getTrendPresentation(
+                metric?.trend,
+                key,
+              );
 
-          <p className="mt-3 text-3xl font-black text-text">
-            {loading ? (
-              <LoadingBlock className="h-9 w-20" />
-            ) : (
-              formatNumber(
-                overview?.totalAccounts,
-              )
-            )}
-          </p>
-        </article>
+            return (
+              <article
+                key={key}
+                className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+                      {label}
+                    </p>
 
-        <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Đã xác thực email
-          </p>
+                    <p className="mt-1 text-xs text-textLight">
+                      {description}
+                    </p>
+                  </div>
 
-          <p className="mt-3 text-3xl font-black text-success">
-            {loading ? (
-              <LoadingBlock className="h-9 w-20" />
-            ) : (
-              formatNumber(
-                overview?.emailVerifiedAccounts,
-              )
-            )}
-          </p>
-        </article>
+                  <span className="material-symbols-outlined rounded-xl bg-background p-2 text-primary">
+                    {icon}
+                  </span>
+                </div>
 
-        <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Đăng ký kỳ hiện tại
-          </p>
+                <p className="mt-5 text-3xl font-black text-text">
+                  {loading ? (
+                    <LoadingBlock className="h-9 w-20" />
+                  ) : (
+                    formatNumber(
+                      metric?.totalCount,
+                    )
+                  )}
+                </p>
 
-          <p className="mt-3 text-3xl font-black text-primary">
-            {loading ? (
-              <LoadingBlock className="h-9 w-20" />
-            ) : (
-              formatNumber(
-                trend?.currentPeriodRegistrations,
-              )
-            )}
-          </p>
-        </article>
+                <div className="mt-4 border-t border-border pt-4">
+                  {loading ? (
+                    <LoadingBlock className="h-5 w-32" />
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={[
+                          "material-symbols-outlined text-[19px]",
+                          trend.className,
+                        ].join(" ")}
+                      >
+                        {trend.icon}
+                      </span>
 
-        <article className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 shadow-[0_10px_28px_rgba(24,63,65,0.04)]">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">
-            Ước tính đăng ký
-          </p>
+                      <span
+                        className={[
+                          "text-sm font-black",
+                          trend.className,
+                        ].join(" ")}
+                      >
+                        {trend.label}
+                      </span>
+                    </div>
+                  )}
 
-          <p className="mt-3 text-3xl font-black text-text">
-            {loading ? (
-              <LoadingBlock className="h-9 w-20" />
-            ) : (
-              formatDecimal(
-                trend?.forecast
-                  ?.estimatedRegistrations,
-              )
-            )}
-          </p>
-
-          <p className="mt-2 text-xs leading-5 text-textLight">
-            Trong{" "}
-            {trend?.forecast
-              ?.days ||
-              forecastDays}{" "}
-            ngày tiếp theo.
-          </p>
-        </article>
-      </div>
-
-      <div className="rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
-        <strong className="text-text">
-          Lưu ý:
-        </strong>{" "}
-        “Đang hoạt động” là trạng thái của tài khoản,
-        không có nghĩa người dùng đang trực tuyến.
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
-          <div className="border-b border-border pb-4">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-              Biểu đồ trạng thái
-            </p>
-
-            <h3 className="mt-1 text-xl font-black text-text">
-              Tài khoản theo trạng thái
-            </h3>
-
-            <p className="mt-1 text-xs leading-5 text-textLight">
-              So sánh số lượng tài khoản ở từng trạng thái hệ thống.
-            </p>
-          </div>
-
-          <div className="mt-5">
-            <StatusBarChart
-              rows={statusRows}
-              loading={loading}
-            />
-          </div>
-        </section>
-
-        <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
-          <div className="border-b border-border pb-4">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-              Biểu đồ cơ cấu
-            </p>
-
-            <h3 className="mt-1 text-xl font-black text-text">
-              Tài khoản theo vai trò
-            </h3>
-
-            <p className="mt-1 text-xs leading-5 text-textLight">
-              Tỷ trọng Cá nhân, Doanh nghiệp,
-              Kiểm duyệt viên và Quản trị viên.
-            </p>
-          </div>
-
-          <div className="mt-6">
-            <RoleDonutChart
-              rows={roleRows}
-              total={
-                totalRoleAccounts
-              }
-              loading={loading}
-            />
-          </div>
-        </section>
+                  {!loading && (
+                    <p className="mt-2 text-xs leading-5 text-textLight">
+                      Kỳ này{" "}
+                      <strong className="text-text">
+                        {formatNumber(
+                          metric?.trend
+                            ?.currentPeriodCount,
+                        )}
+                      </strong>
+                      {" · kỳ trước "}
+                      <strong className="text-text">
+                        {formatNumber(
+                          metric?.trend
+                            ?.previousPeriodCount,
+                        )}
+                      </strong>
+                    </p>
+                  )}
+                </div>
+              </article>
+            );
+          },
+        )}
       </div>
 
       <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
-        <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-              Biểu đồ xu hướng
-            </p>
+        <div className="border-b border-border pb-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            Tranh chấp
+          </p>
 
-            <h3 className="mt-1 text-xl font-black text-text">
-              Đăng ký mới theo ngày
-            </h3>
+          <h3 className="mt-1 text-xl font-black text-text">
+            Trạng thái tranh chấp hiện tại
+          </h3>
 
-            <p className="mt-1 text-xs leading-5 text-textLight">
-              Hiển thị hai kỳ liên tiếp cùng độ dài để so sánh:
-              kỳ trước và kỳ hiện tại.
-            </p>
-          </div>
-
-          {!loading &&
-            trend && (
-              <div
-                className={[
-                  "inline-flex items-center gap-1 text-sm font-black",
-                  directionMeta.className,
-                ].join(" ")}
-              >
-                <span className="material-symbols-outlined text-[20px]">
-                  {directionMeta.icon}
-                </span>
-
-                {directionMeta.label}
-              </div>
-            )}
+          <p className="mt-1 text-xs leading-5 text-textLight">
+            Phân bố trạng thái hiện tại trên toàn hệ thống,
+            không phải số tranh chấp mới trong kỳ.
+          </p>
         </div>
 
-        <div className="mt-5">
-          <RegistrationLineChart
-            rows={
-              dailyRegistrations
-            }
-            loading={loading}
-          />
-        </div>
-
-        {!loading &&
-          trend && (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl bg-background p-3">
-                <p className="text-xs font-bold text-textLight">
-                  Kỳ trước
-                </p>
-
-                <p className="mt-1 text-xl font-black text-text">
-                  {formatNumber(
-                    trend.previousPeriodRegistrations,
-                  )}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-background p-3">
-                <p className="text-xs font-bold text-textLight">
-                  Kỳ hiện tại
-                </p>
-
-                <p className="mt-1 text-xl font-black text-text">
-                  {formatNumber(
-                    trend.currentPeriodRegistrations,
-                  )}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-background p-3">
-                <p className="text-xs font-bold text-textLight">
-                  Thay đổi
-                </p>
-
-                <p className="mt-1 text-xl font-black text-text">
-                  {Number(
-                    trend.registrationChange,
-                  ) > 0
-                    ? "+"
-                    : ""}
-                  {formatNumber(
-                    trend.registrationChange,
-                  )}
-                </p>
-              </div>
-
-              <div className="rounded-xl bg-background p-3">
-                <p className="text-xs font-bold text-textLight">
-                  Trung bình/ngày
-                </p>
-
-                <p className="mt-1 text-xl font-black text-text">
-                  {formatDecimal(
-                    trend.averageDailyRegistrations,
-                  )}
-                </p>
-              </div>
+        <div className="mt-6 space-y-4">
+          {loading ? (
+            <>
+              <LoadingBlock className="h-12 w-full" />
+              <LoadingBlock className="h-12 w-full" />
+              <LoadingBlock className="h-12 w-full" />
+            </>
+          ) : disputeRows.length ===
+            0 ? (
+            <div className="rounded-xl bg-background px-4 py-8 text-center text-sm font-semibold text-textLight">
+              Chưa có dữ liệu trạng thái tranh chấp.
             </div>
-          )}
+          ) : (
+            disputeRows.map(
+              (item) => {
+                const width =
+                  item.percentage > 0
+                    ? Math.max(
+                        2,
+                        Math.min(
+                          100,
+                          item.percentage,
+                        ),
+                      )
+                    : 0;
 
-        <div className="mt-4 rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
-          Số đăng ký tương lai chỉ là{" "}
-          <strong className="text-text">
-            ước tính
-          </strong>{" "}
-          từ trung bình đăng ký của kỳ gần nhất,
-          không phải mức tăng trưởng được cam kết.
+                return (
+                  <div
+                    key={
+                      item.key ||
+                      item.displayLabel
+                    }
+                  >
+                    <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                      <span className="font-bold text-text">
+                        {
+                          item.displayLabel
+                        }
+                      </span>
+
+                      <span className="font-black text-text">
+                        {formatNumber(
+                          item.count,
+                        )}
+                        {" · "}
+                        {formatDecimal(
+                          item.percentage,
+                        )}
+                        %
+                      </span>
+                    </div>
+
+                    <div className="h-3 overflow-hidden rounded-full bg-background">
+                      <div
+                        className={[
+                          "h-full rounded-full transition-all duration-300",
+                          item.className,
+                        ].join(" ")}
+                        style={{
+                          width:
+                            `${width}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              },
+            )
+          )}
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-white p-6 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-          Truy cập nhanh
-        </p>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {QUICK_ACTIONS.map(
-            (item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="group rounded-xl border border-border p-4 transition hover:border-primary/30 hover:bg-background"
-              >
-                <span className="material-symbols-outlined flex h-10 w-10 items-center justify-center rounded-xl bg-background text-primary">
-                  {item.icon}
-                </span>
-
-                <p className="mt-3 font-black text-text">
-                  {item.title}
-                </p>
-
-                <p className="mt-1 text-xs leading-5 text-textLight">
-                  {item.description}
-                </p>
-              </Link>
-            ),
-          )}
-        </div>
-      </section>
+      <div className="rounded-xl border border-border bg-white px-4 py-3 text-xs leading-5 text-textLight">
+        <strong className="text-text">
+          Quy ước:
+        </strong>{" "}
+        “Giao dịch” là số bản ghi thanh toán.
+        Xu hướng tăng hoặc giảm được hiển thị theo ngữ cảnh;
+        tăng số đơn hoặc lịch hẹn không mặc định được coi là
+        tốt, và tăng tranh chấp không được tô như tín hiệu tích cực.
+      </div>
     </section>
   );
 }
