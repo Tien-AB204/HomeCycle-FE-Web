@@ -15,6 +15,11 @@ const ADMIN_NAV_GROUPS = [
         icon: "payments",
       },
       {
+        label: "Tài chính",
+        path: "/admin/dashboard/finance",
+        icon: "account_balance",
+      },
+      {
         label: "Đơn hàng",
         path: "/admin/dashboard/orders",
         icon: "inventory_2",

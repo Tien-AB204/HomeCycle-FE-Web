@@ -29,6 +29,7 @@ import RoleRoute from "./RoleRoute";
 // Admin Pages
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
 import AdminSystemWalletPage from "../pages/admin/AdminSystemWalletPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import BrandPage from "../pages/admin/BrandPage";
@@ -195,6 +196,11 @@ const AppRouter = () => {
           <Route index element={<AdminDashboardPage />} />
 
           <Route path="dashboard" element={<AdminDashboardPage />} />
+
+          <Route
+            path="dashboard/finance"
+            element={<AdminFinanceDashboardPage />}
+          />
 
           <Route
             path="dashboard/users"

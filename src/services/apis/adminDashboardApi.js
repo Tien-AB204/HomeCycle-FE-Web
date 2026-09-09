@@ -243,6 +243,113 @@ const adminDashboardApi = {
         skipGlobalErrorPage: true,
       },
     ),
+
+  getFinanceOverview: async ({
+    from,
+    to,
+    groupBy = "Day",
+    signal,
+  } = {}) =>
+    axiosClient.get(
+      "/admin/dashboard/finance/overview",
+      {
+        params: cleanParams({
+          from,
+          to,
+          groupBy,
+        }),
+        signal,
+        skipGlobalErrorPage: true,
+      },
+    ),
+
+  getFinanceCashFlow: async ({
+    from,
+    to,
+    groupBy = "Day",
+    signal,
+  } = {}) =>
+    axiosClient.get(
+      "/admin/dashboard/finance/cash-flow",
+      {
+        params: cleanParams({
+          from,
+          to,
+          groupBy,
+        }),
+        signal,
+        skipGlobalErrorPage: true,
+      },
+    ),
+
+  getFinancePaymentStatus: async ({
+    from,
+    to,
+    groupBy = "Day",
+    signal,
+  } = {}) =>
+    axiosClient.get(
+      "/admin/dashboard/finance/payment-status",
+      {
+        params: cleanParams({
+          from,
+          to,
+          groupBy,
+        }),
+        signal,
+        skipGlobalErrorPage: true,
+      },
+    ),
+
+  getFinanceHealth: async ({
+    from,
+    to,
+    groupBy = "Day",
+    signal,
+  } = {}) =>
+    axiosClient.get(
+      "/admin/dashboard/finance/health",
+      {
+        params: cleanParams({
+          from,
+          to,
+          groupBy,
+        }),
+        signal,
+        skipGlobalErrorPage: true,
+      },
+    ),
+
+  getFinanceTransactions: async ({
+    from,
+    to,
+    groupBy = "Day",
+    pageNumber = 1,
+    pageSize = 20,
+    transactionType,
+    status,
+    referenceType,
+    flowScope,
+    signal,
+  } = {}) =>
+    axiosClient.get(
+      "/admin/dashboard/finance/transactions",
+      {
+        params: cleanParams({
+          from,
+          to,
+          groupBy,
+          pageNumber,
+          pageSize,
+          transactionType,
+          status,
+          referenceType,
+          flowScope,
+        }),
+        signal,
+        skipGlobalErrorPage: true,
+      },
+    ),
 };
 
 export default adminDashboardApi;
