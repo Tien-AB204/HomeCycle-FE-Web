@@ -4,6 +4,8 @@ export const PLATFORM_POLICY_TYPES = Object.freeze({
   DISPUTE: "dispute",
   APPOINTMENT: "appointment",
   FILE_UPLOAD: "file-upload",
+  PAYMENT: "payment",
+  ORDER: "order",
 });
 
 const SUPPORTED_POLICY_TYPES = new Set(
