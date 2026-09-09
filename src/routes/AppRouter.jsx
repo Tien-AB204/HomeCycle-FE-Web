@@ -29,6 +29,7 @@ import RoleRoute from "./RoleRoute";
 // Admin Pages
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import AdminSystemWalletPage from "../pages/admin/AdminSystemWalletPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
@@ -263,6 +264,11 @@ const AppRouter = () => {
           <Route path="users" element={<UserManagementPage />} />
 
           <Route path="posts" element={<PostManagementPage />} />
+
+          <Route
+            path="system-wallet"
+            element={<AdminSystemWalletPage />}
+          />
 
           <Route path="policies" element={<PlatformPolicyPage />} />
         </Route>

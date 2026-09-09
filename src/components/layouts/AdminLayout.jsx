@@ -90,6 +90,11 @@ const ADMIN_NAV_GROUPS = [
         icon: "inventory_2",
       },
       {
+        label: "Ví hệ thống",
+        path: "/admin/system-wallet",
+        icon: "account_balance_wallet",
+      },
+      {
         label: "Chính sách hệ thống",
         path: "/admin/policies",
         icon: "policy",
