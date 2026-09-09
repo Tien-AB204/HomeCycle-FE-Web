@@ -314,6 +314,25 @@ const labelFor = (
   );
 };
 
+const BUSINESS_DEMAND_LABELS = {
+  cosmeticdamage: "Hư hỏng ngoại quan",
+  minordamage: "Hư hỏng nhẹ",
+  none: "Không hư hỏng",
+  moderatedamage: "Hư hỏng vừa",
+  severedamage: "Hư hỏng nặng",
+  totalloss: "Hư hỏng hoàn toàn",
+  fullyfunctional: "Hoạt động đầy đủ",
+  partiallyfunctional: "Hoạt động một phần",
+  nonfunctional: "Không hoạt động",
+  bulklot: "Thu mua theo lô",
+  retail: "Thu mua lẻ",
+};
+
+const demandLabelFor = (value) =>
+  BUSINESS_DEMAND_LABELS[
+    normalize(value)
+  ] ||
+  String(value || "Chưa xác định");
 const formatNumber = (value) =>
   new Intl.NumberFormat(
     "vi-VN",
@@ -342,6 +361,12 @@ const formatPercent = (value) =>
   value === undefined
     ? "—"
     : `${formatDecimal(value)}%`;
+
+const formatHours = (value) =>
+  value === null ||
+  value === undefined
+    ? "—"
+    : `${formatDecimal(value)} giờ`;
 
 const formatDate = (value) => {
   if (!value) {
@@ -590,6 +615,191 @@ const SeriesTable = ({
   </section>
 );
 
+const MultiSeriesTable = ({
+  title,
+  rows,
+  columns,
+}) => (
+  <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+    <h3 className="text-lg font-black text-text">
+      {title}
+    </h3>
+
+    <div className="mt-4 overflow-x-auto">
+      <table className="min-w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-border text-xs uppercase tracking-[0.1em] text-textLight">
+            <th className="px-3 py-3">
+              Từ ngày
+            </th>
+
+            <th className="px-3 py-3">
+              Đến trước
+            </th>
+
+            {columns.map(
+              (column) => (
+                <th
+                  key={column.key}
+                  className="px-3 py-3 text-right"
+                >
+                  {column.label}
+                </th>
+              ),
+            )}
+          </tr>
+        </thead>
+
+        <tbody>
+          {!Array.isArray(rows) ||
+          rows.length === 0 ? (
+            <tr>
+              <td
+                colSpan={
+                  columns.length + 2
+                }
+                className="px-3 py-8 text-center text-textLight"
+              >
+                Chưa có dữ liệu.
+              </td>
+            </tr>
+          ) : (
+            rows.map(
+              (item, index) => (
+                <tr
+                  key={`${item.from}-${index}`}
+                  className="border-b border-border/70 last:border-0"
+                >
+                  <td className="px-3 py-3 font-semibold text-text">
+                    {formatDate(
+                      item.from,
+                    )}
+                  </td>
+
+                  <td className="px-3 py-3 text-textLight">
+                    {formatDate(
+                      item.toExclusive,
+                    )}
+                  </td>
+
+                  {columns.map(
+                    (column) => (
+                      <td
+                        key={
+                          column.key
+                        }
+                        className="px-3 py-3 text-right font-black text-text"
+                      >
+                        {formatNumber(
+                          item?.[
+                            column.key
+                          ],
+                        )}
+                      </td>
+                    ),
+                  )}
+                </tr>
+              ),
+            )
+          )}
+        </tbody>
+      </table>
+    </div>
+  </section>
+);
+
+const PaymentMethodTable = ({
+  rows,
+}) => (
+  <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+    <h3 className="text-lg font-black text-text">
+      Hiệu quả phương thức thanh toán
+    </h3>
+
+    <div className="mt-4 overflow-x-auto">
+      <table className="min-w-full text-left text-sm">
+        <thead>
+          <tr className="border-b border-border text-xs uppercase tracking-[0.1em] text-textLight">
+            <th className="px-3 py-3">
+              Phương thức
+            </th>
+            <th className="px-3 py-3 text-right">
+              Tổng
+            </th>
+            <th className="px-3 py-3 text-right">
+              Thành công
+            </th>
+            <th className="px-3 py-3 text-right">
+              Thất bại
+            </th>
+            <th className="px-3 py-3 text-right">
+              Tỷ lệ thành công
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {!Array.isArray(rows) ||
+          rows.length === 0 ? (
+            <tr>
+              <td
+                colSpan={5}
+                className="px-3 py-8 text-center text-textLight"
+              >
+                Chưa có dữ liệu.
+              </td>
+            </tr>
+          ) : (
+            rows.map(
+              (item, index) => (
+                <tr
+                  key={`${item.method}-${index}`}
+                  className="border-b border-border/70 last:border-0"
+                >
+                  <td className="px-3 py-3 font-bold text-text">
+                    {labelFor(
+                      item.method,
+                      "payments",
+                    )}
+                  </td>
+
+                  <td className="px-3 py-3 text-right">
+                    {formatNumber(
+                      item.totalCount,
+                    )}
+                  </td>
+
+                  <td className="px-3 py-3 text-right font-black text-success">
+                    {formatNumber(
+                      item.paidCount,
+                    )}
+                  </td>
+
+                  <td className="px-3 py-3 text-right font-black text-error">
+                    {formatNumber(
+                      item.failedCount,
+                    )}
+                  </td>
+
+                  <td className="px-3 py-3 text-right font-black text-text">
+                    {item.successRate ===
+                      null ||
+                    item.successRate ===
+                      undefined
+                      ? "—"
+                      : `${formatDecimal(
+                          item.successRate,
+                        )}%`}
+                  </td>
+                </tr>
+              ),
+            )
+          )}
+        </tbody>
+      </table>
+    </div>
+  </section>
+);
 const TradeTable = ({
   title,
   rows,
@@ -715,8 +925,10 @@ const DemandGroup = ({
               className="flex items-start justify-between gap-4 rounded-xl bg-background px-3 py-3"
             >
               <span className="text-sm font-bold text-text">
-                {item.label ||
-                  item.key}
+                {demandLabelFor(
+                  item.label ||
+                    item.key,
+                )}
               </span>
 
               <span className="shrink-0 text-right text-sm font-black text-text">
@@ -1422,84 +1634,186 @@ export default function AdminDashboardModulePage({
 
   const renderOperation =
     () => {
-      const trend =
-        data?.createdTrend;
-
-      const extraCards = [];
-
       if (
         dashboard ===
         "payments"
       ) {
-        extraCards.push({
-          label:
-            "Đã thanh toán trong kỳ",
-          value:
-            formatNumber(
-              data
-                ?.paidInPeriodCount,
-            ),
-        });
+        return (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiCard
+                label="Tổng thanh toán"
+                value={formatNumber(
+                  data?.totalPayments,
+                )}
+                loading={loading}
+              />
+
+              <KpiCard
+                label="Chờ thanh toán"
+                value={formatNumber(
+                  data?.pendingCount,
+                )}
+                loading={loading}
+                valueClassName="text-warning"
+              />
+
+              <KpiCard
+                label="Đã thanh toán trong kỳ"
+                value={formatNumber(
+                  data?.paidInPeriodCount,
+                )}
+                loading={loading}
+                valueClassName="text-success"
+              />
+
+              <KpiCard
+                label="Chờ lâu nhất"
+                value={formatHours(
+                  data?.oldestPendingAgeHours,
+                )}
+                hint={`Trung bình ${formatHours(
+                  data?.averagePendingAgeHours,
+                )}`}
+                loading={loading}
+                valueClassName="text-error"
+              />
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-2">
+              <DistributionPanel
+                title="Trạng thái hiện tại"
+                description="Phân bố trạng thái hiện tại của payment sau khi áp dụng bộ lọc."
+                rows={
+                  data?.currentStatusDistribution
+                }
+                dashboard="payments"
+              />
+
+              <DistributionPanel
+                title="Tuổi payment đang chờ"
+                description="Phân bố payment Pending theo thời gian kể từ lúc tạo."
+                rows={
+                  data?.pendingAgingDistribution
+                }
+                dashboard="payments"
+              />
+            </div>
+
+            <PaymentMethodTable
+              rows={
+                data?.paymentMethodPerformance
+              }
+            />
+
+            <SeriesTable
+              title="Thanh toán thành công theo kỳ"
+              rows={data?.paidSeries}
+            />
+          </>
+        );
       }
 
       if (
         dashboard ===
         "orders"
       ) {
-        extraCards.push(
-          {
-            label:
-              "Hoàn tất trong kỳ",
-            value:
-              formatNumber(
-                data
-                  ?.completedInPeriodCount,
-              ),
-          },
-          {
-            label:
-              "Hủy trong kỳ",
-            value:
-              formatNumber(
-                data
-                  ?.cancelledInPeriodCount,
-              ),
-          },
-          {
-            label:
-              "Hoàn trả trong kỳ",
-            value:
-              formatNumber(
-                data
-                  ?.returnedInPeriodCount,
-              ),
-          },
-        );
-      }
+        return (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <KpiCard
+                label="Tổng đơn"
+                value={formatNumber(
+                  data?.totalOrders,
+                )}
+                loading={loading}
+              />
 
-      if (
-        dashboard ===
-        "appointments"
-      ) {
-        extraCards.push(
-          {
-            label:
-              "Đề xuất đổi lịch",
-            value:
-              formatNumber(
-                data
-                  ?.rescheduleProposalsCreatedInPeriodCount,
-              ),
-          },
-          {
-            label:
-              "Ngày hẹn trong kỳ",
-            value:
-              formatNumber(
-                data
-                  ?.scheduledDateInPeriodCount,
-              ),
-          },
+              <KpiCard
+                label="Đơn đang hoạt động"
+                value={formatNumber(
+                  data?.activeOrderCount,
+                )}
+                loading={loading}
+                valueClassName="text-primary"
+              />
+
+              <KpiCard
+                label="Hoàn tất trong kỳ"
+                value={formatNumber(
+                  data?.completedInPeriodCount,
+                )}
+                loading={loading}
+                valueClassName="text-success"
+              />
+
+              <KpiCard
+                label="Đã hủy trong kỳ"
+                value={formatNumber(
+                  data?.cancelledInPeriodCount,
+                )}
+                loading={loading}
+                valueClassName="text-warning"
+              />
+
+              <KpiCard
+                label="Hoàn trả trong kỳ"
+                value={formatNumber(
+                  data?.returnedInPeriodCount,
+                )}
+                loading={loading}
+              />
+
+              <KpiCard
+                label="Đơn active lâu nhất"
+                value={formatHours(
+                  data?.oldestActiveOrderAgeHours,
+                )}
+                hint={`Tuổi trung bình ${formatHours(
+                  data?.averageActiveOrderAgeHours,
+                )}; tính từ lúc tạo đơn.`}
+                loading={loading}
+                valueClassName="text-error"
+              />
+            </div>
+
+            <div className="grid gap-6 xl:grid-cols-2">
+              <DistributionPanel
+                title="Trạng thái hiện tại"
+                rows={
+                  data?.currentStatusDistribution
+                }
+                dashboard="orders"
+              />
+
+              <DistributionPanel
+                title="Tuổi đơn đang hoạt động"
+                rows={
+                  data?.activeOrderAgingDistribution
+                }
+                dashboard="orders"
+              />
+            </div>
+
+            <MultiSeriesTable
+              title="Kết quả đơn hàng theo kỳ"
+              rows={data?.outcomeSeries}
+              columns={[
+                {
+                  key: "completedCount",
+                  label: "Hoàn tất",
+                },
+                {
+                  key: "cancelledCount",
+                  label: "Hủy",
+                },
+                {
+                  key: "returnedCount",
+                  label: "Hoàn trả",
+                },
+              ]}
+            />
+          </>
         );
       }
 
@@ -1507,122 +1821,120 @@ export default function AdminDashboardModulePage({
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
-              label="Tổng toàn thời gian"
+              label="Tổng lịch hẹn"
               value={formatNumber(
-                data?.totalCount,
+                data?.totalAppointments,
               )}
               loading={loading}
             />
 
             <KpiCard
-              label="Tạo mới kỳ hiện tại"
+              label="Lịch sắp tới"
               value={formatNumber(
-                trend
-                  ?.currentPeriodCount,
+                data?.upcomingCount,
               )}
               loading={loading}
               valueClassName="text-primary"
             />
 
             <KpiCard
-              label="Kỳ trước"
+              label="Lịch hôm nay"
               value={formatNumber(
-                trend
-                  ?.previousPeriodCount,
+                data?.todayCount,
               )}
               loading={loading}
             />
 
             <KpiCard
-              label="Thay đổi"
+              label="Đang đề xuất"
               value={formatNumber(
-                trend?.change,
+                data?.pendingCount,
               )}
-              hint={
-                trend
-                  ?.growthPercent ===
-                  null
-                  ? "Không có tỷ lệ tăng trưởng do kỳ trước bằng 0."
-                  : `Tỷ lệ ${formatPercent(
-                      trend
-                        ?.growthPercent,
-                    )}`
-              }
+              loading={loading}
+              valueClassName="text-warning"
+            />
+
+            <KpiCard
+              label="Quá thời gian hẹn"
+              value={formatNumber(
+                data?.overdueCount,
+              )}
+              hint={`Lâu nhất ${formatHours(
+                data?.oldestOverdueAgeHours,
+              )} · trung bình ${formatHours(
+                data?.averageOverdueAgeHours,
+              )}`}
+              loading={loading}
+              valueClassName="text-error"
+            />
+
+            <KpiCard
+              label="Hoàn tất trong kỳ"
+              value={formatNumber(
+                data?.completedInPeriodCount,
+              )}
+              loading={loading}
+              valueClassName="text-success"
+            />
+
+            <KpiCard
+              label="Đã hủy trong kỳ"
+              value={formatNumber(
+                data?.cancelledInPeriodCount,
+              )}
               loading={loading}
             />
 
-            {extraCards.map(
-              (item) => (
-                <KpiCard
-                  key={
-                    item.label
-                  }
-                  label={
-                    item.label
-                  }
-                  value={
-                    item.value
-                  }
-                  loading={
-                    loading
-                  }
-                />
-              ),
-            )}
+            <KpiCard
+              label="Đã quá hạn"
+              value={formatNumber(
+                data?.expiredCount,
+              )}
+              loading={loading}
+            />
+
+            <KpiCard
+              label="Đề xuất đổi lịch"
+              value={formatNumber(
+                data?.rescheduleProposalCount,
+              )}
+              loading={loading}
+            />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
             <DistributionPanel
               title="Trạng thái hiện tại"
-              description="Phân bố trạng thái hiện tại của các bản ghi được tạo trong kỳ."
               rows={
-                data
-                  ?.createdInPeriodByCurrentStatus
+                data?.currentStatusDistribution
               }
-              dashboard={
-                dashboard
-              }
+              dashboard="appointments"
             />
 
-            {dashboard ===
-              "payments" && (
-              <DistributionPanel
-                title="Phương thức thanh toán"
-                rows={
-                  data
-                    ?.createdInPeriodByMethod
-                }
-                dashboard={
-                  dashboard
-                }
-              />
-            )}
+            <DistributionPanel
+              title="Loại lịch hẹn"
+              rows={
+                data?.appointmentTypeDistribution
+              }
+              dashboard="appointments"
+            />
 
-            {dashboard ===
-              "appointments" && (
-              <DistributionPanel
-                title="Loại lịch hẹn"
-                rows={
-                  data
-                    ?.createdInPeriodByType
-                }
-                dashboard={
-                  dashboard
-                }
-              />
-            )}
+            <DistributionPanel
+              title="Mức độ quá hạn"
+              rows={
+                data?.overdueAgingDistribution
+              }
+              dashboard="appointments"
+            />
           </div>
 
           <SeriesTable
-            title="Xu hướng tạo mới"
-            rows={
-              data?.createdSeries
-            }
+            title="Khối lượng lịch theo ngày hẹn thực tế"
+            rows={data?.scheduledSeries}
           />
         </>
       );
     };
-
   const renderDispute =
     () => (
       <>
@@ -1630,15 +1942,41 @@ export default function AdminDashboardModulePage({
           <KpiCard
             label="Tổng tranh chấp"
             value={formatNumber(
-              data?.totalCount,
+              data?.totalDisputes,
             )}
             loading={loading}
           />
 
           <KpiCard
-            label="Tạo trong kỳ"
+            label="Chưa xử lý xong"
             value={formatNumber(
-              data?.periodCount,
+              data?.unresolvedDisputeCount,
+            )}
+            loading={loading}
+            valueClassName="text-error"
+          />
+
+          <KpiCard
+            label="Đã giải quyết trong kỳ"
+            value={formatNumber(
+              data?.resolvedInPeriodCount,
+            )}
+            loading={loading}
+            valueClassName="text-success"
+          />
+
+          <KpiCard
+            label="Thời gian xử lý trung bình"
+            value={formatHours(
+              data?.averageResolutionTimeHours,
+            )}
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Chưa xử lý lâu nhất"
+            value={formatHours(
+              data?.oldestUnresolvedAgeHours,
             )}
             loading={loading}
             valueClassName="text-error"
@@ -1647,8 +1985,7 @@ export default function AdminDashboardModulePage({
           <KpiCard
             label="Nguyên nhân chưa xác định"
             value={formatNumber(
-              data
-                ?.unknownCategoryCount,
+              data?.unknownCategoryCount,
             )}
             loading={loading}
           />
@@ -1656,82 +1993,57 @@ export default function AdminDashboardModulePage({
 
         <div className="grid gap-6 xl:grid-cols-2">
           <DistributionPanel
-            title="Theo nguyên nhân"
-            rows={data?.byCategory}
+            title="Trạng thái hiện tại"
+            rows={
+              data?.currentStatusDistribution
+            }
             dashboard="disputes"
           />
 
           <DistributionPanel
-            title="Theo trạng thái"
-            rows={data?.byStatus}
+            title="Theo nguyên nhân"
+            description="Phân bố tất cả tranh chấp theo nguyên nhân."
+            rows={
+              data?.categoryDistribution
+            }
+            dashboard="disputes"
+          />
+
+          <DistributionPanel
+            title="Tranh chấp chưa xử lý theo nguyên nhân"
+            rows={
+              data?.unresolvedByCategory
+            }
+            dashboard="disputes"
+          />
+
+          <DistributionPanel
+            title="Tuổi tranh chấp chưa xử lý"
+            rows={
+              data?.unresolvedAgingDistribution
+            }
             dashboard="disputes"
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {[
+        <MultiSeriesTable
+          title="Mở mới và giải quyết theo kỳ"
+          rows={
+            data?.openedVsResolvedSeries
+          }
+          columns={[
             {
-              title:
-                "Được chọn nhiều nhất",
-              rows:
-                data
-                  ?.mostSelectedCategories,
+              key: "openedCount",
+              label: "Mở mới",
             },
             {
-              title:
-                "Ít nhất trong nhóm đã dùng",
-              rows:
-                data
-                  ?.leastSelectedUsedCategories,
+              key: "resolvedCount",
+              label: "Đã giải quyết",
             },
-            {
-              title:
-                "Chưa được chọn",
-              rows:
-                data
-                  ?.unselectedCategories,
-            },
-          ].map((group) => (
-            <section
-              key={group.title}
-              className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]"
-            >
-              <h3 className="font-black text-text">
-                {group.title}
-              </h3>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {!Array.isArray(
-                  group.rows,
-                ) ||
-                group.rows
-                  .length ===
-                  0 ? (
-                  <span className="text-sm text-textLight">
-                    Chưa có dữ liệu.
-                  </span>
-                ) : (
-                  group.rows.map(
-                    (item) => (
-                      <span
-                        key={item}
-                        className="rounded-full bg-background px-3 py-1.5 text-xs font-bold text-text"
-                      >
-                        {labelFor(
-                          item,
-                          "disputes",
-                        )}
-                      </span>
-                    ),
-                  )
-                )}
-              </div>
-            </section>
-          ))}
-        </div>
+          ]}
+        />
       </>
     );
-
   const renderBusinessOverview =
     () => (
       <>
@@ -2203,7 +2515,7 @@ export default function AdminDashboardModulePage({
       {!loading &&
         data?.period && (
           <div className="rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
-            Kỳ hiện tại:{" "}
+            Kỳ sự kiện:{" "}
             <strong className="text-text">
               {formatDate(
                 data.period.from,
@@ -2214,13 +2526,6 @@ export default function AdminDashboardModulePage({
               {formatDate(
                 data.period
                   .toExclusive,
-              )}
-            </strong>
-            {" · kỳ trước từ "}
-            <strong className="text-text">
-              {formatDate(
-                data.period
-                  .previousFrom,
               )}
             </strong>
             {" · UTC+7"}
