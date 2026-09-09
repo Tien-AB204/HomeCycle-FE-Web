@@ -8,8 +8,11 @@ import {
 } from "../../constants/appointments";
 import { ROLES } from "../../constants/roles";
 import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
+import CollectionSchedulePanel from "../../features/appointments/CollectionSchedulePanel";
+import OrderSettlementPaymentPanel from "../../features/appointments/OrderSettlementPaymentPanel";
 import { useAuth } from "../../hooks/useAuth";
 import appointmentApi from "../../services/apis/appointmentApi";
+import inspectionFormApi from "../../services/apis/inspectionFormApi";
 
 const PAGE_SIZE = 10;
 const API_PAGE_SIZE = 100;
@@ -131,20 +134,145 @@ const AppointmentDetailModal = ({
     detail: null,
     error: "",
   });
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
 
+  const [inspectionState, setInspectionState] =
+    useState({
+      loading: false,
+      form: null,
+      error: "",
+    });
+
+  const [scheduleOpen, setScheduleOpen] =
+    useState(false);
+
+  const [
+    settlementPayment,
+    setSettlementPayment,
+  ] = useState(null);
+
   const loadDetail = useCallback(async () => {
-    setState((current) => ({ ...current, loading: true, error: "" }));
+    setState((current) => ({
+      ...current,
+      loading: true,
+      error: "",
+    }));
+
+    setInspectionState({
+      loading: true,
+      form: null,
+      error: "",
+    });
 
     try {
-      const detail = await appointmentApi.getById(appointmentId);
-      setState({ loading: false, detail, error: "" });
+      const detail =
+        await appointmentApi.getById(
+          appointmentId,
+        );
+
+      if (detail?.inspectionAppointment) {
+        try {
+          const inspectionForm =
+            await inspectionFormApi.getByAppointment(
+              appointmentId,
+            );
+
+          setInspectionState({
+            loading: false,
+            form: inspectionForm,
+            error: "",
+          });
+
+          const pendingPaymentId =
+            localStorage.getItem(
+              "homecycle:pending-order-settlement-payment-id",
+            ) || "";
+
+          const pendingOrderId =
+            localStorage.getItem(
+              "homecycle:pending-order-settlement-order-id",
+            ) || "";
+
+          const pendingAmount =
+            localStorage.getItem(
+              "homecycle:pending-order-settlement-amount",
+            ) || "";
+
+          const currentOrderId =
+            String(
+              inspectionForm.orderId ||
+                "",
+            ).trim();
+
+          if (
+            pendingPaymentId &&
+            pendingOrderId &&
+            currentOrderId &&
+            pendingOrderId ===
+              currentOrderId
+          ) {
+            setSettlementPayment({
+              paymentId:
+                pendingPaymentId,
+
+              orderId:
+                pendingOrderId ||
+                inspectionForm.orderId ||
+                "",
+
+              amount:
+                pendingAmount,
+            });
+          } else {
+            setSettlementPayment(
+              null,
+            );
+          }
+        } catch (inspectionError) {
+          if (
+            inspectionError?.name !==
+              "CanceledError" &&
+            inspectionError?.code !==
+              "ERR_CANCELED"
+          ) {
+            setInspectionState({
+              loading: false,
+              form: null,
+              error: getErrorMessage(
+                inspectionError,
+                "Biên bản kiểm định chưa sẵn sàng.",
+              ),
+            });
+          }
+        }
+      } else {
+        setInspectionState({
+          loading: false,
+          form: null,
+          error: "",
+        });
+      }
+
+      setState({
+        loading: false,
+        detail,
+        error: "",
+      });
     } catch (error) {
+      setInspectionState({
+        loading: false,
+        form: null,
+        error: "",
+      });
+
       setState({
         loading: false,
         detail: null,
-        error: getErrorMessage(error, "Không thể tải chi tiết lịch hẹn."),
+        error: getErrorMessage(
+          error,
+          "Không thể tải chi tiết lịch hẹn.",
+        ),
       });
     }
   }, [appointmentId]);
@@ -154,7 +282,7 @@ const AppointmentDetailModal = ({
   }, [loadDetail]);
 
   const handleCheckIn = async () => {
-    setBusy(true);
+    setBusy("check-in");
     setNotice("");
 
     try {
@@ -172,7 +300,62 @@ const AppointmentDetailModal = ({
         error: getErrorMessage(error, "Không thể check-in lịch hẹn."),
       }));
     } finally {
-      setBusy(false);
+      setBusy("");
+    }
+  };
+
+  const handleCollectNow = async () => {
+    const inspectionForm =
+      inspectionState.form;
+
+    if (
+      !inspectionForm?.actions?.canCollectNow
+    ) {
+      return;
+    }
+
+    const accepted = window.confirm(
+      "Thu gom ngay sẽ tiếp tục giao dịch mà không tạo một lịch thu gom mới. Bạn có chắc muốn tiếp tục?",
+    );
+
+    if (!accepted) {
+      return;
+    }
+
+    setBusy("collect-now");
+    setNotice("");
+
+    try {
+      await inspectionFormApi.collectNow(
+        inspectionForm.inspectionFormId,
+        inspectionForm.revision,
+      );
+
+      setNotice(
+        "Đã xác nhận thu gom ngay. Dữ liệu giao dịch đang được tải lại.",
+      );
+
+      await loadDetail();
+      onChanged();
+    } catch (error) {
+      const message = getErrorMessage(
+        error,
+        "Không thể thực hiện thu gom ngay.",
+      );
+
+      /*
+       * Revision có thể đã thay đổi ở thiết bị khác.
+       * Luôn tải lại dữ liệu mới nhất, không tự retry
+       * bằng revision cũ.
+       */
+      await loadDetail();
+
+      setState((current) => ({
+        ...current,
+        error: message,
+      }));
+    } finally {
+      setBusy("");
     }
   };
 
@@ -329,15 +512,265 @@ const AppointmentDetailModal = ({
                 </p>
               )}
 
+              {isInspection && (
+                <section className="mt-4 rounded-xl border border-border bg-background p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+                        Biên bản kiểm định
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-textLight">
+                        Quyền thao tác được lấy trực tiếp từ máy chủ.
+                      </p>
+                    </div>
+
+                    {inspectionState.form && (
+                      <span className="rounded-full border border-border bg-white px-3 py-1 text-xs font-black text-text">
+                        Phiên bản {inspectionState.form.revision}
+                      </span>
+                    )}
+                  </div>
+
+                  {inspectionState.loading && (
+                    <div
+                      className="mt-4 flex items-center gap-2 text-sm font-semibold text-textLight"
+                      role="status"
+                    >
+                      <span
+                        className="material-symbols-outlined animate-spin text-lg"
+                        aria-hidden="true"
+                      >
+                        progress_activity
+                      </span>
+                      Đang tải biên bản kiểm định...
+                    </div>
+                  )}
+
+                  {!inspectionState.loading &&
+                    inspectionState.error && (
+                      <div className="mt-4 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2.5 text-xs font-semibold leading-5 text-warning">
+                        {inspectionState.error}
+                      </div>
+                    )}
+
+                  {!inspectionState.loading &&
+                    inspectionState.form && (
+                      <div className="mt-4 space-y-3">
+                        <p className="text-xs leading-5 text-textLight">
+                          {inspectionState.form.actions?.canCollectNow
+                            ? "Máy chủ cho phép thu gom ngay từ biên bản hiện tại."
+                            : inspectionState.form.actions?.canScheduleCollection
+                              ? "Máy chủ đã cho phép tạo lịch thu gom từ biên bản hiện tại."
+                              : "Hiện chưa có thao tác thu gom khả dụng cho biên bản này."}
+                        </p>
+
+                        <div className="flex flex-wrap gap-2">
+                          {inspectionState.form.actions?.canCollectNow && (
+                            <button
+                              type="button"
+                              onClick={handleCollectNow}
+                              disabled={Boolean(busy)}
+                              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {busy === "collect-now"
+                                ? "Đang xử lý..."
+                                : "Thu gom ngay"}
+                            </button>
+                          )}
+
+                          {inspectionState.form.actions?.canScheduleCollection && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setScheduleOpen(
+                                  (current) => !current,
+                                )
+                              }
+                              disabled={Boolean(busy)}
+                              className="rounded-lg border border-primary bg-white px-4 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {scheduleOpen
+                                ? "Ẩn tạo lịch"
+                                : "Tạo lịch thu gom"}
+                            </button>
+                          )}
+                        </div>
+
+                        {scheduleOpen &&
+                          inspectionState.form.actions
+                            ?.canScheduleCollection && (
+                            <CollectionSchedulePanel
+                              inspectionForm={inspectionState.form}
+                              onClose={() =>
+                                setScheduleOpen(false)
+                              }
+                              onRefreshRequired={async () => {
+                                setScheduleOpen(false);
+                                await loadDetail();
+                              }}
+                              onScheduled={async (result) => {
+                                setScheduleOpen(false);
+
+                                /*
+                                 * Một schedule response mới phải thay
+                                 * hoàn toàn settlement cũ của màn hình.
+                                 */
+                                localStorage.removeItem(
+                                  "homecycle:pending-order-settlement-payment-id",
+                                );
+
+                                localStorage.removeItem(
+                                  "homecycle:pending-order-settlement-order-id",
+                                );
+
+                                localStorage.removeItem(
+                                  "homecycle:pending-order-settlement-amount",
+                                );
+
+                                setSettlementPayment(
+                                  null,
+                                );
+
+                                if (result?.paymentRequired) {
+                                  const paymentId =
+                                    String(
+                                      result.paymentId ||
+                                        "",
+                                    ).trim();
+
+                                  const orderId =
+                                    String(
+                                      result.orderId ||
+                                        inspectionState.form
+                                          .orderId ||
+                                        "",
+                                    ).trim();
+
+                                  const amount =
+                                    Number(
+                                      result.additionalPaymentAmount,
+                                    );
+
+                                  if (!paymentId) {
+                                    setState((current) => ({
+                                      ...current,
+                                      error:
+                                        "Máy chủ yêu cầu thanh toán bổ sung nhưng chưa trả về mã thanh toán.",
+                                    }));
+                                  } else {
+                                    const nextSettlement = {
+                                      paymentId,
+                                      orderId,
+                                      appointmentId:
+                                        result.appointmentId ||
+                                        "",
+                                      amount:
+                                        Number.isFinite(
+                                          amount,
+                                        )
+                                          ? amount
+                                          : "",
+                                    };
+
+                                    localStorage.setItem(
+                                      "homecycle:pending-order-settlement-payment-id",
+                                      paymentId,
+                                    );
+
+                                    if (orderId) {
+                                      localStorage.setItem(
+                                        "homecycle:pending-order-settlement-order-id",
+                                        orderId,
+                                      );
+                                    }
+
+                                    if (
+                                      Number.isFinite(
+                                        amount,
+                                      )
+                                    ) {
+                                      localStorage.setItem(
+                                        "homecycle:pending-order-settlement-amount",
+                                        String(amount),
+                                      );
+                                    }
+
+                                    setSettlementPayment(
+                                      nextSettlement,
+                                    );
+
+                                    setNotice(
+                                      Number.isFinite(
+                                        amount,
+                                      )
+                                        ? `Đã tạo lịch thu gom. Cần thanh toán phần còn lại ${amount.toLocaleString(
+                                            "vi-VN",
+                                          )} đ.`
+                                        : "Đã tạo lịch thu gom và phát sinh khoản thanh toán bổ sung.",
+                                    );
+                                  }
+                                } else {
+                                  setSettlementPayment(
+                                    null,
+                                  );
+
+                                  setNotice(
+                                    "Đã tạo lịch thu gom thành công.",
+                                  );
+                                }
+
+                                await loadDetail();
+                                onChanged();
+                              }}
+                            />
+                          )}
+
+                        {settlementPayment && (
+                          <OrderSettlementPaymentPanel
+                            settlement={
+                              settlementPayment
+                            }
+                            onCompleted={async () => {
+                              localStorage.removeItem(
+                                "homecycle:pending-order-settlement-payment-id",
+                              );
+
+                              localStorage.removeItem(
+                                "homecycle:pending-order-settlement-order-id",
+                              );
+
+                              localStorage.removeItem(
+                                "homecycle:pending-order-settlement-amount",
+                              );
+
+                              setSettlementPayment(
+                                null,
+                              );
+
+                              setNotice(
+                                "Đã thanh toán phần còn lại thành công.",
+                              );
+
+                              await loadDetail();
+                              onChanged();
+                            }}
+                          />
+                        )}
+                      </div>
+                    )}
+                </section>
+              )}
+
               <div className="mt-6 flex justify-end border-t border-border pt-5">
                 {canCheckIn ? (
                   <button
                     type="button"
                     onClick={handleCheckIn}
-                    disabled={busy}
+                    disabled={Boolean(busy)}
                     className="rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:opacity-50"
                   >
-                    {busy ? "Đang check-in..." : "Xác nhận check-in"}
+                    {busy === "check-in" ? "Đang check-in..." : "Xác nhận check-in"}
                   </button>
                 ) : (
                   <span className="rounded-lg bg-primary/10 px-4 py-2.5 text-sm font-bold text-textLight">
