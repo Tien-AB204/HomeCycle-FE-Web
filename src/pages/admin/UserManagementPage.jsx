@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
+import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import adminUserApi from "../../services/apis/adminUserApi";
 import { getUserId } from "../../utils/authUtils";
 
@@ -243,8 +244,8 @@ export default function UserManagementPage() {
     const controller = new AbortController();
     let isActive = true;
 
-    adminUserApi
-      .getAll({
+    adminDashboardApi
+      .getUsers({
         role: roleFilter || undefined,
         status: statusFilter || undefined,
         keyword: debouncedKeyword || undefined,
@@ -614,6 +615,7 @@ export default function UserManagementPage() {
               type="search"
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
+              maxLength={200}
               placeholder="Tìm theo tên đăng nhập, thư điện tử, số điện thoại..."
               className="w-full rounded-lg border border-border py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
             />
