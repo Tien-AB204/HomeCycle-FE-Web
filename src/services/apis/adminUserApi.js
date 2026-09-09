@@ -142,6 +142,43 @@ const adminUserApi = {
     };
   },
 
+  createModerator: async ({
+    email,
+    username,
+  } = {}) => {
+    const normalizedEmail =
+      String(email || "").trim();
+
+    const normalizedUsername =
+      String(username || "").trim();
+
+    if (!normalizedEmail) {
+      throw new Error(
+        "Vui lòng nhập thư điện tử Moderator.",
+      );
+    }
+
+    if (!normalizedUsername) {
+      throw new Error(
+        "Vui lòng nhập tên đăng nhập Moderator.",
+      );
+    }
+
+    const result =
+      await axiosClient.post(
+        "/auth/admin/moderators",
+        {
+          email: normalizedEmail,
+          username: normalizedUsername,
+        },
+        {
+          skipGlobalErrorPage: true,
+        },
+      );
+
+    return unwrapResult(result);
+  },
+
   lock: async (userId) => {
     const normalizedUserId = normalizeRequiredId(
       userId,
