@@ -285,9 +285,9 @@ export function DashboardDonutChart({
             ) => (
               <div
                 key={`${item.key}-legend-${index}`}
-                className="flex items-center justify-between gap-3 rounded-xl bg-background px-3 py-2.5"
+                className="flex items-start justify-between gap-3 rounded-xl bg-background px-3 py-2.5"
               >
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 items-start gap-2">
                   <span
                     className={[
                       "h-3 w-3 shrink-0 rounded-full bg-current",
@@ -295,7 +295,7 @@ export function DashboardDonutChart({
                     ].join(" ")}
                   />
 
-                  <span className="truncate text-xs font-bold text-text">
+                  <span className="min-w-0 whitespace-normal break-words text-xs font-bold leading-4 text-text">
                     {getLabel(item)}
                   </span>
                 </div>
@@ -435,6 +435,132 @@ export function DashboardColumnChart({
   );
 }
 
+export function DashboardHorizontalBarChart({
+  title,
+  description,
+  rows,
+  getLabel,
+  hideZero = false,
+}) {
+  const safeRows =
+    Array.isArray(rows)
+      ? rows
+      : [];
+
+  const visibleRows =
+    hideZero
+      ? safeRows.filter(
+          (item) =>
+            (Number(item?.count) || 0) >
+            0,
+        )
+      : safeRows;
+
+  const maxValue =
+    Math.max(
+      1,
+      ...visibleRows.map(
+        (item) =>
+          Number(item?.count) || 0,
+      ),
+    );
+
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+      <h3 className="text-lg font-black text-text">
+        {title}
+      </h3>
+
+      {description && (
+        <p className="mt-1 text-xs leading-5 text-textLight">
+          {description}
+        </p>
+      )}
+
+      {visibleRows.length === 0 ? (
+        <div className="mt-5">
+          {emptyState}
+        </div>
+      ) : (
+        <div className="mt-6 space-y-4">
+          {visibleRows.map(
+            (
+              item,
+              index,
+            ) => {
+              const count =
+                Number(
+                  item?.count,
+                ) || 0;
+
+              const width =
+                count > 0
+                  ? Math.max(
+                      3,
+                      (count /
+                        maxValue) *
+                        100,
+                    )
+                  : 0;
+
+              const percentage =
+                Number(
+                  item?.percentage,
+                ) || 0;
+
+              const tone =
+                toneFor(
+                  item?.key ||
+                    item?.label,
+                  index,
+                );
+
+              return (
+                <div
+                  key={`${item.key}-${index}`}
+                >
+                  <div className="mb-2 flex items-start justify-between gap-4">
+                    <span className="min-w-0 break-words text-sm font-bold leading-5 text-text">
+                      {getLabel(item)}
+                    </span>
+
+                    <span className="shrink-0 text-sm font-black text-text">
+                      {formatNumber(
+                        count,
+                      )}
+                      {" · "}
+                      {formatDecimal(
+                        percentage,
+                      )}
+                      %
+                    </span>
+                  </div>
+
+                  <div className="h-3 overflow-hidden rounded-full bg-background">
+                    <div
+                      className={[
+                        "h-full rounded-full bg-current transition-all duration-300",
+                        tone,
+                      ].join(" ")}
+                      style={{
+                        width: `${width}%`,
+                      }}
+                      title={`${getLabel(
+                        item,
+                      )}: ${formatNumber(
+                        count,
+                      )}`}
+                    />
+                  </div>
+                </div>
+              );
+            },
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
 export function DashboardLineChart({
   title,
   description,

@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import {
   DashboardColumnChart,
   DashboardDonutChart,
+  DashboardHorizontalBarChart,
   DashboardLineChart,
 } from "../../components/admin/AdminDashboardCharts";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
@@ -1990,9 +1991,9 @@ export default function AdminDashboardModulePage({
             dashboard="disputes"
           />
 
-          <DashboardColumnChart
+          <DashboardHorizontalBarChart
             title="Tranh chấp chưa xử lý theo nguyên nhân"
-            description="Tập trung vào backlog hiện còn chưa giải quyết."
+            description="Tập trung vào các nhóm nguyên nhân hiện còn tranh chấp chưa giải quyết."
             rows={
               data?.unresolvedByCategory
             }
@@ -2003,6 +2004,7 @@ export default function AdminDashboardModulePage({
                 "disputes",
               )
             }
+            hideZero
           />
 
           <DashboardColumnChart
