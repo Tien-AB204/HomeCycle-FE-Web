@@ -26,6 +26,20 @@ const POLICY_TABS = [
       "Giới hạn dung lượng và định dạng tệp theo từng ngữ cảnh.",
     icon: "upload_file",
   },
+  {
+    key: PLATFORM_POLICY_TYPES.PAYMENT,
+    label: "Thanh toán",
+    description:
+      "Tỷ lệ đặt cọc và thời gian hiệu lực của thanh toán.",
+    icon: "payments",
+  },
+  {
+    key: PLATFORM_POLICY_TYPES.ORDER,
+    label: "Đơn hàng",
+    description:
+      "Thời gian người mua được phép xác nhận đã nhận hàng.",
+    icon: "inventory_2",
+  },
 ];
 
 const DISPUTE_EDITABLE_FIELDS = [
@@ -102,6 +116,40 @@ const APPOINTMENT_FIELDS = [
     unit: "giờ",
     min: 1,
     max: 720,
+  },
+];
+
+const PAYMENT_FIELDS = [
+  {
+    name: "depositRatePercent",
+    label: "Tỷ lệ đặt cọc",
+    unit: "%",
+    min: 0,
+    max: 100,
+    minExclusive: true,
+    integer: false,
+    step: "any",
+  },
+  {
+    name: "paymentExpiryMinutes",
+    label: "Thời gian hiệu lực thanh toán",
+    unit: "phút",
+    min: 1,
+    max: 1440,
+    integer: true,
+    step: "1",
+  },
+];
+
+const ORDER_FIELDS = [
+  {
+    name: "buyerReceiveConfirmationTimeoutHours",
+    label: "Thời gian người mua xác nhận đã nhận hàng",
+    unit: "giờ",
+    min: 1,
+    max: 720,
+    integer: true,
+    step: "1",
   },
 ];
 
@@ -308,6 +356,18 @@ function NumberPolicyField({
   disabled,
   onChange,
 }) {
+  const rangeDescription = field.minExclusive
+    ? `Lớn hơn ${new Intl.NumberFormat("vi-VN").format(
+        field.min,
+      )} và không vượt quá ${new Intl.NumberFormat(
+        "vi-VN",
+      ).format(field.max)} ${field.unit}.`
+    : `Từ ${new Intl.NumberFormat("vi-VN").format(
+        field.min,
+      )} đến ${new Intl.NumberFormat("vi-VN").format(
+        field.max,
+      )} ${field.unit}.`;
+
   return (
     <label className="block rounded-2xl border border-border bg-background/60 p-4">
       <span className="text-sm font-black text-text">
@@ -315,18 +375,15 @@ function NumberPolicyField({
       </span>
 
       <span className="mt-1 block text-xs leading-5 text-textLight">
-        Từ{" "}
-        {new Intl.NumberFormat("vi-VN").format(field.min)} đến{" "}
-        {new Intl.NumberFormat("vi-VN").format(field.max)}{" "}
-        {field.unit}.
+        {rangeDescription}
       </span>
 
       <div className="mt-3 flex overflow-hidden rounded-xl border border-border bg-white focus-within:border-primary">
         <input
           type="number"
-          min={field.min}
+          min={field.minExclusive ? undefined : field.min}
           max={field.max}
-          step="1"
+          step={field.step || "1"}
           value={value ?? ""}
           disabled={disabled}
           onChange={(event) =>
@@ -427,7 +484,13 @@ function VersionDetail({ detail, policyType }) {
   const fields =
     policyType === PLATFORM_POLICY_TYPES.DISPUTE
       ? DISPUTE_FIELDS
-      : APPOINTMENT_FIELDS;
+      : policyType === PLATFORM_POLICY_TYPES.APPOINTMENT
+        ? APPOINTMENT_FIELDS
+        : policyType === PLATFORM_POLICY_TYPES.PAYMENT
+          ? PAYMENT_FIELDS
+          : policyType === PLATFORM_POLICY_TYPES.ORDER
+            ? ORDER_FIELDS
+            : [];
 
   return (
     <div className="mt-5 rounded-2xl border border-primary/20 bg-background/60 p-5">
@@ -537,6 +600,14 @@ export default function PlatformPolicyPage() {
 
     if (activeTab === PLATFORM_POLICY_TYPES.APPOINTMENT) {
       return APPOINTMENT_FIELDS;
+    }
+
+    if (activeTab === PLATFORM_POLICY_TYPES.PAYMENT) {
+      return PAYMENT_FIELDS;
+    }
+
+    if (activeTab === PLATFORM_POLICY_TYPES.ORDER) {
+      return ORDER_FIELDS;
     }
 
     return [];
@@ -700,18 +771,35 @@ export default function PlatformPolicyPage() {
 
       const value = Number(rawValue);
 
-      if (!Number.isInteger(value)) {
+      if (!Number.isFinite(value)) {
+        throw new Error(
+          `"${field.label}" phải là số hợp lệ.`,
+        );
+      }
+
+      if (
+        field.integer !== false &&
+        !Number.isInteger(value)
+      ) {
         throw new Error(
           `"${field.label}" phải là số nguyên.`,
         );
       }
 
+      const belowMinimum = field.minExclusive
+        ? value <= field.min
+        : value < field.min;
+
       if (
-        value < field.min ||
+        belowMinimum ||
         value > field.max
       ) {
+        const rangeMessage = field.minExclusive
+          ? `lớn hơn ${field.min} và không vượt quá ${field.max}`
+          : `từ ${field.min} đến ${field.max}`;
+
         throw new Error(
-          `"${field.label}" phải từ ${field.min} đến ${field.max} ${field.unit}.`,
+          `"${field.label}" phải ${rangeMessage} ${field.unit}.`,
         );
       }
 
@@ -954,8 +1042,8 @@ export default function PlatformPolicyPage() {
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
             Quản lý chính sách tranh chấp, lịch hẹn,
-            tải tệp và lịch sử phiên bản theo
-            máy chủ HomeCycle.
+            tải tệp, thanh toán, đơn hàng và lịch sử
+            phiên bản theo máy chủ HomeCycle.
           </p>
         </div>
 
