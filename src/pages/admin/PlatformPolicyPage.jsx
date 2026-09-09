@@ -1537,28 +1537,6 @@ export default function PlatformPolicyPage() {
           </div>
 
           <aside className="space-y-4">
-            <section className="rounded-2xl border border-border bg-background p-5 shadow-[0_10px_28px_rgba(24,63,65,0.04)]">
-              <span
-                className="material-symbols-outlined flex h-12 w-12 items-center justify-center rounded-xl bg-white text-primary shadow-sm"
-                aria-hidden="true"
-              >
-                verified_user
-              </span>
-
-              <p className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-textLight">
-                Quyền truy cập
-              </p>
-
-              <h3 className="mt-2 text-lg font-black text-text">
-                Chỉ dành cho Quản trị viên
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-textLight">
-                Màn hình chỉ dành cho Quản trị viên.
-                Kiểm duyệt viên, Doanh nghiệp và Cá nhân không có
-                quyền truy cập.
-              </p>
-            </section>
 
             <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.04)]">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
