@@ -102,7 +102,7 @@ const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   if (error?.response?.status === 403) {
-    return "Bạn không có quyền thực hiện thao tác này. Backend cần xác nhận quyền xóa bài đăng của Admin.";
+    return "Phiên quản trị hiện tại không có quyền thực hiện thao tác này. Vui lòng đăng nhập lại hoặc kiểm tra quyền tài khoản.";
   }
 
   return (
