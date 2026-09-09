@@ -21,14 +21,14 @@ const POLICY_TABS = [
   },
   {
     key: PLATFORM_POLICY_TYPES.FILE_UPLOAD,
-    label: "Upload file",
+    label: "Tải tệp",
     description:
-      "Giới hạn dung lượng và định dạng file theo từng ngữ cảnh.",
+      "Giới hạn dung lượng và định dạng tệp theo từng ngữ cảnh.",
     icon: "upload_file",
   },
 ];
 
-const DISPUTE_FIELDS = [
+const DISPUTE_EDITABLE_FIELDS = [
   {
     name: "normalDisputeWindowDays",
     label: "Thời hạn mở tranh chấp thông thường",
@@ -50,6 +50,9 @@ const DISPUTE_FIELDS = [
     min: 0,
     max: 100,
   },
+];
+
+const DISPUTE_READONLY_FIELDS = [
   {
     name: "returnWindowDays",
     label: "Thời hạn hoàn trả",
@@ -64,6 +67,11 @@ const DISPUTE_FIELDS = [
     min: 1,
     max: 100,
   },
+];
+
+const DISPUTE_FIELDS = [
+  ...DISPUTE_EDITABLE_FIELDS,
+  ...DISPUTE_READONLY_FIELDS,
 ];
 
 const APPOINTMENT_FIELDS = [
@@ -101,8 +109,8 @@ const FILE_UPLOAD_CONTEXTS = [
   { value: "Avatar", label: "Ảnh đại diện" },
   { value: "IdentityDocument", label: "Giấy tờ định danh" },
   { value: "BusinessDocument", label: "Giấy tờ doanh nghiệp" },
-  { value: "PostMedia", label: "Media bài đăng" },
-  { value: "ReviewMedia", label: "Media đánh giá" },
+  { value: "PostMedia", label: "Tệp bài đăng" },
+  { value: "ReviewMedia", label: "Tệp đánh giá" },
   {
     value: "InspectionEvidence",
     label: "Bằng chứng kiểm định",
@@ -198,6 +206,52 @@ const normalizeExtensions = (extensions) =>
 const sameExtensions = (left, right) =>
   JSON.stringify(normalizeExtensions(left)) ===
   JSON.stringify(normalizeExtensions(right));
+
+const getDraftInteger = (value) => {
+  const parsed = Number(value);
+
+  return Number.isInteger(parsed) ? parsed : null;
+};
+
+const getRelationshipError = (policyType, draft) => {
+  if (policyType === PLATFORM_POLICY_TYPES.DISPUTE) {
+    const normalWindow = getDraftInteger(
+      draft.normalDisputeWindowDays,
+    );
+
+    const lowReputationWindow = getDraftInteger(
+      draft.lowReputationDisputeWindowDays,
+    );
+
+    if (
+      normalWindow !== null &&
+      lowReputationWindow !== null &&
+      lowReputationWindow < normalWindow
+    ) {
+      return "Thời hạn cho tài khoản uy tín thấp không được nhỏ hơn thời hạn tranh chấp thông thường.";
+    }
+  }
+
+  if (policyType === PLATFORM_POLICY_TYPES.APPOINTMENT) {
+    const rescheduleCutoff = getDraftInteger(
+      draft.rescheduleCutoffHours,
+    );
+
+    const cancellationCutoff = getDraftInteger(
+      draft.cancellationCutoffHours,
+    );
+
+    if (
+      rescheduleCutoff !== null &&
+      cancellationCutoff !== null &&
+      rescheduleCutoff < cancellationCutoff
+    ) {
+      return "Hạn cuối đổi lịch phải lớn hơn hoặc bằng hạn cuối hủy lịch.";
+    }
+  }
+
+  return "";
+};
 
 const findFileRule = (policy, context) =>
   policy?.config?.rules?.find(
@@ -316,7 +370,7 @@ function EmptyHistory() {
       </h4>
 
       <p className="mt-2 text-sm text-textLight">
-        Backend chưa trả về phiên bản nào cho chính sách này.
+        Máy chủ chưa trả về phiên bản nào cho chính sách này.
       </p>
     </div>
   );
@@ -478,7 +532,7 @@ export default function PlatformPolicyPage() {
 
   const activeFields = useMemo(() => {
     if (activeTab === PLATFORM_POLICY_TYPES.DISPUTE) {
-      return DISPUTE_FIELDS;
+      return DISPUTE_EDITABLE_FIELDS;
     }
 
     if (activeTab === PLATFORM_POLICY_TYPES.APPOINTMENT) {
@@ -487,6 +541,11 @@ export default function PlatformPolicyPage() {
 
     return [];
   }, [activeTab]);
+
+  const relationshipError = useMemo(
+    () => getRelationshipError(activeTab, draft),
+    [activeTab, draft],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -506,7 +565,12 @@ export default function PlatformPolicyPage() {
         }
 
         setCurrentPolicy(policy);
-        setVersions(versionItems);
+        setVersions(
+          [...versionItems].sort(
+            (left, right) =>
+              Number(right.version) - Number(left.version),
+          ),
+        );
 
         if (
           activeTab === PLATFORM_POLICY_TYPES.FILE_UPLOAD
@@ -612,6 +676,13 @@ export default function PlatformPolicyPage() {
   };
 
   const buildStandardPayload = () => {
+    const relationshipMessage =
+      getRelationshipError(activeTab, draft);
+
+    if (relationshipMessage) {
+      throw new Error(relationshipMessage);
+    }
+
     const payload = {};
 
     for (const field of activeFields) {
@@ -658,7 +729,7 @@ export default function PlatformPolicyPage() {
   const buildFilePayload = () => {
     if (!fileContext) {
       throw new Error(
-        "Vui lòng chọn ngữ cảnh upload.",
+        "Vui lòng chọn ngữ cảnh tải tệp.",
       );
     }
 
@@ -693,7 +764,7 @@ export default function PlatformPolicyPage() {
 
     if (invalidExtension) {
       throw new Error(
-        `Định dạng ${invalidExtension} không được Backend hỗ trợ.`,
+        `Định dạng ${invalidExtension} không được máy chủ hỗ trợ.`,
       );
     }
 
@@ -739,7 +810,7 @@ export default function PlatformPolicyPage() {
   const handleSave = async () => {
     if (!currentPolicy) {
       setActionError(
-        "Chưa tải được policy hiện hành nên không thể cập nhật.",
+        "Chưa tải được chính sách hiện hành nên không thể cập nhật.",
       );
 
       return;
@@ -883,8 +954,8 @@ export default function PlatformPolicyPage() {
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
             Quản lý chính sách tranh chấp, lịch hẹn,
-            upload file và lịch sử phiên bản theo
-            Backend HomeCycle.
+            tải tệp và lịch sử phiên bản theo
+            máy chủ HomeCycle.
           </p>
         </div>
 
@@ -1006,7 +1077,7 @@ export default function PlatformPolicyPage() {
                         {currentPolicy && (
                           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-success/20 bg-success/10 px-3 py-1.5 text-xs font-black text-success">
                             <span className="h-2 w-2 rounded-full bg-success" />
-                            Kết nối Backend
+                            Đã kết nối máy chủ
                           </span>
                         )}
                       </div>
@@ -1021,29 +1092,78 @@ export default function PlatformPolicyPage() {
                     <div className="border-t border-border pt-6">
                       {activeTab !==
                       PLATFORM_POLICY_TYPES.FILE_UPLOAD ? (
-                        <div className="grid gap-4 md:grid-cols-2">
-                          {activeFields.map((field) => (
-                            <NumberPolicyField
-                              key={field.name}
-                              field={field}
-                              value={draft[field.name]}
-                              disabled={disabled}
-                              onChange={
-                                handleStandardChange
-                              }
-                            />
-                          ))}
+                        <div className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2">
+                            {activeFields.map((field) => (
+                              <NumberPolicyField
+                                key={field.name}
+                                field={field}
+                                value={draft[field.name]}
+                                disabled={disabled}
+                                onChange={
+                                  handleStandardChange
+                                }
+                              />
+                            ))}
+                          </div>
+
+                          {relationshipError && (
+                            <div
+                              role="alert"
+                              className="rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm font-bold text-error"
+                            >
+                              {relationshipError}
+                            </div>
+                          )}
+
+                          {activeTab ===
+                            PLATFORM_POLICY_TYPES.DISPUTE && (
+                            <div className="rounded-2xl border border-border bg-background/60 p-4">
+                              <p className="text-sm font-black text-text">
+                                Thông tin chỉ đọc
+                              </p>
+
+                              <p className="mt-1 text-xs leading-5 text-textLight">
+                                Hai giá trị dưới đây đang được
+                                máy chủ sử dụng nhưng tài liệu
+                                bàn giao hiện chưa mở quyền cập
+                                nhật cho giao diện quản trị.
+                              </p>
+
+                              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                {DISPUTE_READONLY_FIELDS.map(
+                                  (field) => (
+                                    <div
+                                      key={field.name}
+                                      className="rounded-xl border border-border bg-white px-4 py-3"
+                                    >
+                                      <p className="text-xs font-bold text-textLight">
+                                        {field.label}
+                                      </p>
+
+                                      <p className="mt-1 font-black text-text">
+                                        {currentPolicy?.config?.[
+                                          field.name
+                                        ] ?? "—"}{" "}
+                                        {field.unit}
+                                      </p>
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="space-y-5">
                           <div className="grid gap-4 md:grid-cols-2">
                             <label className="block rounded-2xl border border-border bg-background/60 p-4">
                               <span className="text-sm font-black text-text">
-                                Ngữ cảnh upload
+                                Ngữ cảnh tải tệp
                               </span>
 
                               <span className="mt-1 block text-xs leading-5 text-textLight">
-                                Mỗi ngữ cảnh có rule riêng.
+                                Mỗi ngữ cảnh có quy định riêng.
                               </span>
 
                               <select
@@ -1079,7 +1199,7 @@ export default function PlatformPolicyPage() {
                               </span>
 
                               <span className="mt-1 block text-xs leading-5 text-textLight">
-                                Tối đa 25 MB cho mỗi file.
+                                Tối đa 25 MB cho mỗi tệp.
                               </span>
 
                               <div className="mt-3 flex overflow-hidden rounded-xl border border-border bg-white focus-within:border-primary">
@@ -1122,7 +1242,7 @@ export default function PlatformPolicyPage() {
 
                             <p className="mt-1 text-xs leading-5 text-textLight">
                               Chỉ sử dụng các phần mở rộng
-                              Backend hiện hỗ trợ.
+                              máy chủ hiện hỗ trợ.
                             </p>
 
                             <div className="mt-4 flex flex-wrap gap-2">
@@ -1166,15 +1286,18 @@ export default function PlatformPolicyPage() {
                     <div className="flex flex-col justify-between gap-3 border-t border-border pt-5 sm:flex-row sm:items-center">
                       <p className="max-w-2xl text-xs leading-5 text-textLight">
                         Chỉ những trường thực sự thay đổi
-                        mới được gửi lên Backend. Sau khi lưu
-                        thành công, policy hiện tại và lịch sử
+                        mới được gửi lên máy chủ. Sau khi lưu
+                        thành công, chính sách hiện tại và lịch sử
                         phiên bản sẽ được tải lại.
                       </p>
 
                       <button
                         type="button"
                         onClick={handleSave}
-                        disabled={disabled}
+                        disabled={
+                          disabled ||
+                          Boolean(relationshipError)
+                        }
                         className="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {actionLoading ? (
@@ -1216,7 +1339,7 @@ export default function PlatformPolicyPage() {
 
                   <p className="mt-2 text-sm leading-6 text-textLight">
                     Chỉ hiển thị nút khôi phục khi
-                    Backend trả về canRestore = true.
+                    máy chủ cho phép khôi phục phiên bản đó.
                   </p>
                 </div>
 
@@ -1339,12 +1462,12 @@ export default function PlatformPolicyPage() {
               </p>
 
               <h3 className="mt-2 text-lg font-black text-text">
-                Chỉ dành cho Admin
+                Chỉ dành cho Quản trị viên
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-textLight">
-                Màn hình nằm trong Admin RoleRoute.
-                Moderator, Business và Personal không có
+                Màn hình chỉ dành cho Quản trị viên.
+                Kiểm duyệt viên, Doanh nghiệp và Cá nhân không có
                 quyền truy cập.
               </p>
             </section>
@@ -1356,11 +1479,11 @@ export default function PlatformPolicyPage() {
 
               <div className="mt-4 space-y-4">
                 {[
-                  "Không gửi metadata của policy trong payload chỉnh sửa.",
-                  "Chỉ gửi trường Admin thực sự thay đổi.",
-                  "Không optimistic update trước khi Backend xác nhận.",
-                  "Restore chỉ dùng khi Backend trả canRestore.",
-                  "Sau save/restore phải tải lại current policy và version history.",
+                  "Không gửi thông tin hệ thống của chính sách trong dữ liệu cập nhật.",
+                  "Chỉ gửi những trường Quản trị viên thực sự thay đổi.",
+                  "Không cập nhật giao diện trước khi máy chủ xác nhận.",
+                  "Chỉ cho khôi phục khi máy chủ xác nhận phiên bản đó có thể khôi phục.",
+                  "Sau khi lưu hoặc khôi phục phải tải lại chính sách hiện tại và lịch sử phiên bản.",
                 ].map((item, index) => (
                   <div
                     key={item}
@@ -1386,7 +1509,7 @@ export default function PlatformPolicyPage() {
         title="Khôi phục phiên bản chính sách?"
         description={
           restoreTarget
-            ? `Hệ thống sẽ tạo một phiên bản active mới từ nội dung của v${restoreTarget.version}. Phiên bản cũ không bị xóa.`
+            ? `Hệ thống sẽ tạo một phiên bản đang áp dụng mới từ nội dung của v${restoreTarget.version}. Phiên bản cũ không bị xóa.`
             : ""
         }
         confirmLabel="Khôi phục"
