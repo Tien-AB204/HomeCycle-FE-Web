@@ -5,6 +5,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
+import productTypeApi from "../../services/apis/productTypeApi";
 
 const GROUP_OPTIONS = [
   { value: "Day", label: "Theo ngày" },
@@ -754,6 +755,7 @@ const initialFilters = {
   userStatus: "",
   targetCity: "",
   serviceCity: "",
+  productTypeId: "",
 };
 
 const validatePeriod = (
@@ -833,6 +835,21 @@ export default function AdminDashboardModulePage({
       data: null,
       error: "",
     });
+
+  const [
+    productTypeOptions,
+    setProductTypeOptions,
+  ] = useState([]);
+
+  const [
+    productTypeLoading,
+    setProductTypeLoading,
+  ] = useState(false);
+
+  const [
+    productTypeError,
+    setProductTypeError,
+  ] = useState("");
 
   const usesPeriod =
     config?.type ===
@@ -917,6 +934,142 @@ export default function AdminDashboardModulePage({
     requestKey,
   ]);
 
+  useEffect(() => {
+    if (
+      dashboard !==
+      "business-demand"
+    ) {
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    let active = true;
+
+    const loadProductTypes =
+      async () => {
+        setProductTypeLoading(true);
+        setProductTypeError("");
+
+        try {
+          const allItems = [];
+          let pageNumber = 1;
+          let hasNextPage = true;
+
+          while (
+            active &&
+            hasNextPage
+          ) {
+            const result =
+              await productTypeApi.getAll({
+                pageNumber,
+                pageSize: 100,
+                signal:
+                  controller.signal,
+              });
+
+            if (!active) {
+              return;
+            }
+
+            allItems.push(
+              ...(Array.isArray(
+                result?.items,
+              )
+                ? result.items
+                : []),
+            );
+
+            hasNextPage =
+              Boolean(
+                result?.hasNextPage,
+              );
+
+            pageNumber += 1;
+          }
+
+          if (!active) {
+            return;
+          }
+
+          const seen =
+            new Set();
+
+          const options =
+            allItems
+              .filter((item) => {
+                const id =
+                  item?.productTypeId;
+
+                if (
+                  !id ||
+                  seen.has(id)
+                ) {
+                  return false;
+                }
+
+                seen.add(id);
+
+                return true;
+              })
+              .map((item) => ({
+                value:
+                  item.productTypeId,
+                label:
+                  `${
+                    item.productTypeName ||
+                    "Loại sản phẩm chưa đặt tên"
+                  }${
+                    item.isActive ===
+                    false
+                      ? " (đã ẩn)"
+                      : ""
+                  }`,
+              }))
+              .sort((a, b) =>
+                a.label.localeCompare(
+                  b.label,
+                  "vi",
+                ),
+              );
+
+          setProductTypeOptions(
+            options,
+          );
+        } catch (error) {
+          if (
+            !active ||
+            error?.name ===
+              "CanceledError" ||
+            error?.code ===
+              "ERR_CANCELED"
+          ) {
+            return;
+          }
+
+          setProductTypeOptions([]);
+
+          setProductTypeError(
+            "Không thể tải danh sách loại sản phẩm. Các bộ lọc khác vẫn có thể sử dụng.",
+          );
+        } finally {
+          if (active) {
+            setProductTypeLoading(
+              false,
+            );
+          }
+        }
+      };
+
+    loadProductTypes();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [dashboard]);
+
   if (!config) {
     return null;
   }
@@ -927,6 +1080,17 @@ export default function AdminDashboardModulePage({
 
   const data =
     state.data;
+
+  const businessProductTypeOptions = [
+    {
+      value: "",
+      label:
+        productTypeLoading
+          ? "Đang tải loại sản phẩm..."
+          : "Tất cả loại sản phẩm",
+    },
+    ...productTypeOptions,
+  ];
 
   const applyFilters = (
     event,
@@ -1195,6 +1359,11 @@ export default function AdminDashboardModulePage({
         "business-demand"
       ) {
         fields.push(
+          renderSelect(
+            "Loại sản phẩm",
+            "productTypeId",
+            businessProductTypeOptions,
+          ),
           <label key="targetCity">
             <span className="text-xs font-black uppercase tracking-[0.11em] text-textLight">
               Thành phố mục tiêu
@@ -2021,6 +2190,14 @@ export default function AdminDashboardModulePage({
             {filterError}
           </p>
         )}
+
+        {dashboard ===
+          "business-demand" &&
+          productTypeError && (
+            <p className="mt-3 text-sm font-semibold text-warning">
+              {productTypeError}
+            </p>
+          )}
       </form>
 
       {!loading &&
