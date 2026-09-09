@@ -4,6 +4,11 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
+import {
+  DashboardColumnChart,
+  DashboardDonutChart,
+  DashboardLineChart,
+} from "../../components/admin/AdminDashboardCharts";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 
@@ -158,7 +163,7 @@ const MODULES = {
     title: "Giao dịch",
     eyebrow: "DASHBOARD VẬN HÀNH",
     description:
-      "Theo dõi số bản ghi thanh toán, trạng thái, phương thức và lượt thanh toán phát sinh trong kỳ.",
+      "Theo dõi trạng thái thanh toán hiện tại, thời gian chờ và các lượt thanh toán thành công trong kỳ.",
     apiMethod: "getPayments",
   },
   orders: {
@@ -166,7 +171,7 @@ const MODULES = {
     title: "Đơn hàng",
     eyebrow: "DASHBOARD VẬN HÀNH",
     description:
-      "Theo dõi đơn hàng tạo mới và các sự kiện hoàn tất, hủy, hoàn trả trong kỳ.",
+      "Theo dõi backlog đơn hàng hiện tại và các sự kiện hoàn tất, hủy, hoàn trả trong kỳ.",
     apiMethod: "getOrders",
   },
   appointments: {
@@ -182,7 +187,7 @@ const MODULES = {
     title: "Tranh chấp",
     eyebrow: "DASHBOARD VẬN HÀNH",
     description:
-      "Theo dõi phân bố nguyên nhân, trạng thái và mức độ lựa chọn các nhóm tranh chấp.",
+      "Theo dõi backlog tranh chấp, thời gian xử lý và luồng mở mới, giải quyết trong kỳ.",
     apiMethod: "getDisputes",
   },
   "business-overview": {
@@ -605,99 +610,6 @@ const SeriesTable = ({
                           item.count,
                         )}
                   </td>
-                </tr>
-              ),
-            )
-          )}
-        </tbody>
-      </table>
-    </div>
-  </section>
-);
-
-const MultiSeriesTable = ({
-  title,
-  rows,
-  columns,
-}) => (
-  <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
-    <h3 className="text-lg font-black text-text">
-      {title}
-    </h3>
-
-    <div className="mt-4 overflow-x-auto">
-      <table className="min-w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs uppercase tracking-[0.1em] text-textLight">
-            <th className="px-3 py-3">
-              Từ ngày
-            </th>
-
-            <th className="px-3 py-3">
-              Đến trước
-            </th>
-
-            {columns.map(
-              (column) => (
-                <th
-                  key={column.key}
-                  className="px-3 py-3 text-right"
-                >
-                  {column.label}
-                </th>
-              ),
-            )}
-          </tr>
-        </thead>
-
-        <tbody>
-          {!Array.isArray(rows) ||
-          rows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={
-                  columns.length + 2
-                }
-                className="px-3 py-8 text-center text-textLight"
-              >
-                Chưa có dữ liệu.
-              </td>
-            </tr>
-          ) : (
-            rows.map(
-              (item, index) => (
-                <tr
-                  key={`${item.from}-${index}`}
-                  className="border-b border-border/70 last:border-0"
-                >
-                  <td className="px-3 py-3 font-semibold text-text">
-                    {formatDate(
-                      item.from,
-                    )}
-                  </td>
-
-                  <td className="px-3 py-3 text-textLight">
-                    {formatDate(
-                      item.toExclusive,
-                    )}
-                  </td>
-
-                  {columns.map(
-                    (column) => (
-                      <td
-                        key={
-                          column.key
-                        }
-                        className="px-3 py-3 text-right font-black text-text"
-                      >
-                        {formatNumber(
-                          item?.[
-                            column.key
-                          ],
-                        )}
-                      </td>
-                    ),
-                  )}
                 </tr>
               ),
             )
@@ -1681,22 +1593,31 @@ export default function AdminDashboardModulePage({
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <DistributionPanel
-                title="Trạng thái hiện tại"
-                description="Phân bố trạng thái hiện tại của payment sau khi áp dụng bộ lọc."
+              <DashboardDonutChart
+                title="Cơ cấu trạng thái thanh toán"
+                description="Ảnh chụp trạng thái hiện tại sau khi áp dụng bộ lọc."
                 rows={
                   data?.currentStatusDistribution
                 }
-                dashboard="payments"
+                getLabel={(item) =>
+                  labelFor(
+                    item.label ||
+                      item.key,
+                    "payments",
+                  )
+                }
               />
 
-              <DistributionPanel
-                title="Tuổi payment đang chờ"
-                description="Phân bố payment Pending theo thời gian kể từ lúc tạo."
+              <DashboardColumnChart
+                title="Thời gian chờ thanh toán"
+                description="Phân bố các thanh toán đang chờ theo thời gian kể từ lúc tạo."
                 rows={
                   data?.pendingAgingDistribution
                 }
-                dashboard="payments"
+                getLabel={(item) =>
+                  item.label ||
+                  item.key
+                }
               />
             </div>
 
@@ -1706,9 +1627,18 @@ export default function AdminDashboardModulePage({
               }
             />
 
-            <SeriesTable
+            <DashboardLineChart
               title="Thanh toán thành công theo kỳ"
+              description="Xu hướng thanh toán thành công theo thời điểm thanh toán thực tế."
               rows={data?.paidSeries}
+              series={[
+                {
+                  key: "count",
+                  label: "Đã thanh toán",
+                  className:
+                    "text-success",
+                },
+              ]}
             />
           </>
         );
@@ -1765,7 +1695,7 @@ export default function AdminDashboardModulePage({
               />
 
               <KpiCard
-                label="Đơn active lâu nhất"
+                label="Đơn đang hoạt động lâu nhất"
                 value={formatHours(
                   data?.oldestActiveOrderAgeHours,
                 )}
@@ -1778,38 +1708,56 @@ export default function AdminDashboardModulePage({
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <DistributionPanel
-                title="Trạng thái hiện tại"
+              <DashboardDonutChart
+                title="Cơ cấu trạng thái đơn hàng"
+                description="Ảnh chụp trạng thái hiện tại của toàn bộ đơn sau khi áp dụng bộ lọc."
                 rows={
                   data?.currentStatusDistribution
                 }
-                dashboard="orders"
+                getLabel={(item) =>
+                  labelFor(
+                    item.label ||
+                      item.key,
+                    "orders",
+                  )
+                }
               />
 
-              <DistributionPanel
+              <DashboardColumnChart
                 title="Tuổi đơn đang hoạt động"
+                description="Thời gian được tính từ lúc tạo đơn, không phải thời gian ở trạng thái hiện tại."
                 rows={
                   data?.activeOrderAgingDistribution
                 }
-                dashboard="orders"
+                getLabel={(item) =>
+                  item.label ||
+                  item.key
+                }
               />
             </div>
 
-            <MultiSeriesTable
+            <DashboardLineChart
               title="Kết quả đơn hàng theo kỳ"
+              description="Các sự kiện hoàn tất, hủy và hoàn trả theo thời điểm nghiệp vụ thực tế."
               rows={data?.outcomeSeries}
-              columns={[
+              series={[
                 {
                   key: "completedCount",
                   label: "Hoàn tất",
+                  className:
+                    "text-success",
                 },
                 {
                   key: "cancelledCount",
                   label: "Hủy",
+                  className:
+                    "text-error",
                 },
                 {
                   key: "returnedCount",
                   label: "Hoàn trả",
+                  className:
+                    "text-warning",
                 },
               ]}
             />
@@ -1903,34 +1851,60 @@ export default function AdminDashboardModulePage({
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <DistributionPanel
-              title="Trạng thái hiện tại"
+            <DashboardDonutChart
+              title="Cơ cấu trạng thái lịch hẹn"
+              description="Ảnh chụp trạng thái hiện tại của các lịch hẹn."
               rows={
                 data?.currentStatusDistribution
               }
-              dashboard="appointments"
+              getLabel={(item) =>
+                labelFor(
+                  item.label ||
+                    item.key,
+                  "appointments",
+                )
+              }
             />
 
-            <DistributionPanel
-              title="Loại lịch hẹn"
+            <DashboardDonutChart
+              title="Cơ cấu loại lịch hẹn"
               rows={
                 data?.appointmentTypeDistribution
               }
-              dashboard="appointments"
+              getLabel={(item) =>
+                labelFor(
+                  item.label ||
+                    item.key,
+                  "appointments",
+                )
+              }
             />
 
-            <DistributionPanel
+            <DashboardColumnChart
               title="Mức độ quá hạn"
+              description="Phân bố các lịch đã quá thời gian hẹn nhưng chưa kết thúc."
               rows={
                 data?.overdueAgingDistribution
               }
-              dashboard="appointments"
+              getLabel={(item) =>
+                item.label ||
+                item.key
+              }
             />
           </div>
 
-          <SeriesTable
+          <DashboardLineChart
             title="Khối lượng lịch theo ngày hẹn thực tế"
+            description="Xu hướng dựa trên ngày kiểm định hoặc ngày thu gom thực tế."
             rows={data?.scheduledSeries}
+            series={[
+              {
+                key: "count",
+                label: "Lịch hẹn",
+                className:
+                  "text-primary",
+              },
+            ]}
           />
         </>
       );
@@ -1992,12 +1966,19 @@ export default function AdminDashboardModulePage({
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <DistributionPanel
-            title="Trạng thái hiện tại"
+          <DashboardDonutChart
+            title="Cơ cấu trạng thái tranh chấp"
+            description="Ảnh chụp trạng thái hiện tại của toàn bộ tranh chấp."
             rows={
               data?.currentStatusDistribution
             }
-            dashboard="disputes"
+            getLabel={(item) =>
+              labelFor(
+                item.label ||
+                  item.key,
+                "disputes",
+              )
+            }
           />
 
           <DistributionPanel
@@ -2009,36 +1990,51 @@ export default function AdminDashboardModulePage({
             dashboard="disputes"
           />
 
-          <DistributionPanel
+          <DashboardColumnChart
             title="Tranh chấp chưa xử lý theo nguyên nhân"
+            description="Tập trung vào backlog hiện còn chưa giải quyết."
             rows={
               data?.unresolvedByCategory
             }
-            dashboard="disputes"
+            getLabel={(item) =>
+              labelFor(
+                item.label ||
+                  item.key,
+                "disputes",
+              )
+            }
           />
 
-          <DistributionPanel
+          <DashboardColumnChart
             title="Tuổi tranh chấp chưa xử lý"
             rows={
               data?.unresolvedAgingDistribution
             }
-            dashboard="disputes"
+            getLabel={(item) =>
+              item.label ||
+              item.key
+            }
           />
         </div>
 
-        <MultiSeriesTable
+        <DashboardLineChart
           title="Mở mới và giải quyết theo kỳ"
+          description="So sánh số tranh chấp phát sinh và số tranh chấp được giải quyết theo thời gian."
           rows={
             data?.openedVsResolvedSeries
           }
-          columns={[
+          series={[
             {
               key: "openedCount",
               label: "Mở mới",
+              className:
+                "text-error",
             },
             {
               key: "resolvedCount",
               label: "Đã giải quyết",
+              className:
+                "text-success",
             },
           ]}
         />
