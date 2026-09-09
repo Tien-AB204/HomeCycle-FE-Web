@@ -27,7 +27,9 @@ import HomeRoute from "./HomeRoute";
 import RoleRoute from "./RoleRoute";
 
 // Admin Pages
+import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
 import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
@@ -192,6 +194,60 @@ const AppRouter = () => {
           <Route index element={<AdminDashboardPage />} />
 
           <Route path="dashboard" element={<AdminDashboardPage />} />
+
+          <Route
+            path="dashboard/users"
+            element={<AdminUserDashboardPage />}
+          />
+
+          <Route
+            path="dashboard/payments"
+            element={
+              <AdminDashboardModulePage dashboard="payments" />
+            }
+          />
+
+          <Route
+            path="dashboard/orders"
+            element={
+              <AdminDashboardModulePage dashboard="orders" />
+            }
+          />
+
+          <Route
+            path="dashboard/appointments"
+            element={
+              <AdminDashboardModulePage dashboard="appointments" />
+            }
+          />
+
+          <Route
+            path="dashboard/disputes"
+            element={
+              <AdminDashboardModulePage dashboard="disputes" />
+            }
+          />
+
+          <Route
+            path="dashboard/businesses/overview"
+            element={
+              <AdminDashboardModulePage dashboard="business-overview" />
+            }
+          />
+
+          <Route
+            path="dashboard/businesses/demand"
+            element={
+              <AdminDashboardModulePage dashboard="business-demand" />
+            }
+          />
+
+          <Route
+            path="dashboard/businesses/performance"
+            element={
+              <AdminDashboardModulePage dashboard="business-performance" />
+            }
+          />
 
           <Route path="categories" element={<CategoryPage />} />
 
