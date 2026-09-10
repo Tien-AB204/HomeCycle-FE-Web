@@ -318,18 +318,11 @@ const ModDashboardPage = () => {
                   {item.icon}
                 </span>
 
-                <span
-                  className={[
-                    "rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em]",
-                    hasError
-                      ? "bg-error/10 text-error"
-                      : "bg-success/10 text-success",
-                  ].join(" ")}
-                >
-                  {hasError
-                    ? "Chưa tải được"
-                    : "Dữ liệu thật"}
-                </span>
+                {hasError && (
+                  <span className="rounded-full bg-error/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.1em] text-error">
+                    Chưa tải được
+                  </span>
+                )}
               </div>
 
               <p className="mt-5 text-3xl font-black tracking-tight text-text">
