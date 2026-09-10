@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Input, Button, Spin, Descriptions, Empty, Tag, Alert } from "antd";
 import {
   SearchOutlined,
@@ -19,26 +19,46 @@ const VerificationPage = () => {
   // --- STATE RESIZABLE CỘT TRÁI ---
   const [sidebarWidth, setSidebarWidth] = useState(380);
   const [isResizing, setIsResizing] = useState(false);
+  const resizeSessionRef = useRef(null);
 
   const startResizing = (e) => {
     e.preventDefault();
+
+    resizeSessionRef.current = {
+      startX: e.clientX,
+      startWidth: sidebarWidth,
+    };
+
     setIsResizing(true);
   };
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!isResizing) return;
-      const newWidth = e.clientX - 278;
+      const session = resizeSessionRef.current;
+
+      if (!isResizing || !session) return;
+
+      const delta =
+        e.clientX - session.startX;
+
+      const newWidth =
+        session.startWidth + delta;
+
       if (newWidth >= 300 && newWidth <= 600) {
         setSidebarWidth(newWidth);
       }
     };
-    const handleMouseUp = () => setIsResizing(false);
+
+    const handleMouseUp = () => {
+      resizeSessionRef.current = null;
+      setIsResizing(false);
+    };
 
     if (isResizing) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     }
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
@@ -54,6 +74,8 @@ const VerificationPage = () => {
   // Inline Actions & Feedback
   const [actionState, setActionState] = useState("idle");
   const [rejectReason, setRejectReason] = useState("");
+  const [supplementRequestNote, setSupplementRequestNote] =
+    useState("");
   const [actionFeedback, setActionFeedback] = useState(null);
   const [globalSuccess, setGlobalSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -328,11 +350,11 @@ const VerificationPage = () => {
   ];
 
   return (
-    <div className="flex h-full bg-white text-text font-sans overflow-hidden">
+    <div className="flex h-[calc(100vh-72px)] min-h-0 bg-white text-text font-sans overflow-hidden">
       {/* CỘT TRÁI */}
       <div
         style={{ width: `${sidebarWidth}px` }}
-        className="border-r border-border flex flex-col shrink-0 bg-background/60 relative select-none"
+        className="min-h-0 border-r border-border flex flex-col shrink-0 bg-background/60 relative select-none"
       >
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
@@ -374,7 +396,7 @@ const VerificationPage = () => {
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {loadingList ? (
             <div className="flex justify-center p-10">
               <Spin />
@@ -425,7 +447,7 @@ const VerificationPage = () => {
       </div>
 
       {/* CỘT PHẢI */}
-      <div className="flex-1 flex flex-col relative bg-white overflow-y-auto">
+      <div className="min-h-0 min-w-0 flex-1 flex flex-col relative bg-white overflow-hidden">
         {!selectedProfileId ? (
           <div className="flex-1 flex flex-col items-center justify-center text-textLight p-8 text-center bg-background">
             {globalSuccess && (
@@ -452,8 +474,8 @@ const VerificationPage = () => {
           </div>
         ) : profileDetail ? (
           <>
-            <div className="flex-1 overflow-y-auto p-8 bg-background/60">
-              <div className="mb-6 flex justify-between items-start">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background/60 p-5">
+              <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
                 <div>
                   <h1 className="text-2xl font-bold text-text">
                     {profileDetail.businessName ||
@@ -476,7 +498,7 @@ const VerificationPage = () => {
               </div>
 
               {/* Thông tin Text */}
-              <div className="bg-white p-6 rounded-xl border border-border shadow-sm">
+              <div className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
                 <Descriptions
                   column={1}
                   labelStyle={{
@@ -556,7 +578,7 @@ const VerificationPage = () => {
               </div>
 
               {/* Thông tin Hình ảnh (Hỗ trợ cả trường riêng lẻ và mảng documents của Doanh nghiệp) */}
-              <div className="mt-6 bg-white p-6 rounded-xl border border-border shadow-sm">
+              <div className="mt-4 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
                 <h3 className="font-semibold text-text mb-4 border-b pb-2">
                   Hình ảnh đính kèm (CCCD / Giấy phép)
                 </h3>
@@ -647,8 +669,55 @@ const VerificationPage = () => {
               </div>
             </div>
 
+            <section className="mx-5 mb-4 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
+              <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
+                <div className="flex items-center gap-3">
+                  <span
+                    className="material-symbols-outlined flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[20px] text-primary"
+                    aria-hidden="true"
+                  >
+                    history
+                  </span>
+
+                  <div>
+                    <h3 className="text-sm font-black text-text">
+                      Lịch sử xác thực
+                    </h3>
+
+                    <p className="mt-0.5 text-xs text-textLight">
+                      Theo dõi các lần thay đổi và kết quả xử lý hồ sơ.
+                    </p>
+                  </div>
+                </div>
+
+                <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-textLight">
+                  Lịch sử
+                </span>
+              </div>
+
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-dashed border-border bg-background/50 p-4">
+                <span
+                  className="material-symbols-outlined text-[21px] text-textLight"
+                  aria-hidden="true"
+                >
+                  schedule
+                </span>
+
+                <div>
+                  <p className="text-sm font-bold text-text">
+                    Chưa có lịch sử xác thực để hiển thị
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-textLight">
+                    Các lần thay đổi trạng thái và kết quả xử lý sẽ
+                    xuất hiện tại đây khi có dữ liệu.
+                  </p>
+                </div>
+              </div>
+            </section>
+
             {/* INLINE ACTIONS FOOTER */}
-            <div className="bg-white border-t border-border p-4 px-8 flex flex-col z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+            <div className="shrink-0 bg-white border-t border-border p-4 px-8 flex flex-col z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
               {actionFeedback && (
                 <Alert
                   message={actionFeedback.text}
@@ -659,7 +728,24 @@ const VerificationPage = () => {
               )}
 
               {actionState === "idle" && (
-                <div className="flex justify-end gap-3">
+                <div className="flex flex-wrap justify-end gap-3">
+                  <Button
+                    size="large"
+                    onClick={() => {
+                      setSupplementRequestNote("");
+                      setActionState("requesting-supplement");
+                    }}
+                    className="font-medium text-warning border-warning/40"
+                  >
+                    <span
+                      className="material-symbols-outlined mr-1 text-[18px]"
+                      aria-hidden="true"
+                    >
+                      note_add
+                    </span>
+                    Yêu cầu bổ sung
+                  </Button>
+
                   <Button
                     danger
                     size="large"
@@ -669,6 +755,7 @@ const VerificationPage = () => {
                   >
                     Từ chối
                   </Button>
+
                   <Button
                     type="primary"
                     size="large"
@@ -678,6 +765,66 @@ const VerificationPage = () => {
                   >
                     Duyệt hồ sơ
                   </Button>
+                </div>
+              )}
+
+              {actionState === "requesting-supplement" && (
+                <div className="rounded-xl border border-warning/20 bg-warning/10 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="flex items-center gap-2 font-semibold text-warning">
+                        <span
+                          className="material-symbols-outlined text-[20px]"
+                          aria-hidden="true"
+                        >
+                          note_add
+                        </span>
+                        Yêu cầu bổ sung giấy tờ
+                      </p>
+
+                      <p className="mt-1 text-xs text-textLight">
+                        Ghi rõ giấy tờ hoặc thông tin người dùng cần bổ sung.
+                      </p>
+                    </div>
+
+                    <span className="rounded-full border border-warning/20 bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-warning">
+                      Đang hoàn thiện
+                    </span>
+                  </div>
+
+                  <Input.TextArea
+                    rows={3}
+                    value={supplementRequestNote}
+                    onChange={(event) =>
+                      setSupplementRequestNote(event.target.value)
+                    }
+                    placeholder="Ví dụ: Vui lòng bổ sung ảnh giấy phép rõ nét hơn..."
+                    className="mt-3"
+                  />
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-xs text-textLight">
+                      Nội dung hiện chưa được gửi đi.
+                    </p>
+
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          setSupplementRequestNote("");
+                          setActionState("idle");
+                        }}
+                      >
+                        Hủy
+                      </Button>
+
+                      <Button
+                        type="primary"
+                        disabled
+                      >
+                        Gửi yêu cầu
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
