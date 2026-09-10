@@ -27,11 +27,23 @@ export default function ManagementPortalLayout({
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const displayName = getDisplayName(user, fallbackDisplayName);
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    useState(false);
+
+  const [
+    desktopSidebarCollapsed,
+    setDesktopSidebarCollapsed,
+  ] = useState(false);
+
+  const displayName =
+    getDisplayName(user, fallbackDisplayName);
+
   const avatarCharacter =
-    String(displayName).trim().charAt(0).toUpperCase() || fallbackInitial;
+    String(displayName)
+      .trim()
+      .charAt(0)
+      .toUpperCase() || fallbackInitial;
 
   const currentPage = getCurrentPage(
     location.pathname,
@@ -41,7 +53,9 @@ export default function ManagementPortalLayout({
 
   const handleLogout = () => {
     logout();
-    navigate("/auth/login", { replace: true });
+    navigate("/auth/login", {
+      replace: true,
+    });
   };
 
   const handleGoHome = () => {
@@ -55,28 +69,91 @@ export default function ManagementPortalLayout({
           type="button"
           aria-label={closeMenuAriaLabel}
           className="fixed inset-0 z-30 bg-primary/40 lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={() =>
+            setMobileMenuOpen(false)
+          }
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-[278px] flex-col overflow-hidden bg-primary text-white shadow-[18px_0_48px_rgba(23,40,48,0.14)] transition-transform lg:sticky lg:top-0 lg:translate-x-0 ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={[
+          "fixed inset-y-0 left-0 z-40 flex h-screen w-[278px] flex-col overflow-visible bg-primary text-white shadow-[18px_0_48px_rgba(23,40,48,0.14)] transition-all duration-200",
+          "lg:sticky lg:top-0 lg:translate-x-0",
+          desktopSidebarCollapsed
+            ? "lg:w-[88px]"
+            : "lg:w-[278px]",
+          mobileMenuOpen
+            ? "translate-x-0"
+            : "-translate-x-full",
+        ].join(" ")}
       >
-        <div className="shrink-0 border-b border-white/10 px-6 py-5">
+        <button
+          type="button"
+          onClick={() =>
+            setDesktopSidebarCollapsed(
+              (current) => !current,
+            )
+          }
+          aria-label={
+            desktopSidebarCollapsed
+              ? "Mở rộng thanh điều hướng"
+              : "Thu gọn thanh điều hướng"
+          }
+          title={
+            desktopSidebarCollapsed
+              ? "Mở rộng thanh điều hướng"
+              : "Thu gọn thanh điều hướng"
+          }
+          className="absolute -right-3 top-[82px] z-50 hidden h-7 w-7 items-center justify-center rounded-full border border-border bg-white text-primary shadow-md transition hover:bg-background lg:flex"
+        >
+          <span
+            className="material-symbols-outlined text-[18px]"
+            aria-hidden="true"
+          >
+            {desktopSidebarCollapsed
+              ? "chevron_right"
+              : "chevron_left"}
+          </span>
+        </button>
+
+        <div
+          className={[
+            "shrink-0 border-b border-white/10 py-5 transition-all",
+            desktopSidebarCollapsed
+              ? "lg:px-3"
+              : "px-6",
+          ].join(" ")}
+        >
           <NavLink
             to={dashboardPath}
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3"
+            onClick={() =>
+              setMobileMenuOpen(false)
+            }
+            title={
+              desktopSidebarCollapsed
+                ? "HomeCycle"
+                : undefined
+            }
+            className={[
+              "flex items-center gap-3",
+              desktopSidebarCollapsed
+                ? "lg:justify-center"
+                : "",
+            ].join(" ")}
           >
             <img
               src={homeCycleMark}
               alt="HomeCycle"
-              className="h-11 w-11 rounded-xl border border-white/20 shadow-sm"
+              className="h-11 w-11 shrink-0 rounded-xl border border-white/20 shadow-sm"
             />
 
-            <div>
+            <div
+              className={
+                desktopSidebarCollapsed
+                  ? "lg:hidden"
+                  : ""
+              }
+            >
               <p className="text-lg font-black tracking-tight">
                 HomeCycle
               </p>
@@ -90,11 +167,23 @@ export default function ManagementPortalLayout({
 
         <nav
           aria-label={navAriaLabel}
-          className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+          className={[
+            "min-h-0 flex-1 space-y-4 overflow-y-auto py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']",
+            desktopSidebarCollapsed
+              ? "lg:px-2"
+              : "px-4",
+          ].join(" ")}
         >
           {navGroups.map((group) => (
             <div key={group.group}>
-              <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">
+              <p
+                className={[
+                  "mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-white/45",
+                  desktopSidebarCollapsed
+                    ? "lg:hidden"
+                    : "",
+                ].join(" ")}
+              >
                 {group.group}
               </p>
 
@@ -103,11 +192,24 @@ export default function ManagementPortalLayout({
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    end={item.path === dashboardPath}
-                    onClick={() => setMobileMenuOpen(false)}
+                    end={
+                      item.path ===
+                      dashboardPath
+                    }
+                    title={
+                      desktopSidebarCollapsed
+                        ? item.label
+                        : undefined
+                    }
+                    onClick={() =>
+                      setMobileMenuOpen(false)
+                    }
                     className={({ isActive }) =>
                       [
                         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition",
+                        desktopSidebarCollapsed
+                          ? "lg:justify-center lg:px-2"
+                          : "",
                         isActive
                           ? "bg-white text-primary shadow-[0_8px_22px_rgba(23,40,48,0.12)]"
                           : "text-white/70 hover:bg-white/10 hover:text-white",
@@ -115,13 +217,21 @@ export default function ManagementPortalLayout({
                     }
                   >
                     <span
-                      className="material-symbols-outlined text-[21px]"
+                      className="material-symbols-outlined shrink-0 text-[21px]"
                       aria-hidden="true"
                     >
                       {item.icon}
                     </span>
 
-                    {item.label}
+                    <span
+                      className={
+                        desktopSidebarCollapsed
+                          ? "lg:hidden"
+                          : ""
+                      }
+                    >
+                      {item.label}
+                    </span>
                   </NavLink>
                 ))}
               </div>
@@ -129,13 +239,39 @@ export default function ManagementPortalLayout({
           ))}
         </nav>
 
-        <div className="shrink-0 border-t border-white/10 p-4">
-          <div className="mb-3 flex items-center gap-3 rounded-xl bg-white/10 p-3">
+        <div
+          className={[
+            "shrink-0 border-t border-white/10 transition-all",
+            desktopSidebarCollapsed
+              ? "p-2"
+              : "p-4",
+          ].join(" ")}
+        >
+          <div
+            className={[
+              "mb-3 flex items-center gap-3 rounded-xl bg-white/10 p-3",
+              desktopSidebarCollapsed
+                ? "lg:justify-center lg:px-2"
+                : "",
+            ].join(" ")}
+            title={
+              desktopSidebarCollapsed
+                ? displayName
+                : undefined
+            }
+          >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 font-black text-white">
               {avatarCharacter}
             </div>
 
-            <div className="min-w-0 flex-1">
+            <div
+              className={[
+                "min-w-0 flex-1",
+                desktopSidebarCollapsed
+                  ? "lg:hidden"
+                  : "",
+              ].join(" ")}
+            >
               <p className="truncate text-sm font-bold text-white">
                 {displayName}
               </p>
@@ -150,29 +286,67 @@ export default function ManagementPortalLayout({
             <button
               type="button"
               onClick={handleGoHome}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white/75 transition hover:bg-white/10 hover:text-white"
+              title={
+                desktopSidebarCollapsed
+                  ? "Về trang chủ"
+                  : undefined
+              }
+              className={[
+                "flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white/75 transition hover:bg-white/10 hover:text-white",
+                desktopSidebarCollapsed
+                  ? "lg:px-2"
+                  : "",
+              ].join(" ")}
             >
               <span
-                className="material-symbols-outlined text-[19px]"
+                className="material-symbols-outlined shrink-0 text-[19px]"
                 aria-hidden="true"
               >
                 home
               </span>
-              Về trang chủ
+
+              <span
+                className={
+                  desktopSidebarCollapsed
+                    ? "lg:hidden"
+                    : ""
+                }
+              >
+                Về trang chủ
+              </span>
             </button>
 
             <button
               type="button"
               onClick={handleLogout}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white/75 transition hover:bg-error/10 hover:text-white"
+              title={
+                desktopSidebarCollapsed
+                  ? "Đăng xuất"
+                  : undefined
+              }
+              className={[
+                "flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white/75 transition hover:bg-error/10 hover:text-white",
+                desktopSidebarCollapsed
+                  ? "lg:px-2"
+                  : "",
+              ].join(" ")}
             >
               <span
-                className="material-symbols-outlined text-[19px]"
+                className="material-symbols-outlined shrink-0 text-[19px]"
                 aria-hidden="true"
               >
                 logout
               </span>
-              Đăng xuất
+
+              <span
+                className={
+                  desktopSidebarCollapsed
+                    ? "lg:hidden"
+                    : ""
+                }
+              >
+                Đăng xuất
+              </span>
             </button>
           </div>
         </div>
@@ -184,7 +358,9 @@ export default function ManagementPortalLayout({
             <button
               type="button"
               aria-label={openMenuAriaLabel}
-              onClick={() => setMobileMenuOpen(true)}
+              onClick={() =>
+                setMobileMenuOpen(true)
+              }
               className="flex h-10 w-10 items-center justify-center rounded-xl border border-border text-primary lg:hidden"
             >
               <span

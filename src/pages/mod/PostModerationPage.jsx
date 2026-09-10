@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   SearchOutlined,
   LoadingOutlined,
@@ -74,6 +74,44 @@ const getModeratorDamageLabel = (value) => {
     ] || "Chưa xác định"
   );
 };
+const MODERATOR_POST_UI_ACTIONS = [
+  {
+    key: "approve",
+    label: "Phê duyệt",
+    icon: "check_circle",
+    confirmLabel: "Xác nhận phê duyệt",
+    requiresReason: false,
+  },
+  {
+    key: "reject",
+    label: "Từ chối",
+    icon: "cancel",
+    confirmLabel: "Xác nhận từ chối",
+    requiresReason: true,
+  },
+  {
+    key: "warn",
+    label: "Cảnh cáo",
+    icon: "warning",
+    confirmLabel: "Gửi cảnh cáo",
+    requiresReason: true,
+  },
+  {
+    key: "hide",
+    label: "Ẩn bài",
+    icon: "visibility_off",
+    confirmLabel: "Xác nhận ẩn bài",
+    requiresReason: true,
+  },
+  {
+    key: "remove",
+    label: "Gỡ bài",
+    icon: "delete",
+    confirmLabel: "Xác nhận gỡ bài",
+    requiresReason: true,
+  },
+];
+
 const PostModerationPage = () => {
   const [posts, setPosts] = useState([]);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -84,30 +122,52 @@ const PostModerationPage = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
+  const [sortOption, setSortOption] = useState("newest");
+  const [statusFilter, setStatusFilter] = useState("");
 
   // --- STATE RESIZABLE CỘT TRÁI ---
   const [sidebarWidth, setSidebarWidth] = useState(380);
   const [isResizing, setIsResizing] = useState(false);
+  const resizeSessionRef = useRef(null);
 
   const startResizing = (e) => {
     e.preventDefault();
+
+    resizeSessionRef.current = {
+      startX: e.clientX,
+      startWidth: sidebarWidth,
+    };
+
     setIsResizing(true);
   };
 
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!isResizing) return;
-      const newWidth = e.clientX - 278; // Trừ sidebar menu chính
+      const session = resizeSessionRef.current;
+
+      if (!isResizing || !session) return;
+
+      const delta =
+        e.clientX - session.startX;
+
+      const newWidth =
+        session.startWidth + delta;
+
       if (newWidth >= 300 && newWidth <= 600) {
         setSidebarWidth(newWidth);
       }
     };
-    const handleMouseUp = () => setIsResizing(false);
+
+    const handleMouseUp = () => {
+      resizeSessionRef.current = null;
+      setIsResizing(false);
+    };
 
     if (isResizing) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     }
+
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
@@ -120,6 +180,8 @@ const PostModerationPage = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionFeedback, setActionFeedback] = useState(null);
   const [globalFeedback, setGlobalFeedback] = useState(null);
+  const [plannedAction, setPlannedAction] = useState(null);
+  const [plannedReason, setPlannedReason] = useState("");
 
   // =========================================================================
   // API EFFECTS
@@ -146,7 +208,7 @@ const PostModerationPage = () => {
   }, [fetchPosts]);
 
   // --- LỌC CLIENT-SIDE (Hỗ trợ tìm theo tên, mô tả VÀ ID bài đăng) ---
-  const filteredPosts = debouncedSearchQuery
+  const searchedPosts = debouncedSearchQuery
     ? posts.filter((p) => {
         const query = debouncedSearchQuery.toLowerCase();
         const productName = p.productName?.toLowerCase() || "";
@@ -167,6 +229,63 @@ const PostModerationPage = () => {
       })
     : posts;
 
+  const filteredPosts = statusFilter
+    ? searchedPosts.filter(
+        (post) =>
+          String(post.status || "")
+            .trim()
+            .toUpperCase() === statusFilter,
+      )
+    : searchedPosts;
+
+  const sortedPosts = [...filteredPosts].sort((a, b) => {
+    if (sortOption === "oldest") {
+      const timeA = Date.parse(a.createdAt || "") || 0;
+      const timeB = Date.parse(b.createdAt || "") || 0;
+      return timeA - timeB;
+    }
+
+    if (sortOption === "name-asc") {
+      const nameA = String(
+        a.productName || a.description || "",
+      );
+
+      const nameB = String(
+        b.productName || b.description || "",
+      );
+
+      return nameA.localeCompare(
+        nameB,
+        "vi",
+        { sensitivity: "base" },
+      );
+    }
+
+    if (sortOption === "name-desc") {
+      const nameA = String(
+        a.productName || a.description || "",
+      );
+
+      const nameB = String(
+        b.productName || b.description || "",
+      );
+
+      return nameB.localeCompare(
+        nameA,
+        "vi",
+        { sensitivity: "base" },
+      );
+    }
+
+    const timeA =
+      Date.parse(a.createdAt || "") || 0;
+
+    const timeB =
+      Date.parse(b.createdAt || "") || 0;
+
+    return timeB - timeA;
+  });
+
   const handleSelectPost = async (id) => {
     if (!id) return;
     setIsLoadingDetail(true);
@@ -174,6 +293,8 @@ const PostModerationPage = () => {
     setActionState("idle");
     setActionFeedback(null);
     setGlobalFeedback(null);
+    setPlannedAction(null);
+    setPlannedReason("");
 
     try {
       const data = await postApi.getById(id);
@@ -273,11 +394,11 @@ const PostModerationPage = () => {
   };
 
   return (
-    <div className="flex h-full bg-white animate-fade-in overflow-hidden">
+    <div className="flex h-[calc(100vh-72px)] min-h-0 bg-white animate-fade-in overflow-hidden">
       {/* CỘT TRÁI (CÓ RESIZE & SEARCH ID) */}
       <div
         style={{ width: `${sidebarWidth}px` }}
-        className="border-r border-border flex flex-col bg-white shrink-0 relative select-none"
+        className="min-h-0 border-r border-border flex flex-col bg-white shrink-0 relative select-none"
       >
         <div className="p-4 flex justify-between items-center border-b border-border">
           <h2 className="text-lg font-bold text-text flex items-center gap-2">
@@ -290,8 +411,8 @@ const PostModerationPage = () => {
           </h2>
         </div>
 
-        <div className="p-4 pb-2 border-b border-border bg-background/60">
-          <div className="relative mb-2">
+        <div className="p-4 pb-3 border-b border-border bg-background/60">
+          <div className="relative">
             <input
               type="text"
               value={searchQuery}
@@ -301,9 +422,80 @@ const PostModerationPage = () => {
             />
             <SearchOutlined className="absolute left-3 top-2.5 text-textLight" />
           </div>
+
+          <div className="mt-3">
+            <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-textLight">
+              Trạng thái
+            </span>
+
+            <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+              {[
+                {
+                  value: "",
+                  label: "Tất cả",
+                },
+                {
+                  value: "ACTIVE",
+                  label: "Hoạt động",
+                },
+                {
+                  value: "CLOSED",
+                  label: "Đã đóng",
+                },
+                {
+                  value: "SUSPENDED",
+                  label: "Đình chỉ",
+                },
+              ].map((option) => (
+                <button
+                  key={option.value || "all"}
+                  type="button"
+                  onClick={() =>
+                    setStatusFilter(option.value)
+                  }
+                  className={[
+                    "rounded-lg border px-2 py-1.5 text-[11px] font-bold transition",
+                    statusFilter === option.value
+                      ? "border-primary bg-primary text-white"
+                      : "border-border bg-white text-textLight hover:border-primary/40 hover:text-primary",
+                  ].join(" ")}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-center gap-2">
+            <span className="shrink-0 text-xs font-semibold text-textLight">
+              Sắp xếp
+            </span>
+
+            <select
+              value={sortOption}
+              onChange={(e) =>
+                setSortOption(e.target.value)
+              }
+              aria-label="Sắp xếp danh sách bài đăng"
+              className="min-w-0 flex-1 rounded-lg border border-border bg-white px-2.5 py-2 text-xs font-semibold text-text outline-none transition focus:border-primary"
+            >
+              <option value="newest">
+                Mới nhất
+              </option>
+              <option value="oldest">
+                Cũ nhất
+              </option>
+              <option value="name-asc">
+                Tên A → Z
+              </option>
+              <option value="name-desc">
+                Tên Z → A
+              </option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-background/60">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background/60">
           {isLoadingList ? (
             <div className="flex flex-col items-center justify-center h-full text-textLight">
               <LoadingOutlined className="text-3xl mb-2 text-primary" />
@@ -314,7 +506,7 @@ const PostModerationPage = () => {
               Không tìm thấy bài đăng nào.
             </div>
           ) : (
-            filteredPosts.map((post) => {
+            sortedPosts.map((post) => {
               const currentId = post.postId || post.id;
               const isSelected =
                 selectedPost &&
@@ -361,7 +553,7 @@ const PostModerationPage = () => {
       </div>
 
       {/* CỘT PHẢI */}
-      <div className="flex-1 flex flex-col bg-white overflow-hidden border-l border-border">
+      <div className="min-h-0 min-w-0 flex-1 flex flex-col bg-white overflow-hidden border-l border-border">
         {!selectedPost && !isLoadingDetail ? (
           <div className="flex-1 flex flex-col items-center justify-center text-textLight bg-background p-8 text-center">
             {globalFeedback && (
@@ -372,10 +564,20 @@ const PostModerationPage = () => {
                 className="mb-6 w-full max-w-md"
               />
             )}
-            <FileTextOutlined className="text-6xl text-border mb-4" />
-            <p className="text-lg">
-              Chọn một bài đăng bên danh sách để xem chi tiết
-            </p>
+            <div className="w-full max-w-md rounded-2xl border border-border bg-white p-7 text-center shadow-[0_12px_32px_rgba(24,63,65,0.06)]">
+              <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <FileTextOutlined className="text-2xl" />
+              </span>
+
+              <h2 className="mt-4 text-lg font-black text-text">
+                Chi tiết bài đăng
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-textLight">
+                Chọn một bài đăng bên trái để xem thông tin,
+                hình ảnh và thao tác kiểm duyệt.
+              </p>
+            </div>
           </div>
         ) : isLoadingDetail ? (
           <div className="flex-1 flex flex-col items-center justify-center text-textLight bg-background">
@@ -390,7 +592,7 @@ const PostModerationPage = () => {
         ) : selectedPost ? (
           <>
             {/* Header */}
-            <div className="px-8 py-5 border-b border-border bg-white shadow-sm z-10 flex justify-between items-center">
+            <div className="shrink-0 flex items-center justify-between gap-4 border-b border-border bg-white px-5 py-4 shadow-sm z-10">
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span
@@ -413,15 +615,15 @@ const PostModerationPage = () => {
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-8 bg-background/60">
-              <div className="max-w-4xl mx-auto space-y-6">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background/60 p-4 xl:p-5">
+              <div className="mx-auto w-full max-w-[1500px] space-y-4">
                 {/* Thông tin cơ bản */}
-                <section className="bg-white p-7 rounded-xl shadow-sm border border-border">
-                  <h3 className="text-base font-bold text-text mb-5 pb-3 border-b flex items-center gap-2">
+                <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
+                  <h3 className="mb-4 flex items-center gap-2 border-b border-border pb-3 text-sm font-black text-text">
                     <InfoCircleOutlined className="text-primary" /> Thông tin
                     cơ bản
                   </h3>
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                     <div>
                       <span className="block text-textLight mb-1">Giá trị</span>
                       <span className="font-bold text-lg text-primary">
@@ -489,12 +691,12 @@ const PostModerationPage = () => {
                 </section>
 
                 {/* Phân loại */}
-                <section className="bg-white p-7 rounded-xl shadow-sm border border-border">
-                  <h3 className="text-base font-bold text-text mb-5 pb-3 border-b flex items-center gap-2">
+                <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
+                  <h3 className="mb-4 flex items-center gap-2 border-b border-border pb-3 text-sm font-black text-text">
                     <AppstoreOutlined className="text-primary" /> Phân loại &
                     Tình trạng
                   </h3>
-                  <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4 text-sm">
                     <div className="col-span-2 md:col-span-1">
                       <span className="block text-textLight mb-1">
                         Danh mục - Ngành hàng
@@ -551,8 +753,8 @@ const PostModerationPage = () => {
                 {/* Thuộc tính */}
                 {selectedPost.product?.attributeValues &&
                   selectedPost.product.attributeValues.length > 0 && (
-                    <section className="bg-white p-7 rounded-xl shadow-sm border border-border">
-                      <h3 className="text-base font-bold text-text mb-5 pb-3 border-b flex items-center gap-2">
+                    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
+                      <h3 className="mb-4 flex items-center gap-2 border-b border-border pb-3 text-sm font-black text-text">
                         <AppstoreOutlined className="text-primary" /> Thông số
                         kỹ thuật
                       </h3>
@@ -591,7 +793,7 @@ const PostModerationPage = () => {
             </div>
 
             {/* INLINE ACTIONS FOOTER */}
-            <div className="px-8 py-5 border-t border-border bg-white flex flex-col gap-3 z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
+            <div className="shrink-0 px-8 py-4 border-t border-border bg-white flex flex-col gap-3 z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
               {actionFeedback && (
                 <Alert
                   message={actionFeedback.text}
@@ -600,17 +802,152 @@ const PostModerationPage = () => {
                 />
               )}
 
-              {actionState === "idle" && (
-                <div className="flex justify-end gap-3">
+              {actionState === "idle" && !plannedAction && (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="mr-1 text-[11px] font-black uppercase tracking-[0.1em] text-textLight">
+                      Xử lý kiểm duyệt
+                    </span>
+
+                    {MODERATOR_POST_UI_ACTIONS.map((action) => (
+                      <Button
+                        key={action.key}
+                        size="small"
+                        danger={
+                          action.key === "reject" ||
+                          action.key === "remove"
+                        }
+                        type={
+                          action.key === "approve"
+                            ? "primary"
+                            : "default"
+                        }
+                        onClick={() => {
+                          setPlannedAction(action.key);
+                          setPlannedReason("");
+                          setActionFeedback(null);
+                        }}
+                        className={[
+                          "flex items-center gap-1.5 font-semibold",
+                          action.key === "approve"
+                            ? "border-none bg-success text-white hover:!bg-success/90"
+                            : "",
+                          action.key === "warn"
+                            ? "border-warning/40 text-warning"
+                            : "",
+                          action.key === "hide"
+                            ? "border-primary/30 text-primary"
+                            : "",
+                        ].join(" ")}
+                      >
+                        <span
+                          className="material-symbols-outlined text-[17px]"
+                          aria-hidden="true"
+                        >
+                          {action.icon}
+                        </span>
+                        {action.label}
+                      </Button>
+                    ))}
+                  </div>
+
                   {selectedPost.status?.toUpperCase() === "ACTIVE" && (
                     <Button
-                      onClick={() => setActionState("suspending")}
+                      onClick={() => {
+                        setPlannedAction(null);
+                        setActionState("suspending");
+                      }}
                       danger
-                      className="font-semibold flex items-center gap-2"
+                      className="flex items-center gap-2 font-semibold"
                     >
                       <StopOutlined /> Đình chỉ bài đăng
                     </Button>
                   )}
+                </div>
+              )}
+
+              {plannedAction && actionState === "idle" && (
+                <div className="rounded-xl border border-border bg-background/70 p-4">
+                  {(() => {
+                    const selectedAction =
+                      MODERATOR_POST_UI_ACTIONS.find(
+                        (item) => item.key === plannedAction,
+                      );
+
+                    if (!selectedAction) return null;
+
+                    return (
+                      <>
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-primary">
+                              Thao tác kiểm duyệt
+                            </p>
+
+                            <h3 className="mt-1 flex items-center gap-2 text-base font-black text-text">
+                              <span
+                                className="material-symbols-outlined text-[20px] text-primary"
+                                aria-hidden="true"
+                              >
+                                {selectedAction.icon}
+                              </span>
+                              {selectedAction.label}
+                            </h3>
+                          </div>
+
+                          <span className="rounded-full border border-warning/20 bg-warning/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-warning">
+                            Đang hoàn thiện
+                          </span>
+                        </div>
+
+                        {selectedAction.requiresReason ? (
+                          <div className="mt-4">
+                            <label className="mb-1.5 block text-xs font-bold text-text">
+                              Lý do xử lý
+                            </label>
+
+                            <Input.TextArea
+                              rows={3}
+                              value={plannedReason}
+                              onChange={(event) =>
+                                setPlannedReason(event.target.value)
+                              }
+                              placeholder="Nhập lý do xử lý..."
+                            />
+                          </div>
+                        ) : (
+                          <p className="mt-4 rounded-lg border border-border bg-white px-3 py-2 text-sm text-textLight">
+                            Thao tác này không yêu cầu nhập lý do bắt buộc.
+                          </p>
+                        )}
+
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-xs text-textLight">
+                            Chức năng này đang được hoàn thiện.
+                          </p>
+
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => {
+                                setPlannedAction(null);
+                                setPlannedReason("");
+                              }}
+                            >
+                              Hủy
+                            </Button>
+
+                            <Button
+                              type="primary"
+                              disabled
+                              className="bg-primary"
+                            >
+                              {selectedAction.confirmLabel}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
 

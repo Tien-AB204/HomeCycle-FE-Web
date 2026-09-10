@@ -1024,12 +1024,12 @@ const DisputeManagementPage = () => {
 
   return (
     <>
-      <div className="flex h-full min-h-0 bg-background text-text">
+      <div className="flex h-[calc(100vh-72px)] min-h-0 overflow-hidden bg-background text-text">
         <section
           style={{
             width: `${sidebarWidth}px`,
           }}
-          className="relative flex shrink-0 select-none flex-col border-r border-border bg-white"
+          className="relative flex min-h-0 shrink-0 select-none flex-col border-r border-border bg-white"
         >
           <div className="border-b border-border p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -1145,7 +1145,7 @@ const DisputeManagementPage = () => {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             {listError && (
               <Alert
                 type="error"
@@ -1325,7 +1325,7 @@ const DisputeManagementPage = () => {
           />
         </section>
 
-        <section className="min-w-0 flex-1 overflow-y-auto">
+        <section className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-background/60">
           {!selectedDisputeId ? (
             <div className="flex h-full items-center justify-center p-8">
               <Empty description="Chọn một tranh chấp để xem chi tiết" />
@@ -1359,7 +1359,7 @@ const DisputeManagementPage = () => {
               />
             </div>
           ) : detail ? (
-            <div className="mx-auto w-full max-w-6xl p-6">
+            <div className="mx-auto w-full max-w-6xl p-5">
               <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide text-textLight">

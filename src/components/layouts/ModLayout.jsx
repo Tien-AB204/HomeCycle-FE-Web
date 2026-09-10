@@ -29,6 +29,36 @@ const MOD_NAV_GROUPS = [
         path: "/mod/disputes",
         icon: "warning",
       },
+      {
+        label: "Đánh giá bị báo cáo",
+        path: "/mod/reviews",
+        icon: "rate_review",
+      },
+    ],
+  },
+  {
+    group: "GIAO DỊCH & GIÁM SÁT",
+    items: [
+      {
+        label: "Rút tiền",
+        path: "/mod/withdrawals",
+        icon: "account_balance_wallet",
+      },
+      {
+        label: "Giao dịch & đơn hàng",
+        path: "/mod/transactions",
+        icon: "receipt_long",
+      },
+      {
+        label: "Lịch hẹn",
+        path: "/mod/appointments",
+        icon: "event_available",
+      },
+      {
+        label: "Lịch sử thương lượng",
+        path: "/mod/negotiations",
+        icon: "forum",
+      },
     ],
   },
 ];

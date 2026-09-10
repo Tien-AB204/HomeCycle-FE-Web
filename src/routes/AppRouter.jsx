@@ -19,7 +19,12 @@ import SearchPage from "../pages/public/SearchPage";
 
 // Moderator Pages vÃ  Security
 import { ROLES } from "../constants/roles";
+import AppointmentMonitoringPage from "../pages/mod/AppointmentMonitoringPage";
 import DisputeManagementPage from "../pages/mod/DisputeManagementPage";
+import NegotiationAuditPage from "../pages/mod/NegotiationAuditPage";
+import ReportedReviewManagementPage from "../pages/mod/ReportedReviewManagementPage";
+import TransactionOrderManagementPage from "../pages/mod/TransactionOrderManagementPage";
+import WithdrawalManagementPage from "../pages/mod/WithdrawalManagementPage";
 import ModDashboardPage from "../pages/mod/ModDashboardPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
@@ -186,6 +191,30 @@ const AppRouter = () => {
           <Route
             path="disputes"
             element={<DisputeManagementPage />}
+          />
+          <Route
+            path="reviews"
+            element={<ReportedReviewManagementPage />}
+          />
+
+          <Route
+            path="withdrawals"
+            element={<WithdrawalManagementPage />}
+          />
+
+          <Route
+            path="transactions"
+            element={<TransactionOrderManagementPage />}
+          />
+
+          <Route
+            path="appointments"
+            element={<AppointmentMonitoringPage />}
+          />
+
+          <Route
+            path="negotiations"
+            element={<NegotiationAuditPage />}
           />
         </Route>
       </Route>

@@ -402,7 +402,7 @@ export default function AdminDashboardPage() {
         onSubmit={submitFilters}
         className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]"
       >
-        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">
+        <div className="grid gap-4 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-end">
           <label>
             <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
               Từ ngày
@@ -446,9 +446,7 @@ export default function AdminDashboardPage() {
               className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
             />
 
-            <span className="mt-1 block text-[11px] text-textLight">
-              Ngày kết thúc không được tính vào kỳ.
-            </span>
+
           </label>
 
           <label>
@@ -500,6 +498,16 @@ export default function AdminDashboardPage() {
             </button>
           </div>
         </div>
+
+        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-textLight">
+          <span
+            className="material-symbols-outlined text-[16px]"
+            aria-hidden="true"
+          >
+            info
+          </span>
+          Ngày kết thúc không được tính vào kỳ.
+        </p>
 
         {filterError && (
           <p className="mt-3 text-sm font-semibold text-error">
