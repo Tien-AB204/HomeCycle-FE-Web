@@ -5,6 +5,7 @@ import {
 import BrandModal from "../../features/system/brand/BrandModal";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import brandApi from "../../services/apis/brandApi";
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_TIME = 400;
@@ -46,25 +47,12 @@ const isCanceledRequest = (error) => {
   );
 };
 
-const getValidationMessage = (
-  errors,
-) => {
-  if (!errors) {
-    return "";
-  }
-
-  return Object.values(errors)
-    .flat()
-    .filter(Boolean)
-    .join("\n");
-};
-
 const getErrorMessage = (error) => {
   const responseData =
     error?.response?.data;
 
   return (
-    getValidationMessage(
+    getSafeValidationMessage(
       responseData?.errors,
     ) ||
     responseData?.error?.message ||

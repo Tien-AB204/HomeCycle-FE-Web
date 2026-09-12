@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import CategoryModal from "../../features/system/category/CategoryModal";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import categoryApi from "../../services/apis/categoryApi";
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 5;
 const SEARCH_DELAY = 400;
@@ -37,19 +38,11 @@ const isCanceledRequest = (error) => {
   return error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 };
 
-const getValidationMessage = (errors) => {
-  if (!errors) {
-    return "";
-  }
-
-  return Object.values(errors).flat().filter(Boolean).join("\n");
-};
-
 const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    getValidationMessage(responseData?.errors) ||
+    getSafeValidationMessage(responseData?.errors) ||
     responseData?.error?.message ||
     responseData?.message ||
     "Đã xảy ra lỗi. Vui lòng thử lại."

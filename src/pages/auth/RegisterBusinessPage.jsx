@@ -10,6 +10,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
 import { decodeJwtPayload } from "../../utils/authUtils";
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const STEPS = {
   EMAIL: "EMAIL",
@@ -23,18 +24,10 @@ const getApiErrorMessage = (
   error,
   fallbackMessage,
 ) => {
-  const validationErrors =
-    error?.response?.data?.errors;
-
-  const firstValidationError =
-    validationErrors
-      ? Object.values(
-          validationErrors,
-        ).flat()[0]
-      : "";
-
   return (
-    firstValidationError ||
+    getSafeValidationMessage(
+      error?.response?.data?.errors,
+    ) ||
     error?.response?.data?.message ||
     error?.response?.data?.error
       ?.message ||

@@ -13,3 +13,24 @@ export const isVietnameseMessage = (message) =>
 
 export const getSafeProblemDetail = (value) =>
   isVietnameseMessage(value) ? value : "";
+
+/*
+ * ModelState validation dictionary của ASP.NET ({ field: [message, ...] })
+ * có thể chứa các thông báo binding mặc định bằng tiếng Anh (vd "The field
+ * X is required.") bên cạnh các thông báo nghiệp vụ tiếng Việt do Backend
+ * tự soạn (FluentValidation). Không được render nguyên cả dictionary -
+ * chỉ giữ lại các message thực sự là tiếng Việt, ghép lại để hiển thị;
+ * nếu không còn message nào an toàn, trả về rỗng để màn hình rơi xuống
+ * thông báo tiếng Việt tự soạn của chính nó. Không bao giờ lộ tên field/
+ * khóa của dictionary.
+ */
+export const getSafeValidationMessage = (errors) => {
+  if (!errors) {
+    return "";
+  }
+
+  return Object.values(errors)
+    .flat()
+    .filter(isVietnameseMessage)
+    .join("\n");
+};

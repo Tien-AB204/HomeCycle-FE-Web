@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import ProductTypeModal from "../../features/system/productType/ProductTypeModal";
 import categoryApi from "../../services/apis/categoryApi";
 import productTypeApi from "../../services/apis/productTypeApi";
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const CATEGORY_PAGE_SIZE = 100;
@@ -48,25 +49,12 @@ const isCanceledRequest = (error) => {
   );
 };
 
-const getValidationMessage = (
-  errors,
-) => {
-  if (!errors) {
-    return "";
-  }
-
-  return Object.values(errors)
-    .flat()
-    .filter(Boolean)
-    .join("\n");
-};
-
 const getErrorMessage = (error) => {
   const responseData =
     error?.response?.data;
 
   return (
-    getValidationMessage(
+    getSafeValidationMessage(
       responseData?.errors,
     ) ||
     responseData?.error?.message ||

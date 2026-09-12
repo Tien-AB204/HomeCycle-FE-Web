@@ -3,6 +3,7 @@ import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import platformPolicyApi, {
   PLATFORM_POLICY_TYPES,
 } from "../../services/apis/platformPolicyApi";
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const POLICY_TABS = [
   {
@@ -204,17 +205,6 @@ const isCanceledRequest = (error) =>
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
 
-const getValidationMessage = (errors) => {
-  if (!errors) {
-    return "";
-  }
-
-  return Object.values(errors)
-    .flat()
-    .filter(Boolean)
-    .join("\n");
-};
-
 const getErrorMessage = (
   error,
   fallback = "Đã xảy ra lỗi. Vui lòng thử lại.",
@@ -222,7 +212,7 @@ const getErrorMessage = (
   const responseData = error?.response?.data;
 
   return (
-    getValidationMessage(responseData?.errors) ||
+    getSafeValidationMessage(responseData?.errors) ||
     responseData?.error?.message ||
     responseData?.message ||
     fallback

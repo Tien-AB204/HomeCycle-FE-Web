@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { userService } from "../../services/userService";
 import AvatarUploader from "../../features/profile/AvatarUploader";
 import SensitiveField from "../../components/shared/SensitiveField";
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -74,12 +75,8 @@ const createIdentityForm = (profile) => ({
 const getApiErrorMessage = (error, fallbackMessage) => {
   const responseData = error?.response?.data;
 
-  const validationMessage = responseData?.errors
-    ? Object.values(responseData.errors).flat().find(Boolean)
-    : "";
-
   return (
-    validationMessage ||
+    getSafeValidationMessage(responseData?.errors) ||
     responseData?.message ||
     responseData?.error?.message ||
     fallbackMessage
