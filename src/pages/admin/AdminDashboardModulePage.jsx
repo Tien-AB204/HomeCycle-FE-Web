@@ -1768,11 +1768,24 @@ export default function AdminDashboardModulePage({
 
       return (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-text">
+            Dashboard này chỉ đọc dữ liệu lịch hẹn hiệu lực hiện tại.
+            Đề xuất đổi lịch chưa được chấp nhận và lịch cũ đã bị thay thế không được tính như một lịch hiệu lực.
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <KpiCard
-              label="Tổng lịch hẹn"
+              label="Tổng lịch hiệu lực"
               value={formatNumber(
                 data?.totalAppointments,
+              )}
+              loading={loading}
+            />
+
+            <KpiCard
+              label="Lịch hôm nay"
+              value={formatNumber(
+                data?.todayCount,
               )}
               loading={loading}
             />
@@ -1787,59 +1800,12 @@ export default function AdminDashboardModulePage({
             />
 
             <KpiCard
-              label="Lịch hôm nay"
-              value={formatNumber(
-                data?.todayCount,
-              )}
-              loading={loading}
-            />
-
-            <KpiCard
-              label="Đang đề xuất"
-              value={formatNumber(
-                data?.pendingCount,
-              )}
-              loading={loading}
-              valueClassName="text-warning"
-            />
-
-            <KpiCard
               label="Quá thời gian hẹn"
               value={formatNumber(
                 data?.overdueCount,
               )}
-              hint={`Lâu nhất ${formatHours(
-                data?.oldestOverdueAgeHours,
-              )} · trung bình ${formatHours(
-                data?.averageOverdueAgeHours,
-              )}`}
               loading={loading}
               valueClassName="text-error"
-            />
-
-            <KpiCard
-              label="Hoàn tất trong kỳ"
-              value={formatNumber(
-                data?.completedInPeriodCount,
-              )}
-              loading={loading}
-              valueClassName="text-success"
-            />
-
-            <KpiCard
-              label="Đã hủy trong kỳ"
-              value={formatNumber(
-                data?.cancelledInPeriodCount,
-              )}
-              loading={loading}
-            />
-
-            <KpiCard
-              label="Đã quá hạn"
-              value={formatNumber(
-                data?.expiredCount,
-              )}
-              loading={loading}
             />
 
             <KpiCard
@@ -1848,13 +1814,14 @@ export default function AdminDashboardModulePage({
                 data?.rescheduleProposalCount,
               )}
               loading={loading}
+              valueClassName="text-warning"
             />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardDonutChart
-              title="Cơ cấu trạng thái lịch hẹn"
-              description="Ảnh chụp trạng thái hiện tại của các lịch hẹn."
+              title="Trạng thái lịch hiệu lực"
+              description="Ảnh chụp trạng thái hiện tại sau khi loại các đề xuất chưa được chấp nhận và lịch đã bị thay thế."
               rows={
                 data?.currentStatusDistribution
               }
@@ -1868,7 +1835,8 @@ export default function AdminDashboardModulePage({
             />
 
             <DashboardDonutChart
-              title="Cơ cấu loại lịch hẹn"
+              title="Cơ cấu loại lịch trong kỳ"
+              description="Phân bố lịch kiểm định và thu gom theo thời điểm hẹn thực tế trong khoảng đã chọn."
               rows={
                 data?.appointmentTypeDistribution
               }
@@ -1880,33 +1848,289 @@ export default function AdminDashboardModulePage({
                 )
               }
             />
-
-            <DashboardColumnChart
-              title="Mức độ quá hạn"
-              description="Phân bố các lịch đã quá thời gian hẹn nhưng chưa kết thúc."
-              rows={
-                data?.overdueAgingDistribution
-              }
-              getLabel={(item) =>
-                item.label ||
-                item.key
-              }
-            />
           </div>
 
           <DashboardLineChart
-            title="Khối lượng lịch theo ngày hẹn thực tế"
-            description="Xu hướng dựa trên ngày kiểm định hoặc ngày thu gom thực tế."
-            rows={data?.scheduledSeries}
+            title="Kiểm định và thu gom theo kỳ"
+            description="Số lịch theo thời điểm hẹn thực tế; mỗi điểm sử dụng khoảng thời gian do hệ thống tổng hợp."
+            rows={
+              data?.appointmentTypeSeries
+            }
             series={[
               {
-                key: "count",
-                label: "Lịch hẹn",
+                key: "inspectionCount",
+                label: "Kiểm định",
                 className:
                   "text-primary",
               },
+              {
+                key: "collectionCount",
+                label: "Thu gom",
+                className:
+                  "text-success",
+              },
             ]}
           />
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+                Kết quả lịch đã kết thúc
+              </p>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <KpiCard
+                  label="Đã kết thúc"
+                  value={formatNumber(
+                    data?.outcome
+                      ?.finalizedCount,
+                  )}
+                  loading={loading}
+                />
+
+                <KpiCard
+                  label="Thành công"
+                  value={formatNumber(
+                    data?.outcome
+                      ?.successfulCount,
+                  )}
+                  hint={formatPercent(
+                    data?.outcome
+                      ?.successRate,
+                  )}
+                  loading={loading}
+                  valueClassName="text-success"
+                />
+
+                <KpiCard
+                  label="Không thành công"
+                  value={formatNumber(
+                    data?.outcome
+                      ?.failedCount,
+                  )}
+                  hint={formatPercent(
+                    data?.outcome
+                      ?.failureRate,
+                  )}
+                  loading={loading}
+                  valueClassName="text-error"
+                />
+              </div>
+
+              <div className="mt-5 overflow-x-auto">
+                <table className="min-w-[620px] w-full text-left text-sm">
+                  <thead className="bg-background text-xs uppercase tracking-wide text-textLight">
+                    <tr>
+                      <th className="px-3 py-3 font-black">
+                        Loại lịch
+                      </th>
+                      <th className="px-3 py-3 font-black">
+                        Đã kết thúc
+                      </th>
+                      <th className="px-3 py-3 font-black">
+                        Thành công
+                      </th>
+                      <th className="px-3 py-3 font-black">
+                        Không thành công
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-border">
+                    {(data?.outcomeByType || []).map(
+                      (item) => (
+                        <tr
+                          key={
+                            item.appointmentType
+                          }
+                        >
+                          <td className="px-3 py-3 font-bold text-text">
+                            {labelFor(
+                              item.appointmentType,
+                              "appointments",
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-textLight">
+                            {formatNumber(
+                              item.finalizedCount,
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-success">
+                            {formatNumber(
+                              item.successfulCount,
+                            )}
+                            {" · "}
+                            {formatPercent(
+                              item.successRate,
+                            )}
+                          </td>
+                          <td className="px-3 py-3 text-error">
+                            {formatNumber(
+                              item.failedCount,
+                            )}
+                            {" · "}
+                            {formatPercent(
+                              item.failureRate,
+                            )}
+                          </td>
+                        </tr>
+                      ),
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+                Check-in lịch kiểm định
+              </p>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <KpiCard
+                  label="Lịch đủ điều kiện"
+                  value={formatNumber(
+                    data?.inspectionCheckIn
+                      ?.eligibleInspectionCount,
+                  )}
+                  loading={loading}
+                />
+
+                <KpiCard
+                  label="Tỷ lệ check-in đủ hai bên"
+                  value={formatPercent(
+                    data?.inspectionCheckIn
+                      ?.fullCheckInRate,
+                  )}
+                  hint={`${formatNumber(
+                    data?.inspectionCheckIn
+                      ?.fullyCheckedInAppointmentCount,
+                  )} lịch đủ hai bên`}
+                  loading={loading}
+                  valueClassName="text-success"
+                />
+
+                <KpiCard
+                  label="Check-in người tham gia"
+                  value={formatPercent(
+                    data?.inspectionCheckIn
+                      ?.participantCheckInRate,
+                  )}
+                  hint={`${formatNumber(
+                    data?.inspectionCheckIn
+                      ?.successfulParticipantCheckIns,
+                  )}/${formatNumber(
+                    data?.inspectionCheckIn
+                      ?.expectedParticipantCheckIns,
+                  )} lượt`}
+                  loading={loading}
+                  valueClassName="text-primary"
+                />
+
+                <KpiCard
+                  label="Thiếu check-in"
+                  value={formatNumber(
+                    (
+                      Number(
+                        data
+                          ?.inspectionCheckIn
+                          ?.partialCheckInAppointmentCount,
+                      ) || 0
+                    ) +
+                      (
+                        Number(
+                          data
+                            ?.inspectionCheckIn
+                            ?.noCheckInAppointmentCount,
+                        ) || 0
+                      ),
+                  )}
+                  hint={`${formatNumber(
+                    data?.inspectionCheckIn
+                      ?.partialCheckInAppointmentCount,
+                  )} một phần · ${formatNumber(
+                    data?.inspectionCheckIn
+                      ?.noCheckInAppointmentCount,
+                  )} chưa check-in`}
+                  loading={loading}
+                  valueClassName="text-warning"
+                />
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {(data?.checkInByParticipant || []).map(
+                  (item) => (
+                    <div
+                      key={
+                        item.participantType
+                      }
+                      className="rounded-xl border border-border bg-background/60 p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-black text-text">
+                            {normalize(
+                              item.participantType,
+                            ) === "buyer"
+                              ? "Người mua"
+                              : normalize(
+                                    item.participantType,
+                                  ) === "seller"
+                                ? "Người bán"
+                                : item.participantType}
+                          </p>
+
+                          <p className="mt-1 text-xs text-textLight">
+                            {formatNumber(
+                              item.checkedInCount,
+                            )}/
+                            {formatNumber(
+                              item.eligibleCount,
+                            )} đã check-in
+                          </p>
+                        </div>
+
+                        <span className="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
+                          {formatPercent(
+                            item.checkInRate,
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/40">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              Math.max(
+                                0,
+                                Number(
+                                  item.checkInRate,
+                                ) || 0,
+                              ),
+                            )}%`,
+                          }}
+                        />
+                      </div>
+
+                      <p className="mt-2 text-xs text-textLight">
+                        Thiếu{" "}
+                        {formatNumber(
+                          item.missingCount,
+                        )} lượt check-in.
+                      </p>
+                    </div>
+                  ),
+                )}
+              </div>
+
+              <p className="mt-4 text-xs leading-5 text-textLight">
+                Chỉ thống kê check-in của lịch kiểm định đủ điều kiện.
+                Dashboard không suy diễn đúng giờ, trễ, grace period hay check-out.
+              </p>
+            </section>
+          </div>
         </>
       );
     };
