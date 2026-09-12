@@ -13,6 +13,7 @@ import {
 } from "@ant-design/icons";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
+import PostThumbnail from "../../components/shared/PostThumbnail";
 import {
   getPostTypeLabel,
   MARKETPLACE_POST_TYPES,
@@ -367,17 +368,11 @@ const MyPostsPage = ({ expectedPostType }) => {
                       </span>
                     </div>
 
-                    <div className="flex h-full w-full items-center justify-center">
-                      {image ? (
-                        <img
-                          src={image}
-                          alt={getPostName(post)}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-                        />
-                      ) : (
-                        <img src={homeCycleMark} alt="" className="h-16 w-16 rounded-2xl shadow-sm" />
-                      )}
-                    </div>
+                    <PostThumbnail
+                      src={image}
+                      alt={getPostName(post)}
+                      className="h-full w-full transition duration-500 group-hover:scale-[1.03]"
+                    />
                   </div>
 
                   <div className="flex flex-1 flex-col p-4">

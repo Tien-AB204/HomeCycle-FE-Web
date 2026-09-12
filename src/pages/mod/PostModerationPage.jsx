@@ -13,6 +13,7 @@ import { Alert, Button, Input } from "antd";
 import { postApi } from "../../services/apis/postApi";
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
+import EvidenceImage from "../../components/shared/EvidenceImage";
 
 const MODERATOR_FUNCTIONALITY_LABELS = {
   "0": "Hoạt động hoàn hảo",
@@ -671,17 +672,12 @@ const PostModerationPage = () => {
                         </span>
                         <div className="flex gap-3 overflow-x-auto pb-2">
                           {selectedPost.medias.map((img, idx) => (
-                            <img
+                            <EvidenceImage
                               key={idx}
                               src={img.url || img.mediaUrl || img}
                               alt="Ảnh bài đăng"
-                              className="h-32 w-32 object-cover rounded-lg border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() =>
-                                window.open(
-                                  img.url || img.mediaUrl || img,
-                                  "_blank",
-                                )
-                              }
+                              onOpen={(url) => window.open(url, "_blank")}
+                              className="h-32 w-32"
                             />
                           ))}
                         </div>

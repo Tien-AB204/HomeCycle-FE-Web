@@ -6,7 +6,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import cartApi from "../../services/apis/cartApi";
-import homeCycleMark from "../../assets/brand/homecycle-mark.png";
+import PostThumbnail from "../../components/shared/PostThumbnail";
 
 const formatCurrency = (value) => {
   if (typeof value !== "number" && typeof value !== "string") {
@@ -186,21 +186,7 @@ const CartPage = () => {
                     to={`/posts/${encodeURIComponent(item.postId)}`}
                     className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-background"
                   >
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <img
-                          src={homeCycleMark}
-                          alt=""
-                          className="h-8 w-8 rounded-lg"
-                        />
-                      </div>
-                    )}
+                    <PostThumbnail src={image} alt={name} />
                   </Link>
 
                   <div className="min-w-0 flex-1">

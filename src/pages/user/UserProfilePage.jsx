@@ -158,22 +158,39 @@ const ProfileField = ({
 };
 
 const IdentityImage = ({ label, imageUrl, emptyMessage }) => {
+  const [failed, setFailed] = useState(false);
+  const [trackedUrl, setTrackedUrl] = useState(imageUrl);
+
+  // Reset trạng thái lỗi tải ảnh khi imageUrl đổi - điều chỉnh state ngay
+  // trong render thay vì dùng effect (tránh lint set-state-in-effect).
+  if (imageUrl !== trackedUrl) {
+    setTrackedUrl(imageUrl);
+    setFailed(false);
+  }
+
+  const showImage = Boolean(imageUrl) && !failed;
+
   return (
     <div>
       <p className="mb-2 text-xs font-black text-textLight">{label}</p>
 
       <div className="flex h-44 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-border bg-background p-2">
-        {imageUrl ? (
+        {showImage ? (
           <img
             src={imageUrl}
             alt={label}
             className="h-full w-full object-contain"
+            onError={() => setFailed(true)}
           />
         ) : (
           <div className="text-center text-textLight">
-            <span className="material-symbols-outlined text-4xl">image</span>
+            <span className="material-symbols-outlined text-4xl">
+              {imageUrl ? "broken_image" : "image"}
+            </span>
 
-            <p className="mt-1 text-sm">{emptyMessage}</p>
+            <p className="mt-1 text-sm">
+              {imageUrl ? "Không thể tải ảnh" : emptyMessage}
+            </p>
           </div>
         )}
       </div>

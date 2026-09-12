@@ -1,5 +1,6 @@
 import ReviewStars from "./ReviewStars";
 import Avatar from "../../components/shared/Avatar";
+import EvidenceImage from "../../components/shared/EvidenceImage";
 
 const formatDate = (value) => {
   const date = new Date(value);
@@ -76,10 +77,11 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
             className="overflow-hidden rounded-lg border border-border"
             aria-label={`Mở ảnh đánh giá ${index + 1}`}
           >
-            <img
+            <EvidenceImage
               src={imageUrl}
               alt={`Ảnh đánh giá ${index + 1}`}
-              className="aspect-square w-full object-cover transition hover:scale-105"
+              bordered={false}
+              className="aspect-square w-full transition hover:scale-105"
             />
           </a>
         ))}

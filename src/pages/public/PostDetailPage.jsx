@@ -18,8 +18,8 @@ import {
   SendOutlined,
   ShoppingOutlined,
 } from "@ant-design/icons";
-import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import { ROLES } from "../../constants/roles";
+import PostThumbnail from "../../components/shared/PostThumbnail";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
@@ -1012,20 +1012,13 @@ const PostDetailPage = ({ ownerMode = false }) => {
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
             <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_12px_38px_rgba(23,40,48,0.07)]">
               <div className="flex h-[300px] items-center justify-center bg-gradient-to-br from-background via-white to-background sm:h-[360px] lg:h-[420px]">
-                {selectedMedia?.url ? (
-                  <img
-                    src={selectedMedia.url}
-                    alt={post.productName}
-                    className="h-full w-full object-contain p-3 sm:p-4"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center text-textLight">
-                    <img src={homeCycleMark} alt="" className="h-16 w-16 rounded-2xl shadow-md" />
-                    <p className="mt-3 font-semibold">
-                      Bài đăng chưa có hình ảnh
-                    </p>
-                  </div>
-                )}
+                <PostThumbnail
+                  src={selectedMedia?.url}
+                  alt={post.productName}
+                  objectFit="contain"
+                  emptyText="Bài đăng chưa có hình ảnh"
+                  className="h-full w-full p-3 sm:p-4"
+                />
               </div>
 
               {medias.length > 1 && (
@@ -1051,10 +1044,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
                           : "border-transparent hover:border-border"
                       }`}
                     >
-                      <img
+                      <PostThumbnail
                         src={media.url}
-                        alt=""
-                        className="h-full w-full object-cover"
+                        className="h-full w-full"
                       />
                     </button>
                   ))}

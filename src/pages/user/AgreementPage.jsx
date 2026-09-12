@@ -20,13 +20,14 @@ import {
   isConcurrencyConflict,
   VERIFICATION_FAILED_WARNING,
 } from "../../utils/transactionFreshnessUtils";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PENDING_AGREEMENT_KEY = "homecycle:pending-payment-agreement-id";
 
 const getErrorMessage = (error, fallbackMessage) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.response?.data?.detail ||
+  getSafeProblemDetail(error?.response?.data?.detail) ||
   fallbackMessage;
 
 const getApiErrorCode = (error) =>

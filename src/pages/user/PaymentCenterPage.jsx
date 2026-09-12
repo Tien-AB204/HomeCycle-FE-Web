@@ -8,6 +8,8 @@ import {
 } from "react-router-dom";
 import agreementApi from "../../services/apis/agreementApi";
 import paymentApi from "../../services/apis/paymentApi";
+import PostThumbnail from "../../components/shared/PostThumbnail";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PENDING_PAGE_SIZE = 8;
 const HISTORY_PAGE_SIZE = 20;
@@ -20,8 +22,9 @@ const getErrorMessage = (
     ?.error?.message ||
   error?.response?.data
     ?.message ||
-  error?.response?.data
-    ?.detail ||
+  getSafeProblemDetail(
+    error?.response?.data?.detail,
+  ) ||
   fallback;
 
 const isRequestCancelled = (
@@ -565,23 +568,10 @@ const PaymentCenterPage = () => {
                     className="rounded-xl border border-border bg-background p-4"
                   >
                     <div className="flex items-start gap-3">
-                      {item
-                        ?.thumbnailUrl ? (
-                        <img
-                          src={
-                            item.thumbnailUrl
-                          }
-                          alt=""
-                          className="h-16 w-16 shrink-0 rounded-lg border border-border object-cover"
-                        />
-                      ) : (
-                        <span
-                          className="material-symbols-outlined flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-border bg-white text-2xl text-textLight"
-                          aria-hidden="true"
-                        >
-                          inventory_2
-                        </span>
-                      )}
+                      <PostThumbnail
+                        src={item?.thumbnailUrl}
+                        className="h-16 w-16 shrink-0 rounded-lg border border-border"
+                      />
 
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm font-black text-text">

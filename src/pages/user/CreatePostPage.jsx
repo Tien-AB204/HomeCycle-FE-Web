@@ -12,6 +12,7 @@ import {
 import DynamicAttributeFields from "../../features/posts/DynamicAttributeFields";
 import MediaUploadField from "../../features/posts/MediaUploadField";
 import PostAddressFields from "../../features/posts/PostAddressFields";
+import PostThumbnail from "../../components/shared/PostThumbnail";
 import {
   DAMAGE_LEVEL_OPTIONS,
   DELIVERY_METHOD_OPTIONS,
@@ -1644,26 +1645,16 @@ const CreatePostPage = () => {
                 </p>
                 <div className="mt-3 flex gap-3 overflow-x-auto">
                   {existingMedias.map((media, index) => (
-                    <div
+                    <PostThumbnail
                       key={media.mediaId || media.url}
-                      className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-border bg-white"
-                    >
-                      {media.url ? (
-                        <img
-                          src={media.url}
-                          alt={`Ảnh hiện có ${index + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-textLight">
-                          ♻
-                        </div>
-                      )}
-                    </div>
+                      src={media.url}
+                      alt={`Ảnh hiện có ${index + 1}`}
+                      className="h-20 w-20 shrink-0 rounded-xl border border-border"
+                    />
                   ))}
                 </div>
                 <p className="mt-3 text-xs leading-5 text-textLight">
-                  Nếu không chọn ảnh mới, frontend sẽ không gửi trường Medias và giữ nguyên dữ liệu ảnh hiện có theo cơ chế của Backend.
+                  Nếu không chọn ảnh mới, hệ thống sẽ giữ nguyên toàn bộ ảnh hiện có của bài đăng.
                 </p>
               </div>
             )}
