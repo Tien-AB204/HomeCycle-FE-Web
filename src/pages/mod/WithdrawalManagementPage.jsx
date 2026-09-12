@@ -401,21 +401,10 @@ const WithdrawalManagementPage = () => {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      render: (statusValue, record) => {
+      render: (statusValue) => {
         const meta = getWithdrawalStatusMeta(statusValue);
-        const needsAction =
-          record?.actions?.canApprove || record?.actions?.canReject;
 
-        return (
-          <div className="flex flex-col items-start gap-1">
-            <Tag color={meta.color}>{meta.label}</Tag>
-            {needsAction && (
-              <span className="text-[11px] font-semibold text-primary">
-                Cần xử lý
-              </span>
-            )}
-          </div>
-        );
+        return <Tag color={meta.color}>{meta.label}</Tag>;
       },
     },
     {
@@ -648,14 +637,6 @@ const WithdrawalManagementPage = () => {
               bankAccount.bankCode ?? bankAccount.BankCode ?? "",
             ).trim();
 
-            const canApprove = Boolean(
-              detail.actions?.canApprove ?? detail.Actions?.CanApprove,
-            );
-
-            const canReject = Boolean(
-              detail.actions?.canReject ?? detail.Actions?.CanReject,
-            );
-
             return (
               <div className="space-y-4">
                 <div className="rounded-2xl border border-border bg-background/60 p-4">
@@ -687,12 +668,6 @@ const WithdrawalManagementPage = () => {
                       Lý do: {rejectReason}
                     </p>
                   )}
-
-                  <p className="mt-3 text-[11px] text-textLight">
-                    {canApprove || canReject
-                      ? "Có thể xử lý"
-                      : "Không còn thao tác xử lý"}
-                  </p>
                 </div>
 
                 <div className="rounded-2xl border border-border bg-background/60 p-4">

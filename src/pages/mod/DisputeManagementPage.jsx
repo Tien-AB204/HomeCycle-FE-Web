@@ -399,6 +399,38 @@ const getActionFlag = (
   );
 };
 
+/*
+ * avatarUrl có thể trỏ tới ảnh Google/Firebase; ảnh Google đôi khi tải
+ * lỗi (hết hạn/CORS). Cha truyền key={avatarUrl} để component remount
+ * và tự reset lỗi khi đổi user/avatar; onError chuyển hẳn về fallback
+ * chữ cái thay vì để ảnh vỡ hiển thị.
+ */
+const UserAvatar = ({ avatarUrl, label }) => {
+  const [hasError, setHasError] = useState(false);
+
+  const initial = (label || "?")
+    .charAt(0)
+    .toUpperCase();
+
+  if (!avatarUrl || hasError) {
+    return (
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[rgba(84,123,125,0.10)] font-black text-primary">
+        {initial}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={avatarUrl}
+      alt={label}
+      referrerPolicy="no-referrer"
+      className="h-11 w-11 shrink-0 rounded-full border border-border object-cover"
+      onError={() => setHasError(true)}
+    />
+  );
+};
+
 const DisputeManagementPage = () => {
   const [disputes, setDisputes] =
     useState([]);
@@ -878,12 +910,6 @@ const DisputeManagementPage = () => {
       );
     }
 
-    const initial = (
-      user.username || "?"
-    )
-      .charAt(0)
-      .toUpperCase();
-
     return (
       <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
         <p className="mb-3 text-xs font-bold uppercase tracking-wide text-textLight">
@@ -891,20 +917,11 @@ const DisputeManagementPage = () => {
         </p>
 
         <div className="flex items-center gap-3">
-          {user.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt={
-                user.username ||
-                title
-              }
-              className="h-11 w-11 rounded-full border border-border object-cover"
-            />
-          ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(84,123,125,0.10)] font-black text-primary">
-              {initial}
-            </div>
-          )}
+          <UserAvatar
+            key={user.avatarUrl || "none"}
+            avatarUrl={user.avatarUrl}
+            label={user.username || title}
+          />
 
           <div className="min-w-0">
             <p className="truncate font-bold text-text">
