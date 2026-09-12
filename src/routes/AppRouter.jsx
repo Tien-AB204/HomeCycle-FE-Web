@@ -53,10 +53,13 @@ import CreatePostPage from "../pages/user/CreatePostPage";
 import DisputeDetailPage from "../pages/user/DisputeDetailPage";
 import NegotiationListPage from "../pages/user/NegotiationListPage";
 import NegotiationRoomPage from "../pages/user/NegotiationRoomPage";
+import NotificationPage from "../pages/user/NotificationPage";
 import OfferManagementPage from "../pages/user/OfferManagementPage";
 import OrderDetailPage from "../pages/user/OrderDetailPage";
 import OrderListPage from "../pages/user/OrderListPage";
+import PaymentCenterPage from "../pages/user/PaymentCenterPage";
 import PaymentResultPage from "../pages/user/PaymentResultPage";
+import WalletPage from "../pages/user/WalletPage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
@@ -111,16 +114,17 @@ const AppRouter = () => {
 
           <Route path="/thoa-thuan/:agreementId" element={<AgreementPage />} />
 
-          <Route
-            path="/thanh-toan"
-            element={<Navigate to="/don-hang" replace />}
-          />
+          <Route path="/thanh-toan" element={<PaymentCenterPage />} />
+
+          <Route path="/vi" element={<WalletPage />} />
 
           <Route path="/payments/success" element={<PaymentResultPage />} />
 
           <Route path="/payments/cancel" element={<PaymentResultPage />} />
 
           <Route path="/lich-hen" element={<AppointmentPage />} />
+
+          <Route path="/thong-bao" element={<NotificationPage />} />
 
           <Route path="/don-hang" element={<OrderListPage />} />
 
