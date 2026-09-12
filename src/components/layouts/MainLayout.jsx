@@ -9,6 +9,7 @@ import {
 import homeCycleLogo from "../../assets/brand/homecycle-logo.png";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
+import { useNotifications } from "../../hooks/useNotifications";
 import { normalizeRole } from "../../utils/authUtils";
 
 const PUBLIC_NAVIGATION = [
@@ -26,6 +27,8 @@ const ACCOUNT_NAVIGATION = [
   },
   { name: "Lịch hẹn", path: "/lich-hen" },
   { name: "Đơn hàng", path: "/don-hang" },
+  { name: "Thanh toán", path: "/thanh-toan" },
+  { name: "Ví", path: "/vi" },
   { name: "Hồ sơ", path: "/ho-so" },
 ];
 
@@ -49,6 +52,7 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const [keyword, setKeyword] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -194,6 +198,33 @@ const MainLayout = () => {
                     Trang quản trị
                   </Link>
                 )}
+                {canUseClientAccount && (
+                  <Link
+                    to="/thong-bao"
+                    aria-label={
+                      unreadCount > 0
+                        ? "Thông báo, " + unreadCount + " chưa đọc"
+                        : "Thông báo"
+                    }
+                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:bg-background"
+                  >
+                    <span
+                      className="material-symbols-outlined text-[22px]"
+                      aria-hidden="true"
+                    >
+                      notifications
+                    </span>
+
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[10px] font-black leading-none text-white">
+                        {unreadCount > 99
+                          ? "99+"
+                          : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
+
                 <div className="flex items-center overflow-hidden rounded-full border border-border bg-white shadow-sm">
                   <Link
                     to={isManager ? managerPath : "/ho-so"}
@@ -308,6 +339,31 @@ const MainLayout = () => {
                 </>
               ) : (
                 <>
+                  {canUseClientAccount && (
+                    <Link
+                      to="/thong-bao"
+                      onClick={closeMenu}
+                      className="relative flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-bold text-primary"
+                    >
+                      <span
+                        className="material-symbols-outlined text-[19px]"
+                        aria-hidden="true"
+                      >
+                        notifications
+                      </span>
+
+                      <span>Thông báo</span>
+
+                      {unreadCount > 0 && (
+                        <span className="rounded-full bg-error px-2 py-0.5 text-[10px] font-black text-white">
+                          {unreadCount > 99
+                            ? "99+"
+                            : unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  )}
+
                   {isManager && (
                     <Link to={managerPath} onClick={closeMenu} className="rounded-full bg-background px-4 py-2 text-sm font-bold text-primary">
                       Trang quản trị

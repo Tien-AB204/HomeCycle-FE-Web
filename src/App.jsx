@@ -4,6 +4,8 @@ import viVN from "antd/locale/vi_VN";
 import { BrowserRouter } from 'react-router-dom';
 import AppRouter from './routes/AppRouter';
 import { AuthProvider } from './contexts/AuthContext';
+import { ChatRealtimeProvider } from './contexts/ChatRealtimeProvider';
+import { NotificationProvider } from './contexts/NotificationContext';
 import ApiErrorRedirect from './components/shared/ApiErrorRedirect';
 
 const App = () => {
@@ -21,7 +23,11 @@ const App = () => {
         <ApiErrorRedirect />
         {/* Bọc AuthProvider ở đây để toàn bộ các Route và Component đều lấy được thông tin User */}
         <AuthProvider>
-          <AppRouter />
+          <ChatRealtimeProvider>
+            <NotificationProvider>
+              <AppRouter />
+            </NotificationProvider>
+          </ChatRealtimeProvider>
         </AuthProvider>
       </ConfigProvider>
     </BrowserRouter>
