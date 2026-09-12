@@ -3,6 +3,7 @@ import { useAuth } from "../../hooks/useAuth";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import adminUserApi from "../../services/apis/adminUserApi";
 import { getUserId } from "../../utils/authUtils";
+import Avatar from "../../components/shared/Avatar";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_TIME = 400;
@@ -93,7 +94,6 @@ const getErrorMessage = (error) => {
   return (
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
     "Không thể thực hiện yêu cầu quản lý người dùng."
   );
 };
@@ -127,10 +127,7 @@ const formatDate = (value) => {
 };
 
 const getDisplayName = (account) =>
-  account?.username || account?.email || "Người dùng HomeCycle";
-
-const getAvatarCharacter = (account) =>
-  getDisplayName(account).trim().charAt(0).toUpperCase() || "U";
+  account?.username || "Người dùng HomeCycle";
 
 const getAvailableAction = (account, currentUserId) => {
   const accountId = String(account?.userId || "").trim();
@@ -789,17 +786,11 @@ export default function UserManagementPage() {
                     >
                       <td className="px-4 py-4">
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-success/10 font-bold text-success">
-                            {account.avatarUrl ? (
-                              <img
-                                src={account.avatarUrl}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              getAvatarCharacter(account)
-                            )}
-                          </div>
+                          <Avatar
+                            src={account.avatarUrl}
+                            alt={getDisplayName(account)}
+                            className="h-11 w-11"
+                          />
                           <div className="min-w-0">
                             <p className="truncate font-bold text-text">
                               {getDisplayName(account)}
@@ -870,17 +861,11 @@ export default function UserManagementPage() {
                   className="rounded-xl border border-border bg-white p-4 shadow-sm"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-success/10 font-bold text-success">
-                      {account.avatarUrl ? (
-                        <img
-                          src={account.avatarUrl}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        getAvatarCharacter(account)
-                      )}
-                    </div>
+                    <Avatar
+                      src={account.avatarUrl}
+                      alt={getDisplayName(account)}
+                      className="h-12 w-12"
+                    />
                     <div className="min-w-0 flex-1">
                       <h2 className="truncate font-bold text-text">
                         {getDisplayName(account)}

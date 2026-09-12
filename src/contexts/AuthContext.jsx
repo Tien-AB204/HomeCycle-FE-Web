@@ -481,8 +481,7 @@ export const AuthProvider = ({
             responseData?.email ||
             normalizedEmail,
           username:
-            responseData?.username ||
-            normalizedEmail,
+            responseData?.username || "",
           role:
             responseData?.role || "",
         };

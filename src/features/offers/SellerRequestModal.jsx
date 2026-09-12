@@ -141,7 +141,6 @@ export default function SellerRequestModal({
 
         if (active) {
           setLoadError(
-            error?.message ||
               "Không thể tải các tin đăng bán của bạn.",
           );
         }

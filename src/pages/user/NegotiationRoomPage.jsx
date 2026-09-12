@@ -16,6 +16,7 @@ import {
   MESSAGE_TYPE,
   NEGOTIATION_STATUS,
 } from "../../constants/negotiations";
+import Avatar from "../../components/shared/Avatar";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import { useAuth } from "../../hooks/useAuth";
@@ -50,7 +51,6 @@ const getErrorMessage = (error, fallbackMessage) => {
   return (
     error?.response?.data?.error?.message ||
     error?.response?.data?.message ||
-    error?.message ||
     fallbackMessage
   );
 };
@@ -1246,17 +1246,11 @@ const NegotiationRoomPage = () => {
         <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(23,40,48,0.07)]">
           <header className="border-b border-border bg-white px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
-              {summary?.otherPartyAvatarUrl ? (
-                <img
-                  src={summary.otherPartyAvatarUrl}
-                  alt=""
-                  className="h-10 w-10 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary font-black text-white">
-                  {(summary?.otherPartyName || "H").charAt(0).toUpperCase()}
-                </span>
-              )}
+              <Avatar
+                src={summary?.otherPartyAvatarUrl}
+                alt={summary?.otherPartyName || ""}
+                className="h-10 w-10 shrink-0"
+              />
               <div className="min-w-0">
                 <h1 className="truncate text-base font-black text-text">
                   {summary?.otherPartyName || "Phòng thương lượng"}

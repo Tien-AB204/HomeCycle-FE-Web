@@ -109,7 +109,6 @@ const getErrorMessage = (error) => {
     responseData?.error?.message ||
     responseData?.message ||
     responseData?.title ||
-    error?.message ||
     "Không thể thực hiện yêu cầu quản lý bài đăng."
   );
 };

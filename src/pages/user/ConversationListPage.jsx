@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import conversationApi from "../../services/apis/conversationApi";
+import Avatar from "../../components/shared/Avatar";
 
 const PAGE_SIZE = 20;
 
@@ -197,18 +198,11 @@ const ConversationListPage = () => {
                   to={`/hop-thu/${encodeURIComponent(item.conversationId)}`}
                   className="flex items-center gap-3 px-5 py-4 transition hover:bg-background"
                 >
-                  {participant.avatarUrl ? (
-                    <img
-                      src={participant.avatarUrl}
-                      alt=""
-                      referrerPolicy="no-referrer"
-                      className="h-11 w-11 shrink-0 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary font-black text-white">
-                      {(participant.displayName || "?").charAt(0).toUpperCase()}
-                    </span>
-                  )}
+                  <Avatar
+                    src={participant.avatarUrl}
+                    alt={participant.displayName || ""}
+                    className="h-11 w-11"
+                  />
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">

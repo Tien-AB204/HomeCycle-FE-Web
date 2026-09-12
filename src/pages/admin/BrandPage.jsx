@@ -69,7 +69,6 @@ const getErrorMessage = (error) => {
     ) ||
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
     "Đã xảy ra lỗi. Vui lòng thử lại."
   );
 };

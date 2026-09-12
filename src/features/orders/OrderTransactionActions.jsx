@@ -7,7 +7,6 @@ const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
   error?.response?.data?.detail ||
-  error?.message ||
   "Không thể thực hiện thao tác.";
 
 const OrderTransactionActions = ({ order, detail, onRefresh }) => {

@@ -28,7 +28,6 @@ export const getBusinessApiErrorMessage = (
     validationMessage ||
     responseData?.message ||
     responseData?.error?.message ||
-    error?.message ||
     fallbackMessage
   );
 };

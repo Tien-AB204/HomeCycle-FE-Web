@@ -27,7 +27,6 @@ const getErrorMessage = (error, fallbackMessage) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
   error?.response?.data?.detail ||
-  error?.message ||
   fallbackMessage;
 
 const getApiErrorCode = (error) =>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getNegotiationStatusMeta } from "../../constants/negotiations";
 import negotiationApi from "../../services/apis/negotiationApi";
+import Avatar from "../../components/shared/Avatar";
 
 const PAGE_SIZE = 10;
 
@@ -13,7 +14,6 @@ const getErrorMessage = (error, fallbackMessage) => {
   return (
     error?.response?.data?.error?.message ||
     error?.response?.data?.message ||
-    error?.message ||
     fallbackMessage
   );
 };
@@ -187,17 +187,11 @@ const NegotiationListPage = () => {
                   className="grid gap-4 px-5 py-4 transition hover:bg-background md:grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] md:items-center"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                      {negotiation.otherPartyAvatarUrl ? (
-                        <img
-                          src={negotiation.otherPartyAvatarUrl}
-                          alt=""
-                          className="h-10 w-10 shrink-0 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary font-black text-white">
-                          {name.charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                      <Avatar
+                        src={negotiation.otherPartyAvatarUrl}
+                        alt={name}
+                        className="h-10 w-10 shrink-0"
+                      />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wide text-textLight">Đang trao đổi với</p>
                         <p className="truncate font-bold text-text">{name}</p>

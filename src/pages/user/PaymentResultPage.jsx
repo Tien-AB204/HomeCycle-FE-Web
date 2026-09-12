@@ -17,7 +17,6 @@ const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
   error?.response?.data?.detail ||
-  error?.message ||
   "Hệ thống chưa thể xác nhận giao dịch.";
 
 const isRequestCancelled = (error) =>

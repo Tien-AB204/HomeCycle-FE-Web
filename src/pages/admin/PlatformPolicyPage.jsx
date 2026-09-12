@@ -225,7 +225,6 @@ const getErrorMessage = (
     getValidationMessage(responseData?.errors) ||
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
     fallback
   );
 };

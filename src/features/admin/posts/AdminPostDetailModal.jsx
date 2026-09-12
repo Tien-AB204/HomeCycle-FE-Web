@@ -107,7 +107,6 @@ const getErrorMessage = (error) => {
     responseData?.error?.message ||
     responseData?.message ||
     responseData?.title ||
-    error?.message ||
     "Không thể tải chi tiết bài đăng."
   );
 };

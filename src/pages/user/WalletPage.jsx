@@ -35,7 +35,6 @@ const getErrorMessage = (
     ?.message ||
   error?.response?.data
     ?.detail ||
-  error?.message ||
   fallback;
 
 const isRequestCancelled = (

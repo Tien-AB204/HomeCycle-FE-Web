@@ -17,7 +17,6 @@ const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
   error?.response?.data?.detail ||
-  error?.message ||
   "Không thể tạo tranh chấp.";
 
 const getExtension = (fileName) => {
@@ -173,7 +172,6 @@ const OrderDisputeModal = ({
             error:
               error?.response?.data?.error?.message ||
               error?.response?.data?.message ||
-              error?.message ||
               "Không thể tải quy định bằng chứng tranh chấp.",
             rule: null,
           });

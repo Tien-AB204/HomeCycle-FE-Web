@@ -4,6 +4,8 @@ import {
 } from "react";
 import { bankDirectoryService } from "../../services/bankDirectoryService";
 import { userService } from "../../services/userService";
+import SensitiveField from "../../components/shared/SensitiveField";
+import { maskMiddleValue } from "../../utils/maskMiddleValue";
 
 const createBankForm = (
   bankAccount,
@@ -80,7 +82,6 @@ const getApiErrorMessage = (
     validationMessage ||
     responseData?.message ||
     responseData?.error?.message ||
-    error?.message ||
     fallbackMessage
   );
 };
@@ -124,6 +125,27 @@ const BankField = ({
         }`}
       />
     </div>
+  );
+};
+
+const MaskedAccountNumber = ({ value }) => {
+  const [revealed, setRevealed] = useState(false);
+  const stringValue = String(value || "");
+
+  return (
+    <p className="mb-6 flex items-center gap-2 font-mono text-xl font-bold tracking-widest">
+      {revealed ? stringValue : maskMiddleValue(stringValue)}
+      <button
+        type="button"
+        onClick={() => setRevealed((current) => !current)}
+        aria-label={revealed ? "Ẩn số tài khoản" : "Hiện số tài khoản đầy đủ"}
+        className="text-white/70 transition hover:text-white"
+      >
+        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+          {revealed ? "visibility_off" : "visibility"}
+        </span>
+      </button>
+    </p>
   );
 };
 
@@ -627,11 +649,9 @@ const BankAccountSection = ({
               Số tài khoản
             </p>
 
-            <p className="mb-6 font-mono text-xl font-bold tracking-widest">
-              {
-                bankAccount.accountNumber
-              }
-            </p>
+            <MaskedAccountNumber
+              value={bankAccount.accountNumber}
+            />
 
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/60">
               Chủ tài khoản
@@ -817,7 +837,7 @@ const BankAccountSection = ({
               placeholder="Tự động điền"
             />
 
-            <BankField
+            <SensitiveField
               id="bank-account-number"
               label="SỐ TÀI KHOẢN"
               name="accountNumber"
@@ -825,6 +845,7 @@ const BankAccountSection = ({
                 form.accountNumber
               }
               onChange={handleChange}
+              required
               placeholder="Nhập số tài khoản"
               autoComplete="off"
             />

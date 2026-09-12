@@ -225,7 +225,6 @@ const LoginPage = () => {
         error?.response?.data?.message ||
         error?.response?.data?.error
           ?.message ||
-        error?.message ||
         "Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.";
 
       if (error?.response && Number(status) < 500) {

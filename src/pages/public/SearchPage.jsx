@@ -134,7 +134,6 @@ const getErrorMessage = (error) => {
   return (
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
     "Không thể tìm kiếm bài đăng."
   );
 };

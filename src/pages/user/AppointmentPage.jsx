@@ -44,7 +44,6 @@ const APPOINTMENT_SOURCES = Object.freeze([
 const getErrorMessage = (error, fallback = "Không thể xử lý lịch hẹn.") =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.message ||
   fallback;
 
 const formatDate = (value) => {
@@ -315,11 +314,19 @@ const AppointmentDetailModal = ({
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-primary/70 p-4 backdrop-blur-[2px]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="appointment-detail-title"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !busy) {
+          onClose();
+        }
+      }}
     >
-      <div className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-white shadow-[0_24px_70px_rgba(23,40,48,0.25)]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="appointment-detail-title"
+        className="max-h-[88vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-white shadow-[0_24px_70px_rgba(23,40,48,0.25)]"
+      >
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-white px-5 py-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">

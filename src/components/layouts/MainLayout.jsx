@@ -11,6 +11,7 @@ import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
 import { normalizeRole } from "../../utils/authUtils";
+import Avatar from "../shared/Avatar";
 
 const PUBLIC_NAVIGATION = [
   { name: "Trang chủ", path: "/" },
@@ -72,7 +73,6 @@ const MainLayout = () => {
     preferredDisplayName ||
     (!username.includes("@") ? username : "") ||
     "Tài khoản của tôi";
-  const displayInitial = displayName.charAt(0).toUpperCase();
   const normalizedRole = normalizeRole(user?.role);
   const isManager =
     normalizedRole === ROLES.MODERATOR || normalizedRole === ROLES.ADMIN;
@@ -260,9 +260,7 @@ const MainLayout = () => {
                     to={isManager ? managerPath : "/ho-so"}
                     className="flex max-w-[180px] items-center gap-2 py-1.5 pl-1.5 pr-3 text-sm font-bold text-primary transition hover:bg-background"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-                      {displayInitial}
-                    </span>
+                    <Avatar src={user?.avatarUrl} alt={displayName} className="h-9 w-9 shrink-0" />
                     <span className="truncate">{displayName}</span>
                   </Link>
                   <button

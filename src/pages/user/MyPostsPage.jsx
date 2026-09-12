@@ -76,7 +76,6 @@ const getErrorMessage = (error) => {
   return (
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
     "Không thể tải bài đăng của bạn."
   );
 };

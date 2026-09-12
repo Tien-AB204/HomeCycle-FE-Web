@@ -2,9 +2,10 @@ import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import { useAuth } from "../../hooks/useAuth";
+import Avatar from "../shared/Avatar";
 
 const getDisplayName = (user, fallbackName) =>
-  user?.fullName || user?.username || user?.email || fallbackName;
+  user?.fullName || user?.username || fallbackName;
 
 const getCurrentPage = (pathname, navGroups, fallbackLabel) =>
   navGroups.flatMap((group) => group.items).find((item) =>
@@ -19,7 +20,6 @@ export default function ManagementPortalLayout({
   roleLabel,
   defaultPageLabel,
   fallbackDisplayName,
-  fallbackInitial,
   navAriaLabel,
   openMenuAriaLabel,
   closeMenuAriaLabel,
@@ -38,12 +38,6 @@ export default function ManagementPortalLayout({
 
   const displayName =
     getDisplayName(user, fallbackDisplayName);
-
-  const avatarCharacter =
-    String(displayName)
-      .trim()
-      .charAt(0)
-      .toUpperCase() || fallbackInitial;
 
   const currentPage = getCurrentPage(
     location.pathname,
@@ -260,9 +254,7 @@ export default function ManagementPortalLayout({
                 : undefined
             }
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 font-black text-white">
-              {avatarCharacter}
-            </div>
+            <Avatar src={user?.avatarUrl} alt={displayName} className="h-10 w-10 shrink-0" />
 
             <div
               className={[
@@ -393,9 +385,7 @@ export default function ManagementPortalLayout({
               </p>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-black text-white shadow-sm">
-              {avatarCharacter}
-            </div>
+            <Avatar src={user?.avatarUrl} alt={displayName} className="h-10 w-10 shadow-sm" />
           </div>
         </header>
 

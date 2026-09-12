@@ -6,6 +6,7 @@ import { useChatRealtime } from "../../hooks/useChatRealtime";
 import conversationApi from "../../services/apis/conversationApi";
 import chatRealtimeService from "../../services/realtime/chatRealtimeService";
 import { getUserId } from "../../utils/authUtils";
+import Avatar from "../../components/shared/Avatar";
 
 const PAGE_SIZE = 30;
 
@@ -277,18 +278,11 @@ const ConversationDetailPage = () => {
           </span>
         </Link>
 
-        {participant?.avatarUrl ? (
-          <img
-            src={participant.avatarUrl}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="h-11 w-11 rounded-full object-cover"
-          />
-        ) : (
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary font-black text-white">
-            {(participant?.displayName || "?").charAt(0).toUpperCase()}
-          </span>
-        )}
+        <Avatar
+          src={participant?.avatarUrl}
+          alt={participant?.displayName || ""}
+          className="h-11 w-11"
+        />
 
         <div className="min-w-0">
           <p className="truncate font-black text-text">

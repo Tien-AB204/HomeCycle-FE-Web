@@ -325,7 +325,6 @@ const InspectionFormPanel = ({
           setPolicyState({
             loading: false,
             error:
-              error?.message ||
               "Không thể tải quy định ảnh minh chứng kiểm định.",
             rule: null,
           });
@@ -1099,10 +1098,18 @@ const InspectionFormPanel = ({
       {confirmModalOpen && form && (
         <div
           className="fixed inset-0 z-[110] flex items-center justify-center bg-primary/70 p-4"
-          role="dialog"
-          aria-modal="true"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !busy) {
+              setConfirmModalOpen(false);
+            }
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-border bg-white p-5 shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-border bg-white p-5 shadow-2xl"
+          >
             <h3 className="text-lg font-black text-text">
               Xác nhận kết quả kiểm định
             </h3>
@@ -1161,10 +1168,20 @@ const InspectionFormPanel = ({
       {rejectModalOpen && (
         <div
           className="fixed inset-0 z-[110] flex items-center justify-center bg-primary/70 p-4"
-          role="dialog"
-          aria-modal="true"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !busy) {
+              setRejectModalOpen(false);
+              setRejectReason("");
+              setFieldError("");
+            }
+          }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-border bg-white p-5 shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="w-full max-w-md rounded-2xl border border-border bg-white p-5 shadow-2xl"
+          >
             <h3 className="text-lg font-black text-text">
               Từ chối kết quả kiểm định
             </h3>

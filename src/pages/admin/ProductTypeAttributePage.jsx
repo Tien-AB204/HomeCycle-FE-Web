@@ -39,6 +39,9 @@ const getValidationMessage = (
     .join("\n");
 };
 
+const isVietnameseMessage = (message) =>
+  /[À-ỹĐđ]/u.test(String(message || ""));
+
 const getErrorMessage = (error) => {
   const responseData =
     error?.response?.data;
@@ -49,7 +52,9 @@ const getErrorMessage = (error) => {
     ) ||
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
+    (!responseData && isVietnameseMessage(error?.message)
+      ? error.message
+      : "") ||
     "Đã xảy ra lỗi. Vui lòng thử lại."
   );
 };

@@ -73,7 +73,6 @@ export default function ModLayout() {
       roleLabel="Kiểm duyệt viên"
       defaultPageLabel="Trung tâm kiểm duyệt"
       fallbackDisplayName="Kiểm duyệt viên"
-      fallbackInitial="M"
       navAriaLabel="Điều hướng kiểm duyệt"
       openMenuAriaLabel="Mở menu kiểm duyệt"
       closeMenuAriaLabel="Đóng menu kiểm duyệt"
