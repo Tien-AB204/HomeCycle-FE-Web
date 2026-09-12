@@ -22,7 +22,70 @@ export const DISPUTE_STATUS = Object.freeze({
   RESOLVED: 1,
   REJECTED: 2,
   CLOSED: 3,
+  UNDER_REVIEW: 4,
+  AWAITING_RETURN: 5,
 });
+
+/*
+ * Backend DisputeStatus/DisputeCategory enum names, dùng làm canonical key.
+ * Detail DTO trả enum-name string (JsonStringEnumConverter), form/list có thể
+ * dùng số - helper hiển thị phải tra được cả hai dạng cho cùng 1 giá trị.
+ */
+const DISPUTE_STATUS_NAMES = Object.freeze({
+  [DISPUTE_STATUS.PENDING]: "Pending",
+  [DISPUTE_STATUS.RESOLVED]: "Resolved",
+  [DISPUTE_STATUS.REJECTED]: "Rejected",
+  [DISPUTE_STATUS.CLOSED]: "Closed",
+  [DISPUTE_STATUS.UNDER_REVIEW]: "UnderReview",
+  [DISPUTE_STATUS.AWAITING_RETURN]: "AwaitingReturn",
+});
+
+const DISPUTE_CATEGORY_NAMES = Object.freeze({
+  [DISPUTE_CATEGORY.NO_SHOW]: "NoShow",
+  [DISPUTE_CATEGORY.ITEM_MISMATCH]: "ItemMismatch",
+  [DISPUTE_CATEGORY.SELLER_NOT_SHIPPED]: "SellerNotShipped",
+  [DISPUTE_CATEGORY.DAMAGED_OR_LOST]: "DamagedOrLost",
+  [DISPUTE_CATEGORY.ITEM_NOT_RECEIVED]: "ItemNotReceived",
+  [DISPUTE_CATEGORY.FRAUD_OR_SCAM]: "FraudOrScam",
+  [DISPUTE_CATEGORY.ABUSIVE_REVIEW]: "AbusiveReview",
+  [DISPUTE_CATEGORY.PAYMENT_NOT_COMPLETED]: "PaymentNotCompleted",
+  [DISPUTE_CATEGORY.COMMITMENT_VIOLATION]: "CommitmentViolation",
+  [DISPUTE_CATEGORY.OTHER]: "Other",
+});
+
+/*
+ * Chuẩn hoá 1 giá trị (number | numeric string | enum-name string) về
+ * số enum Backend, hoặc null nếu không nhận diện được.
+ */
+const normalizeEnumNumber = (value, namesByNumber) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    const byName = Object.keys(namesByNumber).find(
+      (key) => namesByNumber[key] === trimmed,
+    );
+
+    if (byName !== undefined) {
+      return Number(byName);
+    }
+  }
+
+  const numeric = Number(value);
+
+  return Number.isFinite(numeric) && namesByNumber[numeric] !== undefined
+    ? numeric
+    : null;
+};
+
+export const normalizeDisputeStatus = (value) =>
+  normalizeEnumNumber(value, DISPUTE_STATUS_NAMES);
+
+export const normalizeDisputeCategory = (value) =>
+  normalizeEnumNumber(value, DISPUTE_CATEGORY_NAMES);
 
 export const ORDER_DISPUTE_CATEGORY_OPTIONS = Object.freeze([
   {
@@ -84,10 +147,30 @@ const DISPUTE_STATUS_META = Object.freeze({
     className:
       "border-border bg-textLight/10 text-textLight",
   },
+  [DISPUTE_STATUS.UNDER_REVIEW]: {
+    label: "Đang xử lý",
+    className:
+      "border-primary/30 bg-primary/10 text-primary",
+  },
+  [DISPUTE_STATUS.AWAITING_RETURN]: {
+    label: "Chờ hoàn trả",
+    className:
+      "border-warning/30 bg-warning/10 text-warning",
+  },
+});
+
+const UNKNOWN_DISPUTE_STATUS_META = Object.freeze({
+  label: "Chưa xác định",
+  className:
+    "border-border bg-textLight/10 text-textLight",
 });
 
 export const getDisputeCategoryLabel = (category) => {
-  const normalizedCategory = Number(category);
+  const normalizedCategory = normalizeDisputeCategory(category);
+
+  if (normalizedCategory === null) {
+    return "Chưa xác định";
+  }
 
   return (
     ORDER_DISPUTE_CATEGORY_OPTIONS.find(
@@ -99,9 +182,11 @@ export const getDisputeCategoryLabel = (category) => {
   );
 };
 
-export const getDisputeStatusMeta = (status) =>
-  DISPUTE_STATUS_META[Number(status)] || {
-    label: "Chưa xác định",
-    className:
-      "border-border bg-textLight/10 text-textLight",
-  };
+export const getDisputeStatusMeta = (status) => {
+  const normalizedStatus = normalizeDisputeStatus(status);
+
+  return (
+    (normalizedStatus !== null && DISPUTE_STATUS_META[normalizedStatus]) ||
+    UNKNOWN_DISPUTE_STATUS_META
+  );
+};
