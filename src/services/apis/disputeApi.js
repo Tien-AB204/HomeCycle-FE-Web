@@ -200,6 +200,53 @@ export const disputeApi = {
   },
 
   /**
+   * Danh sách tranh chấp mà user hiện tại là người gửi
+   * hoặc người bị khiếu nại.
+   */
+  getMine: async ({
+    pageNumber = 1,
+    pageSize = 10,
+    signal,
+  } = {}) => {
+    const response = await axiosClient.get("/disputes", {
+      params: {
+        PageNumber: pageNumber,
+        PageSize: pageSize,
+      },
+      signal,
+    });
+
+    const source = response?.data ?? response ?? {};
+
+    return {
+      items: Array.isArray(source?.items) ? source.items : [],
+      pageNumber: source?.pageNumber ?? pageNumber,
+      pageSize: source?.pageSize ?? pageSize,
+      totalCount: source?.totalCount ?? 0,
+      totalPages: source?.totalPages ?? 0,
+      hasPreviousPage: Boolean(source?.hasPreviousPage),
+      hasNextPage: Boolean(source?.hasNextPage),
+    };
+  },
+
+  /**
+   * Đóng tranh chấp do chính người dùng hiện tại gửi,
+   * chỉ khả dụng khi máy chủ cho phép (actions.canCloseDispute).
+   */
+  close: async (disputeId) => {
+    const id = normalizeIdentifier(
+      disputeId,
+      "Không tìm thấy mã tranh chấp.",
+    );
+
+    const response = await axiosClient.post(
+      `/disputes/${encodeURIComponent(id)}/close`,
+    );
+
+    return response;
+  },
+
+  /**
    * Xem chi tiết một tranh chấp mà user hiện tại
    * là người gửi hoặc người bị khiếu nại.
    */
