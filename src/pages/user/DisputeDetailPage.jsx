@@ -44,12 +44,33 @@ const formatCurrency = (value) => {
     : "—";
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  error?.response?.data?.detail ||
-  error?.message ||
-  "Không thể tải chi tiết tranh chấp.";
+/*
+ * Chỉ dùng HTTP status / mã lỗi ổn định của Backend để chọn thông báo.
+ * Không hiển thị message thô từ Backend/Axios ra giao diện.
+ * Backend GET /disputes/{id} trả 400 kèm code DISPUTE_NOT_FOUND / DISPUTE_FORBIDDEN.
+ */
+const getErrorMessage = (error) => {
+  const httpStatus = error?.response?.status;
+  const code = String(
+    error?.response?.data?.code ??
+      error?.response?.data?.error?.code ??
+      "",
+  ).trim();
+
+  if (httpStatus === 404 || code === "DISPUTE_NOT_FOUND") {
+    return "Không tìm thấy tranh chấp.";
+  }
+
+  if (httpStatus === 403 || code === "DISPUTE_FORBIDDEN") {
+    return "Bạn không có quyền xem tranh chấp này.";
+  }
+
+  if (httpStatus === 401) {
+    return "Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.";
+  }
+
+  return "Không thể tải chi tiết tranh chấp. Vui lòng thử lại.";
+};
 
 const DetailRow = ({
   label,
@@ -365,8 +386,8 @@ const DisputeDetailPage = () => {
 
           {!order && (
             <p className="mt-3 text-sm text-textLight">
-              Backend chưa trả thông tin
-              đơn hàng liên quan.
+              Chưa có thông tin đơn hàng
+              liên quan.
             </p>
           )}
 

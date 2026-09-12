@@ -76,6 +76,7 @@ export const PAYMENT_TYPE_OPTIONS = Object.freeze([
 export const DELIVERY_METHOD_OPTIONS = Object.freeze([
   { value: DELIVERY_METHOD.BUYER_PICK_UP, label: "Người mua tự đến lấy" },
   { value: DELIVERY_METHOD.SELLER_DELIVERS, label: "Người bán giao hàng" },
+  { value: DELIVERY_METHOD.GHN, label: "Giao hàng nhanh (GHN)" },
 ]);
 
 export const normalizeAgreementStatus = (status) => {
@@ -104,7 +105,21 @@ export const getPaymentTypeLabel = (type) => {
   return PAYMENT_TYPE_OPTIONS.find((option) => option.value === type)?.label || type || "Chưa xác định";
 };
 
+/*
+ * Backend DeliveryMethod: Unknown=0, GhnDelivery=1, SellerDelivers=2, BuyerPickUp=3.
+ * Chỉ dùng cho hiển thị - Unknown / giá trị lạ không được lộ tên enum ra UI.
+ */
+const DELIVERY_METHOD_BY_NUMBER = Object.freeze({
+  0: DELIVERY_METHOD.UNKNOWN,
+  1: DELIVERY_METHOD.GHN,
+  2: DELIVERY_METHOD.SELLER_DELIVERS,
+  3: DELIVERY_METHOD.BUYER_PICK_UP,
+});
+
 export const getDeliveryMethodLabel = (method) => {
-  if (method === DELIVERY_METHOD.GHN) return "Giao hàng nhanh (GHN)";
-  return DELIVERY_METHOD_OPTIONS.find((option) => option.value === method)?.label || method || "Chưa xác định";
+  const raw = String(method ?? "").trim();
+  const normalized = DELIVERY_METHOD_BY_NUMBER[raw] ?? raw;
+
+  if (normalized === DELIVERY_METHOD.GHN) return "Giao hàng nhanh (GHN)";
+  return DELIVERY_METHOD_OPTIONS.find((option) => option.value === normalized)?.label || "Chưa xác định";
 };

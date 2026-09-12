@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ORDER_STATUS } from "../../constants/orders";
+import { isOrderStatus } from "../../constants/orders";
 import reviewApi from "../../services/apis/reviewApi";
 import ReviewCard from "./ReviewCard";
 import ReviewFormModal from "./ReviewFormModal";
@@ -74,7 +74,7 @@ const OrderReviewSection = ({
         ? items.reduce((total, review) => total + review.rating, 0) /
           items.length
         : 0;
-  const isOrderCompleted = Number(orderStatus) === ORDER_STATUS.COMPLETED;
+  const isOrderCompleted = isOrderStatus(orderStatus, "Completed");
   const serverCanReview = eligibility?.canReview;
   const isEligible =
     typeof serverCanReview === "boolean" ? serverCanReview : isOrderCompleted;
