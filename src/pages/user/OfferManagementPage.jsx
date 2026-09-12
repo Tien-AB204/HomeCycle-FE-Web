@@ -8,12 +8,17 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { getOfferStatusMeta } from "../../constants/offers";
+import { ROLES } from "../../constants/roles";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferDetailModal from "../../features/offers/OfferDetailModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
+import BuyPostOfferMatchPanel from "../../features/offers/BuyPostOfferMatchPanel";
 import offerApi from "../../services/apis/offerApi";
 import postApi from "../../services/apis/postApi";
+import { useAuth } from "../../hooks/useAuth";
+import { useChatRealtime } from "../../hooks/useChatRealtime";
+import { normalizeRole } from "../../utils/authUtils";
 import {
   getOfferChangedFields,
   getPostChangedFields,
@@ -69,11 +74,25 @@ const formatDate = (value) => {
 
 const OfferManagementPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const normalizedRole = normalizeRole(user?.role);
+  const isPersonal = normalizedRole === ROLES.PERSONAL;
+
+  const {
+    connection,
+    reconnectVersion,
+  } = useChatRealtime();
+
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab =
     searchParams.get("tab") === "received"
       ? "received"
       : "sent";
+
+  const scopedBuyPostId =
+    String(
+      searchParams.get("buyPostId") || "",
+    ).trim();
   const [pageNumber, setPageNumber] = useState(1);
   const [requestVersion, setRequestVersion] = useState(0);
   const [successMessage, setSuccessMessage] = useState("");
@@ -88,8 +107,11 @@ const OfferManagementPage = () => {
   const [counterSubmitting, setCounterSubmitting] = useState(false);
   const [counterError, setCounterError] = useState("");
   const [staleWarning, setStaleWarning] = useState(null);
-  const listRequestKey = `${activeTab}:${pageNumber}:${requestVersion}`;
-  const detailRequestKey = `${selectedOfferId}:${detailVersion}`;
+  const listRequestKey =
+    `${activeTab}:${scopedBuyPostId}:${pageNumber}:${requestVersion}:${reconnectVersion}`;
+
+  const detailRequestKey =
+    `${selectedOfferId}:${detailVersion}:${reconnectVersion}`;
   const [listState, setListState] = useState({
     requestKey: "",
     result: null,
@@ -100,6 +122,14 @@ const OfferManagementPage = () => {
     offer: null,
     post: null,
     error: "",
+  });
+
+  const [
+    cardMatchState,
+    setCardMatchState,
+  ] = useState({
+    requestKey: "",
+    items: {},
   });
 
   useEffect(() => {
@@ -113,6 +143,8 @@ const OfferManagementPage = () => {
     request({
       pageNumber,
       pageSize: PAGE_SIZE,
+      buyPostId:
+        scopedBuyPostId || undefined,
       signal: controller.signal,
     })
       .then((result) => {
@@ -148,7 +180,12 @@ const OfferManagementPage = () => {
       isActive = false;
       controller.abort();
     };
-  }, [activeTab, listRequestKey, pageNumber]);
+  }, [
+    activeTab,
+    listRequestKey,
+    pageNumber,
+    scopedBuyPostId,
+  ]);
 
   useEffect(() => {
     if (!selectedOfferId) {
@@ -232,8 +269,213 @@ const OfferManagementPage = () => {
       ? detailState.error
       : "";
 
+  const cardMatchOfferKey = offers
+    .filter((offer) => Boolean(offer.buyPostId))
+    .map(
+      (offer) =>
+        `${offer.offerId}:${offer.version ?? "na"}:${offer.buyPostId}`,
+    )
+    .join("|");
+
+  const cardMatchRequestKey =
+    `${listRequestKey}:${cardMatchOfferKey}`;
+
+  useEffect(() => {
+    const visibleBuyPostOffers =
+      Array.isArray(result?.items)
+        ? result.items.filter(
+            (offer) =>
+              Boolean(offer.buyPostId),
+          )
+        : [];
+
+    if (
+      visibleBuyPostOffers.length === 0
+    ) {
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    let isActive = true;
+
+    Promise.all(
+      visibleBuyPostOffers.map(
+        async (offer) => {
+          try {
+            const detail =
+              await offerApi.getById(
+                offer.offerId,
+                {
+                  signal:
+                    controller.signal,
+                },
+              );
+
+            return [
+              offer.offerId,
+              {
+                detail,
+                error: false,
+                offerVersion:
+                  detail.version ??
+                  offer.version ??
+                  null,
+                buyPostUpdatedAt:
+                  detail.buyPost
+                    ?.updatedAt || "",
+                sellPostUpdatedAt:
+                  detail.sellPost
+                    ?.updatedAt || "",
+              },
+            ];
+          } catch (requestError) {
+            if (
+              isCanceledRequest(
+                requestError,
+              )
+            ) {
+              return null;
+            }
+
+            return [
+              offer.offerId,
+              {
+                detail: null,
+                error: true,
+                offerVersion:
+                  offer.version ??
+                  null,
+                buyPostUpdatedAt: "",
+                sellPostUpdatedAt: "",
+              },
+            ];
+          }
+        },
+      ),
+    ).then((entries) => {
+      if (!isActive) {
+        return;
+      }
+
+      setCardMatchState({
+        requestKey:
+          cardMatchRequestKey,
+        items: Object.fromEntries(
+          entries.filter(Boolean),
+        ),
+      });
+    });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [
+    cardMatchRequestKey,
+    result,
+  ]);
+
+  useEffect(() => {
+    if (!connection) {
+      return undefined;
+    }
+
+    const normalizeRealtimeId = (
+      value,
+    ) =>
+      String(value ?? "").trim();
+
+    const isRelevantToScope = (
+      payload,
+    ) => {
+      if (!scopedBuyPostId) {
+        return true;
+      }
+
+      const eventBuyPostId =
+        normalizeRealtimeId(
+          payload?.buyPostId ??
+            payload?.BuyPostId,
+        );
+
+      return (
+        eventBuyPostId ===
+        scopedBuyPostId
+      );
+    };
+
+    const handleOfferChanged = (
+      payload,
+    ) => {
+      if (
+        !isRelevantToScope(payload)
+      ) {
+        return;
+      }
+
+      setRequestVersion(
+        (currentVersion) =>
+          currentVersion + 1,
+      );
+
+      const eventOfferId =
+        normalizeRealtimeId(
+          payload?.offerId ??
+            payload?.OfferId,
+        );
+
+      if (
+        selectedOfferId &&
+        eventOfferId ===
+          selectedOfferId
+      ) {
+        setDetailVersion(
+          (currentVersion) =>
+            currentVersion + 1,
+        );
+      }
+    };
+
+    connection.on(
+      "OfferCreated",
+      handleOfferChanged,
+    );
+
+    connection.on(
+      "OfferUpdated",
+      handleOfferChanged,
+    );
+
+    return () => {
+      connection.off(
+        "OfferCreated",
+        handleOfferChanged,
+      );
+
+      connection.off(
+        "OfferUpdated",
+        handleOfferChanged,
+      );
+    };
+  }, [
+    connection,
+    scopedBuyPostId,
+    selectedOfferId,
+  ]);
+
   const changeTab = (nextTab) => {
-    setSearchParams({ tab: nextTab });
+    const nextParams = {
+      tab: nextTab,
+    };
+
+    if (scopedBuyPostId) {
+      nextParams.buyPostId =
+        scopedBuyPostId;
+    }
+
+    setSearchParams(nextParams);
     setPageNumber(1);
     setSelectedOfferId("");
     setSuccessMessage("");
@@ -316,7 +558,10 @@ const OfferManagementPage = () => {
         await offerApi.reject(selectedOffer.offerId);
         message = "Đã từ chối đề nghị thành công.";
       } else {
-        await offerApi.accept(selectedOffer.offerId);
+        await offerApi.accept(
+          selectedOffer.offerId,
+          verification.latestOffer.version,
+        );
         message = "Đã đồng ý mức giá và mở phiên thương lượng.";
       }
 
@@ -409,7 +654,14 @@ const OfferManagementPage = () => {
         return;
       }
 
-      const result = await offerApi.counter(counteringOffer.offerId, terms);
+      const result = await offerApi.counter(
+        counteringOffer.offerId,
+        {
+          ...terms,
+          version:
+            verification.latestOffer.version,
+        },
+      );
       setCounteringOffer(null);
       refreshList();
       navigate(
@@ -463,7 +715,14 @@ const OfferManagementPage = () => {
         return;
       }
 
-      await offerApi.update(editingOffer.offerId, terms);
+      await offerApi.update(
+        editingOffer.offerId,
+        {
+          ...terms,
+          version:
+            verification.latestOffer.version,
+        },
+      );
       setEditingOffer(null);
       setSuccessMessage("Đã cập nhật đề nghị thành công.");
       refreshList();
@@ -506,6 +765,28 @@ const OfferManagementPage = () => {
         </div>
       </header>
 
+      {scopedBuyPostId && (
+        <div className="mt-4 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+              Đang lọc theo tin thu mua
+            </p>
+            <p className="mt-1 text-sm leading-6 text-textLight">
+              Danh sách này chỉ hiển thị các đề nghị gắn với tin thu mua bạn vừa mở.
+            </p>
+          </div>
+
+          <Link
+            to={`/bai-dang-cua-toi/${encodeURIComponent(
+              scopedBuyPostId,
+            )}`}
+            className="shrink-0 rounded-xl border border-primary bg-white px-4 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10"
+          >
+            Quay lại tin thu mua
+          </Link>
+        </div>
+      )}
+
       <div className="mt-4 rounded-xl border border-border bg-white p-1.5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
         <div
           role="tablist"
@@ -523,7 +804,9 @@ const OfferManagementPage = () => {
                 : "text-textLight hover:bg-background hover:text-text"
             }`}
           >
-            Đề nghị đã gửi
+            {isPersonal
+              ? "Chào hàng đã gửi"
+              : "Đề nghị đã gửi"}
           </button>
           <button
             type="button"
@@ -536,7 +819,9 @@ const OfferManagementPage = () => {
                 : "text-textLight hover:bg-background hover:text-text"
             }`}
           >
-            Đề nghị đã nhận
+            {scopedBuyPostId
+              ? "Chào hàng nhận được"
+              : "Đề nghị đã nhận"}
           </button>
         </div>
       </div>
@@ -629,6 +914,14 @@ const OfferManagementPage = () => {
                   ? offer.receiverAvatarUrl
                   : offer.senderAvatarUrl;
 
+              const cardMatchItem =
+                cardMatchState.requestKey ===
+                cardMatchRequestKey
+                  ? cardMatchState.items[
+                      offer.offerId
+                    ] || null
+                  : null;
+
               return (
                 <article
                   key={offer.offerId}
@@ -681,6 +974,34 @@ const OfferManagementPage = () => {
                       Xem chi tiết
                     </button>
                   </div>
+
+                  {offer.buyPostId && (
+                    <div className="md:col-span-6">
+                      {!cardMatchItem ? (
+                        <div
+                          role="status"
+                          className="animate-pulse rounded-xl border border-border bg-background/60 p-3"
+                        >
+                          <div className="h-3 w-44 rounded bg-border/60" />
+                          <div className="mt-2 h-4 w-72 max-w-full rounded bg-border/40" />
+                        </div>
+                      ) : cardMatchItem.error ? (
+                        <div
+                          role="status"
+                          className="rounded-xl border border-border bg-background/60 p-3 text-xs leading-5 text-textLight"
+                        >
+                          Chưa thể đối chiếu tiêu chí cho đề nghị này. Mở chi tiết hoặc làm mới danh sách để thử lại.
+                        </div>
+                      ) : (
+                        <BuyPostOfferMatchPanel
+                          offer={
+                            cardMatchItem.detail
+                          }
+                          compact
+                        />
+                      )}
+                    </div>
+                  )}
                 </article>
               );
             })}

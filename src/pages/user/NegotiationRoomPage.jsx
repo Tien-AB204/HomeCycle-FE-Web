@@ -785,6 +785,17 @@ const NegotiationRoomPage = () => {
     NEGOTIATION_STATUS.AGREED,
   ].includes(negotiation?.negotiationStatus);
   const messages = sortMessages(negotiation?.messages || []);
+
+  const latestPendingProposal =
+    getLatestPendingProposal(negotiation);
+
+  const pendingProposalIsMine =
+    Boolean(
+      latestPendingProposal &&
+        String(latestPendingProposal.senderId) ===
+          String(currentUserId || ""),
+    );
+
   const realtimeStatusMeta =
     REALTIME_STATUS_META[realtimeStatus] ||
     REALTIME_STATUS_META[CHAT_REALTIME_STATUS.DISCONNECTED];
@@ -1049,7 +1060,11 @@ const NegotiationRoomPage = () => {
   const handleCounterSubmit = async (event) => {
     event.preventDefault();
 
-    if (!negotiation || actionBusy) {
+    if (
+      !negotiation ||
+      actionBusy ||
+      pendingProposalIsMine
+    ) {
       return;
     }
 
@@ -1066,6 +1081,44 @@ const NegotiationRoomPage = () => {
       return;
     }
 
+    const latestPendingProposalForCounter =
+      getLatestPendingProposal(
+        verification.latestNegotiation,
+      );
+
+    if (
+      latestPendingProposalForCounter &&
+      String(
+        latestPendingProposalForCounter.senderId,
+      ) === String(currentUserId || "")
+    ) {
+      setRequestState({
+        requestKey,
+        negotiation:
+          verification.latestNegotiation,
+        post: verification.latestPost,
+        error: "",
+      });
+
+      setCounterForm({
+        offerPrice: String(
+          verification.latestNegotiation
+            .currentOfferPrice ?? "",
+        ),
+        offerQuantity: String(
+          verification.latestNegotiation
+            .currentOfferQuantity ?? 1,
+        ),
+      });
+
+      setActionError(
+        "Bạn đang có một phản đề chờ đối tác xử lý. Hãy chờ đối tác phản hồi trước khi gửi phản đề mới.",
+      );
+
+      setActionBusy("");
+      return;
+    }
+
     if (
       verification.negotiationChanges.length ||
       verification.postChanges.length
@@ -1076,7 +1129,10 @@ const NegotiationRoomPage = () => {
     }
 
     try {
-      await negotiationApi.counter(negotiationId, counterForm);
+      await negotiationApi.counter(
+        negotiationId,
+        counterForm,
+      );
       setSuccessMessage("Đã gửi đề xuất mới đến đối tác.");
       refreshRoom();
     } catch (requestError) {
@@ -1354,7 +1410,7 @@ const NegotiationRoomPage = () => {
                   </p>
                 )}
 
-                {isOpen && (
+                {isOpen && !pendingProposalIsMine && (
                   <details className="mt-3 border-t border-border pt-3">
                     <summary className="cursor-pointer text-sm font-black text-primary">
                       Gửi phản đề về giá và số lượng
@@ -1408,6 +1464,29 @@ const NegotiationRoomPage = () => {
                       </button>
                     </form>
                   </details>
+                )}
+
+                {isOpen && pendingProposalIsMine && (
+                  <div className="mt-3 flex items-start gap-2 border-t border-border pt-3">
+                    <span
+                      className="material-symbols-outlined mt-0.5 text-[18px] text-warning"
+                      aria-hidden="true"
+                    >
+                      schedule
+                    </span>
+
+                    <div>
+                      <p className="text-sm font-bold text-text">
+                        Đang chờ đối tác phản hồi
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-textLight">
+                        Bạn đã gửi phản đề mới nhất. Sau khi đối tác chấp nhận,
+                        từ chối hoặc gửi phản đề khác, bạn có thể tiếp tục
+                        thương lượng.
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

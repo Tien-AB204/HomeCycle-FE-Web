@@ -43,7 +43,11 @@ const normalizePageSize = (value) => {
     : DEFAULT_PAGE_SIZE;
 };
 
-const normalizeTerms = ({ offerPrice, offerQuantity }) => {
+const normalizeTerms = ({
+  offerPrice,
+  offerQuantity,
+  version,
+}) => {
   const normalizedPrice = Number(offerPrice);
   const normalizedQuantity = Number(offerQuantity);
 
@@ -58,10 +62,19 @@ const normalizeTerms = ({ offerPrice, offerQuantity }) => {
     throw new Error("Số lượng đề nghị phải là số nguyên lớn hơn 0.");
   }
 
-  return {
+  const payload = {
     offerPrice: normalizedPrice,
     offerQuantity: normalizedQuantity,
   };
+
+  if (
+    Number.isInteger(version) &&
+    version >= 0
+  ) {
+    payload.version = version;
+  }
+
+  return payload;
 };
 
 const normalizeParticipant = (participant) => {
@@ -132,21 +145,62 @@ const ensureOffer = (response, fallbackMessage) => {
   return offer;
 };
 
-const getPagedOffers = async (
-  endpoint,
-  { pageNumber, pageSize, signal },
+const getFilteredPagedOffers = async (
+  path,
+  {
+    pageNumber = DEFAULT_PAGE_NUMBER,
+    pageSize = DEFAULT_PAGE_SIZE,
+    postId,
+    buyPostId,
+    status,
+    signal,
+  } = {},
   fallbackMessage,
 ) => {
-  const normalizedPageNumber = normalizePageNumber(pageNumber);
-  const normalizedPageSize = normalizePageSize(pageSize);
-  const response = await axiosClient.get(endpoint, {
-    params: {
-      PageNumber: normalizedPageNumber,
-      PageSize: normalizedPageSize,
+  const normalizedPageNumber =
+    normalizePageNumber(pageNumber);
+
+  const normalizedPageSize =
+    normalizePageSize(pageSize);
+
+  const params = {
+    PageNumber: normalizedPageNumber,
+    PageSize: normalizedPageSize,
+  };
+
+  if (postId) {
+    params.PostId = normalizeIdentifier(
+      postId,
+      "Mã bài đăng không hợp lệ.",
+    );
+  }
+
+  if (buyPostId) {
+    params.BuyPostId = normalizeIdentifier(
+      buyPostId,
+      "Mã tin thu mua không hợp lệ.",
+    );
+  }
+
+  const normalizedStatus =
+    String(status ?? "").trim();
+
+  if (normalizedStatus) {
+    params.Status = normalizedStatus;
+  }
+
+  const response = await axiosClient.get(
+    path,
+    {
+      params,
+      signal,
     },
-    signal,
-  });
-  const data = unwrapResponse(response, fallbackMessage);
+  );
+
+  const data = unwrapResponse(
+    response,
+    fallbackMessage,
+  );
 
   return normalizePagination(
     data,
@@ -154,20 +208,47 @@ const getPagedOffers = async (
     normalizedPageSize,
   );
 };
-
 export const offerApi = {
-  create: async ({ postId, offerPrice, offerQuantity }) => {
+  create: async ({
+    postId,
+    buyPostId,
+    offerPrice,
+    offerQuantity,
+  }) => {
     const normalizedPostId = normalizeIdentifier(
       postId,
       "Không tìm thấy mã bài đăng.",
     );
-    const terms = normalizeTerms({ offerPrice, offerQuantity });
-    const response = await axiosClient.post("/offers", {
+
+    const terms =
+      normalizeTerms({
+        offerPrice,
+        offerQuantity,
+      });
+
+    const payload = {
       postId: normalizedPostId,
       ...terms,
-    });
+    };
 
-    return ensureOffer(response, "Không thể gửi đề nghị thương lượng.");
+    if (buyPostId) {
+      payload.buyPostId =
+        normalizeIdentifier(
+          buyPostId,
+          "Mã tin thu mua không hợp lệ.",
+        );
+    }
+
+    const response =
+      await axiosClient.post(
+        "/offers",
+        payload,
+      );
+
+    return ensureOffer(
+      response,
+      "Không thể gửi đề nghị thương lượng.",
+    );
   },
 
   update: async (offerId, terms) => {
@@ -199,11 +280,21 @@ export const offerApi = {
   getSent: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,
+    postId,
+    buyPostId,
+    status,
     signal,
   } = {}) => {
-    return getPagedOffers(
+    return getFilteredPagedOffers(
       "/offers/sent",
-      { pageNumber, pageSize, signal },
+      {
+        pageNumber,
+        pageSize,
+        postId,
+        buyPostId,
+        status,
+        signal,
+      },
       "Không thể tải các đề nghị đã gửi.",
     );
   },
@@ -211,11 +302,21 @@ export const offerApi = {
   getReceived: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,
+    postId,
+    buyPostId,
+    status,
     signal,
   } = {}) => {
-    return getPagedOffers(
+    return getFilteredPagedOffers(
       "/offers/received",
-      { pageNumber, pageSize, signal },
+      {
+        pageNumber,
+        pageSize,
+        postId,
+        buyPostId,
+        status,
+        signal,
+      },
       "Không thể tải các đề nghị đã nhận.",
     );
   },
@@ -268,13 +369,20 @@ export const offerApi = {
     return ensureOffer(response, "Không thể từ chối đề nghị.");
   },
 
-  accept: async (offerId) => {
+  accept: async (offerId, version) => {
     const normalizedOfferId = normalizeIdentifier(
       offerId,
       "Không tìm thấy mã đề nghị.",
     );
+
     const response = await axiosClient.patch(
       `/offers/${encodeURIComponent(normalizedOfferId)}/accept`,
+      {
+        version:
+          Number.isInteger(version)
+            ? version
+            : null,
+      },
     );
     const result = unwrapResponse(
       response,

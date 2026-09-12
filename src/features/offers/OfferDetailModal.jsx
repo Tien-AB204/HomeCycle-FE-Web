@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { getOfferStatusMeta } from "../../constants/offers";
+import BuyPostOfferMatchPanel from "./BuyPostOfferMatchPanel";
 
 const formatCurrency = (value) => {
   const amount = Number(value);
@@ -85,7 +86,7 @@ const OfferDetailModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="offer-detail-title"
-        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-border bg-white shadow-[0_28px_80px_rgba(23,40,48,0.28)]"
+        className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-3xl border border-border bg-white shadow-[0_28px_80px_rgba(23,40,48,0.28)]"
       >
         <div className="relative flex items-start justify-between gap-4 overflow-hidden bg-primary px-6 py-5 text-white">
           <div className="pointer-events-none absolute -right-10 -top-14 h-32 w-32 rounded-full border-[22px] border-white/5" />
@@ -170,14 +171,34 @@ const OfferDetailModal = ({
                 </div>
               </div>
 
+              {offer.buyPostId && (
+                <BuyPostOfferMatchPanel
+                  offer={offer}
+                />
+              )}
+
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   to={`/posts/${encodeURIComponent(offer.postId)}`}
                   onClick={onClose}
                   className="rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/10"
                 >
-                  Xem bài đăng
+                  {offer.buyPostId
+                    ? "Xem sản phẩm chào bán"
+                    : "Xem bài đăng"}
                 </Link>
+
+                {offer.buyPostId && (
+                  <Link
+                    to={`/posts/${encodeURIComponent(
+                      offer.buyPostId,
+                    )}`}
+                    onClick={onClose}
+                    className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-bold text-primary transition hover:bg-primary/10"
+                  >
+                    Xem tin thu mua
+                  </Link>
+                )}
 
                 {offer.canUpdate && (
                   <button

@@ -5,6 +5,7 @@ import {
 import {
   Link,
   Navigate,
+  useLocation,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -75,6 +76,8 @@ const createInitialForm = () => ({
   productName: "",
   modelNumber: "",
   price: "",
+  priceFrom: "",
+  expiryDate: "",
   originalPrice: "",
   quantity: "1",
   description: "",
@@ -117,8 +120,17 @@ const createFormFromPost = (post) => {
     brandId: product.brandId || "",
     productName: product.productName || post?.productName || "",
     modelNumber: product.modelNumber || "",
-    price: toFormString(post?.basePrice),
-    originalPrice: toFormString(product.originalPrice),
+    price: toFormString(
+      post?.priceTo ?? post?.basePrice,
+    ),
+    priceFrom:
+      toFormString(post?.priceFrom),
+    expiryDate:
+      post?.expiryDate
+        ? String(post.expiryDate).slice(0, 10)
+        : "",
+    originalPrice:
+      toFormString(product.originalPrice),
     quantity: toFormString(post?.quantity, "1"),
     description: post?.description || "",
     detailDescription: product.detailDescription || "",
@@ -288,6 +300,7 @@ const SectionHeading = ({ number, title, description }) => {
 
 const CreatePostPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { postId = "" } = useParams();
   const { user } = useAuth();
   const userId = getUserId(user);
@@ -296,6 +309,23 @@ const CreatePostPage = () => {
   const isBuyPost = postType === MARKETPLACE_POST_TYPES.BUY;
   const listPath = isBuyPost ? "/tin-thu-mua" : "/tin-dang-ban";
   const postTypeLabel = isBuyPost ? "tin thu mua" : "tin đăng bán";
+
+  const rawSellerRequestContinuation =
+    location.state?.sellerRequestContinuation;
+
+  const sellerRequestBuyPostId =
+    !isEditing &&
+    !isBuyPost &&
+    typeof rawSellerRequestContinuation?.buyPostId === "string"
+      ? rawSellerRequestContinuation.buyPostId.trim()
+      : "";
+
+  const sellerRequestReturnPath =
+    sellerRequestBuyPostId
+      ? `/posts/${encodeURIComponent(
+          sellerRequestBuyPostId,
+        )}`
+      : `${listPath}?view=mine`;
 
   const [form, setForm] = useState(createInitialForm);
   const [existingMedias, setExistingMedias] = useState([]);
@@ -590,8 +620,19 @@ const CreatePostPage = () => {
     const nextErrors = {};
     const nextAttributeErrors = {};
     const quantity = Number(form.quantity);
-    const price = Number(form.price);
-    const usageDuration = Number(form.usageDuration);
+
+    const price =
+      form.price === ""
+        ? undefined
+        : Number(form.price);
+
+    const priceFrom =
+      form.priceFrom === ""
+        ? undefined
+        : Number(form.priceFrom);
+
+    const usageDuration =
+      Number(form.usageDuration);
 
     if (!form.categoryId) {
       nextErrors.categoryId = "Vui lòng chọn danh mục.";
@@ -613,8 +654,72 @@ const CreatePostPage = () => {
       nextErrors.quantity = "Số lượng phải là số nguyên lớn hơn 0.";
     }
 
-    if (!Number.isFinite(price) || price <= 0) {
-      nextErrors.price = "Mức giá phải lớn hơn 0.";
+    if (
+      !isBuyPost &&
+      (
+        !Number.isFinite(price) ||
+        price <= 0
+      )
+    ) {
+      nextErrors.price =
+        "Mức giá phải lớn hơn 0.";
+    }
+
+    if (
+      isBuyPost &&
+      price !== undefined &&
+      (
+        !Number.isFinite(price) ||
+        price < 0
+      )
+    ) {
+      nextErrors.price =
+        "Giá tối đa phải từ 0 trở lên.";
+    }
+
+    if (
+      isBuyPost &&
+      priceFrom !== undefined &&
+      (
+        !Number.isFinite(priceFrom) ||
+        priceFrom < 0
+      )
+    ) {
+      nextErrors.priceFrom =
+        "Giá tối thiểu phải từ 0 trở lên.";
+    }
+
+    if (
+      isBuyPost &&
+      Number.isFinite(priceFrom) &&
+      Number.isFinite(price) &&
+      priceFrom > price
+    ) {
+      nextErrors.priceFrom =
+        "Giá tối thiểu không được lớn hơn giá tối đa.";
+    }
+
+    if (isBuyPost && form.expiryDate) {
+      const expiryDate =
+        new Date(
+          form.expiryDate + "T23:59:59",
+        );
+
+      const now = new Date();
+      const maxExpiryDate = new Date();
+
+      maxExpiryDate.setMonth(
+        maxExpiryDate.getMonth() + 6,
+      );
+
+      if (
+        Number.isNaN(expiryDate.getTime()) ||
+        expiryDate <= now ||
+        expiryDate > maxExpiryDate
+      ) {
+        nextErrors.expiryDate =
+          "Hạn tin phải ở tương lai và không quá 6 tháng.";
+      }
     }
 
     if (form.description.trim().length < 10) {
@@ -647,10 +752,12 @@ const CreatePostPage = () => {
     }
 
     if (
+      !isBuyPost &&
       form.medias.length === 0 &&
       existingMedias.length === 0
     ) {
-      nextErrors.medias = "Vui lòng chọn ít nhất một ảnh sản phẩm.";
+      nextErrors.medias =
+        "Vui lòng chọn ít nhất một ảnh sản phẩm.";
     }
 
     if (!isBuyPost) {
@@ -710,8 +817,18 @@ const CreatePostPage = () => {
       ...form,
       ...normalizedCondition,
       productName: form.productName.trim(),
-      price: Number(form.price),
-      originalPrice: parseOptionalNumber(form.originalPrice),
+      price: isBuyPost
+        ? parseOptionalNumber(form.price)
+        : Number(form.price),
+
+      priceFrom:
+        parseOptionalNumber(form.priceFrom),
+
+      expiryDate:
+        form.expiryDate || undefined,
+
+      originalPrice:
+        parseOptionalNumber(form.originalPrice),
       quantity: Number(form.quantity),
       description: form.description.trim(),
       detailDescription: form.detailDescription.trim(),
@@ -754,6 +871,20 @@ const CreatePostPage = () => {
         setSuccessMessage(nextSuccessMessage);
         setFieldErrors({});
         setAttributeErrors({});
+      } else if (sellerRequestBuyPostId) {
+        navigate(sellerRequestReturnPath, {
+          replace: true,
+          state: {
+            sellerRequestContinuation: {
+              buyPostId:
+                sellerRequestBuyPostId,
+              createdSellPostId:
+                savedPost.postId,
+            },
+            postSuccessMessage:
+              nextSuccessMessage,
+          },
+        });
       } else {
         navigate(`${listPath}?view=mine`, {
           replace: true,
@@ -1084,22 +1215,92 @@ const CreatePostPage = () => {
           />
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {isBuyPost && (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-text">
+                  Giá tối thiểu
+                </span>
+
+                <input
+                  type="number"
+                  min="0"
+                  value={form.priceFrom}
+                  onChange={(event) =>
+                    updateField(
+                      "priceFrom",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isSubmitting}
+                  placeholder="Không bắt buộc"
+                  className={inputClassName}
+                />
+
+                <FieldError
+                  message={fieldErrors.priceFrom}
+                />
+              </label>
+            )}
+
             <label className="block">
               <span className="mb-1.5 block text-sm font-semibold text-text">
-                {isBuyPost ? "Giá mua dự kiến" : "Giá đăng bán"}{" "}
-                <span className="text-error">*</span>
+                {isBuyPost
+                  ? "Giá tối đa"
+                  : "Giá đăng bán"}{" "}
+
+                {!isBuyPost && (
+                  <span className="text-error">*</span>
+                )}
               </span>
+
               <input
                 type="number"
-                min="1"
+                min={isBuyPost ? "0" : "1"}
                 value={form.price}
-                onChange={(event) => updateField("price", event.target.value)}
+                onChange={(event) =>
+                  updateField(
+                    "price",
+                    event.target.value,
+                  )
+                }
                 disabled={isSubmitting}
-                placeholder="Đơn vị: VNĐ"
+                placeholder={
+                  isBuyPost
+                    ? "Không bắt buộc"
+                    : "Đơn vị: VNĐ"
+                }
                 className={inputClassName}
               />
-              <FieldError message={fieldErrors.price} />
+
+              <FieldError
+                message={fieldErrors.price}
+              />
             </label>
+
+            {isBuyPost && (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-text">
+                  Hiệu lực đến
+                </span>
+
+                <input
+                  type="date"
+                  value={form.expiryDate}
+                  onChange={(event) =>
+                    updateField(
+                      "expiryDate",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isSubmitting}
+                  className={inputClassName}
+                />
+
+                <FieldError
+                  message={fieldErrors.expiryDate}
+                />
+              </label>
+            )}
 
             <label className="block">
               <span className="mb-1.5 block text-sm font-semibold text-text">
@@ -1140,26 +1341,40 @@ const CreatePostPage = () => {
               <FieldError message={fieldErrors.priorityLevel} />
             </label>
 
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-text">
-                Không gian sử dụng
-              </span>
-              <select
-                value={form.spaceUsage}
-                onChange={(event) =>
-                  updateField("spaceUsage", event.target.value)
-                }
-                disabled={isSubmitting}
-                className={inputClassName}
-              >
-                {SPACE_USAGE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <FieldError message={fieldErrors.spaceUsage} />
-            </label>
+            {!isBuyPost && (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-text">
+                  Không gian sử dụng
+                </span>
+
+                <select
+                  value={form.spaceUsage}
+                  onChange={(event) =>
+                    updateField(
+                      "spaceUsage",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isSubmitting}
+                  className={inputClassName}
+                >
+                  {SPACE_USAGE_OPTIONS.map(
+                    (option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ),
+                  )}
+                </select>
+
+                <FieldError
+                  message={fieldErrors.spaceUsage}
+                />
+              </label>
+            )}
 
             <label className="block">
               <span className="mb-1.5 block text-sm font-semibold text-text">
@@ -1361,26 +1576,40 @@ const CreatePostPage = () => {
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-text">
-                Hình thức giao nhận
-              </span>
-              <select
-                value={form.deliveryMethod}
-                onChange={(event) =>
-                  updateField("deliveryMethod", event.target.value)
-                }
-                disabled={isSubmitting}
-                className={inputClassName}
-              >
-                {DELIVERY_METHOD_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <FieldError message={fieldErrors.deliveryMethod} />
-            </label>
+            {!isBuyPost && (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-text">
+                  Hình thức giao nhận
+                </span>
+
+                <select
+                  value={form.deliveryMethod}
+                  onChange={(event) =>
+                    updateField(
+                      "deliveryMethod",
+                      event.target.value,
+                    )
+                  }
+                  disabled={isSubmitting}
+                  className={inputClassName}
+                >
+                  {DELIVERY_METHOD_OPTIONS.map(
+                    (option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ),
+                  )}
+                </select>
+
+                <FieldError
+                  message={fieldErrors.deliveryMethod}
+                />
+              </label>
+            )}
 
             <PostAddressFields
               city={form.city}
@@ -1393,15 +1622,19 @@ const CreatePostPage = () => {
             />
           </div>
 
+          {!isBuyPost && (
           <div className="mt-5">
             <span className="mb-2 block text-sm font-semibold text-text">
               Hình ảnh sản phẩm <span className="text-error">*</span>
             </span>
+
             <MediaUploadField
               files={form.medias}
               error={fieldErrors.medias}
               disabled={isSubmitting}
-              onChange={(files) => updateField("medias", files)}
+              onChange={(files) =>
+                updateField("medias", files)
+              }
             />
 
             {isEditing && existingMedias.length > 0 && (
@@ -1435,12 +1668,13 @@ const CreatePostPage = () => {
               </div>
             )}
           </div>
+          )}
         </section>
 
         <div className="sticky bottom-4 z-20 rounded-2xl border border-border bg-white/95 p-4 shadow-[0_16px_45px_rgba(23,40,48,0.14)] backdrop-blur">
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
             <Link
-              to={`${listPath}?view=mine`}
+              to={sellerRequestReturnPath}
               className="rounded-xl border border-border bg-white px-5 py-3 text-center text-sm font-bold text-primary transition hover:border-primary hover:bg-primary/10"
             >
               Hủy
