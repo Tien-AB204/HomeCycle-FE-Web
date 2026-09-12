@@ -28,6 +28,19 @@ const ACTIONS = {
     confirmClassName:
       "bg-success text-white hover:bg-success",
   },
+  delete: {
+    buttonLabel: "Xóa tin thu mua",
+    title: "Xóa tin thu mua?",
+    description:
+      "Tin thu mua sẽ bị xóa khỏi hệ thống và không thể khôi phục. Tin có giao dịch chưa hoàn tất sẽ không thể xóa.",
+    confirmLabel: "Xóa tin thu mua",
+    pendingLabel: "Đang xóa...",
+    successMessage: "Đã xóa tin thu mua.",
+    buttonClassName:
+      "border border-error text-error hover:bg-error hover:text-white",
+    confirmClassName:
+      "bg-error text-white hover:bg-error",
+  },
 };
 
 const getErrorMessage = (error) => {
@@ -41,7 +54,7 @@ const getErrorMessage = (error) => {
   );
 };
 
-const getActionName = (status) => {
+const getLifecycleActionName = (status) => {
   const normalizedStatus = String(status || "")
     .trim()
     .toLowerCase();
@@ -57,25 +70,37 @@ const getActionName = (status) => {
   return "";
 };
 
+const canDeleteBuyPost = (postType, status) => {
+  if (String(postType || "").trim().toLowerCase() !== "buy") {
+    return false;
+  }
+
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+
+  return normalizedStatus !== "deleted" && normalizedStatus !== "suspended";
+};
+
 const PostLifecycleControl = ({
   postId,
   postName,
+  postType,
   status,
   onCompleted,
   fullWidth = false,
 }) => {
   const titleId = useId();
-  const [isConfirmOpen, setIsConfirmOpen] =
-    useState(false);
-  const [isSubmitting, setIsSubmitting] =
-    useState(false);
+  const [pendingAction, setPendingAction] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const actionName = getActionName(status);
-  const action = ACTIONS[actionName];
 
-  if (!action || !postId) {
+  const lifecycleActionName = getLifecycleActionName(status);
+  const showDelete = canDeleteBuyPost(postType, status);
+
+  if (!postId || (!lifecycleActionName && !showDelete)) {
     return null;
   }
+
+  const action = ACTIONS[pendingAction];
 
   const closeDialog = () => {
     if (isSubmitting) {
@@ -83,11 +108,11 @@ const PostLifecycleControl = ({
     }
 
     setError("");
-    setIsConfirmOpen(false);
+    setPendingAction("");
   };
 
   const handleConfirm = async () => {
-    if (isSubmitting) {
+    if (isSubmitting || !pendingAction) {
       return;
     }
 
@@ -95,14 +120,17 @@ const PostLifecycleControl = ({
     setError("");
 
     try {
-      if (actionName === "close") {
+      if (pendingAction === "close") {
         await postApi.close(postId);
-      } else {
+      } else if (pendingAction === "reactivate") {
         await postApi.reactivate(postId);
+      } else {
+        await postApi.deleteBuy(postId);
       }
 
-      setIsConfirmOpen(false);
-      onCompleted?.(action.successMessage);
+      const message = ACTIONS[pendingAction].successMessage;
+      setPendingAction("");
+      onCompleted?.(message);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -112,20 +140,39 @@ const PostLifecycleControl = ({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setError("");
-          setIsConfirmOpen(true);
-        }}
-        className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-xs font-bold transition ${action.buttonClassName} ${
-          fullWidth ? "w-full" : ""
-        }`}
-      >
-        {action.buttonLabel}
-      </button>
+      <div className={`flex flex-wrap gap-2 ${fullWidth ? "w-full" : ""}`}>
+        {lifecycleActionName && (
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              setPendingAction(lifecycleActionName);
+            }}
+            className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-xs font-bold transition ${ACTIONS[lifecycleActionName].buttonClassName} ${
+              fullWidth ? "w-full" : ""
+            }`}
+          >
+            {ACTIONS[lifecycleActionName].buttonLabel}
+          </button>
+        )}
 
-      {isConfirmOpen && (
+        {showDelete && (
+          <button
+            type="button"
+            onClick={() => {
+              setError("");
+              setPendingAction("delete");
+            }}
+            className={`inline-flex items-center justify-center rounded-md px-3 py-2 text-xs font-bold transition ${ACTIONS.delete.buttonClassName} ${
+              fullWidth ? "w-full" : ""
+            }`}
+          >
+            {ACTIONS.delete.buttonLabel}
+          </button>
+        )}
+      </div>
+
+      {Boolean(pendingAction) && action && (
         <div
           role="presentation"
           onMouseDown={(event) => {
@@ -144,15 +191,17 @@ const PostLifecycleControl = ({
             <div className="flex items-start gap-4">
               <div
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${
-                  actionName === "close"
-                    ? "bg-error/10 text-error"
-                    : "bg-success/10 text-success"
+                  pendingAction === "reactivate"
+                    ? "bg-success/10 text-success"
+                    : "bg-error/10 text-error"
                 }`}
               >
                 <span className="material-symbols-outlined">
-                  {actionName === "close"
-                    ? "pause_circle"
-                    : "play_circle"}
+                  {pendingAction === "reactivate"
+                    ? "play_circle"
+                    : pendingAction === "delete"
+                      ? "delete"
+                      : "pause_circle"}
                 </span>
               </div>
 
