@@ -55,8 +55,26 @@ export const leaveNegotiation = async (connection, negotiationId) => {
   await connection.invoke("LeaveNegotiation", negotiationId);
 };
 
+export const joinConversation = async (connection, conversationId) => {
+  if (connection?.state !== HubConnectionState.Connected) {
+    throw new Error("Kết nối hội thoại chưa sẵn sàng.");
+  }
+
+  await connection.invoke("JoinConversation", conversationId);
+};
+
+export const leaveConversation = async (connection, conversationId) => {
+  if (connection?.state !== HubConnectionState.Connected) {
+    return;
+  }
+
+  await connection.invoke("LeaveConversation", conversationId);
+};
+
 export default {
   createConnection: createChatConnection,
   joinNegotiation,
   leaveNegotiation,
+  joinConversation,
+  leaveConversation,
 };
