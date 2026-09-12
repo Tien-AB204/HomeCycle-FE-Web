@@ -1219,6 +1219,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
                     <PostLifecycleControl
                       postId={post.postId}
                       postName={post.productName}
+                      postType={post.postType}
                       status={post.status}
                       onCompleted={
                         handleLifecycleCompleted

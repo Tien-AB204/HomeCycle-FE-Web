@@ -676,6 +676,27 @@ export const postApi = {
     return true;
   },
 
+  /*
+   * Xóa mềm tin thu mua của chính Business hiện tại
+   * (Backend: DELETE /posts/buy/{postId}, chỉ áp dụng PostType.Buy).
+   */
+  deleteBuy: async (postId) => {
+    const normalizedPostId = normalizeRequiredIdentifier(
+      postId,
+      "Không tìm thấy mã bài đăng.",
+    );
+
+    await axiosClient.delete(
+      `/posts/buy/${encodeURIComponent(normalizedPostId)}`,
+    );
+
+    notifyPostCatalogChanged({
+      postId: normalizedPostId,
+      reason: "deleted",
+    });
+    return true;
+  },
+
   getAll: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,
