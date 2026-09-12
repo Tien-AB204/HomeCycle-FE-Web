@@ -59,6 +59,55 @@ export const appointmentApi = {
     if (!id) throw new Error("Không tìm thấy mã lịch hẹn.");
     return axiosClient.post(`/appointments/${encodeURIComponent(id)}/check-in`);
   },
+
+  requestReschedule: async (appointmentId, proposedAt) => {
+    const id = String(appointmentId || "").trim();
+    if (!id) throw new Error("Không tìm thấy mã lịch hẹn.");
+
+    const date = new Date(proposedAt);
+    if (Number.isNaN(date.getTime())) {
+      throw new Error("Thời gian đề xuất không hợp lệ.");
+    }
+
+    return axiosClient.post(
+      `/appointments/${encodeURIComponent(id)}/reschedule`,
+      { proposedAt: date.toISOString() },
+    );
+  },
+
+  acceptReschedule: async (proposalAppointmentId) => {
+    const id = String(proposalAppointmentId || "").trim();
+    if (!id) throw new Error("Không tìm thấy đề xuất đổi lịch.");
+
+    return axiosClient.post(
+      `/appointments/${encodeURIComponent(id)}/reschedule/accept`,
+    );
+  },
+
+  rejectReschedule: async (proposalAppointmentId, reason = "") => {
+    const id = String(proposalAppointmentId || "").trim();
+    if (!id) throw new Error("Không tìm thấy đề xuất đổi lịch.");
+
+    return axiosClient.post(
+      `/appointments/${encodeURIComponent(id)}/reschedule/reject`,
+      { reason: String(reason || "").trim() || null },
+    );
+  },
+
+  cancel: async (appointmentId, reason) => {
+    const id = String(appointmentId || "").trim();
+    if (!id) throw new Error("Không tìm thấy mã lịch hẹn.");
+
+    const normalizedReason = String(reason || "").trim();
+    if (!normalizedReason) {
+      throw new Error("Vui lòng nhập lý do hủy lịch hẹn.");
+    }
+
+    return axiosClient.post(
+      `/appointments/${encodeURIComponent(id)}/cancel`,
+      { reason: normalizedReason },
+    );
+  },
 };
 
 export default appointmentApi;
