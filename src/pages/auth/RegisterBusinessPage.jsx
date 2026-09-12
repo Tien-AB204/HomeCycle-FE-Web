@@ -4,10 +4,12 @@ import {
 } from "react";
 import {
   Link,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
+import { decodeJwtPayload } from "../../utils/authUtils";
 
 const STEPS = {
   EMAIL: "EMAIL",
@@ -99,13 +101,34 @@ const StepIndicator = ({ step }) => {
 
 const RegisterBusinessPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { saveSession } = useAuth();
 
+  /*
+   * Đến từ đăng nhập Google (tài khoản mới): registrationToken đã có
+   * sẵn, bỏ qua bước gửi/xác thực OTP và vào thẳng bước tạo mật khẩu.
+   */
+  const googleRegistration =
+    location.state?.google?.registrationToken
+      ? location.state.google
+      : null;
+
+  const googleEmail = googleRegistration
+    ? String(
+        decodeJwtPayload(googleRegistration.registrationToken)
+          ?.email || "",
+      )
+    : "";
+
+  const isGoogleRegistration = Boolean(googleRegistration);
+
   const [step, setStep] =
-    useState(STEPS.EMAIL);
+    useState(
+      googleRegistration ? STEPS.PASSWORD : STEPS.EMAIL,
+    );
 
   const [email, setEmail] =
-    useState("");
+    useState(googleEmail);
 
   const [otp, setOtp] =
     useState("");
@@ -113,7 +136,9 @@ const RegisterBusinessPage = () => {
   const [
     registrationToken,
     setRegistrationToken,
-  ] = useState("");
+  ] = useState(
+    googleRegistration?.registrationToken || "",
+  );
 
   const [password, setPassword] =
     useState("");
@@ -670,11 +695,23 @@ const RegisterBusinessPage = () => {
             </h2>
 
             <p className="mt-1 text-sm text-textLight">
-              Email{" "}
-              <span className="font-bold text-primary">
-                {email}
-              </span>{" "}
-              đã được xác thực.
+              {isGoogleRegistration ? (
+                <>
+                  Tiếp tục đăng ký với email Google{" "}
+                  <span className="font-bold text-primary">
+                    {email || "đã liên kết"}
+                  </span>
+                  .
+                </>
+              ) : (
+                <>
+                  Email{" "}
+                  <span className="font-bold text-primary">
+                    {email}
+                  </span>{" "}
+                  đã được xác thực.
+                </>
+              )}
             </p>
           </div>
 

@@ -66,6 +66,43 @@ export const hasRole = (userRole, allowedRole) => {
 };
 
 /**
+ * Giải mã phần payload của JWT (KHÔNG xác thực chữ ký) - chỉ dùng để
+ * đọc thông tin hiển thị (vd email trong registration token) ở FE,
+ * không dùng cho mục đích xác thực/bảo mật.
+ */
+export const decodeJwtPayload = (token) => {
+  try {
+    const segments = String(token || "").split(".");
+
+    if (segments.length !== 3) {
+      return null;
+    }
+
+    const base64Url = segments[1];
+
+    const base64 = base64Url
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(
+        Math.ceil(base64Url.length / 4) * 4,
+        "=",
+      );
+
+    const binaryString = window.atob(base64);
+
+    const bytes = Uint8Array.from(binaryString, (character) =>
+      character.charCodeAt(0),
+    );
+
+    const json = new TextDecoder().decode(bytes);
+
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Backend từng trả mã người dùng với nhiều kiểu key khác nhau.
  * Hàm này giúp các màn hình nghiệp vụ chỉ dùng một nguồn thống nhất.
  */
