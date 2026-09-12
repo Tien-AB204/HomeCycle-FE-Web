@@ -20,6 +20,13 @@ const getErrorMessage = (error) =>
   getSafeProblemDetail(error?.response?.data?.detail) ||
   "Hệ thống chưa thể xác nhận giao dịch.";
 
+const formatCurrency = (value) => {
+  const amount = Number(value);
+  return Number.isFinite(amount)
+    ? `${amount.toLocaleString("vi-VN")} đ`
+    : "";
+};
+
 const isRequestCancelled = (error) =>
   error?.name === "CanceledError" ||
   error?.code === "ERR_CANCELED";
@@ -366,6 +373,20 @@ const PaymentResultPage = () => {
               </p>
 
               {state.order
+                ?.amountPaid !==
+                undefined && (
+                <p className="mt-1">
+                  <strong>
+                    Đã thanh toán:
+                  </strong>{" "}
+                  {formatCurrency(
+                    state.order
+                      .amountPaid,
+                  )}
+                </p>
+              )}
+
+              {state.order
                 ?.quantity !==
                 undefined && (
                 <p className="mt-1">
@@ -411,6 +432,16 @@ const PaymentResultPage = () => {
                 className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary transition hover:bg-primary/10"
               >
                 Xem lịch hẹn
+              </Link>
+            )}
+
+          {!resultOrderId &&
+            agreementId && (
+              <Link
+                to={`/thoa-thuan/${agreementId}`}
+                className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary transition hover:bg-primary/10"
+              >
+                Xem thỏa thuận
               </Link>
             )}
 

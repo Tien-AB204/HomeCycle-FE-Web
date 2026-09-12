@@ -12,6 +12,7 @@ import negotiationApi from "../../services/apis/negotiationApi";
 import orderApi from "../../services/apis/orderApi";
 import paymentApi from "../../services/apis/paymentApi";
 import postApi from "../../services/apis/postApi";
+import walletApi from "../../services/apis/walletApi";
 import {
   AGREEMENT_CHANGED_WARNING,
   getAgreementChangedFields,
@@ -61,6 +62,12 @@ const AgreementPage = () => {
     post: null,
   });
   const [staleWarning, setStaleWarning] = useState(null);
+  const [wallet, setWallet] = useState({
+    loading: false,
+    balance: null,
+    error: "",
+  });
+  const [paymentAck, setPaymentAck] = useState(false);
   const pollingRef = useRef(null);
 
   const stopPolling = useCallback(() => {
@@ -259,6 +266,57 @@ const AgreementPage = () => {
     );
   };
 
+  const loadWalletBalance = useCallback(async (signal) => {
+    setWallet((current) => ({ ...current, loading: true, error: "" }));
+    try {
+      const info = await walletApi.getMine({ signal });
+      setWallet({ loading: false, balance: info.availableBalance, error: "" });
+    } catch (walletError) {
+      if (
+        walletError?.name === "CanceledError" ||
+        walletError?.code === "ERR_CANCELED"
+      ) {
+        return;
+      }
+      setWallet({
+        loading: false,
+        balance: null,
+        error: getErrorMessage(walletError, "Không thể tải số dư ví."),
+      });
+    }
+  }, []);
+
+  const [walletContextKey, setWalletContextKey] = useState("");
+  const buyerAwaitingPayment =
+    String(preview?.userRole || "").toLowerCase() === "buyer" &&
+    agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
+  const paymentContextKey = `${agreement?.agreementId || ""}:${buyerAwaitingPayment}`;
+
+  // Đổi thỏa thuận hoặc rời khỏi bước chờ thanh toán -> trả xác nhận và số
+  // dư ví về trạng thái ban đầu. Điều chỉnh ngay trong render, không dùng
+  // effect, để tránh lint set-state-in-effect.
+  if (paymentContextKey !== walletContextKey) {
+    setWalletContextKey(paymentContextKey);
+    setPaymentAck(false);
+    setWallet({ loading: buyerAwaitingPayment, balance: null, error: "" });
+  }
+
+  useEffect(() => {
+    if (!buyerAwaitingPayment) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => {
+      void loadWalletBalance(controller.signal);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [paymentContextKey, buyerAwaitingPayment, loadWalletBalance]);
+
   const checkPayment = useCallback(async ({ silent = false } = {}) => {
     if (!agreement?.agreementId) return "";
     try {
@@ -339,17 +397,44 @@ const AgreementPage = () => {
     }
   };
 
-  const handleWalletPayment = () => runAction(
-    "wallet",
-    () => paymentApi.checkoutWithWallet(agreement.agreementId),
-    "Thanh toán bằng ví thành công.",
-  );
+  const handleWalletPayment = async () => {
+    await runAction(
+      "wallet",
+      () => paymentApi.checkoutWithWallet(agreement.agreementId),
+      "Thanh toán bằng ví thành công.",
+    );
+    // Số dư có thể đã đổi (thanh toán thành công hoặc phát hiện không đủ) - làm mới để hiển thị đúng thực tế.
+    await loadWalletBalance();
+  };
 
   const negotiationId = agreement?.negotiationId || preview?.negotiationId || negotiationIdParam;
-  const isBuyer = String(preview?.userRole || "").toLowerCase() === "buyer";
   const canEdit = Boolean(preview?.canEdit) && agreement?.agreementStatus === AGREEMENT_STATUS.PENDING;
   const canRequestEdit = agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
-  const canPay = isBuyer && agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
+  const canPay = buyerAwaitingPayment;
+
+  /*
+   * Với thỏa thuận loại "Deposit" (vd kiểm định), số tiền thực thu chỉ là
+   * một phần giá trị hợp đồng (tỉ lệ đặt cọc do Backend cấu hình, Web
+   * không có quyền truy cập số này) - totalAmount lúc đó KHÔNG phải số
+   * tiền sẽ bị trừ. Chỉ khi loại thanh toán là toàn phần, totalAmount mới
+   * chắc chắn bằng đúng số tiền sẽ thanh toán, và mới đủ căn cứ để khoá
+   * nút ví khi số dư không đủ.
+   */
+  const isDepositPayment =
+    String(agreement?.paymentType || "").toLowerCase() === "deposit";
+  const totalAmount = Number(agreement?.totalAmount) || 0;
+  const hasSufficientBalance =
+    wallet.balance !== null && wallet.balance >= totalAmount;
+  const walletUnavailableReason = wallet.loading
+    ? "Đang kiểm tra số dư ví..."
+    : wallet.error
+      ? wallet.error
+      : wallet.balance === null
+        ? "Chưa xác định được số dư ví."
+        : !isDepositPayment && !hasSufficientBalance
+          ? "Số dư ví không đủ để thanh toán toàn bộ giá trị thỏa thuận."
+          : "";
+  const walletDisabled = Boolean(walletUnavailableReason);
 
   if (loading) {
     return <div className="mx-auto mt-6 max-w-5xl rounded-2xl border border-border bg-white p-14 text-center font-semibold text-textLight shadow-[0_10px_30px_rgba(23,40,48,0.05)]">Đang tải thỏa thuận...</div>;
@@ -405,10 +490,57 @@ const AgreementPage = () => {
           <section className="mt-5 rounded-2xl border border-border bg-gradient-to-r from-white to-background p-5 shadow-[0_10px_30px_rgba(23,40,48,0.07)] sm:p-6">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">Bước tiếp theo</p>
             <h2 className="mt-1 text-lg font-black text-text">Thanh toán để tiếp tục</h2>
-            <p className="mt-2 text-sm leading-6 text-textLight">Tổng giá trị thỏa thuận: <strong className="text-error">{formatCurrency(agreement.totalAmount)}</strong>. Số tiền cần thanh toán chính xác sẽ được hiển thị trên PayOS theo hình thức đặt cọc hoặc toàn phần đã chọn.</p>
+            <p className="mt-2 text-sm leading-6 text-textLight">
+              Tổng giá trị thỏa thuận: <strong className="text-error">{formatCurrency(agreement.totalAmount)}</strong>.{" "}
+              {isDepositPayment
+                ? "Thỏa thuận này chỉ thu một khoản đặt cọc, số tiền chính xác sẽ được xác nhận ngay khi thanh toán."
+                : "Đây là số tiền chính xác sẽ được thanh toán toàn bộ."}
+            </p>
+
+            <div className="mt-4 rounded-xl border border-border bg-white p-4">
+              <p className="text-xs font-black uppercase tracking-wide text-textLight">Số dư ví khả dụng</p>
+              {wallet.loading ? (
+                <p className="mt-1 text-sm text-textLight">Đang kiểm tra số dư ví...</p>
+              ) : wallet.error ? (
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-semibold text-error">{wallet.error}</p>
+                  <button type="button" onClick={loadWalletBalance} className="text-sm font-bold text-primary underline">Thử lại</button>
+                </div>
+              ) : (
+                <>
+                  <p className="mt-1 text-lg font-black text-text">{formatCurrency(wallet.balance)}</p>
+                  {!isDepositPayment && (
+                    <p className={`mt-1 text-xs font-bold ${hasSufficientBalance ? "text-success" : "text-error"}`}>
+                      {hasSufficientBalance
+                        ? "Đủ số dư để thanh toán bằng ví."
+                        : "Số dư ví hiện thấp hơn giá trị thỏa thuận. Vui lòng nạp thêm ví hoặc chọn thanh toán qua PayOS."}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            <label className="mt-4 flex items-start gap-2.5 text-sm leading-6 text-textLight">
+              <input
+                type="checkbox"
+                checked={paymentAck}
+                onChange={(event) => setPaymentAck(event.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
+              />
+              Tôi đã kiểm tra đúng thông tin thỏa thuận và số tiền thanh toán ở trên, và đồng ý tiếp tục thanh toán.
+            </label>
+
             <div className="mt-4 flex flex-wrap gap-3">
-              <button type="button" onClick={handlePayOs} disabled={Boolean(busy)} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:opacity-50">{busy === "payos" ? "Đang tạo liên kết..." : "Thanh toán qua PayOS"}</button>
-              <button type="button" onClick={handleWalletPayment} disabled={Boolean(busy)} className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary hover:bg-primary/10 disabled:opacity-50">{busy === "wallet" ? "Đang thanh toán..." : "Thanh toán bằng ví"}</button>
+              <button type="button" onClick={handlePayOs} disabled={Boolean(busy) || !paymentAck} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy === "payos" ? "Đang tạo liên kết..." : "Thanh toán qua PayOS"}</button>
+              <button
+                type="button"
+                onClick={handleWalletPayment}
+                disabled={Boolean(busy) || !paymentAck || walletDisabled}
+                title={walletDisabled ? walletUnavailableReason : undefined}
+                className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy === "wallet" ? "Đang thanh toán..." : "Thanh toán bằng ví"}
+              </button>
               <button type="button" onClick={checkPayment} className="rounded-lg border border-border bg-white px-5 py-3 text-sm font-bold text-textLight hover:bg-background">Kiểm tra trạng thái</button>
             </div>
             {paymentStatus && <p className="mt-3 text-sm font-bold text-primary">Trạng thái thanh toán: {paymentStatus}</p>}
