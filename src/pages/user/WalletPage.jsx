@@ -9,6 +9,7 @@ import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import walletApi from "../../services/apis/walletApi";
 import { normalizeRole } from "../../utils/authUtils";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const WITHDRAWAL_REFERENCE = 4;
@@ -33,8 +34,9 @@ const getErrorMessage = (
     ?.error?.message ||
   error?.response?.data
     ?.message ||
-  error?.response?.data
-    ?.detail ||
+  getSafeProblemDetail(
+    error?.response?.data?.detail,
+  ) ||
   fallback;
 
 const isRequestCancelled = (

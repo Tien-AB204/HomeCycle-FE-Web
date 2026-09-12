@@ -8,6 +8,7 @@ import {
   PAYMENT_TYPE_OPTIONS,
 } from "../../constants/agreements";
 import agreementApi from "../../services/apis/agreementApi";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 import GhnCollectionFields from "../appointments/GhnCollectionFields";
 import {
   createGhnCollectionInfo,
@@ -131,8 +132,9 @@ const getErrorMessage = (
     ?.error?.message ||
   error?.response?.data
     ?.message ||
-  error?.response?.data
-    ?.detail ||
+  getSafeProblemDetail(
+    error?.response?.data?.detail,
+  ) ||
   fallbackMessage;
 
 const formatCurrency = (value) => {

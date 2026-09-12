@@ -8,6 +8,7 @@ import {
 } from "@ant-design/icons";
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
+import EvidenceImage from "../../components/shared/EvidenceImage";
 
 const VerificationPage = () => {
   const [activeTab, setActiveTab] = useState("business");
@@ -604,13 +605,10 @@ const VerificationPage = () => {
                             <span className="text-xs text-textLight font-bold uppercase tracking-wider">
                               {docLabel}
                             </span>
-                            <img
+                            <EvidenceImage
                               src={doc.documentUrl}
                               alt={docLabel}
-                              className="h-32 w-48 object-cover rounded shadow-sm border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                              onClick={() =>
-                                window.open(doc.documentUrl, "_blank")
-                              }
+                              onOpen={(url) => window.open(url, "_blank")}
                             />
                           </div>
                         );
@@ -640,11 +638,10 @@ const VerificationPage = () => {
                               <span className="text-xs text-textLight font-bold uppercase tracking-wider">
                                 {imgLabel}
                               </span>
-                              <img
+                              <EvidenceImage
                                 src={value}
                                 alt={key}
-                                className="h-32 w-48 object-cover rounded shadow-sm border border-border cursor-pointer hover:opacity-80 transition-opacity"
-                                onClick={() => window.open(value, "_blank")}
+                                onOpen={(url) => window.open(url, "_blank")}
                               />
                             </div>
                           );

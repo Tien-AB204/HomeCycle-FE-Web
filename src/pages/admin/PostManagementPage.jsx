@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import AdminPostDetailModal from "../../features/admin/posts/AdminPostDetailModal";
 import adminPostApi from "../../services/apis/adminPostApi";
+import PostThumbnail from "../../components/shared/PostThumbnail";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 
@@ -108,7 +110,7 @@ const getErrorMessage = (error) => {
   return (
     responseData?.error?.message ||
     responseData?.message ||
-    responseData?.title ||
+    getSafeProblemDetail(responseData?.title) ||
     "Không thể thực hiện yêu cầu quản lý bài đăng."
   );
 };
@@ -482,19 +484,10 @@ export default function PostManagementPage() {
                     >
                       <td className="px-4 py-4">
                         <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-14 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-textLight">
-                            {thumbnailUrl ? (
-                              <img
-                                src={thumbnailUrl}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <span className="material-symbols-outlined">
-                                image
-                              </span>
-                            )}
-                          </div>
+                          <PostThumbnail
+                            src={thumbnailUrl}
+                            className="h-14 w-16 shrink-0 rounded-lg"
+                          />
                           <div className="min-w-0">
                             <p className="line-clamp-2 font-bold leading-5 text-text">
                               {post.productName || "Bài đăng chưa có tên"}
@@ -572,19 +565,10 @@ export default function PostManagementPage() {
                   className="rounded-xl border border-border bg-white p-4 shadow-sm"
                 >
                   <div className="flex gap-3">
-                    <div className="flex h-20 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-background text-border">
-                      {thumbnailUrl ? (
-                        <img
-                          src={thumbnailUrl}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="material-symbols-outlined text-3xl">
-                          image
-                        </span>
-                      )}
-                    </div>
+                    <PostThumbnail
+                      src={thumbnailUrl}
+                      className="h-20 w-24 shrink-0 rounded-lg"
+                    />
                     <div className="min-w-0 flex-1">
                       <h2 className="line-clamp-2 font-bold text-text">
                         {post.productName || "Bài đăng chưa có tên"}

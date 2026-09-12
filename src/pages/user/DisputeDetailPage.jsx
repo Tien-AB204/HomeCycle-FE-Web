@@ -16,6 +16,7 @@ import {
   getPaymentStatusMeta,
 } from "../../constants/orders";
 import disputeApi from "../../services/apis/disputeApi";
+import EvidenceImage from "../../components/shared/EvidenceImage";
 
 const formatDate = (value) => {
   if (!value) {
@@ -405,14 +406,14 @@ const DisputeDetailPage = () => {
                       rel="noreferrer"
                       className="overflow-hidden rounded-xl border border-border bg-background"
                     >
-                      <img
+                      <EvidenceImage
                         src={image.url}
                         alt={
                           image.fileName ||
                           `Bằng chứng ${index + 1}`
                         }
-                        loading="lazy"
-                        className="h-44 w-full object-cover transition hover:scale-[1.02]"
+                        bordered={false}
+                        className="h-44 w-full transition hover:scale-[1.02]"
                       />
 
                       <p className="truncate px-3 py-2 text-xs font-bold text-textLight">

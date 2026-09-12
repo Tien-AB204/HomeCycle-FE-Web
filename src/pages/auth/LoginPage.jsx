@@ -53,6 +53,7 @@ const LoginPage = () => {
     useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleIconFailed, setGoogleIconFailed] = useState(false);
   const googleButtonRef = useRef(null);
   const googleCredentialHandlerRef = useRef(null);
 
@@ -389,11 +390,14 @@ const LoginPage = () => {
             title="Chưa cấu hình đăng nhập Google (thiếu VITE_GOOGLE_CLIENT_ID)."
             className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-white py-3 text-sm font-bold text-textLight opacity-60"
           >
-            <img
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt=""
-              className="h-4 w-4"
-            />
+            {!googleIconFailed && (
+              <img
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt=""
+                onError={() => setGoogleIconFailed(true)}
+                className="h-4 w-4"
+              />
+            )}
             Google (chưa cấu hình)
           </button>
         )}

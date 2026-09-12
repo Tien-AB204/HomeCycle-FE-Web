@@ -2,11 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import orderApi from "../../services/apis/orderApi";
 import OrderDisputeModal from "../disputes/OrderDisputeModal";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.response?.data?.detail ||
+  getSafeProblemDetail(error?.response?.data?.detail) ||
   "Không thể thực hiện thao tác.";
 
 const OrderTransactionActions = ({ order, detail, onRefresh }) => {

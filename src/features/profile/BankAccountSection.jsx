@@ -128,6 +128,35 @@ const BankField = ({
   );
 };
 
+const BankLogo = ({ src }) => {
+  const [failed, setFailed] = useState(false);
+  const [trackedSrc, setTrackedSrc] = useState(src);
+
+  if (src !== trackedSrc) {
+    setTrackedSrc(src);
+    setFailed(false);
+  }
+
+  if (!src || failed) {
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded bg-background">
+        <span className="material-symbols-outlined text-textLight">
+          account_balance
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      onError={() => setFailed(true)}
+      className="h-9 w-9 rounded object-contain"
+    />
+  );
+};
+
 const MaskedAccountNumber = ({ value }) => {
   const [revealed, setRevealed] = useState(false);
   const stringValue = String(value || "");
@@ -743,21 +772,7 @@ const BankAccountSection = ({
                             }}
                             className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-primary/10"
                           >
-                            {bank.logo ? (
-                              <img
-                                src={
-                                  bank.logo
-                                }
-                                alt=""
-                                className="h-9 w-9 rounded object-contain"
-                              />
-                            ) : (
-                              <div className="flex h-9 w-9 items-center justify-center rounded bg-background">
-                                <span className="material-symbols-outlined text-textLight">
-                                  account_balance
-                                </span>
-                              </div>
-                            )}
+                            <BankLogo src={bank.logo} />
 
                             <div className="min-w-0 flex-1">
                               <p className="font-bold text-text">

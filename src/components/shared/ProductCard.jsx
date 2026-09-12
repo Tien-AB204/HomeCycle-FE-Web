@@ -46,12 +46,21 @@ const ProductCard = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const [trackedImage, setTrackedImage] = useState(null);
 
   if (!data) {
     return null;
   }
 
   const image = data.image || data.thumbnailUrl || data.medias?.[0]?.url;
+
+  // Reset trạng thái lỗi tải ảnh khi ảnh đổi - điều chỉnh state ngay
+  // trong render thay vì dùng effect (tránh lint set-state-in-effect).
+  if (image !== trackedImage) {
+    setTrackedImage(image);
+    setImageFailed(false);
+  }
   const name = data.name || data.productName || "Sản phẩm chưa có tên";
   const type =
     data.type || data.categoryName || data.productTypeName || "Đồ gia dụng";
@@ -152,17 +161,20 @@ const ProductCard = ({
        */}
       {!isBuyPost && (
         <div className="relative h-44 overflow-hidden bg-background sm:h-48 lg:h-44 xl:h-48">
-          {image ? (
+          {image && !imageFailed ? (
             <img
               src={image}
               alt={name}
               loading="lazy"
+              onError={() => setImageFailed(true)}
               className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full flex-col items-center justify-center bg-background text-textLight">
               <img src={homeCycleMark} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
-              <span className="mt-2 text-xs font-bold">Chưa có hình ảnh</span>
+              <span className="mt-2 text-xs font-bold">
+                {image ? "Không thể tải ảnh" : "Chưa có hình ảnh"}
+              </span>
             </div>
           )}
 

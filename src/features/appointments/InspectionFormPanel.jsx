@@ -17,6 +17,7 @@ import {
 import inspectionFormApi from "../../services/apis/inspectionFormApi";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import CollectionSchedulePanel from "./CollectionSchedulePanel";
+import EvidenceImage from "../../components/shared/EvidenceImage";
 
 const INSPECTION_EVIDENCE_CONTEXT = "InspectionEvidence";
 const MAX_IMAGES = 5;
@@ -178,11 +179,11 @@ const ImagePreviewGrid = ({ images }) => {
           rel="noreferrer"
           className="overflow-hidden rounded-lg border border-border bg-background"
         >
-          <img
+          <EvidenceImage
             src={image.url}
             alt={image.fileName || `Ảnh ${index + 1}`}
-            loading="lazy"
-            className="h-24 w-full object-cover"
+            bordered={false}
+            className="h-24 w-full"
           />
         </a>
       ))}

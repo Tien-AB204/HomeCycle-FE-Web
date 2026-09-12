@@ -35,8 +35,24 @@ const SensitiveField = ({
   placeholder = "",
 }) => {
   const [revealed, setRevealed] = useState(false);
+  const [trackedKey, setTrackedKey] = useState(null);
   const stringValue = String(value || "");
   const toggleRevealed = () => setRevealed((current) => !current);
+
+  /*
+   * Trả trạng thái hiện về ẩn mặc định khi: đổi field/bản ghi (id), đổi
+   * chế độ xem/sửa (readOnly), hoặc đổi giá trị TRONG khi đang ở chế độ
+   * xem (chỉ có thể do đổi bản ghi, không phải do gõ phím - ở chế độ sửa
+   * value đổi theo từng ký tự gõ nên không dùng làm điều kiện reset,
+   * nếu không nút hiện sẽ tự tắt ngay khi người dùng đang gõ).
+   * Điều chỉnh state ngay trong render, không dùng effect.
+   */
+  const currentKey = `${id}:${readOnly}:${readOnly ? value : ""}`;
+
+  if (currentKey !== trackedKey) {
+    setTrackedKey(currentKey);
+    setRevealed(false);
+  }
 
   return (
     <div>

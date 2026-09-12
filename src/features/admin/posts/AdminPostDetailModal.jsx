@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import adminPostApi from "../../../services/apis/adminPostApi";
+import EvidenceImage from "../../../components/shared/EvidenceImage";
+import { getSafeProblemDetail } from "../../../utils/safeErrorMessage";
 
 const STATUS_META = {
   draft: {
@@ -106,7 +108,7 @@ const getErrorMessage = (error) => {
   return (
     responseData?.error?.message ||
     responseData?.message ||
-    responseData?.title ||
+    getSafeProblemDetail(responseData?.title) ||
     "Không thể tải chi tiết bài đăng."
   );
 };
@@ -298,22 +300,13 @@ export default function AdminPostDetailModal({
               <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                 <div>
                   <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-background">
-                    {selectedMedia?.url ? (
-                      <img
-                        src={selectedMedia.url}
-                        alt={post.productName || "Hình ảnh bài đăng"}
-                        className="h-full w-full object-contain"
-                      />
-                    ) : (
-                      <div className="flex h-full flex-col items-center justify-center text-textLight">
-                        <span className="material-symbols-outlined text-6xl">
-                          image_not_supported
-                        </span>
-                        <span className="mt-2 text-sm font-semibold">
-                          Chưa có hình ảnh
-                        </span>
-                      </div>
-                    )}
+                    <EvidenceImage
+                      src={selectedMedia?.url}
+                      alt={post.productName || "Hình ảnh bài đăng"}
+                      bordered={false}
+                      objectFit="contain"
+                      className="h-full w-full"
+                    />
                   </div>
 
                   {medias.length > 1 && (
@@ -330,10 +323,11 @@ export default function AdminPostDetailModal({
                               : "border-transparent hover:border-border"
                           }`}
                         >
-                          <img
+                          <EvidenceImage
                             src={media.url}
                             alt=""
-                            className="h-full w-full object-cover"
+                            bordered={false}
+                            className="h-full w-full"
                           />
                         </button>
                       ))}

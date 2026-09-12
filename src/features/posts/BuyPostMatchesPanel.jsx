@@ -4,6 +4,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import postApi from "../../services/apis/postApi";
+import PostThumbnail from "../../components/shared/PostThumbnail";
 
 const formatCurrency = (value) => {
   if (
@@ -195,22 +196,11 @@ export default function BuyPostMatchesPanel({
                     key={sellPost.postId}
                     className="overflow-hidden rounded-2xl border border-border bg-white transition hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
                   >
-                    <div className="flex h-36 items-center justify-center bg-background">
-                      {image ? (
-                        <img
-                          src={image}
-                          alt={
-                            sellPost.productName ||
-                            "Sản phẩm"
-                          }
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="material-symbols-outlined text-4xl text-border">
-                          image
-                        </span>
-                      )}
-                    </div>
+                    <PostThumbnail
+                      src={image}
+                      alt={sellPost.productName || "Sản phẩm"}
+                      className="h-36 w-full"
+                    />
 
                     <div className="p-4">
                       <p className="line-clamp-2 font-black text-text">

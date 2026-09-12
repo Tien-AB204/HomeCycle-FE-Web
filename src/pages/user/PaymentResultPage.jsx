@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import orderApi from "../../services/apis/orderApi";
 import paymentApi from "../../services/apis/paymentApi";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PENDING_AGREEMENT_KEY =
   "homecycle:pending-payment-agreement-id";
@@ -16,7 +17,7 @@ const PENDING_AGREEMENT_KEY =
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.response?.data?.detail ||
+  getSafeProblemDetail(error?.response?.data?.detail) ||
   "Hệ thống chưa thể xác nhận giao dịch.";
 
 const isRequestCancelled = (error) =>

@@ -16,6 +16,7 @@ import {
 import agreementApi from "../../services/apis/agreementApi";
 import inspectionFormApi from "../../services/apis/inspectionFormApi";
 import orderApi from "../../services/apis/orderApi";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const DIRECT_METHODS = [
   DELIVERY_METHOD.BUYER_PICK_UP,
@@ -54,7 +55,7 @@ const getErrorMessage = (
 ) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.response?.data?.detail ||
+  getSafeProblemDetail(error?.response?.data?.detail) ||
   fallback;
 
 const createInitialForm = () => ({

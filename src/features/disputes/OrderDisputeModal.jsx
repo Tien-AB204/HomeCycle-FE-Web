@@ -8,6 +8,7 @@ import {
 } from "../../constants/disputes";
 import disputeApi from "../../services/apis/disputeApi";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const MIN_IMAGES = 2;
 const MAX_IMAGES = 5;
@@ -16,7 +17,7 @@ const DISPUTE_EVIDENCE_CONTEXT = "DisputeEvidence";
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.response?.data?.detail ||
+  getSafeProblemDetail(error?.response?.data?.detail) ||
   "Không thể tạo tranh chấp.";
 
 const getExtension = (fileName) => {
