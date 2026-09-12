@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -96,20 +97,13 @@ const DisputeDetailPage = () => {
     error: "",
   });
 
-  useEffect(() => {
-    const controller =
-      new AbortController();
+  const [isClosing, setIsClosing] = useState(false);
+  const [closeError, setCloseError] = useState("");
 
-    const loadDetail = async () => {
+  const loadDetail = useCallback(
+    async (signal) => {
       try {
-        const detail =
-          await disputeApi.getById(
-            disputeId,
-            {
-              signal:
-                controller.signal,
-            },
-          );
+        const detail = await disputeApi.getById(disputeId, { signal });
 
         setState({
           loading: false,
@@ -118,24 +112,55 @@ const DisputeDetailPage = () => {
         });
       } catch (error) {
         if (
-          error?.name !==
-            "CanceledError" &&
+          error?.name !== "CanceledError" &&
           error?.code !== "ERR_CANCELED"
         ) {
           setState({
             loading: false,
             detail: null,
-            error:
-              getErrorMessage(error),
+            error: getErrorMessage(error),
           });
         }
       }
+    },
+    [disputeId],
+  );
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    const timeoutId = window.setTimeout(() => {
+      void loadDetail(controller.signal);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
     };
+  }, [loadDetail]);
 
-    void loadDetail();
+  const handleClose = async () => {
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn đóng tranh chấp này?",
+    );
 
-    return () => controller.abort();
-  }, [disputeId]);
+    if (!confirmed) {
+      return;
+    }
+
+    setIsClosing(true);
+    setCloseError("");
+
+    try {
+      await disputeApi.close(disputeId);
+      await loadDetail();
+    } catch (error) {
+      setCloseError(getErrorMessage(error));
+    } finally {
+      setIsClosing(false);
+    }
+  };
 
   if (state.loading) {
     return (
@@ -218,6 +243,10 @@ const DisputeDetailPage = () => {
       ? dispute.evidenceImages
       : [];
 
+  const canClose = Boolean(
+    dispute.actions?.canCloseDispute,
+  );
+
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-6xl px-4 pb-14 pt-7 sm:px-6">
       <Link
@@ -251,12 +280,31 @@ const DisputeDetailPage = () => {
           </h1>
         </div>
 
-        <span
-          className={`w-fit rounded-full border px-3 py-1.5 text-xs font-black ${disputeStatus.className}`}
-        >
-          {disputeStatus.label}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={`w-fit rounded-full border px-3 py-1.5 text-xs font-black ${disputeStatus.className}`}
+          >
+            {disputeStatus.label}
+          </span>
+
+          {canClose && (
+            <button
+              type="button"
+              onClick={handleClose}
+              disabled={isClosing}
+              className="rounded-full border border-primary bg-white px-4 py-1.5 text-xs font-black text-primary transition hover:bg-primary hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isClosing ? "Đang đóng..." : "Đóng tranh chấp"}
+            </button>
+          )}
+        </div>
       </header>
+
+      {closeError && (
+        <div className="mt-4 rounded-xl border border-error/30 bg-error/10 p-3 text-sm font-semibold text-error">
+          {closeError}
+        </div>
+      )}
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
         <div className="space-y-5">
