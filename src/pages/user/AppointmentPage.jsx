@@ -4,7 +4,6 @@ import {
   APPOINTMENT_STATUS_OPTIONS,
   APPOINTMENT_TYPE,
   getAppointmentStatusMeta,
-  isAppointmentStatus,
 } from "../../constants/appointments";
 import { ROLES } from "../../constants/roles";
 import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
@@ -144,6 +143,19 @@ const AppointmentDetailModal = ({
     });
 
   const [scheduleOpen, setScheduleOpen] =
+    useState(false);
+
+  const [rescheduleDraft, setRescheduleDraft] =
+    useState("");
+  const [showRescheduleForm, setShowRescheduleForm] =
+    useState(false);
+  const [showCancelForm, setShowCancelForm] =
+    useState(false);
+  const [cancelReasonDraft, setCancelReasonDraft] =
+    useState("");
+  const [rejectReasonDraft, setRejectReasonDraft] =
+    useState("");
+  const [showRejectRescheduleForm, setShowRejectRescheduleForm] =
     useState(false);
 
 
@@ -309,20 +321,112 @@ const AppointmentDetailModal = ({
     }
   };
 
+  const handleRequestReschedule = async () => {
+    if (!rescheduleDraft) {
+      return;
+    }
+
+    setBusy("reschedule");
+    setNotice("");
+
+    try {
+      await appointmentApi.requestReschedule(appointmentId, rescheduleDraft);
+      setNotice("Đã gửi đề xuất đổi lịch. Đang chờ bên còn lại phản hồi.");
+      setShowRescheduleForm(false);
+      setRescheduleDraft("");
+      await loadDetail();
+      onChanged();
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        error: getErrorMessage(error, "Không thể gửi đề xuất đổi lịch."),
+      }));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const handleAcceptReschedule = async (proposalAppointmentId) => {
+    setBusy("accept-reschedule");
+    setNotice("");
+
+    try {
+      await appointmentApi.acceptReschedule(proposalAppointmentId);
+      setNotice("Đã chấp nhận thời gian mới.");
+      await loadDetail();
+      onChanged();
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        error: getErrorMessage(error, "Không thể chấp nhận đề xuất đổi lịch."),
+      }));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const handleRejectReschedule = async (proposalAppointmentId) => {
+    setBusy("reject-reschedule");
+    setNotice("");
+
+    try {
+      await appointmentApi.rejectReschedule(
+        proposalAppointmentId,
+        rejectReasonDraft,
+      );
+      setNotice("Đã từ chối đề xuất đổi lịch.");
+      setShowRejectRescheduleForm(false);
+      setRejectReasonDraft("");
+      await loadDetail();
+      onChanged();
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        error: getErrorMessage(error, "Không thể từ chối đề xuất đổi lịch."),
+      }));
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!cancelReasonDraft.trim()) {
+      return;
+    }
+
+    setBusy("cancel");
+    setNotice("");
+
+    try {
+      await appointmentApi.cancel(appointmentId, cancelReasonDraft);
+      setNotice("Đã hủy lịch hẹn.");
+      setShowCancelForm(false);
+      setCancelReasonDraft("");
+      await loadDetail();
+      onChanged();
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        error: getErrorMessage(error, "Không thể hủy lịch hẹn."),
+      }));
+    } finally {
+      setBusy("");
+    }
+  };
+
   const detail = state.detail;
-  const base = detail?.appointment || {};
-  const isInspection = Boolean(detail?.inspectionAppointment);
-  const specialized =
-    detail?.inspectionAppointment || detail?.collectionAppointment || {};
+  const isInspection = Boolean(detail?.inspection);
+  const specialized = detail?.inspection || detail?.collection || {};
+  const checkIn = detail?.inspection?.checkIn || {};
+  const cancellation = detail?.cancellation || null;
+  const reschedule = detail?.reschedule || null;
+  const actions = detail?.actions || {};
   const isCurrentUserCheckedIn =
     perspective === APPOINTMENT_PERSPECTIVE.BUYER
-      ? Boolean(base.buyerCheckAt)
-      : Boolean(base.sellerCheckAt);
-  const canCheckIn =
-    !base.cancelledAt &&
-    !isAppointmentStatus(base.appointmentStatus, "Completed") &&
-    !isCurrentUserCheckedIn;
-  const statusMeta = getAppointmentStatusMeta(base.appointmentStatus);
+      ? Boolean(checkIn.buyerCheckAt)
+      : Boolean(checkIn.sellerCheckAt);
+  const canCheckIn = isInspection && Boolean(checkIn.canCheckIn);
+  const statusMeta = getAppointmentStatusMeta(detail?.appointmentStatus);
 
   return (
     <div
@@ -439,27 +543,115 @@ const AppointmentDetailModal = ({
                 )}
               </dl>
 
-              <section className="mt-5">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-                  Tiến trình check-in
-                </p>
-                <div className="mt-2 rounded-xl border border-border px-4">
-                  <CheckInStatus
-                    label="Người mua"
-                    checkedAt={base.buyerCheckAt}
-                  />
-                  <CheckInStatus
-                    label="Người bán"
-                    checkedAt={base.sellerCheckAt}
-                  />
-                </div>
-              </section>
+              {isInspection && (
+                <section className="mt-5">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+                    Tiến trình check-in
+                  </p>
+                  <div className="mt-2 rounded-xl border border-border px-4">
+                    <CheckInStatus
+                      label="Người mua"
+                      checkedAt={checkIn.buyerCheckAt}
+                    />
+                    <CheckInStatus
+                      label="Người bán"
+                      checkedAt={checkIn.sellerCheckAt}
+                    />
+                  </div>
+                </section>
+              )}
 
               {isInspection && (
                 <p className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-sm leading-6 text-primary">
                   Lịch kiểm định được hoàn tất sau khi cả hai bên xác nhận
                   check-in.
                 </p>
+              )}
+
+              {cancellation && (
+                <div className="mt-4 rounded-xl border border-error/30 bg-error/10 p-3.5 text-sm leading-6 text-error">
+                  <p className="font-black">Lịch hẹn đã bị hủy</p>
+                  <p className="mt-1">
+                    Lúc {formatDate(cancellation.cancelledAt)}
+                    {cancellation.reason ? ` — ${cancellation.reason}` : ""}
+                  </p>
+                </div>
+              )}
+
+              {reschedule && (
+                <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-3.5 text-sm leading-6 text-warning">
+                  <p className="font-black">Đề xuất đổi lịch đang chờ xử lý</p>
+                  <p className="mt-1">
+                    Thời gian mới đề xuất: {formatDate(reschedule.proposedAt)}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    {reschedule.isCurrentUserRequester
+                      ? "Bạn đã gửi đề xuất này, đang chờ bên còn lại phản hồi."
+                      : "Bên còn lại đề xuất đổi sang thời gian này."}
+                  </p>
+
+                  {!reschedule.isCurrentUserRequester && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {actions.canAcceptReschedule && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleAcceptReschedule(
+                              reschedule.proposalAppointmentId,
+                            )
+                          }
+                          disabled={Boolean(busy)}
+                          className="rounded-lg bg-success px-3.5 py-2 text-xs font-black text-white transition hover:bg-success/90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {busy === "accept-reschedule"
+                            ? "Đang xử lý..."
+                            : "Chấp nhận thời gian mới"}
+                        </button>
+                      )}
+
+                      {actions.canRejectReschedule && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowRejectRescheduleForm((current) => !current)
+                          }
+                          disabled={Boolean(busy)}
+                          className="rounded-lg border border-error px-3.5 py-2 text-xs font-black text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Từ chối
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {showRejectRescheduleForm && actions.canRejectReschedule && (
+                    <div className="mt-3 space-y-2">
+                      <textarea
+                        value={rejectReasonDraft}
+                        onChange={(event) =>
+                          setRejectReasonDraft(event.target.value)
+                        }
+                        placeholder="Lý do từ chối (không bắt buộc)"
+                        rows={2}
+                        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRejectReschedule(
+                            reschedule.proposalAppointmentId,
+                          )
+                        }
+                        disabled={Boolean(busy)}
+                        className="rounded-lg bg-error px-3.5 py-2 text-xs font-black text-white transition hover:bg-error/90 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {busy === "reject-reschedule"
+                          ? "Đang xử lý..."
+                          : "Xác nhận từ chối"}
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
 
               {isInspection && (
@@ -576,24 +768,97 @@ const AppointmentDetailModal = ({
                 </section>
               )}
 
-              <div className="mt-6 flex justify-end border-t border-border pt-5">
-                {canCheckIn ? (
+              {!reschedule && (actions.canRequestReschedule || actions.canCancel) && (
+                <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                  {actions.canRequestReschedule && (
+                    <button
+                      type="button"
+                      onClick={() => setShowRescheduleForm((current) => !current)}
+                      disabled={Boolean(busy)}
+                      className="rounded-lg border border-primary px-4 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Đề xuất đổi lịch
+                    </button>
+                  )}
+
+                  {actions.canCancel && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelForm((current) => !current)}
+                      disabled={Boolean(busy)}
+                      className="rounded-lg border border-error px-4 py-2.5 text-sm font-black text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Hủy lịch hẹn
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {showRescheduleForm && actions.canRequestReschedule && (
+                <div className="mt-3 space-y-2 rounded-xl border border-border bg-background p-3.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-textLight">
+                    Thời gian đề xuất mới
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={rescheduleDraft}
+                    onChange={(event) => setRescheduleDraft(event.target.value)}
+                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-primary"
+                  />
                   <button
                     type="button"
-                    onClick={handleCheckIn}
-                    disabled={Boolean(busy)}
-                    className="rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:opacity-50"
+                    onClick={handleRequestReschedule}
+                    disabled={Boolean(busy) || !rescheduleDraft}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {busy === "check-in" ? "Đang check-in..." : "Xác nhận check-in"}
+                    {busy === "reschedule" ? "Đang gửi..." : "Gửi đề xuất"}
                   </button>
-                ) : (
-                  <span className="rounded-lg bg-primary/10 px-4 py-2.5 text-sm font-bold text-textLight">
-                    {isCurrentUserCheckedIn
-                      ? "Bạn đã check-in"
-                      : "Không thể check-in"}
-                  </span>
-                )}
-              </div>
+                </div>
+              )}
+
+              {showCancelForm && actions.canCancel && (
+                <div className="mt-3 space-y-2 rounded-xl border border-error/30 bg-error/5 p-3.5">
+                  <label className="text-xs font-bold uppercase tracking-wide text-error">
+                    Lý do hủy lịch hẹn
+                  </label>
+                  <textarea
+                    value={cancelReasonDraft}
+                    onChange={(event) => setCancelReasonDraft(event.target.value)}
+                    rows={2}
+                    placeholder="Nhập lý do hủy..."
+                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-error"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCancelAppointment}
+                    disabled={Boolean(busy) || !cancelReasonDraft.trim()}
+                    className="rounded-lg bg-error px-4 py-2 text-sm font-black text-white transition hover:bg-error/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {busy === "cancel" ? "Đang hủy..." : "Xác nhận hủy"}
+                  </button>
+                </div>
+              )}
+
+              {isInspection && (
+                <div className="mt-6 flex justify-end border-t border-border pt-5">
+                  {canCheckIn ? (
+                    <button
+                      type="button"
+                      onClick={handleCheckIn}
+                      disabled={Boolean(busy)}
+                      className="rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {busy === "check-in" ? "Đang check-in..." : "Xác nhận check-in"}
+                    </button>
+                  ) : (
+                    <span className="rounded-lg bg-primary/10 px-4 py-2.5 text-sm font-bold text-textLight">
+                      {isCurrentUserCheckedIn
+                        ? "Bạn đã check-in"
+                        : "Không thể check-in"}
+                    </span>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
