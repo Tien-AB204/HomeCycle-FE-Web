@@ -146,39 +146,88 @@ const createSellFormData = (postData) => {
   return formData;
 };
 
-const createBuyFormData = (postData) => {
-  const formData = new FormData();
+const createBuyPayload = (postData) => {
+  let expiryDate = null;
 
-  appendCommonPostFields(formData, postData);
-  appendFormValue(formData, "ExpectedPrice", postData.price);
-  appendFormValue(formData, "Requirement.ExpectedPrice", postData.price);
-  appendFormValue(formData, "Requirement.CategoryId", postData.categoryId);
-  appendFormValue(
-    formData,
-    "Requirement.ProductTypeId",
-    postData.productTypeId,
-  );
-  appendFormValue(formData, "Requirement.BrandId", postData.brandId);
-  appendFormValue(formData, "Requirement.ProductName", postData.productName);
-  appendFormValue(formData, "Requirement.SpaceUsage", postData.spaceUsage);
-  appendFormValue(
-    formData,
-    "Requirement.FunctionalityStatus",
-    postData.functionalityStatus,
-  );
-  appendFormValue(
-    formData,
-    "Requirement.UsageDuration",
-    postData.usageDuration,
-  );
-  appendFormValue(formData, "Requirement.DamageLevel", postData.damageLevel);
-  appendAttributeValues(
-    formData,
-    "Requirement.AttributeValues",
-    postData.attributeValues,
-  );
+  const expiryDateValue =
+    normalizeText(postData.expiryDate);
 
-  return formData;
+  if (expiryDateValue) {
+    const parsedExpiryDate =
+      new Date(
+        expiryDateValue + "T23:59:59",
+      );
+
+    if (!Number.isNaN(parsedExpiryDate.getTime())) {
+      expiryDate =
+        parsedExpiryDate.toISOString();
+    }
+  }
+
+  return {
+    title: normalizeText(postData.productName),
+    description: normalizeText(postData.description),
+
+    brandId:
+      normalizeText(postData.brandId) || null,
+
+    categoryId:
+      normalizeText(postData.categoryId) || null,
+
+    productTypeId:
+      normalizeText(postData.productTypeId) || null,
+
+    functionalityStatus:
+      normalizeText(
+        postData.functionalityStatus,
+      ) || null,
+
+    usageDuration:
+      typeof postData.usageDuration === "number" &&
+      Number.isFinite(postData.usageDuration)
+        ? postData.usageDuration
+        : null,
+
+    damageLevel:
+      normalizeText(postData.damageLevel) || null,
+
+    attributeValues:
+      normalizeAttributeValues(
+        postData.attributeValues,
+      ),
+
+    streetAddress:
+      normalizeText(postData.streetAddress) || null,
+
+    ward:
+      normalizeText(postData.ward) || null,
+
+    city:
+      normalizeText(postData.city) || null,
+
+    priorityLevel:
+      normalizeText(postData.priorityLevel) || null,
+
+    priceFrom:
+      typeof postData.priceFrom === "number" &&
+      Number.isFinite(postData.priceFrom)
+        ? postData.priceFrom
+        : null,
+
+    priceTo:
+      typeof postData.price === "number" &&
+      Number.isFinite(postData.price)
+        ? postData.price
+        : null,
+
+    quantity:
+      Number.isInteger(postData.quantity) &&
+      postData.quantity > 0
+        ? postData.quantity
+        : null,
+
+    expiryDate,
+  };
 };
 
 const ensureCreatedPost = (response, fallbackMessage) => {
@@ -352,7 +401,7 @@ export const postApi = {
 
     const response = await axiosClient.post(
       "/posts/create/buy",
-      createBuyFormData(postData),
+      createBuyPayload(postData),
     );
     const post = ensureCreatedPost(response, "Không thể tạo tin thu mua.");
 
@@ -392,12 +441,208 @@ export const postApi = {
 
     const response = await axiosClient.patch(
       `/posts/update/buy/${encodeURIComponent(normalizedPostId)}`,
-      createBuyFormData(postData),
+      createBuyPayload(postData),
     );
     const post = ensureCreatedPost(response, "Không thể cập nhật tin thu mua.");
 
     notifyPostCatalogChanged({ postId: post.postId, reason: "updated" });
     return post;
+  },
+
+  getSellerCandidatesByUser: async (
+    userId,
+    {
+      pageNumber = DEFAULT_PAGE_NUMBER,
+      pageSize = 100,
+      signal,
+    } = {},
+  ) => {
+    const normalizedUserId =
+      normalizeRequiredIdentifier(
+        userId,
+        "Không tìm thấy mã người dùng.",
+      );
+
+    const normalizedPageNumber =
+      normalizePageNumber(pageNumber);
+
+    const normalizedPageSize =
+      normalizePageSize(pageSize);
+
+    const response = await axiosClient.get(
+      "/posts/get-all/by-user/" +
+        encodeURIComponent(normalizedUserId),
+      {
+        params: {
+          PageNumber: normalizedPageNumber,
+          PageSize: normalizedPageSize,
+        },
+        signal,
+      },
+    );
+
+    const data = unwrapResponse(
+      response,
+      "Không thể tải các tin đăng bán của bạn.",
+    );
+
+    return normalizePagination(
+      data,
+      normalizedPageNumber,
+      normalizedPageSize,
+    );
+  },
+
+  getBuyMatches: async (
+    buyPostId,
+    {
+      pageNumber = DEFAULT_PAGE_NUMBER,
+      pageSize = DEFAULT_PAGE_SIZE,
+      signal,
+    } = {},
+  ) => {
+    const normalizedBuyPostId =
+      normalizeRequiredIdentifier(
+        buyPostId,
+        "Không tìm thấy mã tin thu mua.",
+      );
+
+    const normalizedPageNumber =
+      normalizePageNumber(pageNumber);
+
+    const normalizedPageSize =
+      normalizePageSize(pageSize);
+
+    const response = await axiosClient.get(
+      "/posts/buy/" +
+        encodeURIComponent(normalizedBuyPostId) +
+        "/matches",
+      {
+        params: {
+          PageNumber: normalizedPageNumber,
+          PageSize: normalizedPageSize,
+        },
+        signal,
+      },
+    );
+
+    const data = unwrapResponse(
+      response,
+      "Không thể tải các sản phẩm phù hợp.",
+    );
+
+    const items = Array.isArray(data?.items)
+      ? data.items
+          .map((item) => {
+            if (!item?.sellPost) {
+              return null;
+            }
+
+            return {
+              sellPost:
+                normalizePostListItem(
+                  item.sellPost,
+                ),
+              matchSummary:
+                item.matchSummary || {},
+            };
+          })
+          .filter(Boolean)
+      : [];
+
+    const totalCount =
+      data?.totalCount ?? items.length;
+
+    return {
+      items,
+      pageNumber:
+        data?.pageNumber ??
+        normalizedPageNumber,
+      pageSize:
+        data?.pageSize ??
+        normalizedPageSize,
+      totalCount,
+      totalPages:
+        data?.totalPages ??
+        Math.ceil(
+          totalCount /
+            (data?.pageSize ||
+              normalizedPageSize),
+        ),
+      hasPreviousPage:
+        Boolean(data?.hasPreviousPage),
+      hasNextPage:
+        Boolean(data?.hasNextPage),
+    };
+  },
+
+  createSellerRequest: async (
+    buyPostId,
+    {
+      sellPostId,
+      offerPrice,
+      offerQuantity,
+    },
+  ) => {
+    const normalizedBuyPostId =
+      normalizeRequiredIdentifier(
+        buyPostId,
+        "Không tìm thấy mã tin thu mua.",
+      );
+
+    const normalizedSellPostId =
+      normalizeRequiredIdentifier(
+        sellPostId,
+        "Vui lòng chọn sản phẩm muốn chào bán.",
+      );
+
+    const normalizedPrice =
+      Number(offerPrice);
+
+    const normalizedQuantity =
+      Number(offerQuantity);
+
+    if (
+      !Number.isFinite(normalizedPrice) ||
+      normalizedPrice <= 0
+    ) {
+      throw new Error(
+        "Giá chào bán phải lớn hơn 0.",
+      );
+    }
+
+    if (
+      !Number.isInteger(normalizedQuantity) ||
+      normalizedQuantity <= 0
+    ) {
+      throw new Error(
+        "Số lượng chào bán phải là số nguyên lớn hơn 0.",
+      );
+    }
+
+    const response = await axiosClient.post(
+      "/posts/buy/" +
+        encodeURIComponent(normalizedBuyPostId) +
+        "/seller-requests",
+      {
+        sellPostId: normalizedSellPostId,
+        offerPrice: normalizedPrice,
+        offerQuantity: normalizedQuantity,
+      },
+    );
+
+    const offer = unwrapResponse(
+      response,
+      "Không thể gửi chào bán.",
+    );
+
+    if (!offer?.offerId) {
+      throw new Error(
+        "Response chào bán không hợp lệ.",
+      );
+    }
+
+    return offer;
   },
 
   close: async (postId) => {

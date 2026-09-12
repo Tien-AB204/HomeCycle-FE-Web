@@ -7,6 +7,7 @@ import {
   useLocation,
   useNavigate,
   useParams,
+  useSearchParams,
 } from "react-router-dom";
 import {
   ArrowLeftOutlined,
@@ -22,6 +23,8 @@ import { ROLES } from "../../constants/roles";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
+import SellerRequestModal from "../../features/offers/SellerRequestModal";
+import BuyPostMatchesPanel from "../../features/posts/BuyPostMatchesPanel";
 import { useAuth } from "../../hooks/useAuth";
 import offerApi from "../../services/apis/offerApi";
 import postApi from "../../services/apis/postApi";
@@ -276,24 +279,89 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const { postId = "" } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { user, isAuthenticated } = useAuth();
   const userId = getUserId(user);
   const normalizedRole = normalizeRole(user?.role);
+  const isBusiness =
+    normalizedRole === ROLES.BUSINESS;
+
+  const buyPostIdParam = String(
+    searchParams.get("buyPostId") || "",
+  ).trim();
+
+  const sellerRequestContinuation =
+    location.state
+      ?.sellerRequestContinuation;
+
+  const continuationBuyPostId =
+    String(
+      sellerRequestContinuation
+        ?.buyPostId || "",
+    ).trim();
+
+  const continuationCreatedSellPostId =
+    String(
+      sellerRequestContinuation
+        ?.createdSellPostId || "",
+    ).trim();
+
+  const hasSellerRequestContinuation =
+    normalizedRole === ROLES.PERSONAL &&
+    continuationBuyPostId ===
+      String(postId) &&
+    Boolean(
+      continuationCreatedSellPostId,
+    );
   const isManager =
     normalizedRole === ROLES.ADMIN ||
     normalizedRole === ROLES.MODERATOR;
+
+  const isPersonal =
+    normalizedRole === ROLES.PERSONAL;
   const [requestVersion, setRequestVersion] =
     useState(0);
   const [selectedMediaId, setSelectedMediaId] =
     useState("");
   const [actionMessage, setActionMessage] =
-    useState("");
+    useState(() =>
+      hasSellerRequestContinuation
+        ? "Tin đăng bán mới đã được tạo. Kiểm tra giá, số lượng rồi gửi chào bán."
+        : "",
+    );
   const [isOfferModalOpen, setIsOfferModalOpen] =
     useState(false);
   const [isOfferSubmitting, setIsOfferSubmitting] =
     useState(false);
   const [offerError, setOfferError] =
     useState("");
+
+  const [
+    isSellerRequestModalOpen,
+    setIsSellerRequestModalOpen,
+  ] = useState(
+    hasSellerRequestContinuation,
+  );
+
+  const [
+    isSellerRequestSubmitting,
+    setIsSellerRequestSubmitting,
+  ] = useState(false);
+
+  const [
+    sellerRequestError,
+    setSellerRequestError,
+  ] = useState("");
+
+  const [
+    sellerRequestInitialSellPostId,
+    setSellerRequestInitialSellPostId,
+  ] = useState(() =>
+    hasSellerRequestContinuation
+      ? continuationCreatedSellPostId
+      : "",
+  );
+
   const [isVerifyingPost, setIsVerifyingPost] = useState(false);
   const [staleWarning, setStaleWarning] = useState(null);
   const requestKey = `${ownerMode ? "owner" : "public"}:${userId}:${postId}:${requestVersion}`;
@@ -425,6 +493,13 @@ const PostDetailPage = ({ ownerMode = false }) => {
     userId &&
       String(post?.ownerId || "") === userId,
   );
+  const proactiveBuyPostId =
+    isBusiness &&
+    !isBuyPost &&
+    !isOwnPost &&
+    buyPostIdParam
+      ? buyPostIdParam
+      : "";
   const isActivePost =
     String(post?.status || "").toLowerCase() ===
     "active";
@@ -434,6 +509,31 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const hasAvailableQuantity =
     Number.isFinite(remainingQuantity) &&
     remainingQuantity > 0;
+
+  useEffect(() => {
+    if (
+      !hasSellerRequestContinuation
+    ) {
+      return;
+    }
+
+    const nextState = {
+      ...(location.state || {}),
+    };
+
+    delete nextState
+      .sellerRequestContinuation;
+
+    navigate(location.pathname, {
+      replace: true,
+      state: nextState,
+    });
+  }, [
+    hasSellerRequestContinuation,
+    location.pathname,
+    location.state,
+    navigate,
+  ]);
 
   const updateDisplayedPost = (latestPost) => {
     setDetailState((currentState) => ({
@@ -465,7 +565,83 @@ const PostDetailPage = ({ ownerMode = false }) => {
       return;
     }
 
-    if (isBuyPost || isOwnPost || isVerifyingPost) {
+    if (
+      isBuyPost &&
+      isPersonal &&
+      !isOwnPost &&
+      !isVerifyingPost
+    ) {
+      setIsVerifyingPost(true);
+
+      try {
+        const latestPost =
+          await postApi.getById(post.postId);
+
+        const verifiedPost = {
+          ...post,
+          ...latestPost,
+          product: {
+            ...(post.product || {}),
+            ...(latestPost.product || {}),
+          },
+        };
+
+        const changedFields =
+          getPostChangedFields(
+            post,
+            verifiedPost,
+          );
+
+        const latestRemainingQuantity =
+          Number(
+            verifiedPost.remainingQuantity,
+          );
+
+        const latestIsAvailable =
+          String(
+            verifiedPost.status || "",
+          ).toLowerCase() === "active" &&
+          Number.isFinite(
+            latestRemainingQuantity,
+          ) &&
+          latestRemainingQuantity > 0;
+
+        if (
+          changedFields.length > 0 ||
+          !latestIsAvailable
+        ) {
+          updateDisplayedPost(
+            verifiedPost,
+          );
+
+          setStaleWarning({
+            message:
+              POST_CHANGED_WARNING,
+            changedFields,
+          });
+
+          return;
+        }
+
+        setSellerRequestError("");
+        setIsSellerRequestModalOpen(true);
+      } catch {
+        setStaleWarning({
+          message:
+            VERIFICATION_FAILED_WARNING,
+        });
+      } finally {
+        setIsVerifyingPost(false);
+      }
+
+      return;
+    }
+
+    if (
+      isBuyPost ||
+      isOwnPost ||
+      isVerifyingPost
+    ) {
       return;
     }
 
@@ -536,6 +712,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
       await offerApi.create({
         postId: post.postId,
+        ...(proactiveBuyPostId
+          ? { buyPostId: proactiveBuyPostId }
+          : {}),
         ...terms,
       });
       setIsOfferModalOpen(false);
@@ -558,6 +737,146 @@ const PostDetailPage = ({ ownerMode = false }) => {
       setIsOfferSubmitting(false);
     }
   };
+
+  const handleCreateNewSellForRequest =
+    () => {
+      if (
+        !post?.postId ||
+        isSellerRequestSubmitting
+      ) {
+        return;
+      }
+
+      setSellerRequestInitialSellPostId(
+        "",
+      );
+
+      setSellerRequestError("");
+      setIsSellerRequestModalOpen(false);
+
+      navigate("/bai-dang/tao-moi", {
+        state: {
+          sellerRequestContinuation: {
+            buyPostId: post.postId,
+          },
+        },
+      });
+    };
+
+  const handleCreateSellerRequest =
+    async (terms) => {
+      if (
+        !isPersonal ||
+        isSellerRequestSubmitting
+      ) {
+        return;
+      }
+
+      setIsSellerRequestSubmitting(true);
+      setSellerRequestError("");
+
+      try {
+        const latestBuyPost =
+          await postApi.getById(
+            post.postId,
+          );
+
+        const verifiedBuyPost = {
+          ...post,
+          ...latestBuyPost,
+          product: {
+            ...(post.product || {}),
+            ...(latestBuyPost.product || {}),
+          },
+        };
+
+        const changedFields =
+          getPostChangedFields(
+            post,
+            verifiedBuyPost,
+          );
+
+        const latestRemainingQuantity =
+          Number(
+            verifiedBuyPost.remainingQuantity,
+          );
+
+        const isUnavailable =
+          String(
+            verifiedBuyPost.status || "",
+          ).toLowerCase() !== "active" ||
+          !Number.isFinite(
+            latestRemainingQuantity,
+          ) ||
+          latestRemainingQuantity <
+            Number(
+              terms.offerQuantity || 0,
+            );
+
+        if (
+          changedFields.length > 0 ||
+          isUnavailable
+        ) {
+          updateDisplayedPost(
+            verifiedBuyPost,
+          );
+
+          setIsSellerRequestModalOpen(
+            false,
+          );
+
+          setStaleWarning({
+            message:
+              POST_CHANGED_WARNING,
+            changedFields,
+          });
+
+          return;
+        }
+
+        await postApi.createSellerRequest(
+          post.postId,
+          terms,
+        );
+
+        setIsSellerRequestModalOpen(false);
+        setSellerRequestInitialSellPostId(
+          "",
+        );
+
+        setActionMessage(
+          "Đã gửi chào hàng. Bạn có thể theo dõi tại mục Chào hàng đã gửi.",
+        );
+      } catch (requestError) {
+        if (
+          isConcurrencyConflict(
+            requestError,
+          )
+        ) {
+          setIsSellerRequestModalOpen(
+            false,
+          );
+
+          setStaleWarning({
+            message:
+              POST_CHANGED_WARNING,
+          });
+
+          return;
+        }
+
+        setSellerRequestError(
+          getErrorMessage(
+            requestError,
+            "Không thể gửi chào bán. Vui lòng kiểm tra sản phẩm, giá và số lượng.",
+          ),
+        );
+      } finally {
+        setIsSellerRequestSubmitting(
+          false,
+        );
+      }
+    };
 
   const handleLifecycleCompleted = (message) => {
     setActionMessage(message);
@@ -745,11 +1064,44 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 {isBuyPost ? (
                   <div>
                     <p className="text-xs font-bold uppercase tracking-wide text-error">
-                      Giá mua tối đa
+                      Khoảng giá thu mua
                     </p>
+
                     <p className="mt-1 text-2xl font-black text-error">
-                      {formatCurrency(post.basePrice)}
+                      {hasValidPrice(post.priceFrom) &&
+                      hasValidPrice(post.priceTo)
+                        ? formatCurrency(
+                            post.priceFrom,
+                          ) +
+                          " – " +
+                          formatCurrency(
+                            post.priceTo,
+                          )
+                        : hasValidPrice(
+                              post.priceTo,
+                            )
+                          ? "Tối đa " +
+                            formatCurrency(
+                              post.priceTo,
+                            )
+                          : hasValidPrice(
+                                post.priceFrom,
+                              )
+                            ? "Từ " +
+                              formatCurrency(
+                                post.priceFrom,
+                              )
+                            : "Thương lượng"}
                     </p>
+
+                    {post.expiryDate && (
+                      <p className="mt-1 text-xs font-semibold text-textLight">
+                        Hiệu lực đến{" "}
+                        {formatDate(
+                          post.expiryDate,
+                        )}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
@@ -782,18 +1134,21 @@ const PostDetailPage = ({ ownerMode = false }) => {
                     {post.remainingQuantity}
                   </dd>
                 </div>
-                <div className="flex justify-between gap-4 border-b border-border pb-2.5">
-                  <dt className="flex items-center gap-2 text-textLight">
-                    <SafetyCertificateOutlined className="text-primary" />
-                    Vận chuyển
-                  </dt>
-                  <dd className="text-right font-semibold text-text">
-                    {getMappedValue(
-                      DELIVERY_METHODS,
-                      post.deliveryMethod,
-                    )}
-                  </dd>
-                </div>
+                {!isBuyPost && (
+                  <div className="flex justify-between gap-4 border-b border-border pb-2.5">
+                    <dt className="flex items-center gap-2 text-textLight">
+                      <SafetyCertificateOutlined className="text-primary" />
+                      Vận chuyển
+                    </dt>
+
+                    <dd className="text-right font-semibold text-text">
+                      {getMappedValue(
+                        DELIVERY_METHODS,
+                        post.deliveryMethod,
+                      )}
+                    </dd>
+                  </div>
+                )}
                 <div className="flex justify-between gap-4 border-b border-border pb-2.5">
                   <dt className="flex items-center gap-2 text-textLight">
                     <CalendarOutlined className="text-primary" />
@@ -848,42 +1203,87 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   disabled={
                     isManager ||
                     isVerifyingPost ||
-                    (isAuthenticated &&
-                    (isBuyPost ||
-                      isOwnPost ||
-                      !isActivePost ||
-                      !hasAvailableQuantity))
+                    (
+                      isAuthenticated &&
+                      (
+                        isOwnPost ||
+                        !isActivePost ||
+                        !hasAvailableQuantity ||
+                        (
+                          isBuyPost &&
+                          !isPersonal
+                        )
+                      )
+                    )
                   }
                   title={
                     isManager
                       ? "Tài khoản quản trị và kiểm duyệt chỉ có quyền xem khu vực người dùng."
                       : !isAuthenticated
                         ? "Đăng nhập để tiếp tục"
-                      : isBuyPost
-                        ? "Luồng gửi bài bán sẽ được thực hiện ở bước riêng"
                         : isOwnPost
-                          ? "Bạn không thể gửi đề nghị cho bài đăng của mình"
+                          ? "Đây là bài đăng của bạn"
                           : !isActivePost ||
                               !hasAvailableQuantity
-                            ? "Bài đăng hiện không nhận thêm đề nghị"
-                            : "Gửi đề nghị giá cho người bán"
+                            ? "Bài đăng hiện không nhận thêm giao dịch"
+                            : isBuyPost &&
+                                !isPersonal
+                              ? "Chỉ tài khoản cá nhân có thể chào bán sản phẩm cho tin thu mua."
+                              : isBuyPost
+                                ? "Chọn tin đăng bán của bạn để gửi chào bán."
+                                : "Gửi đề nghị giá cho người bán"
                   }
                   className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {!isManager && (!isAuthenticated || (!isBuyPost && !isOwnPost && isActivePost && hasAvailableQuantity)) ? <SendOutlined /> : null}
+                  {!isManager &&
+                  (
+                    !isAuthenticated ||
+                    (
+                      !isOwnPost &&
+                      isActivePost &&
+                      hasAvailableQuantity &&
+                      (
+                        !isBuyPost ||
+                        isPersonal
+                      )
+                    )
+                  ) ? (
+                    <SendOutlined />
+                  ) : null}
+
                   {isManager
                     ? "Chỉ xem bài đăng"
                     : !isAuthenticated
                       ? "Đăng nhập để tiếp tục"
-                    : isBuyPost
-                      ? "Gửi bài bán (sắp ra mắt)"
                       : isOwnPost
                         ? "Đây là bài đăng của bạn"
                         : !isActivePost ||
                             !hasAvailableQuantity
-                          ? "Không thể thương lượng"
-                          : "Gửi đề nghị thương lượng"}
+                          ? "Không thể giao dịch"
+                          : isBuyPost &&
+                              !isPersonal
+                            ? "Chỉ tài khoản cá nhân có thể chào bán"
+                            : isBuyPost
+                              ? "Chào bán sản phẩm"
+                              : "Gửi đề nghị thương lượng"}
                 </button>
+              )}
+
+              {proactiveBuyPostId && (
+                <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs leading-5 text-primary">
+                  <p className="font-bold">
+                    Đề nghị này sẽ được gắn với tin thu mua đang chọn.
+                  </p>
+
+                  <Link
+                    to={`/bai-dang-cua-toi/${encodeURIComponent(
+                      proactiveBuyPostId,
+                    )}`}
+                    className="mt-1 inline-block font-bold underline underline-offset-2"
+                  >
+                    Quay lại tin thu mua
+                  </Link>
+                </div>
               )}
 
               <p className="mt-3 flex items-center gap-2 text-xs text-textLight">
@@ -1039,6 +1439,77 @@ const PostDetailPage = ({ ownerMode = false }) => {
             )}
           </section>
 
+          {ownerMode &&
+          isBuyPost &&
+          normalizedRole ===
+            ROLES.BUSINESS && (
+            <>
+              <section className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_34px_rgba(23,40,48,0.06)] sm:p-6">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+                    Xử lý nhu cầu thu mua
+                  </p>
+
+                  <h2 className="mt-1 text-xl font-black text-text">
+                    Theo dõi chào hàng và đề nghị
+                  </h2>
+
+                  <p className="mt-1 text-sm leading-6 text-textLight">
+                    Mở đúng danh sách đã lọc theo tin thu mua này hoặc xem các sản phẩm hệ thống gợi ý.
+                  </p>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                  <Link
+                    to={`/thuong-luong?tab=received&buyPostId=${encodeURIComponent(
+                      post.postId,
+                    )}`}
+                    className="rounded-xl border border-primary/20 bg-primary/5 p-4 transition hover:border-primary hover:bg-primary/10"
+                  >
+                    <p className="font-black text-primary">
+                      Mở chào hàng nhận được
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-textLight">
+                      Xem các sản phẩm Personal đã chủ động chào bán cho nhu cầu này.
+                    </p>
+                  </Link>
+
+                  <Link
+                    to={`/thuong-luong?tab=sent&buyPostId=${encodeURIComponent(
+                      post.postId,
+                    )}`}
+                    className="rounded-xl border border-border bg-background/60 p-4 transition hover:border-primary hover:bg-primary/5"
+                  >
+                    <p className="font-black text-text">
+                      Mở đề nghị đã gửi
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-textLight">
+                      Xem các đề nghị mua doanh nghiệp đã chủ động gửi từ tin thu mua này.
+                    </p>
+                  </Link>
+
+                  <a
+                    href="#buy-post-matches"
+                    className="rounded-xl border border-border bg-background/60 p-4 transition hover:border-primary hover:bg-primary/5"
+                  >
+                    <p className="font-black text-text">
+                      Xem sản phẩm phù hợp
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-textLight">
+                      Đối chiếu các tin đăng bán đang hoạt động với tiêu chí thu mua hiện tại.
+                    </p>
+                  </a>
+                </div>
+              </section>
+
+              <div id="buy-post-matches">
+                <BuyPostMatchesPanel
+                  buyPostId={post.postId}
+                />
+              </div>
+            </>
+          )}
+
           <div className="mt-6">
             <Link
               to={listPath}
@@ -1048,6 +1519,39 @@ const PostDetailPage = ({ ownerMode = false }) => {
               <ArrowLeftOutlined /> Quay lại {ownerMode ? "bài đăng của tôi" : "danh sách"}
             </Link>
           </div>
+
+          {isSellerRequestModalOpen && (
+            <SellerRequestModal
+              buyPost={post}
+              userId={userId}
+              initialSellPostId={
+                sellerRequestInitialSellPostId
+              }
+              onCreateNew={
+                handleCreateNewSellForRequest
+              }
+              submitting={
+                isSellerRequestSubmitting
+              }
+              serverError={
+                sellerRequestError
+              }
+              onClose={() => {
+                if (
+                  !isSellerRequestSubmitting
+                ) {
+                  setIsSellerRequestModalOpen(
+                    false,
+                  );
+
+                  setSellerRequestError("");
+                }
+              }}
+              onSubmit={
+                handleCreateSellerRequest
+              }
+            />
+          )}
 
           {isOfferModalOpen && (
             <OfferFormModal
