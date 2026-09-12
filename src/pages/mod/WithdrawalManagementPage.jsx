@@ -58,8 +58,22 @@ const getWithdrawalStatusMeta = (status) => {
   );
 };
 
+/*
+ * Số tiền phải phân biệt "chưa có dữ liệu" (null/undefined/""/khoảng trắng/
+ * không phải số) với 0 - null/undefined hiển thị "—", 0 hiển thị "0 đ".
+ */
 const formatCurrency = (value) => {
-  const amount = Number(value);
+  if (typeof value !== "number" && typeof value !== "string") {
+    return "—";
+  }
+
+  const raw = typeof value === "string" ? value.trim() : value;
+
+  if (raw === "") {
+    return "—";
+  }
+
+  const amount = Number(raw);
 
   return Number.isFinite(amount)
     ? `${amount.toLocaleString("vi-VN")} đ`
@@ -173,6 +187,8 @@ const WithdrawalManagementPage = () => {
 
   const [isAccountRevealed, setIsAccountRevealed] = useState(false);
 
+  const listRequestRef = useRef(0);
+  const listControllerRef = useRef(null);
   const detailRequestRef = useRef(0);
   const detailControllerRef = useRef(null);
 
@@ -190,48 +206,65 @@ const WithdrawalManagementPage = () => {
     };
   }, [pageNumber, pageSize, keyword, status, dateRange]);
 
-  const loadWithdrawals = useCallback(
-    async (signal) => {
-      setState((current) => ({ ...current, loading: true, error: "" }));
+  /*
+   * Loader danh sách duy nhất cho cả auto-load (filter/page) lẫn "Làm mới":
+   * huỷ request trước, cấp request id mới, và chỉ request id hiện hành
+   * mới được ghi state - response cũ về muộn không đè lên kết quả mới.
+   */
+  const loadWithdrawals = useCallback(async () => {
+    listControllerRef.current?.abort();
 
-      try {
-        const result = await moderatorWithdrawalApi.getWithdrawals({
-          ...listParams,
-          signal,
-        });
+    const controller = new AbortController();
+    listControllerRef.current = controller;
 
-        setState({
-          items: result.items,
-          totalCount: result.totalCount,
-          loading: false,
-          error: "",
-        });
-      } catch (error) {
-        if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {
-          return;
-        }
+    const requestId = listRequestRef.current + 1;
+    listRequestRef.current = requestId;
 
-        setState({
-          items: [],
-          totalCount: 0,
-          loading: false,
-          error: "Không thể tải danh sách yêu cầu rút tiền. Vui lòng thử lại.",
-        });
+    setState((current) => ({ ...current, loading: true, error: "" }));
+
+    try {
+      const result = await moderatorWithdrawalApi.getWithdrawals({
+        ...listParams,
+        signal: controller.signal,
+      });
+
+      if (listRequestRef.current !== requestId) {
+        return;
       }
-    },
-    [listParams],
-  );
+
+      setState({
+        items: result.items,
+        totalCount: result.totalCount,
+        loading: false,
+        error: "",
+      });
+    } catch (error) {
+      if (listRequestRef.current !== requestId) {
+        return;
+      }
+
+      if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {
+        return;
+      }
+
+      setState({
+        items: [],
+        totalCount: 0,
+        loading: false,
+        error: "Không thể tải danh sách yêu cầu rút tiền. Vui lòng thử lại.",
+      });
+    }
+  }, [listParams]);
 
   useEffect(() => {
-    const controller = new AbortController();
-
     const timeoutId = window.setTimeout(() => {
-      void loadWithdrawals(controller.signal);
+      void loadWithdrawals();
     }, 0);
 
     return () => {
       window.clearTimeout(timeoutId);
-      controller.abort();
+      listRequestRef.current += 1;
+      listControllerRef.current?.abort();
     };
   }, [loadWithdrawals]);
 
