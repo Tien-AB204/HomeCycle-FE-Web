@@ -718,6 +718,33 @@ export const postApi = {
     return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
   },
 
+  /*
+   * "/posts/get-all" chỉ dành cho Moderator/Admin (403 với người dùng
+   * thường/khách). Trang chủ công khai phải dùng "/posts/get-all-active"
+   * (AllowAnonymous, chỉ trả bài Active) - đúng endpoint Backend đã ghi
+   * chú "cho trang chủ người dùng".
+   */
+  getAllActive: async ({
+    pageNumber = DEFAULT_PAGE_NUMBER,
+    pageSize = DEFAULT_PAGE_SIZE,
+    signal,
+  } = {}) => {
+    const normalizedPageNumber = normalizePageNumber(pageNumber);
+    const normalizedPageSize = normalizePageSize(pageSize);
+
+    const response = await axiosClient.get("/posts/get-all-active", {
+      params: {
+        PageNumber: normalizedPageNumber,
+        PageSize: normalizedPageSize,
+      },
+      signal,
+    });
+
+    const data = unwrapResponse(response, "Không thể tải danh sách bài đăng.");
+
+    return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
+  },
+
   search: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,

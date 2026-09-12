@@ -261,7 +261,7 @@ const Homepage = () => {
     let isActive = true;
 
     postApi
-      .getAll({
+      .getAllActive({
         pageNumber: 1,
         pageSize: HOME_PAGE_SIZE,
         signal: controller.signal,

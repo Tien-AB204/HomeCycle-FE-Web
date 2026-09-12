@@ -145,32 +145,44 @@ const ProductCard = ({
           : ""
       }`}
     >
-      <div className="relative h-44 overflow-hidden bg-background sm:h-48 lg:h-44 xl:h-48">
-        {image ? (
-          <img
-            src={image}
-            alt={name}
-            loading="lazy"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center bg-background text-textLight">
-            <img src={homeCycleMark} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
-            <span className="mt-2 text-xs font-bold">Chưa có hình ảnh</span>
-          </div>
-        )}
+      {/*
+       * Bài đăng thu mua (Buy) không có hình ảnh sản phẩm thật (chỉ mô tả
+       * nhu cầu) - không hiển thị vùng media/placeholder/chiều cao dự trữ
+       * cho loại này, kể cả khi Backend còn trả dữ liệu media cũ.
+       */}
+      {!isBuyPost && (
+        <div className="relative h-44 overflow-hidden bg-background sm:h-48 lg:h-44 xl:h-48">
+          {image ? (
+            <img
+              src={image}
+              alt={name}
+              loading="lazy"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center bg-background text-textLight">
+              <img src={homeCycleMark} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
+              <span className="mt-2 text-xs font-bold">Chưa có hình ảnh</span>
+            </div>
+          )}
 
-        {isBuyPost && (
-          <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white shadow-sm">
-            Đang tìm mua
+          <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold text-textLight shadow-sm backdrop-blur">
+            {type}
           </span>
-        )}
-        <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold text-textLight shadow-sm backdrop-blur">
-          {type}
-        </span>
-      </div>
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col p-4">
+        {isBuyPost && (
+          <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="rounded-full bg-primary px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white">
+              Đang tìm mua
+            </span>
+            <span className="rounded-full bg-background px-2.5 py-1 text-[9px] font-extrabold text-textLight">
+              {type}
+            </span>
+          </div>
+        )}
         {ownerName && (
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-textLight">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background text-[10px] text-success" aria-hidden="true">✓</span>
