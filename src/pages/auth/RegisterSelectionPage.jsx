@@ -1,17 +1,25 @@
 import { useState } from "react";
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const RegisterSelectionPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   // State lưu trữ lựa chọn: 'personal' hoặc 'business' (Mặc định chọn 'personal' như Figma)
-  const [selectedRole, setSelectedRole] = useState('personal'); 
+  const [selectedRole, setSelectedRole] = useState('personal');
+
+  /*
+   * Nếu đến từ đăng nhập Google (tài khoản mới), giữ nguyên
+   * externalRegisterToken khi chuyển sang bước đăng ký cụ thể.
+   */
+  const googleState = location.state?.google || null;
 
   const handleContinue = () => {
-    if (selectedRole === 'personal') {
-      navigate('/auth/register/personal');
-    } else {
-      navigate('/auth/register/business');
-    }
+    const nextPath =
+      selectedRole === 'personal'
+        ? '/auth/register/personal'
+        : '/auth/register/business';
+
+    navigate(nextPath, googleState ? { state: { google: googleState } } : undefined);
   };
 
   return (

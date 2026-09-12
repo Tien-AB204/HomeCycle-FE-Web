@@ -391,6 +391,55 @@ export const AuthProvider = ({
   );
 
   /**
+   * Đăng nhập bằng Google (tài khoản đã tồn tại).
+   *
+   * GoogleAuthResponseDto hiện tại của Backend chỉ trả accessToken/
+   * refreshToken, không kèm thông tin user như LoginResponseDto thông
+   * thường. userId/username/email/role được lấy trực tiếp từ claim đã
+   * xác nhận có trong access token do JwtService.GenerateAccessToken phát
+   * hành (sub, ClaimTypes.Name/Email/Role dạng URI đầy đủ).
+   */
+  const loginWithGoogleTokens = useCallback(
+    (accessToken, refreshToken) => {
+      const payload = decodeJwtPayload(accessToken);
+
+      if (!payload) {
+        throw new Error(
+          "Không thể đọc thông tin phiên đăng nhập từ Google.",
+        );
+      }
+
+      const userInfo = {
+        userId:
+          payload.sub ||
+          payload[
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+          ] ||
+          "",
+        username:
+          payload[
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
+          ] || "",
+        email:
+          payload[
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+          ] || "",
+        role:
+          payload[
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"
+          ] || "",
+      };
+
+      return saveSession({
+        user: userInfo,
+        accessToken,
+        refreshToken,
+      });
+    },
+    [saveSession],
+  );
+
+  /**
    * Đăng nhập bằng email và mật khẩu.
    */
   const login = useCallback(
@@ -593,6 +642,7 @@ export const AuthProvider = ({
       logout,
       saveSession,
       updateUser,
+      loginWithGoogleTokens,
     }),
     [
       user,
@@ -602,6 +652,7 @@ export const AuthProvider = ({
       logout,
       saveSession,
       updateUser,
+      loginWithGoogleTokens,
     ],
   );
 

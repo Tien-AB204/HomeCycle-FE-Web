@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import authApi from "../../services/apis/authApi";
+import { decodeJwtPayload } from "../../utils/authUtils";
 
 const STEPS = {
   EMAIL: "EMAIL",
@@ -146,14 +147,37 @@ const FileInput = ({
 
 const RegisterPersonalPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [step, setStep] = useState(STEPS.EMAIL);
-  const [email, setEmail] = useState("");
+  /*
+   * Đến từ đăng nhập Google (tài khoản mới): registrationToken đã có
+   * sẵn (externalRegisterToken), bỏ qua bước gửi/xác thực OTP và vào
+   * thẳng bước Thông tin tài khoản với email hiển thị (không cho sửa).
+   */
+  const googleRegistration =
+    location.state?.google?.registrationToken
+      ? location.state.google
+      : null;
+
+  const googleEmail = googleRegistration
+    ? String(
+        decodeJwtPayload(googleRegistration.registrationToken)
+          ?.email || "",
+      )
+    : "";
+
+  const [step, setStep] = useState(
+    googleRegistration ? STEPS.BASIC : STEPS.EMAIL,
+  );
+  const [email, setEmail] = useState(googleEmail);
   const [otp, setOtp] = useState("");
   const [
     registrationToken,
     setRegistrationToken,
-  ] = useState("");
+  ] = useState(
+    googleRegistration?.registrationToken || "",
+  );
+  const isGoogleRegistration = Boolean(googleRegistration);
 
   const [form, setForm] =
     useState(INITIAL_FORM);
@@ -979,8 +1003,17 @@ const RegisterPersonalPage = () => {
           className="space-y-5 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6"
         >
           <div className="rounded-md border border-success/30 bg-success/10 p-3 text-sm text-success">
-            Email <strong>{email}</strong> đã được
-            xác thực.
+            {isGoogleRegistration ? (
+              <>
+                Tiếp tục đăng ký với email Google{" "}
+                <strong>{email || "đã liên kết"}</strong>.
+              </>
+            ) : (
+              <>
+                Email <strong>{email}</strong> đã được
+                xác thực.
+              </>
+            )}
           </div>
 
           <div>

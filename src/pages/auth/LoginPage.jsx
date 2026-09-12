@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Link,
   useLocation,
   useNavigate,
 } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import authApi from "../../services/apis/authApi";
 import { getHomePathByRole } from "../../utils/authUtils";
+
+const GOOGLE_CLIENT_ID = String(
+  import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
+).trim();
+
+const GOOGLE_SCRIPT_ID = "google-identity-services-script";
+const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
 const getSafeReturnPath = (from) => {
   let returnPath = "";
@@ -30,7 +38,7 @@ const getSafeReturnPath = (from) => {
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, loginWithGoogleTokens } = useAuth();
   const returnPath = getSafeReturnPath(location.state?.from);
 
   const [email, setEmail] =
@@ -44,6 +52,144 @@ const LoginPage = () => {
   const [loading, setLoading] =
     useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const googleButtonRef = useRef(null);
+  const googleCredentialHandlerRef = useRef(null);
+
+  const handleGoogleCredentialResponse = async (credentialResponse) => {
+    const idToken = credentialResponse?.credential;
+
+    if (!idToken) {
+      setErrorMessage(
+        "Không nhận được thông tin xác thực từ Google. Vui lòng thử lại.",
+      );
+      return;
+    }
+
+    setGoogleLoading(true);
+    setErrorMessage("");
+
+    try {
+      const response = await authApi.googleLogin(idToken);
+
+      /*
+       * Backend hiện trả Ok({ Message: Result<GoogleAuthResponseDto> })
+       * bất kể thành công/thất bại (không set mã lỗi HTTP tương ứng) -
+       * phải tự kiểm tra isSuccess bên trong "message" thay vì dựa vào
+       * axios reject.
+       */
+      const wrapped = response?.message ?? response;
+
+      if (wrapped?.isSuccess === false) {
+        setErrorMessage(
+          "Đăng nhập bằng Google thất bại. Vui lòng thử lại.",
+        );
+        return;
+      }
+
+      const data = wrapped?.data ?? wrapped;
+
+      if (data?.isNewUser) {
+        if (!data?.externalRegisterToken) {
+          setErrorMessage(
+            "Không thể tiếp tục đăng ký từ Google. Vui lòng thử lại.",
+          );
+          return;
+        }
+
+        navigate("/auth/register", {
+          state: {
+            google: {
+              registrationToken: data.externalRegisterToken,
+            },
+          },
+        });
+        return;
+      }
+
+      if (!data?.accessToken || !data?.refreshToken) {
+        setErrorMessage(
+          "Máy chủ không trả về thông tin đăng nhập hợp lệ.",
+        );
+        return;
+      }
+
+      const loggedInUser = loginWithGoogleTokens(
+        data.accessToken,
+        data.refreshToken,
+      );
+
+      navigate(
+        returnPath || getHomePathByRole(loggedInUser?.role),
+        { replace: true },
+      );
+    } catch (error) {
+      console.error("Lỗi đăng nhập Google:", error);
+      setErrorMessage(
+        "Đăng nhập bằng Google thất bại. Vui lòng thử lại.",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    googleCredentialHandlerRef.current = handleGoogleCredentialResponse;
+  });
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const initialize = () => {
+      if (cancelled || !window.google?.accounts?.id) {
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (credentialResponse) => {
+          void googleCredentialHandlerRef.current?.(credentialResponse);
+        },
+      });
+
+      if (googleButtonRef.current) {
+        window.google.accounts.id.renderButton(
+          googleButtonRef.current,
+          {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+            shape: "rectangular",
+            text: "continue_with",
+            locale: "vi",
+            width: 320,
+          },
+        );
+      }
+    };
+
+    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID);
+
+    if (existingScript) {
+      initialize();
+    } else {
+      const script = document.createElement("script");
+      script.id = GOOGLE_SCRIPT_ID;
+      script.src = GOOGLE_SCRIPT_SRC;
+      script.async = true;
+      script.defer = true;
+      script.onload = initialize;
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -227,17 +373,31 @@ const LoginPage = () => {
           </span>
         </div>
 
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-white py-3 text-sm font-bold text-primary transition hover:bg-background"
-        >
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            alt=""
-            className="h-4 w-4"
-          />
-          Google
-        </button>
+        {GOOGLE_CLIENT_ID ? (
+          <div className="relative flex w-full justify-center">
+            <div ref={googleButtonRef} />
+
+            {googleLoading && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70 text-sm font-bold text-primary">
+                Đang xử lý...
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled
+            title="Chưa cấu hình đăng nhập Google (thiếu VITE_GOOGLE_CLIENT_ID)."
+            className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-white py-3 text-sm font-bold text-textLight opacity-60"
+          >
+            <img
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt=""
+              className="h-4 w-4"
+            />
+            Google (chưa cấu hình)
+          </button>
+        )}
       </form>
 
       <div className="mt-7 border-t border-border pt-5 text-center text-sm text-textLight">
