@@ -290,6 +290,20 @@ const AgreementPage = () => {
   const buyerAwaitingPayment =
     String(preview?.userRole || "").toLowerCase() === "buyer" &&
     agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
+
+  /*
+   * Với thỏa thuận loại "Deposit" (vd kiểm định), số tiền thực thu chỉ là
+   * một phần giá trị hợp đồng - tỉ lệ đặt cọc do Backend cấu hình
+   * (payment policy DepositRatePercent, chỉ Admin đọc được) và số tiền
+   * chính xác chỉ được Backend xác định tại thời điểm gọi thanh toán.
+   * Web không có trường nào để biết trước con số này, nên KHÔNG cho phép
+   * thanh toán bằng ví cho loại thỏa thuận này (không có bước xác nhận
+   * trung gian như PayOS) - totalAmount hiển thị chỉ là giá trị hợp đồng,
+   * không phải số tiền sẽ bị trừ.
+   */
+  const isDepositPayment =
+    String(agreement?.paymentType || "").toLowerCase() === "deposit";
+  const walletCheckoutEligible = buyerAwaitingPayment && !isDepositPayment;
   const paymentContextKey = `${agreement?.agreementId || ""}:${buyerAwaitingPayment}`;
 
   // Đổi thỏa thuận hoặc rời khỏi bước chờ thanh toán -> trả xác nhận và số
@@ -298,11 +312,11 @@ const AgreementPage = () => {
   if (paymentContextKey !== walletContextKey) {
     setWalletContextKey(paymentContextKey);
     setPaymentAck(false);
-    setWallet({ loading: buyerAwaitingPayment, balance: null, error: "" });
+    setWallet({ loading: walletCheckoutEligible, balance: null, error: "" });
   }
 
   useEffect(() => {
-    if (!buyerAwaitingPayment) {
+    if (!walletCheckoutEligible) {
       return undefined;
     }
 
@@ -315,7 +329,7 @@ const AgreementPage = () => {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [paymentContextKey, buyerAwaitingPayment, loadWalletBalance]);
+  }, [paymentContextKey, walletCheckoutEligible, loadWalletBalance]);
 
   const checkPayment = useCallback(async ({ silent = false } = {}) => {
     if (!agreement?.agreementId) return "";
@@ -412,28 +426,20 @@ const AgreementPage = () => {
   const canRequestEdit = agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
   const canPay = buyerAwaitingPayment;
 
-  /*
-   * Với thỏa thuận loại "Deposit" (vd kiểm định), số tiền thực thu chỉ là
-   * một phần giá trị hợp đồng (tỉ lệ đặt cọc do Backend cấu hình, Web
-   * không có quyền truy cập số này) - totalAmount lúc đó KHÔNG phải số
-   * tiền sẽ bị trừ. Chỉ khi loại thanh toán là toàn phần, totalAmount mới
-   * chắc chắn bằng đúng số tiền sẽ thanh toán, và mới đủ căn cứ để khoá
-   * nút ví khi số dư không đủ.
-   */
-  const isDepositPayment =
-    String(agreement?.paymentType || "").toLowerCase() === "deposit";
   const totalAmount = Number(agreement?.totalAmount) || 0;
   const hasSufficientBalance =
     wallet.balance !== null && wallet.balance >= totalAmount;
-  const walletUnavailableReason = wallet.loading
-    ? "Đang kiểm tra số dư ví..."
-    : wallet.error
-      ? wallet.error
-      : wallet.balance === null
-        ? "Chưa xác định được số dư ví."
-        : !isDepositPayment && !hasSufficientBalance
-          ? "Số dư ví không đủ để thanh toán toàn bộ giá trị thỏa thuận."
-          : "";
+  const walletUnavailableReason = isDepositPayment
+    ? "Thanh toán bằng ví chưa khả dụng cho hình thức đặt cọc vì số tiền đặt cọc chính xác được Backend xác định tại thời điểm thanh toán. Vui lòng dùng PayOS."
+    : wallet.loading
+      ? "Đang kiểm tra số dư ví..."
+      : wallet.error
+        ? wallet.error
+        : wallet.balance === null
+          ? "Chưa xác định được số dư ví."
+          : !hasSufficientBalance
+            ? "Số dư ví không đủ để thanh toán toàn bộ giá trị thỏa thuận."
+            : "";
   const walletDisabled = Boolean(walletUnavailableReason);
 
   if (loading) {
@@ -498,8 +504,10 @@ const AgreementPage = () => {
             </p>
 
             <div className="mt-4 rounded-xl border border-border bg-white p-4">
-              <p className="text-xs font-black uppercase tracking-wide text-textLight">Số dư ví khả dụng</p>
-              {wallet.loading ? (
+              <p className="text-xs font-black uppercase tracking-wide text-textLight">Thanh toán bằng ví</p>
+              {isDepositPayment ? (
+                <p className="mt-1 text-sm leading-6 text-textLight">{walletUnavailableReason}</p>
+              ) : wallet.loading ? (
                 <p className="mt-1 text-sm text-textLight">Đang kiểm tra số dư ví...</p>
               ) : wallet.error ? (
                 <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -509,13 +517,11 @@ const AgreementPage = () => {
               ) : (
                 <>
                   <p className="mt-1 text-lg font-black text-text">{formatCurrency(wallet.balance)}</p>
-                  {!isDepositPayment && (
-                    <p className={`mt-1 text-xs font-bold ${hasSufficientBalance ? "text-success" : "text-error"}`}>
-                      {hasSufficientBalance
-                        ? "Đủ số dư để thanh toán bằng ví."
-                        : "Số dư ví hiện thấp hơn giá trị thỏa thuận. Vui lòng nạp thêm ví hoặc chọn thanh toán qua PayOS."}
-                    </p>
-                  )}
+                  <p className={`mt-1 text-xs font-bold ${hasSufficientBalance ? "text-success" : "text-error"}`}>
+                    {hasSufficientBalance
+                      ? "Đủ số dư để thanh toán bằng ví."
+                      : "Số dư ví hiện thấp hơn giá trị thỏa thuận. Vui lòng nạp thêm ví hoặc chọn thanh toán qua PayOS."}
+                  </p>
                 </>
               )}
             </div>
@@ -527,7 +533,9 @@ const AgreementPage = () => {
                 onChange={(event) => setPaymentAck(event.target.checked)}
                 className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
               />
-              Tôi đã kiểm tra đúng thông tin thỏa thuận và số tiền thanh toán ở trên, và đồng ý tiếp tục thanh toán.
+              {isDepositPayment
+                ? "Tôi đã kiểm tra đúng thông tin thỏa thuận ở trên và đồng ý tiếp tục thanh toán đặt cọc qua PayOS."
+                : "Tôi đã kiểm tra đúng thông tin thỏa thuận và số tiền thanh toán ở trên, và đồng ý tiếp tục thanh toán."}
             </label>
 
             <div className="mt-4 flex flex-wrap gap-3">
