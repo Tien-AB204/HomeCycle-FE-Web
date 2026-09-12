@@ -7,10 +7,9 @@ import {
 } from "../../constants/appointments";
 import { ROLES } from "../../constants/roles";
 import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
-import CollectionSchedulePanel from "../../features/appointments/CollectionSchedulePanel";
+import InspectionFormPanel from "../../features/appointments/InspectionFormPanel";
 import { useAuth } from "../../hooks/useAuth";
 import appointmentApi from "../../services/apis/appointmentApi";
-import inspectionFormApi from "../../services/apis/inspectionFormApi";
 
 const PAGE_SIZE = 10;
 const API_PAGE_SIZE = 100;
@@ -135,16 +134,6 @@ const AppointmentDetailModal = ({
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
 
-  const [inspectionState, setInspectionState] =
-    useState({
-      loading: false,
-      form: null,
-      error: "",
-    });
-
-  const [scheduleOpen, setScheduleOpen] =
-    useState(false);
-
   const [rescheduleDraft, setRescheduleDraft] =
     useState("");
   const [showRescheduleForm, setShowRescheduleForm] =
@@ -166,55 +155,11 @@ const AppointmentDetailModal = ({
       error: "",
     }));
 
-    setInspectionState({
-      loading: true,
-      form: null,
-      error: "",
-    });
-
     try {
       const detail =
         await appointmentApi.getById(
           appointmentId,
         );
-
-      if (detail?.inspectionAppointment) {
-        try {
-          const inspectionForm =
-            await inspectionFormApi.getByAppointment(
-              appointmentId,
-            );
-
-          setInspectionState({
-            loading: false,
-            form: inspectionForm,
-            error: "",
-          });
-
-        } catch (inspectionError) {
-          if (
-            inspectionError?.name !==
-              "CanceledError" &&
-            inspectionError?.code !==
-              "ERR_CANCELED"
-          ) {
-            setInspectionState({
-              loading: false,
-              form: null,
-              error: getErrorMessage(
-                inspectionError,
-                "Biên bản kiểm định chưa sẵn sàng.",
-              ),
-            });
-          }
-        }
-      } else {
-        setInspectionState({
-          loading: false,
-          form: null,
-          error: "",
-        });
-      }
 
       setState({
         loading: false,
@@ -222,12 +167,6 @@ const AppointmentDetailModal = ({
         error: "",
       });
     } catch (error) {
-      setInspectionState({
-        loading: false,
-        form: null,
-        error: "",
-      });
-
       setState({
         loading: false,
         detail: null,
@@ -260,61 +199,6 @@ const AppointmentDetailModal = ({
       setState((current) => ({
         ...current,
         error: getErrorMessage(error, "Không thể check-in lịch hẹn."),
-      }));
-    } finally {
-      setBusy("");
-    }
-  };
-
-  const handleCollectNow = async () => {
-    const inspectionForm =
-      inspectionState.form;
-
-    if (
-      !inspectionForm?.actions?.canCollectNow
-    ) {
-      return;
-    }
-
-    const accepted = window.confirm(
-      "Thu gom ngay sẽ tiếp tục giao dịch mà không tạo một lịch thu gom mới. Bạn có chắc muốn tiếp tục?",
-    );
-
-    if (!accepted) {
-      return;
-    }
-
-    setBusy("collect-now");
-    setNotice("");
-
-    try {
-      await inspectionFormApi.collectNow(
-        inspectionForm.inspectionFormId,
-        inspectionForm.revision,
-      );
-
-      setNotice(
-        "Đã xác nhận thu gom ngay. Dữ liệu giao dịch đang được tải lại.",
-      );
-
-      await loadDetail();
-      onChanged();
-    } catch (error) {
-      const message = getErrorMessage(
-        error,
-        "Không thể thực hiện thu gom ngay.",
-      );
-
-      /*
-       * Revision có thể đã thay đổi ở thiết bị khác.
-       * Luôn tải lại dữ liệu mới nhất, không tự retry
-       * bằng revision cũ.
-       */
-      await loadDetail();
-
-      setState((current) => ({
-        ...current,
-        error: message,
       }));
     } finally {
       setBusy("");
@@ -655,117 +539,16 @@ const AppointmentDetailModal = ({
               )}
 
               {isInspection && (
-                <section className="mt-4 rounded-xl border border-border bg-background p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-                        Biên bản kiểm định
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-textLight">
-                        Quyền thao tác được lấy trực tiếp từ máy chủ.
-                      </p>
-                    </div>
-
-                    {inspectionState.form && (
-                      <span className="rounded-full border border-border bg-white px-3 py-1 text-xs font-black text-text">
-                        Phiên bản {inspectionState.form.revision}
-                      </span>
-                    )}
-                  </div>
-
-                  {inspectionState.loading && (
-                    <div
-                      className="mt-4 flex items-center gap-2 text-sm font-semibold text-textLight"
-                      role="status"
-                    >
-                      <span
-                        className="material-symbols-outlined animate-spin text-lg"
-                        aria-hidden="true"
-                      >
-                        progress_activity
-                      </span>
-                      Đang tải biên bản kiểm định...
-                    </div>
+                <InspectionFormPanel
+                  appointmentId={appointmentId}
+                  canCreateInspectionForm={Boolean(
+                    actions.canCreateInspectionForm,
                   )}
-
-                  {!inspectionState.loading &&
-                    inspectionState.error && (
-                      <div className="mt-4 rounded-lg border border-warning/20 bg-warning/10 px-3 py-2.5 text-xs font-semibold leading-5 text-warning">
-                        {inspectionState.error}
-                      </div>
-                    )}
-
-                  {!inspectionState.loading &&
-                    inspectionState.form && (
-                      <div className="mt-4 space-y-3">
-                        <p className="text-xs leading-5 text-textLight">
-                          {inspectionState.form.actions?.canCollectNow
-                            ? "Máy chủ cho phép thu gom ngay từ biên bản hiện tại."
-                            : inspectionState.form.actions?.canScheduleCollection
-                              ? "Máy chủ đã cho phép tạo lịch thu gom từ biên bản hiện tại."
-                              : "Hiện chưa có thao tác thu gom khả dụng cho biên bản này."}
-                        </p>
-
-                        <div className="flex flex-wrap gap-2">
-                          {inspectionState.form.actions?.canCollectNow && (
-                            <button
-                              type="button"
-                              onClick={handleCollectNow}
-                              disabled={Boolean(busy)}
-                              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {busy === "collect-now"
-                                ? "Đang xử lý..."
-                                : "Thu gom ngay"}
-                            </button>
-                          )}
-
-                          {inspectionState.form.actions?.canScheduleCollection && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setScheduleOpen(
-                                  (current) => !current,
-                                )
-                              }
-                              disabled={Boolean(busy)}
-                              className="rounded-lg border border-primary bg-white px-4 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              {scheduleOpen
-                                ? "Ẩn tạo lịch"
-                                : "Tạo lịch thu gom"}
-                            </button>
-                          )}
-                        </div>
-
-                        {scheduleOpen &&
-                          inspectionState.form.actions
-                            ?.canScheduleCollection && (
-                            <CollectionSchedulePanel
-                              inspectionForm={inspectionState.form}
-                              onClose={() =>
-                                setScheduleOpen(false)
-                              }
-                              onRefreshRequired={async () => {
-                                setScheduleOpen(false);
-                                await loadDetail();
-                              }}
-                              onScheduled={async () => {
-                                setScheduleOpen(false);
-
-                                setNotice(
-                                  "Đã tạo lịch thu gom thành công.",
-                                );
-
-                                await loadDetail();
-                                onChanged();
-                              }}
-                            />
-                          )}
-                      </div>
-                    )}
-                </section>
+                  onAppointmentChanged={() => {
+                    void loadDetail();
+                    onChanged();
+                  }}
+                />
               )}
 
               {!reschedule && (actions.canRequestReschedule || actions.canCancel) && (
