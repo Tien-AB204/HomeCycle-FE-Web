@@ -1,11 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { DELIVERY_METHOD } from "../../constants/agreements";
-import { ORDER_STATUS } from "../../constants/orders";
-import { useAuth } from "../../hooks/useAuth";
-import agreementApi from "../../services/apis/agreementApi";
 import orderApi from "../../services/apis/orderApi";
-import { getUserId } from "../../utils/authUtils";
 import OrderDisputeModal from "../disputes/OrderDisputeModal";
 
 const getErrorMessage = (error) =>
@@ -15,98 +10,103 @@ const getErrorMessage = (error) =>
   error?.message ||
   "Không thể thực hiện thao tác.";
 
-const sameIdentifier = (left, right) => {
-  const leftId = String(left || "")
-    .trim()
-    .toLowerCase();
-
-  const rightId = String(right || "")
-    .trim()
-    .toLowerCase();
-
-  return Boolean(leftId && rightId && leftId === rightId);
-};
-
 const OrderTransactionActions = ({ order, detail, onRefresh }) => {
-  const { user } = useAuth();
+  const [busy, setBusy] =
+    useState("");
 
-  const [agreement, setAgreement] = useState(null);
+  const [error, setError] =
+    useState("");
 
-  const [loadingAgreement, setLoadingAgreement] = useState(true);
+  const [notice, setNotice] =
+    useState("");
 
-  const [busy, setBusy] = useState("");
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [disputeOpen, setDisputeOpen] = useState(false);
+  const [
+    disputeOpen,
+    setDisputeOpen,
+  ] = useState(false);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const orderActions =
+    detail?.actions ||
+    order?.actions ||
+    {};
 
-    const loadAgreement = async () => {
-      if (!order?.agreementId) {
-        setAgreement(null);
-        setLoadingAgreement(false);
-        return;
-      }
+  const normalizeConfirmAction = (
+    value,
+  ) =>
+    String(value ?? "")
+      .replace(/[\s_-]/g, "")
+      .toLowerCase();
 
-      setLoadingAgreement(true);
+  const confirmAction =
+    normalizeConfirmAction(
+      orderActions.confirmAction,
+    );
 
-      try {
-        const result = await agreementApi.getById(order.agreementId, {
-          signal: controller.signal,
-        });
+  const showSellerReady =
+    orderActions.canConfirmSellerReady ===
+    true;
 
-        setAgreement(result);
-      } catch (requestError) {
-        if (
-          requestError?.name !== "CanceledError" &&
-          requestError?.code !== "ERR_CANCELED"
-        ) {
-          setAgreement(null);
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoadingAgreement(false);
-        }
-      }
-    };
-
-    void loadAgreement();
-
-    return () => controller.abort();
-  }, [order?.agreementId]);
-
-  const currentUserId = getUserId(user);
-
-  const isBuyer = sameIdentifier(currentUserId, agreement?.buyerId);
-
-  const isSeller = sameIdentifier(currentUserId, agreement?.sellerId);
-
-  const deliveryMethod = agreement?.agreementDetails?.deliveryMethod;
-
-  const isDirectDelivery =
-    deliveryMethod === DELIVERY_METHOD.BUYER_PICK_UP ||
-    deliveryMethod === DELIVERY_METHOD.SELLER_DELIVERS;
-
-  const isGhnDelivery = deliveryMethod === DELIVERY_METHOD.GHN;
-
-  const orderStatus = Number(order?.orderStatus);
-
-  const isProcessing = orderStatus === ORDER_STATUS.PROCESSING;
-
-  const canCreateDispute =
-    (orderStatus === ORDER_STATUS.PROCESSING ||
-      orderStatus === ORDER_STATUS.COMPLETED) &&
-    !detail?.dispute?.hasActiveDispute;
-
-  const latestDisputeId = detail?.dispute?.latestDisputeId;
-
-  const sellerAlreadyConfirmed = Boolean(order?.sellerHandoverConfirmedAt);
-
-  const showSellerConfirmation = isProcessing && isSeller && isDirectDelivery;
+  const showSellerConfirmation =
+    orderActions.canConfirm === true &&
+    (
+      confirmAction === "1" ||
+      confirmAction ===
+        "confirmhandover"
+    );
 
   const showBuyerConfirmation =
-    isProcessing && isBuyer && (isDirectDelivery || isGhnDelivery);
+    orderActions.canConfirm === true &&
+    (
+      confirmAction === "2" ||
+      confirmAction ===
+        "confirmreceived"
+    );
+
+  const canCreateDispute =
+    orderActions.canDispute === true &&
+    !detail?.dispute?.hasActiveDispute;
+
+  const canCancelOrder =
+    orderActions.canCancel === true;
+
+  const canConfirmReturn =
+    orderActions.canConfirmReturn ===
+    true;
+
+  const canConfirmReturnReceived =
+    orderActions
+      .canConfirmReturnReceived ===
+    true;
+
+  const latestDisputeId =
+    detail?.dispute?.latestDisputeId;
+
+  const shipment =
+    detail?.shipment ||
+    order?.shipment ||
+    {};
+
+  const shipmentId =
+    String(
+      shipment?.shipmentId || "",
+    ).trim();
+
+  const normalizedDeliveryMethod =
+    String(
+      order?.deliveryMethod ?? "",
+    )
+      .replace(/[\s_-]/g, "")
+      .toLowerCase();
+
+  const isGhnDelivery =
+    normalizedDeliveryMethod === "1" ||
+    normalizedDeliveryMethod ===
+      "ghndelivery";
+
+  const sellerAlreadyConfirmed =
+    Boolean(
+      order?.sellerHandoverConfirmedAt,
+    );
 
   const productName =
     order?.productName || detail?.postDescription || "Sản phẩm trong đơn hàng";
@@ -158,6 +158,67 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
         "Đã xác nhận nhận sản phẩm thành công. Trạng thái đơn hàng đã được cập nhật.",
     });
 
+  const confirmSellerReady = () => {
+    if (!shipmentId) {
+      setError(
+        "Máy chủ cho phép xác nhận chuẩn bị hàng nhưng chưa trả về mã vận chuyển.",
+      );
+
+      return;
+    }
+
+    runAction({
+      key: "seller-ready",
+      confirmation:
+        "Bạn xác nhận sản phẩm đã được chuẩn bị xong và sẵn sàng để giao nhận?",
+      action: () =>
+        orderApi.confirmSellerReady(
+          shipmentId,
+        ),
+      successMessage:
+        "Đã xác nhận hàng sẵn sàng để giao nhận.",
+    });
+  };
+
+  const cancelAfterRejectedInspection = () =>
+    runAction({
+      key: "cancel-order",
+      confirmation:
+        "Hủy giao dịch này? Chỉ thực hiện khi kết quả kiểm định đã bị từ chối và máy chủ cho phép hủy.",
+      action: () =>
+        orderApi.cancelAfterRejectedInspection(
+          order.orderId,
+        ),
+      successMessage:
+        "Đã hủy giao dịch theo kết quả kiểm định.",
+    });
+
+  const confirmReturn = () =>
+    runAction({
+      key: "confirm-return",
+      confirmation:
+        "Bạn xác nhận đã trả lại sản phẩm cho người bán? Hệ thống sẽ bắt đầu thời hạn để người bán xác nhận đã nhận lại hàng.",
+      action: () =>
+        orderApi.confirmReturn(
+          order.orderId,
+        ),
+      successMessage:
+        "Đã xác nhận trả lại sản phẩm.",
+    });
+
+  const confirmReturnReceived = () =>
+    runAction({
+      key: "return-received",
+      confirmation:
+        "Bạn xác nhận đã nhận lại sản phẩm? Sau khi xác nhận, hệ thống sẽ tiếp tục xử lý hoàn tiền theo trạng thái giao dịch.",
+      action: () =>
+        orderApi.confirmReturnReceived(
+          order.orderId,
+        ),
+      successMessage:
+        "Đã xác nhận nhận lại sản phẩm.",
+    });
+
   const handleDisputeCreated = async (result) => {
     setDisputeOpen(false);
     setError("");
@@ -172,7 +233,14 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
   };
 
   const hasAnyConfirmationAction =
-    showSellerConfirmation || showBuyerConfirmation;
+    showSellerReady ||
+    showSellerConfirmation ||
+    showBuyerConfirmation;
+
+  const hasResolutionAction =
+    canCancelOrder ||
+    canConfirmReturn ||
+    canConfirmReturnReceived;
 
   return (
     <>
@@ -205,23 +273,42 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
           </div>
         )}
 
-        {loadingAgreement && (
-          <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-textLight">
-            <span
-              className="material-symbols-outlined animate-spin text-lg"
-              aria-hidden="true"
-            >
-              progress_activity
-            </span>
-            Đang kiểm tra vai trò trong giao dịch...
-          </div>
-        )}
-
-        {!loadingAgreement && hasAnyConfirmationAction && (
+        {hasAnyConfirmationAction && (
           <div className="mt-4 rounded-xl bg-background p-4">
             <h3 className="text-sm font-black text-text">
               Xác nhận giao nhận
             </h3>
+
+            {showSellerReady && (
+              <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-bold text-text">
+                    Chuẩn bị giao hàng
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-textLight">
+                    Xác nhận khi sản phẩm đã được chuẩn bị xong và sẵn sàng
+                    để giao hoặc bàn giao.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={
+                    confirmSellerReady
+                  }
+                  disabled={
+                    Boolean(busy) ||
+                    !shipmentId
+                  }
+                  className="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "seller-ready"
+                    ? "Đang xác nhận..."
+                    : "Hàng đã sẵn sàng"}
+                </button>
+              </div>
+            )}
 
             {showSellerConfirmation && (
               <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -283,6 +370,70 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {hasResolutionAction && (
+          <div className="mt-4 rounded-xl border border-border bg-background p-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">
+                Xử lý giao dịch
+              </p>
+
+              <h3 className="mt-1 text-sm font-black text-text">
+                Hủy hoặc hoàn trả sản phẩm
+              </h3>
+
+              <p className="mt-1 text-xs leading-5 text-textLight">
+                Các thao tác bên dưới chỉ xuất hiện khi máy chủ xác nhận tài
+                khoản hiện tại đủ điều kiện thực hiện.
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {canCancelOrder && (
+                <button
+                  type="button"
+                  onClick={
+                    cancelAfterRejectedInspection
+                  }
+                  disabled={Boolean(busy)}
+                  className="rounded-lg border border-error/30 bg-white px-4 py-2.5 text-sm font-black text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "cancel-order"
+                    ? "Đang hủy..."
+                    : "Hủy giao dịch"}
+                </button>
+              )}
+
+              {canConfirmReturn && (
+                <button
+                  type="button"
+                  onClick={confirmReturn}
+                  disabled={Boolean(busy)}
+                  className="rounded-lg border border-warning/40 bg-white px-4 py-2.5 text-sm font-black text-warning transition hover:bg-warning/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "confirm-return"
+                    ? "Đang xác nhận..."
+                    : "Xác nhận đã trả hàng"}
+                </button>
+              )}
+
+              {canConfirmReturnReceived && (
+                <button
+                  type="button"
+                  onClick={
+                    confirmReturnReceived
+                  }
+                  disabled={Boolean(busy)}
+                  className="rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === "return-received"
+                    ? "Đang xác nhận..."
+                    : "Xác nhận đã nhận lại hàng"}
+                </button>
+              )}
+            </div>
           </div>
         )}
 
