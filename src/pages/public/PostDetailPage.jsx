@@ -26,6 +26,7 @@ import OfferFormModal from "../../features/offers/OfferFormModal";
 import SellerRequestModal from "../../features/offers/SellerRequestModal";
 import BuyPostMatchesPanel from "../../features/posts/BuyPostMatchesPanel";
 import { useAuth } from "../../hooks/useAuth";
+import cartApi from "../../services/apis/cartApi";
 import offerApi from "../../services/apis/offerApi";
 import postApi from "../../services/apis/postApi";
 import { getUserId, normalizeRole } from "../../utils/authUtils";
@@ -333,6 +334,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
     useState(false);
   const [isOfferSubmitting, setIsOfferSubmitting] =
     useState(false);
+  const [isAddingToCart, setIsAddingToCart] =
+    useState(false);
+  const [cartFeedback, setCartFeedback] =
+    useState(null);
   const [offerError, setOfferError] =
     useState("");
 
@@ -675,6 +680,32 @@ const PostDetailPage = ({ ownerMode = false }) => {
       setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
     } finally {
       setIsVerifyingPost(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (isAddingToCart) {
+      return;
+    }
+
+    setIsAddingToCart(true);
+    setCartFeedback(null);
+
+    try {
+      await cartApi.addToCart(post.postId);
+
+      setCartFeedback({
+        type: "success",
+        message: "Đã thêm vào giỏ hàng.",
+      });
+    } catch (error) {
+      setCartFeedback({
+        type: "error",
+        message:
+          error?.message || "Không thể thêm vào giỏ hàng. Vui lòng thử lại.",
+      });
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -1267,6 +1298,35 @@ const PostDetailPage = ({ ownerMode = false }) => {
                               ? "Chào bán sản phẩm"
                               : "Gửi đề nghị thương lượng"}
                 </button>
+              )}
+
+              {!ownerMode &&
+                !isManager &&
+                !isBuyPost &&
+                isAuthenticated &&
+                !isOwnPost &&
+                isActivePost &&
+                hasAvailableQuantity && (
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    disabled={isAddingToCart}
+                    className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-primary bg-white px-4 py-3 text-sm font-bold text-primary transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isAddingToCart ? "Đang thêm..." : "Thêm vào giỏ hàng"}
+                  </button>
+                )}
+
+              {cartFeedback && (
+                <p
+                  className={`mt-2 text-xs font-semibold ${
+                    cartFeedback.type === "success"
+                      ? "text-success"
+                      : "text-error"
+                  }`}
+                >
+                  {cartFeedback.message}
+                </p>
               )}
 
               {proactiveBuyPostId && (

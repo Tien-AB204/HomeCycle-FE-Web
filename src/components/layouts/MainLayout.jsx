@@ -200,6 +200,36 @@ const MainLayout = () => {
                 )}
                 {canUseClientAccount && (
                   <Link
+                    to="/gio-hang"
+                    aria-label="Giỏ hàng"
+                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:bg-background"
+                  >
+                    <span
+                      className="material-symbols-outlined text-[22px]"
+                      aria-hidden="true"
+                    >
+                      shopping_cart
+                    </span>
+                  </Link>
+                )}
+
+                {canUseClientAccount && (
+                  <Link
+                    to="/hop-thu"
+                    aria-label="Hộp thư"
+                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:bg-background"
+                  >
+                    <span
+                      className="material-symbols-outlined text-[22px]"
+                      aria-hidden="true"
+                    >
+                      forum
+                    </span>
+                  </Link>
+                )}
+
+                {canUseClientAccount && (
+                  <Link
                     to="/thong-bao"
                     aria-label={
                       unreadCount > 0
@@ -339,6 +369,40 @@ const MainLayout = () => {
                 </>
               ) : (
                 <>
+                  {canUseClientAccount && (
+                    <Link
+                      to="/gio-hang"
+                      onClick={closeMenu}
+                      className="flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-bold text-primary"
+                    >
+                      <span
+                        className="material-symbols-outlined text-[19px]"
+                        aria-hidden="true"
+                      >
+                        shopping_cart
+                      </span>
+
+                      <span>Giỏ hàng</span>
+                    </Link>
+                  )}
+
+                  {canUseClientAccount && (
+                    <Link
+                      to="/hop-thu"
+                      onClick={closeMenu}
+                      className="flex items-center gap-2 rounded-full border border-border bg-white px-4 py-2 text-sm font-bold text-primary"
+                    >
+                      <span
+                        className="material-symbols-outlined text-[19px]"
+                        aria-hidden="true"
+                      >
+                        forum
+                      </span>
+
+                      <span>Hộp thư</span>
+                    </Link>
+                  )}
+
                   {canUseClientAccount && (
                     <Link
                       to="/thong-bao"
