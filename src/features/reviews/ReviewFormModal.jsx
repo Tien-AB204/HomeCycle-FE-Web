@@ -6,7 +6,6 @@ const MAX_IMAGES = 3;
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.message ||
   "Không thể lưu đánh giá. Vui lòng thử lại.";
 
 const ReviewFormModal = ({ mode = "create", review, onClose, onSubmit }) => {

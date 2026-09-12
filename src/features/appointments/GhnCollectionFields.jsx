@@ -66,7 +66,6 @@ const ContactEditor = ({
             "ERR_CANCELED"
         ) {
           setLoadError(
-            error?.message ||
               "Không thể tải quận/huyện GHN.",
           );
         }
@@ -108,7 +107,6 @@ const ContactEditor = ({
             "ERR_CANCELED"
         ) {
           setLoadError(
-            error?.message ||
               "Không thể tải phường/xã GHN.",
           );
         }

@@ -9,7 +9,6 @@ const PAGE_SIZE = 10;
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.message ||
   "Không thể tải đánh giá của người dùng.";
 
 const ReceivedReviewsPage = () => {

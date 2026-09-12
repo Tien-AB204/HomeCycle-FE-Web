@@ -26,6 +26,7 @@ import {
   WarningOutlined,
 } from "@ant-design/icons";
 import axiosClient from "../../services/apis/axiosClient";
+import Avatar from "../../components/shared/Avatar";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -396,38 +397,6 @@ const getActionFlag = (
   return Boolean(
     actions?.[name] ??
       actions?.[pascalName],
-  );
-};
-
-/*
- * avatarUrl có thể trỏ tới ảnh Google/Firebase; ảnh Google đôi khi tải
- * lỗi (hết hạn/CORS). Cha truyền key={avatarUrl} để component remount
- * và tự reset lỗi khi đổi user/avatar; onError chuyển hẳn về fallback
- * chữ cái thay vì để ảnh vỡ hiển thị.
- */
-const UserAvatar = ({ avatarUrl, label }) => {
-  const [hasError, setHasError] = useState(false);
-
-  const initial = (label || "?")
-    .charAt(0)
-    .toUpperCase();
-
-  if (!avatarUrl || hasError) {
-    return (
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[rgba(84,123,125,0.10)] font-black text-primary">
-        {initial}
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={avatarUrl}
-      alt={label}
-      referrerPolicy="no-referrer"
-      className="h-11 w-11 shrink-0 rounded-full border border-border object-cover"
-      onError={() => setHasError(true)}
-    />
   );
 };
 
@@ -917,10 +886,10 @@ const DisputeManagementPage = () => {
         </p>
 
         <div className="flex items-center gap-3">
-          <UserAvatar
-            key={user.avatarUrl || "none"}
-            avatarUrl={user.avatarUrl}
-            label={user.username || title}
+          <Avatar
+            src={user.avatarUrl}
+            alt={user.username || title}
+            className="h-11 w-11 border border-border"
           />
 
           <div className="min-w-0">

@@ -31,7 +31,6 @@ const formatCurrency = (value) =>
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
-  error?.message ||
   "Không thể tải danh sách đơn hàng.";
 
 const loadOrderSource = async ({ source, signal }) => {

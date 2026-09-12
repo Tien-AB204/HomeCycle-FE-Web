@@ -55,7 +55,6 @@ const getErrorMessage = (
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
   error?.response?.data?.detail ||
-  error?.message ||
   fallback;
 
 const createInitialForm = () => ({

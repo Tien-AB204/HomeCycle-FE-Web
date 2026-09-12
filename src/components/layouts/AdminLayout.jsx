@@ -118,7 +118,6 @@ export default function AdminLayout() {
       roleLabel="Quản trị viên"
       defaultPageLabel="Trung tâm quản trị"
       fallbackDisplayName="Quản trị viên"
-      fallbackInitial="A"
       navAriaLabel="Điều hướng quản trị"
       openMenuAriaLabel="Mở menu quản trị"
       closeMenuAriaLabel="Đóng menu quản trị"

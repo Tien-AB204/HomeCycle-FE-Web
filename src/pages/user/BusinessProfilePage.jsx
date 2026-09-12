@@ -493,9 +493,6 @@ export default function BusinessProfilePage() {
     profile.fullName ||
     profile.username ||
     "Doanh nghiệp";
-  const displayInitial = displayName
-    .charAt(0)
-    .toUpperCase();
 
   return (
     <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 pb-16 pt-7 sm:px-6">
@@ -563,9 +560,6 @@ export default function BusinessProfilePage() {
             <AvatarUploader
               avatarUrl={profile.avatarUrl}
               displayName={displayName}
-              fallbackInitial={
-                displayInitial
-              }
               onUpdated={
                 handleAvatarUpdated
               }

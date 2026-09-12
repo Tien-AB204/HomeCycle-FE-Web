@@ -1,4 +1,5 @@
 import ReviewStars from "./ReviewStars";
+import Avatar from "../../components/shared/Avatar";
 
 const formatDate = (value) => {
   const date = new Date(value);
@@ -15,17 +16,11 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
   <article className="rounded-xl border border-border bg-white p-4 shadow-[0_6px_18px_rgba(23,40,48,0.035)] sm:p-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 items-center gap-3">
-        {review.reviewerAvatarUrl ? (
-          <img
-            src={review.reviewerAvatarUrl}
-            alt=""
-            className="h-10 w-10 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <span className="material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary" aria-hidden="true">
-            person
-          </span>
-        )}
+        <Avatar
+          src={review.reviewerAvatarUrl}
+          alt={review.reviewerName || ""}
+          className="h-10 w-10"
+        />
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-sm font-black text-text">

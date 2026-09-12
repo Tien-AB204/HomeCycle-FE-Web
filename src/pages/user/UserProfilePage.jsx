@@ -3,6 +3,7 @@ import BankAccountSection from "../../features/profile/BankAccountSection";
 import { useAuth } from "../../hooks/useAuth";
 import { userService } from "../../services/userService";
 import AvatarUploader from "../../features/profile/AvatarUploader";
+import SensitiveField from "../../components/shared/SensitiveField";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
@@ -81,7 +82,6 @@ const getApiErrorMessage = (error, fallbackMessage) => {
     validationMessage ||
     responseData?.message ||
     responseData?.error?.message ||
-    error?.message ||
     fallbackMessage
   );
 };
@@ -679,9 +679,6 @@ export default function UserProfilePage() {
     );
   }
 
-  const displayInitial = (profile.fullName || profile.username || "U")
-    .charAt(0)
-    .toUpperCase();
 
   const verificationStatus = getVerificationStatusMeta(
     profile.verificationStatus,
@@ -722,7 +719,6 @@ export default function UserProfilePage() {
             <AvatarUploader
               avatarUrl={profile.avatarUrl}
               displayName={profile.fullName || profile.username}
-              fallbackInitial={displayInitial}
               onUpdated={handleAvatarUpdated}
             />
 
@@ -928,7 +924,7 @@ export default function UserProfilePage() {
               {!isEditingIdentity ? (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <ProfileField
+                    <SensitiveField
                       id="identity-code-view"
                       label="SỐ CCCD"
                       name="representativeCode"
@@ -979,7 +975,7 @@ export default function UserProfilePage() {
               ) : (
                 <form onSubmit={handleUpdateIdentity} className="space-y-6">
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <ProfileField
+                    <SensitiveField
                       id="identity-code"
                       label="SỐ CCCD"
                       name="representativeCode"

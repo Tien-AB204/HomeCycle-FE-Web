@@ -133,7 +133,6 @@ const getErrorMessage = (
     ?.message ||
   error?.response?.data
     ?.detail ||
-  error?.message ||
   fallbackMessage;
 
 const formatCurrency = (value) => {

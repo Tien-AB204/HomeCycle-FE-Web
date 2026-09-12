@@ -124,7 +124,6 @@ const getErrorMessage = (
   return (
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
     fallbackMessage
   );
 };

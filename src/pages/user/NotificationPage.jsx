@@ -67,7 +67,6 @@ const getErrorMessage = (
       ?.error?.message ||
     error?.response?.data
       ?.message ||
-    error?.message ||
     fallback
   );
 };

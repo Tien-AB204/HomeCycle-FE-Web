@@ -38,7 +38,6 @@ const getApiErrorMessage = (
     error?.response?.data?.message ||
     error?.response?.data?.error
       ?.message ||
-    error?.message ||
     fallbackMessage
   );
 };

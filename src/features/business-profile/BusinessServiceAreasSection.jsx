@@ -289,11 +289,19 @@ export default function BusinessServiceAreasSection({
       {deleteTarget && (
         <div
           className="fixed inset-0 z-[70] flex items-center justify-center bg-primary/45 p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-area-title"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isSaving) {
+              setDeleteTarget(null);
+            }
+          }}
         >
-          <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white p-6 shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-area-title"
+            className="w-full max-w-md rounded-3xl border border-white/60 bg-white p-6 shadow-2xl"
+          >
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-error/10 text-error">
               <span className="material-symbols-outlined">
                 delete_forever

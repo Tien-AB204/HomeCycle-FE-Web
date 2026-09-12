@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { getOfferStatusMeta } from "../../constants/offers";
 import { ROLES } from "../../constants/roles";
+import Avatar from "../../components/shared/Avatar";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferDetailModal from "../../features/offers/OfferDetailModal";
@@ -43,7 +44,6 @@ const getErrorMessage = (error, fallbackMessage) => {
   return (
     responseData?.error?.message ||
     responseData?.message ||
-    error?.message ||
     fallbackMessage
   );
 };
@@ -928,17 +928,11 @@ const OfferManagementPage = () => {
                   className="grid gap-4 px-5 py-4 transition hover:bg-background md:grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] md:items-center"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                      {otherPartyAvatar ? (
-                        <img
-                          src={otherPartyAvatar}
-                          alt=""
-                          className="h-10 w-10 shrink-0 rounded-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary font-black text-white">
-                          {otherPartyName?.charAt(0).toUpperCase() || "H"}
-                        </span>
-                      )}
+                      <Avatar
+                        src={otherPartyAvatar}
+                        alt={otherPartyName || ""}
+                        className="h-10 w-10 shrink-0"
+                      />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-wide text-textLight">
                           {activeTab === "sent" ? "Gửi đến" : "Nhận từ"}

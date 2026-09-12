@@ -84,7 +84,6 @@ export default function BuyPostMatchesPanel({
           setState({
             loading: false,
             error:
-              error?.message ||
               "Không thể tải sản phẩm phù hợp.",
             items: [],
             totalCount: 0,

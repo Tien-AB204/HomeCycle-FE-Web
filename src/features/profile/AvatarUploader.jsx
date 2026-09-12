@@ -3,6 +3,7 @@ import {
   useState,
 } from "react";
 import { userService } from "../../services/userService";
+import avatarPlaceholder from "../../assets/brand/user-avatar-placeholder.svg";
 
 const MAX_FILE_SIZE =
   5 * 1024 * 1024;
@@ -33,7 +34,6 @@ const getApiErrorMessage = (
     validationMessage ||
     responseData?.message ||
     responseData?.error?.message ||
-    error?.message ||
     fallbackMessage
   );
 };
@@ -61,7 +61,6 @@ const validateAvatar = (file) => {
 export default function AvatarUploader({
   avatarUrl,
   displayName,
-  fallbackInitial,
   onUpdated,
   updateAvatar =
     userService.updateAvatar,
@@ -86,10 +85,26 @@ export default function AvatarUploader({
   const [error, setError] =
     useState("");
 
+  const [imageFailed, setImageFailed] =
+    useState(false);
+
   const displayedAvatarUrl =
     selectedFile
       ? previewUrl
       : avatarUrl;
+
+  const [trackedAvatarUrl, setTrackedAvatarUrl] =
+    useState(displayedAvatarUrl);
+
+  // Reset trạng thái lỗi khi ảnh hiển thị đổi (chọn ảnh mới/đổi user) -
+  // điều chỉnh state ngay trong render thay vì dùng effect.
+  if (displayedAvatarUrl !== trackedAvatarUrl) {
+    setTrackedAvatarUrl(displayedAvatarUrl);
+    setImageFailed(false);
+  }
+
+  const showPlaceholder =
+    !displayedAvatarUrl || imageFailed;
 
   const resetSelection = () => {
     setSelectedFile(null);
@@ -203,20 +218,20 @@ export default function AvatarUploader({
   return (
     <div className="flex w-full flex-col items-center">
       <div className="relative">
-        {displayedAvatarUrl ? (
-          <img
-            src={displayedAvatarUrl}
-            alt={`Ảnh đại diện của ${
-              displayName ||
-              "người dùng"
-            }`}
-            className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-[0_8px_24px_rgba(23,40,48,0.14)]"
-          />
-        ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-black text-white shadow-[0_8px_24px_rgba(23,40,48,0.14)]">
-            {fallbackInitial}
-          </div>
-        )}
+        <img
+          src={showPlaceholder ? avatarPlaceholder : displayedAvatarUrl}
+          alt={`Ảnh đại diện của ${
+            displayName ||
+            "người dùng"
+          }`}
+          referrerPolicy={showPlaceholder ? undefined : "no-referrer"}
+          onError={
+            showPlaceholder
+              ? undefined
+              : () => setImageFailed(true)
+          }
+          className="h-24 w-24 rounded-full border-4 border-white object-cover shadow-[0_8px_24px_rgba(23,40,48,0.14)]"
+        />
 
         <label
           htmlFor="profile-avatar-input"

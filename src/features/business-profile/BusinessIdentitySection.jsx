@@ -1,5 +1,6 @@
 import { useState } from "react";
 import businessProfileApi from "../../services/apis/businessProfileApi";
+import SensitiveField from "../../components/shared/SensitiveField";
 import {
   BusinessField,
   BusinessFileField,
@@ -179,9 +180,11 @@ export default function BusinessIdentitySection({
               label="Họ tên người đại diện"
               value={profile.fullName}
             />
-            <IdentityInfo
+            <SensitiveField
+              id="business-identity-number-view"
               label="Số CCCD / giấy tờ"
               value={profile.identityNumber}
+              readOnly
             />
             <IdentityInfo
               label="Họ tên trên giấy tờ"
@@ -268,7 +271,7 @@ export default function BusinessIdentitySection({
             }
             required
           />
-          <BusinessField
+          <SensitiveField
             id="business-identity-number"
             label="Số CCCD / giấy tờ"
             value={form.identityNumber}

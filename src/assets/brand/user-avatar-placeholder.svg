@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Ảnh đại diện mặc định">
+  <defs>
+    <clipPath id="hc-avatar-circle">
+      <circle cx="48" cy="48" r="48" />
+    </clipPath>
+  </defs>
+  <circle cx="48" cy="48" r="48" fill="#E4EAEA" />
+  <g clip-path="url(#hc-avatar-circle)" fill="#2B5659">
+    <circle cx="48" cy="38" r="16" />
+    <path d="M48 58c-17.7 0-32 12.98-32 29v9h64v-9c0-16.02-14.3-29-32-29z" />
+  </g>
+</svg>

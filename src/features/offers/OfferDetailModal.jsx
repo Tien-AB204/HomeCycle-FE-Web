@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { getOfferStatusMeta } from "../../constants/offers";
 import BuyPostOfferMatchPanel from "./BuyPostOfferMatchPanel";
+import Avatar from "../../components/shared/Avatar";
 
 const formatCurrency = (value) => {
   const amount = Number(value);
@@ -35,17 +36,7 @@ const Participant = ({ label, participant }) => {
         {label}
       </p>
       <div className="mt-3 flex items-center gap-3">
-        {participant?.avatarUrl ? (
-          <img
-            src={participant.avatarUrl}
-            alt=""
-            className="h-10 w-10 rounded-full object-cover"
-          />
-        ) : (
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary font-black text-white">
-            {name.charAt(0).toUpperCase()}
-          </span>
-        )}
+        <Avatar src={participant?.avatarUrl} alt={name} className="h-10 w-10" />
         <p className="min-w-0 truncate text-sm font-bold text-text">
           {name}
         </p>
