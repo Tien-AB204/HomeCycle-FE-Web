@@ -1,3 +1,5 @@
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+
 export const MAX_BUSINESS_FILE_SIZE =
   5 * 1024 * 1024;
 
@@ -15,17 +17,10 @@ export const getBusinessApiErrorMessage = (
   const responseData =
     error?.response?.data;
 
-  const validationMessage =
-    responseData?.errors
-      ? Object.values(
-          responseData.errors,
-        )
-          .flat()
-          .find(Boolean)
-      : "";
-
   return (
-    validationMessage ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
     responseData?.message ||
     responseData?.error?.message ||
     fallbackMessage

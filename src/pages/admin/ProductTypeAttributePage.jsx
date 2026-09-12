@@ -12,6 +12,10 @@ import OptionModal from "../../features/system/productType/OptionModal";
 import productTypeApi from "../../services/apis/productTypeApi";
 import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi";
 import productTypeOptionApi from "../../services/apis/productTypeOptionApi";
+import {
+  isVietnameseMessage,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const INPUT_MODE_LABELS = {
   OptionOnly: "Chỉ chọn tùy chọn",
@@ -26,28 +30,12 @@ const isCanceledRequest = (error) => {
   );
 };
 
-const getValidationMessage = (
-  errors,
-) => {
-  if (!errors) {
-    return "";
-  }
-
-  return Object.values(errors)
-    .flat()
-    .filter(Boolean)
-    .join("\n");
-};
-
-const isVietnameseMessage = (message) =>
-  /[À-ỹĐđ]/u.test(String(message || ""));
-
 const getErrorMessage = (error) => {
   const responseData =
     error?.response?.data;
 
   return (
-    getValidationMessage(
+    getSafeValidationMessage(
       responseData?.errors,
     ) ||
     responseData?.error?.message ||

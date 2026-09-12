@@ -6,6 +6,7 @@ import { bankDirectoryService } from "../../services/bankDirectoryService";
 import { userService } from "../../services/userService";
 import SensitiveField from "../../components/shared/SensitiveField";
 import { maskMiddleValue } from "../../utils/maskMiddleValue";
+import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const createBankForm = (
   bankAccount,
@@ -69,17 +70,10 @@ const getApiErrorMessage = (
   const responseData =
     error?.response?.data;
 
-  const validationMessage =
-    responseData?.errors
-      ? Object.values(
-          responseData.errors,
-        )
-          .flat()
-          .find(Boolean)
-      : "";
-
   return (
-    validationMessage ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
     responseData?.message ||
     responseData?.error?.message ||
     fallbackMessage
