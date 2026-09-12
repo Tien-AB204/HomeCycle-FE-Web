@@ -59,10 +59,16 @@ const PaymentResultPage = () => {
   const [state, setState] =
     useState({
       loading:
-        Boolean(agreementId) &&
-        !cancelledByRoute,
+        Boolean(agreementId),
 
+      /*
+       * Đường dẫn/tham số hủy của PayOS chỉ là gợi ý ban đầu (dùng khi
+       * chưa có agreementId để hỏi Backend) - KHÔNG được ghi đè trạng
+       * thái thật của Backend. Nếu có agreementId, luôn chờ Backend xác
+       * nhận thay vì kết luận "Cancelled" ngay từ URL.
+       */
       status:
+        !agreementId &&
         cancelledByRoute
           ? "Cancelled"
           : "",
@@ -79,10 +85,7 @@ const PaymentResultPage = () => {
     const timeoutId =
       window.setTimeout(
         async () => {
-          if (
-            !agreementId ||
-            cancelledByRoute
-          ) {
+          if (!agreementId) {
             return;
           }
 
@@ -156,11 +159,16 @@ const PaymentResultPage = () => {
                 loading: false,
 
                 /*
-                 * A PAID query parameter is not authoritative.
-                 * Keep the UI pending until the Backend confirms.
+                 * Backend không thể xác nhận được (lỗi mạng/hệ thống) -
+                 * đây là trường hợp duy nhất được phép dùng route/query
+                 * PayOS làm bằng chứng tạm thời. Một tham số PAID vẫn
+                 * không phải bằng chứng thành công (giữ Pending chờ xác
+                 * nhận), nhưng route/query hủy vẫn có thể phản ánh đúng
+                 * việc người dùng đã hủy khi Backend không thể hỏi được.
                  */
-                status:
-                  payOsStatus === "PAID"
+                status: cancelledByRoute
+                  ? "Cancelled"
+                  : payOsStatus === "PAID"
                     ? "Pending"
                     : "",
 
