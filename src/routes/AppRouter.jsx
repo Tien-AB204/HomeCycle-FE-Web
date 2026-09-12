@@ -49,8 +49,12 @@ import UserManagementPage from "../pages/admin/UserManagementPage";
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 import AgreementPage from "../pages/user/AgreementPage";
 import AppointmentPage from "../pages/user/AppointmentPage";
+import CartPage from "../pages/user/CartPage";
+import ConversationDetailPage from "../pages/user/ConversationDetailPage";
+import ConversationListPage from "../pages/user/ConversationListPage";
 import CreatePostPage from "../pages/user/CreatePostPage";
 import DisputeDetailPage from "../pages/user/DisputeDetailPage";
+import DisputeListPage from "../pages/user/DisputeListPage";
 import NegotiationListPage from "../pages/user/NegotiationListPage";
 import NegotiationRoomPage from "../pages/user/NegotiationRoomPage";
 import NotificationPage from "../pages/user/NotificationPage";
@@ -116,6 +120,15 @@ const AppRouter = () => {
 
           <Route path="/thanh-toan" element={<PaymentCenterPage />} />
 
+          <Route path="/gio-hang" element={<CartPage />} />
+
+          <Route path="/hop-thu" element={<ConversationListPage />} />
+
+          <Route
+            path="/hop-thu/:conversationId"
+            element={<ConversationDetailPage />}
+          />
+
           <Route path="/vi" element={<WalletPage />} />
 
           <Route path="/payments/success" element={<PaymentResultPage />} />
@@ -129,6 +142,8 @@ const AppRouter = () => {
           <Route path="/don-hang" element={<OrderListPage />} />
 
           <Route path="/don-hang/:orderId" element={<OrderDetailPage />} />
+
+          <Route path="/tranh-chap" element={<DisputeListPage />} />
 
           <Route
             path="/tranh-chap/:disputeId"
