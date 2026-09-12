@@ -63,6 +63,42 @@ export const agreementApi = {
     return axiosClient.patch(`/agreements/${encodeURIComponent(id)}/request-edit`);
   },
 
+  getGhnParcelInfo: async (negotiationId, { signal } = {}) => {
+    const id = normalizeIdentifier(
+      negotiationId,
+      "Không tìm thấy mã phiên thương lượng để lấy thông tin kiện hàng.",
+    );
+
+    const response = await axiosClient.get(
+      `/agreements/negotiations/${encodeURIComponent(id)}/ghn-parcel-info`,
+      { signal },
+    );
+
+    if (!response || typeof response !== "object") {
+      throw new Error("Response thông tin kiện hàng GHN không hợp lệ.");
+    }
+
+    return response;
+  },
+
+  previewGhnShipping: async (negotiationId, payload, { signal } = {}) => {
+    const id = normalizeIdentifier(
+      negotiationId,
+      "Không tìm thấy mã phiên thương lượng để tính phí GHN.",
+    );
+
+    const response = await axiosClient.post(
+      `/agreements/negotiations/${encodeURIComponent(id)}/ghn-preview`,
+      payload,
+      { signal },
+    );
+
+    if (!response || typeof response !== "object") {
+      throw new Error("Response xem trước phí GHN không hợp lệ.");
+    }
+
+    return response;
+  },
   getPendingPayment: async ({ pageNumber = 1, pageSize = 10, signal } = {}) => {
     const response = await axiosClient.get("/agreements/pending-payment", {
       params: { PageNumber: pageNumber, PageSize: pageSize },

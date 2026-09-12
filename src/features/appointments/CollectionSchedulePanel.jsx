@@ -4,9 +4,7 @@ import {
 } from "react";
 import {
   DELIVERY_METHOD,
-  PAYMENT_TYPE,
   getDeliveryMethodLabel,
-  getPaymentTypeLabel,
 } from "../../constants/agreements";
 import GhnCollectionFields from "./GhnCollectionFields";
 import {
@@ -93,10 +91,6 @@ export default function CollectionSchedulePanel({
   const [ghnInfo, setGhnInfo] =
     useState(null);
 
-  const [
-    ghnFullPaymentAccepted,
-    setGhnFullPaymentAccepted,
-  ] = useState(false);
 
   const [form, setForm] =
     useState(createInitialForm);
@@ -135,16 +129,6 @@ export default function CollectionSchedulePanel({
             },
           );
 
-        if (
-          nextAgreement.paymentType !==
-            PAYMENT_TYPE.DEPOSIT &&
-          nextAgreement.paymentType !==
-            PAYMENT_TYPE.FULL_PAYMENT
-        ) {
-          throw new Error(
-            "Hình thức thanh toán của thỏa thuận không hợp lệ.",
-          );
-        }
 
         const details =
           nextAgreement.agreementDetails ||
@@ -166,9 +150,6 @@ export default function CollectionSchedulePanel({
               details.ghnInfo,
           }),
         );
-
-        setGhnFullPaymentAccepted(false);
-
         setForm({
           collectionDate:
             toDateTimeLocal(
@@ -254,8 +235,6 @@ export default function CollectionSchedulePanel({
     });
 
     if (name === "deliveryMethod") {
-      setGhnFullPaymentAccepted(false);
-
       if (
         value === DELIVERY_METHOD.GHN &&
         !ghnInfo
@@ -317,13 +296,6 @@ export default function CollectionSchedulePanel({
         return ghnError;
       }
 
-      if (
-        agreement.paymentType ===
-          PAYMENT_TYPE.DEPOSIT &&
-        !ghnFullPaymentAccepted
-      ) {
-        return "Vui lòng xác nhận chuyển sang thanh toán đầy đủ khi sử dụng GHN.";
-      }
     } else {
       if (
         !form.pickupAddress.trim()
@@ -421,10 +393,6 @@ export default function CollectionSchedulePanel({
             deliveryMethod:
               form.deliveryMethod,
 
-            paymentType:
-              isGhn
-                ? PAYMENT_TYPE.FULL_PAYMENT
-                : agreement.paymentType,
 
             estimatedShippingFee:
               isGhn
@@ -525,24 +493,6 @@ export default function CollectionSchedulePanel({
         </div>
       )}
 
-      {agreement && (
-        <div className="mt-4 rounded-lg bg-background px-3 py-3">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">
-            Thanh toán kế thừa
-          </p>
-
-          <p className="mt-1 text-sm font-bold text-text">
-            {getPaymentTypeLabel(
-              agreement.paymentType,
-            )}
-          </p>
-
-          <p className="mt-1 text-xs leading-5 text-textLight">
-            HomeCycle giữ nguyên hình thức thanh toán của thỏa thuận.
-            Không yêu cầu chọn lại ở bước này.
-          </p>
-        </div>
-      )}
 
       <fieldset className="mt-4">
         <legend className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
@@ -589,33 +539,6 @@ export default function CollectionSchedulePanel({
           gửi phí GHN từ trình duyệt.
         </p>
 
-        {form.deliveryMethod ===
-          DELIVERY_METHOD.GHN &&
-          agreement?.paymentType ===
-            PAYMENT_TYPE.DEPOSIT && (
-            <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-warning/25 bg-warning/10 px-3 py-3 text-xs leading-5 text-warning">
-              <input
-                type="checkbox"
-                checked={
-                  ghnFullPaymentAccepted
-                }
-                onChange={(event) => {
-                  setGhnFullPaymentAccepted(
-                    event.target.checked,
-                  );
-                  setError("");
-                }}
-                disabled={submitting}
-                className="mt-0.5 h-4 w-4 accent-primary"
-              />
-
-              <span>
-                Tôi hiểu rằng giao hàng GHN yêu cầu chuyển giao dịch
-                này sang thanh toán đầy đủ phần tiền còn lại và phí
-                vận chuyển trước khi tạo vận đơn.
-              </span>
-            </label>
-          )}
 
         {form.deliveryMethod ===
           DELIVERY_METHOD.GHN &&

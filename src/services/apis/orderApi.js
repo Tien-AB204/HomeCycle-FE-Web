@@ -64,13 +64,73 @@ export const orderApi = {
       },
     );
 
-    if (!response?.order?.orderId) {
+    /*
+     * BE hiện trả OrderDetailDto trực tiếp.
+     * Giữ compatibility với response legacy có field `order`
+     * để không làm vỡ các màn hình đã triển khai trước đó.
+     */
+    const order =
+      response?.order?.orderId
+        ? response.order
+        : response;
+
+    if (!order?.orderId) {
       throw new Error(
         "Response chi tiết đơn hàng không hợp lệ.",
       );
     }
 
-    return response;
+    if (response?.order?.orderId) {
+      return response;
+    }
+
+    return {
+      order,
+
+      negotiationId:
+        order.negotiationId || "",
+
+      thumbnailUrl:
+        order.thumbnailUrl || "",
+
+      postDescription:
+        order.postDescription || "",
+
+      counterpartyName:
+        order.counterparty?.username || "",
+
+      counterpartyUserId:
+        order.counterparty?.userId || "",
+
+      paymentMethod:
+        order.payment?.paymentMethod ??
+        null,
+
+      paidAt:
+        order.payment?.paidAt ?? null,
+
+      shipment:
+        order.shipment ?? null,
+
+      appointments:
+        Array.isArray(order.appointments)
+          ? order.appointments
+          : [],
+
+      review:
+        order.review || {},
+
+      dispute:
+        order.dispute || {},
+
+      actions:
+        order.actions || {},
+
+      timeline:
+        Array.isArray(order.timeline)
+          ? order.timeline
+          : [],
+    };
   },
 
   getByAgreementId: async (
@@ -92,6 +152,112 @@ export const orderApi = {
     if (!response?.orderId) {
       throw new Error(
         "Response đơn hàng theo thỏa thuận không hợp lệ.",
+      );
+    }
+
+    return response;
+  },
+
+  /**
+   * Đồng bộ trạng thái GHN theo Order.
+   * Backend tự lấy GHNOrderCode nên FE không gửi mã vận đơn.
+   */
+  getShipmentTracking: async (
+    orderId,
+    { signal } = {},
+  ) => {
+    const id = normalizeIdentifier(
+      orderId,
+      "Không tìm thấy mã đơn hàng để theo dõi vận chuyển.",
+    );
+
+    const response = await axiosClient.get(
+      `/orders/${encodeURIComponent(id)}/shipment-tracking`,
+      {
+        signal,
+        /*
+         * Tracking có thể trả 409 khi worker chưa tạo xong
+         * vận đơn. Giữ lỗi tại card thay vì bật global page.
+         */
+        skipGlobalErrorPage: true,
+      },
+    );
+
+    if (!response?.orderId) {
+      throw new Error(
+        "Response theo dõi vận chuyển không hợp lệ.",
+      );
+    }
+
+    return response;
+  },
+
+  /**
+   * Hủy Order sau khi kết quả kiểm định bị từ chối.
+   * Quyền thao tác lấy từ OrderDetailDto.actions.canCancel.
+   */
+  cancelAfterRejectedInspection: async (orderId) => {
+    const id = normalizeIdentifier(
+      orderId,
+      "Không tìm thấy mã đơn hàng để hủy.",
+    );
+
+    return axiosClient.post(
+      `/orders/${encodeURIComponent(id)}/cancel`,
+    );
+  },
+
+  /**
+   * Buyer xác nhận đã trả hàng trong luồng tranh chấp/hoàn trả.
+   */
+  confirmReturn: async (orderId) => {
+    const id = normalizeIdentifier(
+      orderId,
+      "Không tìm thấy mã đơn hàng để xác nhận trả hàng.",
+    );
+
+    return axiosClient.post(
+      `/orders/${encodeURIComponent(id)}/confirm-return`,
+    );
+  },
+
+  /**
+   * Seller xác nhận đã nhận lại hàng.
+   */
+  confirmReturnReceived: async (orderId) => {
+    const id = normalizeIdentifier(
+      orderId,
+      "Không tìm thấy mã đơn hàng để xác nhận nhận lại hàng.",
+    );
+
+    return axiosClient.post(
+      `/orders/${encodeURIComponent(id)}/confirm-return-received`,
+    );
+  },
+
+  /**
+   * Người bán xác nhận hàng đã chuẩn bị xong.
+   * Quyền thao tác lấy từ
+   * actions.canConfirmSellerReady.
+   */
+  confirmSellerReady: async (
+    shipmentId,
+  ) => {
+    const id = normalizeIdentifier(
+      shipmentId,
+      "Không tìm thấy mã vận chuyển để xác nhận hàng sẵn sàng.",
+    );
+
+    const response =
+      await axiosClient.post(
+        "/shipments/" +
+          encodeURIComponent(id) +
+          "/seller-ready",
+      );
+
+    if (!response) {
+      throw new Error(
+        "Không nhận được phản hồi xác nhận chuẩn bị hàng.",
       );
     }
 

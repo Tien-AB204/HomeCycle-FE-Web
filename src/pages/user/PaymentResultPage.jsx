@@ -13,15 +13,6 @@ import paymentApi from "../../services/apis/paymentApi";
 const PENDING_AGREEMENT_KEY =
   "homecycle:pending-payment-agreement-id";
 
-const PENDING_SETTLEMENT_PAYMENT_KEY =
-  "homecycle:pending-order-settlement-payment-id";
-
-const PENDING_SETTLEMENT_ORDER_KEY =
-  "homecycle:pending-order-settlement-order-id";
-
-const PENDING_SETTLEMENT_AMOUNT_KEY =
-  "homecycle:pending-order-settlement-amount";
-
 const getErrorMessage = (error) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
@@ -29,19 +20,9 @@ const getErrorMessage = (error) =>
   error?.message ||
   "Hệ thống chưa thể xác nhận giao dịch.";
 
-const clearSettlementStorage = () => {
-  localStorage.removeItem(
-    PENDING_SETTLEMENT_PAYMENT_KEY,
-  );
-
-  localStorage.removeItem(
-    PENDING_SETTLEMENT_ORDER_KEY,
-  );
-
-  localStorage.removeItem(
-    PENDING_SETTLEMENT_AMOUNT_KEY,
-  );
-};
+const isRequestCancelled = (error) =>
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
 
 const PaymentResultPage = () => {
   const [searchParams] =
@@ -50,29 +31,9 @@ const PaymentResultPage = () => {
   const location =
     useLocation();
 
-  const flow =
-    String(
-      searchParams.get("flow") || "",
-    )
-      .trim()
-      .toLowerCase();
-
-  const isSettlement =
-    flow === "settlement";
-
   const agreementId =
     localStorage.getItem(
       PENDING_AGREEMENT_KEY,
-    ) || "";
-
-  const settlementPaymentId =
-    localStorage.getItem(
-      PENDING_SETTLEMENT_PAYMENT_KEY,
-    ) || "";
-
-  const settlementOrderId =
-    localStorage.getItem(
-      PENDING_SETTLEMENT_ORDER_KEY,
     ) || "";
 
   const payOsStatus =
@@ -91,30 +52,18 @@ const PaymentResultPage = () => {
   const [state, setState] =
     useState({
       loading:
-        isSettlement
-          ? Boolean(
-              settlementPaymentId,
-            )
-          : Boolean(agreementId) &&
-            !cancelledByRoute,
+        Boolean(agreementId) &&
+        !cancelledByRoute,
 
       status:
         cancelledByRoute
           ? "Cancelled"
           : "",
 
+      statusDetail: null,
       order: null,
-
-      orderId:
-        isSettlement
-          ? settlementOrderId
-          : "",
-
       error: "",
     });
-
-  const [retryBusy, setRetryBusy] =
-    useState(false);
 
   useEffect(() => {
     const controller =
@@ -123,108 +72,6 @@ const PaymentResultPage = () => {
     const timeoutId =
       window.setTimeout(
         async () => {
-          if (isSettlement) {
-            if (
-              !settlementPaymentId
-            ) {
-              setState((current) => ({
-                ...current,
-                loading: false,
-              }));
-
-              return;
-            }
-
-            try {
-              const result =
-                await paymentApi
-                  .getOrderSettlementStatus(
-                    settlementPaymentId,
-                    {
-                      signal:
-                        controller.signal,
-                    },
-                  );
-
-              const status =
-                String(
-                  result?.paymentStatus ||
-                    "",
-                ).trim();
-
-              const orderId =
-                result?.orderId ||
-                settlementOrderId ||
-                "";
-
-              let order = null;
-
-              if (
-                status.toLowerCase() ===
-                  "completed" &&
-                orderId
-              ) {
-                try {
-                  const response =
-                    await orderApi.getById(
-                      orderId,
-                      {
-                        signal:
-                          controller.signal,
-                      },
-                    );
-
-                  order =
-                    response?.order ||
-                    response;
-                } catch {
-                  order = null;
-                }
-
-                clearSettlementStorage();
-              }
-
-              setState({
-                loading: false,
-                status:
-                  status ||
-                  (cancelledByRoute
-                    ? "Cancelled"
-                    : ""),
-                order,
-                orderId,
-                error: "",
-              });
-            } catch (error) {
-              if (
-                error?.name !==
-                  "CanceledError" &&
-                error?.code !==
-                  "ERR_CANCELED"
-              ) {
-                setState({
-                  loading: false,
-                  status:
-                    cancelledByRoute
-                      ? "Cancelled"
-                      : payOsStatus ===
-                          "PAID"
-                        ? "Pending"
-                        : "",
-                  order: null,
-                  orderId:
-                    settlementOrderId,
-                  error:
-                    getErrorMessage(
-                      error,
-                    ),
-                });
-              }
-            }
-
-            return;
-          }
-
           if (
             !agreementId ||
             cancelledByRoute
@@ -233,14 +80,19 @@ const PaymentResultPage = () => {
           }
 
           try {
+            const statusDetail =
+              await paymentApi
+                .getStatusDetail(
+                  agreementId,
+                  {
+                    signal:
+                      controller.signal,
+                  },
+                );
+
             const status =
-              await paymentApi.getStatus(
-                agreementId,
-                {
-                  signal:
-                    controller.signal,
-                },
-              );
+              statusDetail
+                .paymentStatus;
 
             let order = null;
 
@@ -248,15 +100,32 @@ const PaymentResultPage = () => {
               status.toLowerCase() ===
               "completed"
             ) {
-              order =
-                await orderApi
-                  .getByAgreementId(
-                    agreementId,
-                    {
-                      signal:
-                        controller.signal,
-                    },
-                  );
+              /*
+               * Current Backend already returns OrderId / AppointmentId.
+               * We preserve those identifiers first. Order detail is an
+               * optional enrichment for this screen, not payment authority.
+               */
+              try {
+                order =
+                  await orderApi
+                    .getByAgreementId(
+                      agreementId,
+                      {
+                        signal:
+                          controller.signal,
+                      },
+                    );
+              } catch (orderError) {
+                if (
+                  isRequestCancelled(
+                    orderError,
+                  )
+                ) {
+                  return;
+                }
+
+                order = null;
+              }
 
               localStorage.removeItem(
                 PENDING_AGREEMENT_KEY,
@@ -266,26 +135,31 @@ const PaymentResultPage = () => {
             setState({
               loading: false,
               status,
+              statusDetail,
               order,
-              orderId:
-                order?.orderId || "",
               error: "",
             });
           } catch (error) {
             if (
-              error?.name !==
-                "CanceledError" &&
-              error?.code !==
-                "ERR_CANCELED"
+              !isRequestCancelled(
+                error,
+              )
             ) {
               setState({
                 loading: false,
+
+                /*
+                 * A PAID query parameter is not authoritative.
+                 * Keep the UI pending until the Backend confirms.
+                 */
                 status:
                   payOsStatus === "PAID"
-                    ? "Processing"
+                    ? "Pending"
                     : "",
+
+                statusDetail: null,
                 order: null,
-                orderId: "",
+
                 error:
                   getErrorMessage(
                     error,
@@ -307,74 +181,8 @@ const PaymentResultPage = () => {
   }, [
     agreementId,
     cancelledByRoute,
-    isSettlement,
     payOsStatus,
-    settlementOrderId,
-    settlementPaymentId,
   ]);
-
-  const handleSettlementRetry =
-    async () => {
-      if (
-        !settlementPaymentId
-      ) {
-        return;
-      }
-
-      const checkoutWindow =
-        window.open(
-          "about:blank",
-          "_blank",
-        );
-
-      if (checkoutWindow) {
-        checkoutWindow.opener =
-          null;
-      }
-
-      setRetryBusy(true);
-
-      try {
-        const origin =
-          window.location.origin;
-
-        const result =
-          await paymentApi
-            .createOrderSettlementPayOsCheckout(
-              settlementPaymentId,
-              {
-                returnUrl:
-                  `${origin}/payments/success?flow=settlement`,
-
-                cancelUrl:
-                  `${origin}/payments/cancel?flow=settlement`,
-              },
-            );
-
-        if (checkoutWindow) {
-          checkoutWindow.location.href =
-            result.checkoutUrl;
-
-          setRetryBusy(false);
-        } else {
-          window.location.assign(
-            result.checkoutUrl,
-          );
-        }
-      } catch (error) {
-        if (checkoutWindow) {
-          checkoutWindow.close();
-        }
-
-        setState((current) => ({
-          ...current,
-          error:
-            getErrorMessage(error),
-        }));
-
-        setRetryBusy(false);
-      }
-    };
 
   const normalizedStatus =
     String(state.status || "")
@@ -384,6 +192,18 @@ const PaymentResultPage = () => {
   const completed =
     normalizedStatus ===
     "completed";
+
+  const pending =
+    normalizedStatus ===
+    "pending";
+
+  const refunded =
+    normalizedStatus ===
+    "refunded";
+
+  const partiallyRefunded =
+    normalizedStatus ===
+    "partiallyrefunded";
 
   const cancelled =
     normalizedStatus ===
@@ -402,15 +222,36 @@ const PaymentResultPage = () => {
     "failed";
 
   const resultOrderId =
-    state.order?.orderId ||
-    state.orderId ||
-    settlementOrderId;
+    String(
+      state.statusDetail
+        ?.orderId ||
+        state.order
+          ?.orderId ||
+        "",
+    ).trim();
+
+  const resultAppointmentId =
+    String(
+      state.statusDetail
+        ?.appointmentId ||
+        "",
+    ).trim();
 
   const title = (() => {
     if (completed) {
-      return isSettlement
-        ? "Thanh toán bổ sung thành công"
-        : "Thanh toán thành công";
+      return "Thanh toán thành công";
+    }
+
+    if (pending) {
+      return "Đang chờ xác nhận thanh toán";
+    }
+
+    if (refunded) {
+      return "Giao dịch đã được hoàn tiền";
+    }
+
+    if (partiallyRefunded) {
+      return "Giao dịch đã hoàn tiền một phần";
     }
 
     if (expired) {
@@ -418,9 +259,7 @@ const PaymentResultPage = () => {
     }
 
     if (cancelled) {
-      return isSettlement
-        ? "Thanh toán bổ sung đã được hủy"
-        : "Thanh toán đã được hủy";
+      return "Thanh toán đã được hủy";
     }
 
     if (failed) {
@@ -428,14 +267,44 @@ const PaymentResultPage = () => {
     }
 
     if (state.loading) {
-      return isSettlement
-        ? "Đang xác nhận khoản thanh toán bổ sung"
-        : "Đang xác nhận giao dịch";
+      return "Đang xác nhận giao dịch";
     }
 
-    return isSettlement
-      ? "Đang đồng bộ thanh toán bổ sung"
-      : "PayOS đã ghi nhận thanh toán";
+    return "Chưa xác nhận được giao dịch";
+  })();
+
+  const description = (() => {
+    if (completed) {
+      return "HomeCycle đã xác nhận thanh toán từ máy chủ và cập nhật giao dịch.";
+    }
+
+    if (pending) {
+      return payOsStatus === "PAID"
+        ? "PayOS đã chuyển bạn về nhưng HomeCycle vẫn đang đồng bộ trạng thái. Không dùng URL PayOS để kết luận thanh toán thành công."
+        : "Giao dịch vẫn đang chờ thanh toán hoặc chờ hệ thống đồng bộ.";
+    }
+
+    if (refunded) {
+      return "Khoản thanh toán đã được hoàn lại theo trạng thái hiện tại của máy chủ.";
+    }
+
+    if (partiallyRefunded) {
+      return "Một phần khoản thanh toán đã được hoàn lại theo trạng thái hiện tại của máy chủ.";
+    }
+
+    if (expired) {
+      return "Liên kết PayOS trước đã hết hiệu lực. Hãy quay lại thỏa thuận để tạo lại thanh toán nếu vẫn cần.";
+    }
+
+    if (cancelled) {
+      return "Phiên thanh toán đã được hủy. Bạn có thể quay lại thỏa thuận để kiểm tra trước khi thử lại.";
+    }
+
+    if (failed) {
+      return "Máy chủ ghi nhận giao dịch không thành công.";
+    }
+
+    return "Không thể kết luận giao dịch chỉ từ đường dẫn trả về của PayOS. Hãy kiểm tra lại từ thỏa thuận hoặc lịch sử thanh toán.";
   })();
 
   return (
@@ -466,9 +335,7 @@ const PaymentResultPage = () => {
         </span>
 
         <p className="mt-5 text-xs font-black uppercase tracking-[0.2em] text-primary">
-          {isSettlement
-            ? "Thanh toán phần còn lại"
-            : "Kết quả thanh toán"}
+          Kết quả thanh toán
         </p>
 
         <h1 className="mt-2 text-2xl font-black text-text">
@@ -476,17 +343,7 @@ const PaymentResultPage = () => {
         </h1>
 
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-textLight">
-          {completed
-            ? isSettlement
-              ? "HomeCycle đã ghi nhận phần tiền còn lại và cập nhật đơn hàng để tiếp tục giao nhận."
-              : "HomeCycle đã ghi nhận khoản thanh toán và cập nhật dữ liệu giao dịch."
-            : expired
-              ? "Liên kết PayOS trước đã hết hiệu lực. Bạn có thể tạo lại một liên kết mới cho cùng khoản thanh toán."
-              : cancelled
-                ? isSettlement
-                  ? "Khoản thanh toán bổ sung chưa hoàn tất. Bạn có thể tạo lại liên kết PayOS."
-                  : "Bạn chưa bị ghi nhận thanh toán. Có thể quay lại thỏa thuận để kiểm tra."
-                : "HomeCycle đang đồng bộ trạng thái mới nhất từ máy chủ."}
+          {description}
         </p>
 
         {state.error && (
@@ -495,74 +352,74 @@ const PaymentResultPage = () => {
           </div>
         )}
 
-        {state.order && (
-          <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4 text-left text-sm text-success">
-            <p>
-              <strong>
-                Mã đơn hàng:
-              </strong>{" "}
-              {state.order.orderCode ||
-                state.order.orderId}
-            </p>
-
-            {state.order.quantity !==
-              undefined && (
-              <p className="mt-1">
+        {completed &&
+          (state.order ||
+            resultOrderId) && (
+            <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4 text-left text-sm text-success">
+              <p>
                 <strong>
-                  Số lượng:
+                  Đơn hàng:
                 </strong>{" "}
-                {state.order.quantity}
+                {state.order
+                  ?.orderCode ||
+                  resultOrderId}
               </p>
-            )}
-          </div>
+
+              {state.order
+                ?.quantity !==
+                undefined && (
+                <p className="mt-1">
+                  <strong>
+                    Số lượng:
+                  </strong>{" "}
+                  {
+                    state.order
+                      .quantity
+                  }
+                </p>
+              )}
+
+              {resultAppointmentId && (
+                <p className="mt-1">
+                  Lịch hẹn đã được tạo hoặc liên kết với giao dịch này.
+                </p>
+              )}
+            </div>
+          )}
+
+        {!agreementId && (
+          <p className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
+            Không tìm thấy mã thỏa thuận đã lưu để đối chiếu giao dịch.
+            Bạn có thể mở Trung tâm thanh toán để kiểm tra các giao dịch gần đây.
+          </p>
         )}
 
-        {isSettlement &&
-          !settlementPaymentId &&
-          !completed && (
-            <p className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
-              Không tìm thấy mã khoản thanh toán bổ sung để đối chiếu.
-              Hãy quay lại đơn hàng để kiểm tra trạng thái.
-            </p>
-          )}
-
-        {!isSettlement &&
-          !agreementId && (
-            <p className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-warning">
-              Không tìm thấy thông tin phiên thanh toán để đối chiếu.
-              Bạn có thể vào danh sách đơn hàng để kiểm tra trạng thái giao dịch.
-            </p>
-          )}
-
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          {isSettlement &&
-            !completed &&
-            settlementPaymentId && (
-              <button
-                type="button"
-                onClick={
-                  handleSettlementRetry
-                }
-                disabled={
-                  retryBusy ||
-                  state.loading
-                }
-                className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {retryBusy
-                  ? "Đang mở PayOS..."
-                  : "Mở lại PayOS"}
-              </button>
-            )}
-
           {resultOrderId && (
             <Link
               to={`/don-hang/${resultOrderId}`}
-              className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary transition hover:bg-primary/10"
+              className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90"
             >
               Xem đơn hàng
             </Link>
           )}
+
+          {completed &&
+            resultAppointmentId && (
+              <Link
+                to="/lich-hen"
+                className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary transition hover:bg-primary/10"
+              >
+                Xem lịch hẹn
+              </Link>
+            )}
+
+          <Link
+            to="/thanh-toan"
+            className="rounded-lg border border-primary bg-white px-5 py-3 text-sm font-black text-primary transition hover:bg-primary/10"
+          >
+            Trung tâm thanh toán
+          </Link>
 
           <Link
             to="/"

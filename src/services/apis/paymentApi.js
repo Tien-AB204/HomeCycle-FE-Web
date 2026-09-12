@@ -40,31 +40,116 @@ const normalizePaymentStatus = (value) => {
 };
 
 const normalizeStatusResponse = (response) => {
+  const source =
+    response?.data ?? response;
+
   if (
-    response &&
-    typeof response === "object" &&
-    !Array.isArray(response)
+    source &&
+    typeof source === "object" &&
+    !Array.isArray(source)
   ) {
     return {
       paymentStatus:
         normalizePaymentStatus(
-          response.paymentStatus,
+          source.paymentStatus ??
+            source.PaymentStatus,
         ),
 
       orderId:
-        response.orderId || null,
+        source.orderId ??
+        source.OrderId ??
+        null,
 
       appointmentId:
-        response.appointmentId || null,
+        source.appointmentId ??
+        source.AppointmentId ??
+        null,
     };
   }
 
   return {
     paymentStatus:
-      normalizePaymentStatus(response),
+      normalizePaymentStatus(source),
 
     orderId: null,
     appointmentId: null,
+  };
+};
+
+const normalizePositiveInteger = (
+  value,
+  fallback,
+) => {
+  const normalized =
+    Number(value);
+
+  return (
+    Number.isInteger(normalized) &&
+    normalized > 0
+  )
+    ? normalized
+    : fallback;
+};
+
+const normalizeHistoryResponse = (
+  response,
+  fallbackPage,
+  fallbackPageSize,
+) => {
+  const source =
+    response?.data ?? response ?? {};
+
+  const items =
+    Array.isArray(source?.items)
+      ? source.items
+      : [];
+
+  const pageNumber =
+    normalizePositiveInteger(
+      source?.pageNumber,
+      fallbackPage,
+    );
+
+  const pageSize =
+    normalizePositiveInteger(
+      source?.pageSize,
+      fallbackPageSize,
+    );
+
+  const totalCount =
+    Math.max(
+      0,
+      Number(
+        source?.totalCount,
+      ) || 0,
+    );
+
+  const totalPages =
+    Math.max(
+      0,
+      Number(
+        source?.totalPages,
+      ) ||
+        Math.ceil(
+          totalCount /
+            pageSize,
+        ),
+    );
+
+  return {
+    items,
+    pageNumber,
+    pageSize,
+    totalCount,
+    totalPages,
+
+    hasPreviousPage:
+      source?.hasPreviousPage ??
+      pageNumber > 1,
+
+    hasNextPage:
+      source?.hasNextPage ??
+      pageNumber < totalPages,
   };
 };
 
@@ -136,7 +221,7 @@ export const paymentApi = {
     );
   },
 
-  getStatus: async (
+  getStatusDetail: async (
     agreementId,
     { signal } = {},
   ) => {
@@ -153,95 +238,102 @@ export const paymentApi = {
 
     return normalizeStatusResponse(
       response,
-    ).paymentStatus;
+    );
   },
 
-  createOrderSettlementPayOsCheckout:
-    async (
-      paymentId,
-      redirectUrls = {},
-    ) => {
-      const id =
-        ensureId(
-          paymentId,
-          "Không tìm thấy khoản thanh toán bổ sung.",
+  /*
+   * Compatibility wrapper:
+   * AgreementPage currently consumes only the normalized status string.
+   * PaymentResultPage uses getStatusDetail() so OrderId/AppointmentId
+   * from the current Backend contract are not discarded.
+   */
+  getStatus: async (
+    agreementId,
+    options = {},
+  ) => {
+    const detail =
+      await paymentApi
+        .getStatusDetail(
+          agreementId,
+          options,
         );
 
-      const payload =
-        normalizeRedirectUrls(
-          redirectUrls,
-        );
+    return detail.paymentStatus;
+  },
 
-      const response =
-        await axiosClient.post(
-          `/payments/order-settlements/${encodeURIComponent(
-            id,
-          )}/payos/checkout`,
-          payload,
-          {
-            skipGlobalErrorPage: true,
-          },
-        );
-
-      if (!response?.checkoutUrl) {
-        throw new Error(
-          "Không nhận được liên kết PayOS cho khoản thanh toán bổ sung.",
-        );
-      }
-
-      return response;
-    },
-
-  checkoutOrderSettlementWithWallet:
-    async (paymentId) => {
-      const id =
-        ensureId(
-          paymentId,
-          "Không tìm thấy khoản thanh toán bổ sung.",
-        );
-
-      const response =
-        await axiosClient.post(
-          `/payments/order-settlements/${encodeURIComponent(
-            id,
-          )}/wallet/checkout`,
-          undefined,
-          {
-            skipGlobalErrorPage: true,
-          },
-        );
-
-      return normalizeStatusResponse(
-        response,
+  getHistory: async ({
+    pageNumber = 1,
+    pageSize = 20,
+    status,
+    method,
+    fromDate,
+    toDate,
+    signal,
+  } = {}) => {
+    const normalizedPage =
+      normalizePositiveInteger(
+        pageNumber,
+        1,
       );
-    },
 
-  getOrderSettlementStatus:
-    async (
-      paymentId,
-      { signal } = {},
-    ) => {
-      const id =
-        ensureId(
-          paymentId,
-          "Không tìm thấy khoản thanh toán bổ sung.",
-        );
-
-      const response =
-        await axiosClient.get(
-          `/payments/order-settlements/${encodeURIComponent(
-            id,
-          )}/status`,
-          {
-            signal,
-            skipGlobalErrorPage: true,
-          },
-        );
-
-      return normalizeStatusResponse(
-        response,
+    const normalizedPageSize =
+      Math.min(
+        100,
+        normalizePositiveInteger(
+          pageSize,
+          20,
+        ),
       );
-    },
+
+    const params = {
+      PageNumber:
+        normalizedPage,
+
+      PageSize:
+        normalizedPageSize,
+    };
+
+    if (
+      status !== undefined &&
+      status !== null &&
+      status !== ""
+    ) {
+      params.Status = status;
+    }
+
+    if (
+      method !== undefined &&
+      method !== null &&
+      method !== ""
+    ) {
+      params.Method = method;
+    }
+
+    if (fromDate) {
+      params.FromDate =
+        fromDate;
+    }
+
+    if (toDate) {
+      params.ToDate =
+        toDate;
+    }
+
+    const response =
+      await axiosClient.get(
+        "/payments/history",
+        {
+          params,
+          signal,
+        },
+      );
+
+    return normalizeHistoryResponse(
+      response,
+      normalizedPage,
+      normalizedPageSize,
+    );
+  },
 };
 
 export default paymentApi;

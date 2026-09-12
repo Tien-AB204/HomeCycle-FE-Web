@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ORDER_STATUS,
-  PAYMENT_STATUS,
   getOrderStatusMeta,
   getPaymentDisplayMeta,
+  isOrderStatus,
+  isPaymentStatus,
 } from "../../constants/orders";
 import OrderTransactionActions from "../../features/orders/OrderTransactionActions";
 import OrderReviewSection from "../../features/reviews/OrderReviewSection";
@@ -12,6 +12,7 @@ import orderApi from "../../services/apis/orderApi";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
 import { useAuth } from "../../hooks/useAuth";
+import { useChatRealtime } from "../../hooks/useChatRealtime";
 
 const OWN_POST_REVIEW_MESSAGE =
   "Chủ bài đăng không thể tự đánh giá đơn hàng của tin đăng.";
@@ -86,10 +87,487 @@ const OrderProductImage = ({ src, alt }) => {
   );
 };
 
+const normalizeTimelineValue = (
+  value,
+) =>
+  String(value ?? "")
+    .replace(/[\s_-]/g, "")
+    .toLowerCase();
+
+const HIDDEN_TIMELINE_CODES =
+  new Set([
+    "collectionschedule",
+    "inspectionscheduled",
+  ]);
+
+const filterTimelineSteps = (
+  steps,
+) =>
+  (Array.isArray(steps)
+    ? steps
+    : [])
+    .filter(
+      (step) =>
+        !HIDDEN_TIMELINE_CODES.has(
+          normalizeTimelineValue(
+            step?.code,
+          ),
+        ),
+    )
+    .map((step) => ({
+      ...step,
+
+      subSteps:
+        filterTimelineSteps(
+          step?.subSteps,
+        ),
+    }));
+
+const sanitizeTimelineText = (
+  value,
+) =>
+  String(value ?? "")
+    .replace(/\bBuyer\b/gi, "Người mua")
+    .replace(/\bSeller\b/gi, "Người bán");
+
+const getTimelineVisual = (
+  status,
+) => {
+  const value =
+    normalizeTimelineValue(status);
+
+  if (
+    value === "2" ||
+    value === "completed"
+  ) {
+    return {
+      icon: "check_circle",
+      dot:
+        "border-success bg-success text-white",
+      text:
+        "text-success",
+    };
+  }
+
+  if (
+    value === "1" ||
+    value === "inprogress"
+  ) {
+    return {
+      icon: "schedule",
+      dot:
+        "border-primary bg-primary text-white",
+      text:
+        "text-primary",
+    };
+  }
+
+  if (
+    value === "3" ||
+    value === "failed"
+  ) {
+    return {
+      icon: "error",
+      dot:
+        "border-error bg-error text-white",
+      text:
+        "text-error",
+    };
+  }
+
+  if (
+    value === "4" ||
+    value === "cancelled" ||
+    value === "canceled"
+  ) {
+    return {
+      icon: "cancel",
+      dot:
+        "border-error bg-error text-white",
+      text:
+        "text-error",
+    };
+  }
+
+  return {
+    icon: "radio_button_unchecked",
+    dot:
+      "border-border bg-white text-textLight",
+    text:
+      "text-textLight",
+  };
+};
+
+const OrderTimelineStep = ({
+  step,
+  isLast = false,
+  nested = false,
+}) => {
+  const visual =
+    getTimelineVisual(
+      step?.status,
+    );
+
+  const title =
+    sanitizeTimelineText(
+      step?.title,
+    ) ||
+    "Cập nhật đơn hàng";
+
+  const description =
+    sanitizeTimelineText(
+      step?.description,
+    );
+
+  const subSteps =
+    filterTimelineSteps(
+      step?.subSteps,
+    );
+
+  return (
+    <div
+      className={[
+        "relative flex gap-3",
+        nested ? "ml-3" : "",
+      ].join(" ")}
+    >
+      <div className="flex w-7 shrink-0 flex-col items-center">
+        <span
+          className={[
+            "material-symbols-outlined z-[1] flex h-7 w-7 items-center justify-center rounded-full border text-[17px]",
+            visual.dot,
+          ].join(" ")}
+          aria-hidden="true"
+        >
+          {visual.icon}
+        </span>
+
+        {!isLast && (
+          <span className="min-h-5 w-px flex-1 bg-border" />
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1 pb-5">
+        <p
+          className={[
+            "text-sm font-black",
+            visual.text,
+          ].join(" ")}
+        >
+          {title}
+        </p>
+
+        {description && (
+          <p className="mt-1 text-xs leading-5 text-textLight">
+            {description}
+          </p>
+        )}
+
+        {step?.occurredAt && (
+          <p className="mt-1 text-[11px] font-semibold text-textLight">
+            {formatDate(
+              step.occurredAt,
+            )}
+          </p>
+        )}
+
+        {subSteps.length > 0 && (
+          <div className="mt-3 rounded-xl bg-background px-3 pt-3">
+            {subSteps.map(
+              (
+                subStep,
+                index,
+              ) => (
+                <OrderTimelineStep
+                  key={
+                    String(
+                      subStep?.code ||
+                        "sub-step",
+                    ) +
+                    "-" +
+                    index
+                  }
+                  step={subStep}
+                  isLast={
+                    index ===
+                    subSteps.length - 1
+                  }
+                  nested
+                />
+              ),
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const OrderTimelinePanel = ({
+  timeline,
+}) => {
+  const steps =
+    filterTimelineSteps(
+      timeline,
+    );
+
+  return (
+    <section className="mt-5 rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+      <div className="border-b border-border pb-4">
+        <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+          Tiến trình đơn hàng
+        </p>
+
+        <h2 className="mt-1 text-lg font-black text-text">
+          Trạng thái giao dịch
+        </h2>
+      </div>
+
+      {steps.length > 0 ? (
+        <div className="mt-5">
+          {steps.map(
+            (step, index) => (
+              <OrderTimelineStep
+                key={
+                  String(
+                    step?.code ||
+                      "timeline-step",
+                  ) +
+                  "-" +
+                  index
+                }
+                step={step}
+                isLast={
+                  index ===
+                  steps.length - 1
+                }
+              />
+            ),
+          )}
+        </div>
+      ) : (
+        <p className="mt-4 rounded-xl bg-background p-4 text-sm font-semibold text-textLight">
+          Tiến trình đơn hàng đang được máy chủ cập nhật.
+        </p>
+      )}
+    </section>
+  );
+};
+
+const GhnShipmentTrackingCard = ({
+  orderId,
+}) => {
+  const [requestVersion, setRequestVersion] =
+    useState(0);
+
+  const [state, setState] =
+    useState({
+      loading: true,
+      tracking: null,
+      error: "",
+    });
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    let active = true;
+
+    orderApi
+      .getShipmentTracking(
+        orderId,
+        {
+          signal: controller.signal,
+        },
+      )
+      .then((tracking) => {
+        if (!active) {
+          return;
+        }
+
+        setState({
+          loading: false,
+          tracking,
+          error: "",
+        });
+      })
+      .catch((error) => {
+        if (
+          !active ||
+          error?.name === "CanceledError" ||
+          error?.code === "ERR_CANCELED"
+        ) {
+          return;
+        }
+
+        setState({
+          loading: false,
+          tracking: null,
+          error: getErrorMessage(error),
+        });
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [orderId, requestVersion]);
+
+  const refresh = () => {
+    setState((current) => ({
+      ...current,
+      loading: true,
+      error: "",
+    }));
+
+    setRequestVersion(
+      (current) => current + 1,
+    );
+  };
+
+  if (state.loading) {
+    return (
+      <section className="mt-5 rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+        <div
+          role="status"
+          className="flex items-center gap-3 text-sm font-semibold text-textLight"
+        >
+          <span
+            className="material-symbols-outlined animate-spin text-xl text-primary"
+            aria-hidden="true"
+          >
+            progress_activity
+          </span>
+
+          Đang đồng bộ trạng thái GHN...
+        </div>
+      </section>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <section className="mt-5 rounded-xl border border-warning/30 bg-warning/10 p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-black text-text">
+              Chưa thể đồng bộ vận chuyển
+            </p>
+
+            <p className="mt-1 text-sm leading-6 text-textLight">
+              {state.error}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={refresh}
+            className="shrink-0 rounded-lg border border-warning/40 bg-white px-4 py-2 text-sm font-black text-warning transition hover:bg-warning/10"
+          >
+            Thử lại
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const tracking =
+    state.tracking;
+
+  if (!tracking) {
+    return null;
+  }
+
+  return (
+    <section className="mt-5 rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+            Vận chuyển GHN
+          </p>
+
+          <h2 className="mt-1 text-lg font-black text-text">
+            Theo dõi vận đơn
+          </h2>
+        </div>
+
+        <button
+          type="button"
+          onClick={refresh}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-2 text-xs font-black text-primary transition hover:bg-primary/10"
+        >
+          <span
+            className="material-symbols-outlined text-base"
+            aria-hidden="true"
+          >
+            refresh
+          </span>
+
+          Cập nhật
+        </button>
+      </div>
+
+      {tracking.isStale && (
+        <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs font-semibold leading-5 text-warning">
+          GHN tạm thời chưa phản hồi. Đây là trạng thái gần nhất HomeCycle đã lưu.
+        </div>
+      )}
+
+      <div className="mt-4 flex items-start gap-3 rounded-xl bg-primary/5 p-4">
+        <span
+          className="material-symbols-outlined mt-0.5 text-primary"
+          aria-hidden="true"
+        >
+          local_shipping
+        </span>
+
+        <p className="text-sm font-semibold leading-6 text-text">
+          {tracking.message ||
+            "Trạng thái vận chuyển đang được cập nhật."}
+        </p>
+      </div>
+
+      <dl className="mt-4 divide-y divide-border border-y border-border">
+        <DetailRow label="Mã vận đơn">
+          {tracking.trackingCode ||
+            "Đang chờ GHN cấp mã"}
+        </DetailRow>
+
+        <DetailRow label="Dự kiến giao">
+          {formatDate(
+            tracking.expectedDeliveryAt,
+          )}
+        </DetailRow>
+
+        <DetailRow label="Đã giao lúc">
+          {formatDate(
+            tracking.deliveredAt,
+          )}
+        </DetailRow>
+
+        <DetailRow label="Đồng bộ gần nhất">
+          {formatDate(
+            tracking.lastSyncedAt,
+          )}
+        </DetailRow>
+      </dl>
+    </section>
+  );
+};
+
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const { user } = useAuth();
-  const [version, setVersion] = useState(0);
+
+  const {
+    connection,
+    reconnectVersion,
+    joinOrder,
+    leaveOrder,
+  } = useChatRealtime();
+
+  const [version, setVersion] =
+    useState(0);
 
   const [state, setState] = useState({
     loading: true,
@@ -138,7 +616,81 @@ const OrderDetailPage = () => {
 
     void loadDetail();
     return () => controller.abort();
-  }, [orderId, version]);
+  }, [
+    orderId,
+    reconnectVersion,
+    version,
+  ]);
+
+  useEffect(() => {
+    if (!connection || !orderId) {
+      return undefined;
+    }
+
+    const normalizedOrderId =
+      String(orderId)
+        .trim()
+        .toLowerCase();
+
+    const handleOrderTrackingUpdated = (
+      payload,
+    ) => {
+      const eventOrderId =
+        String(
+          payload?.orderId ??
+            payload?.OrderId ??
+            "",
+        )
+          .trim()
+          .toLowerCase();
+
+      if (
+        !eventOrderId ||
+        eventOrderId !== normalizedOrderId
+      ) {
+        return;
+      }
+
+      /*
+       * BE event chỉ chứa OrderId + UpdatedAt.
+       * Không merge event vào OrderDetail state.
+       * Tăng version để refetch DTO authoritative từ REST.
+       */
+      setVersion(
+        (current) => current + 1,
+      );
+    };
+
+    connection.on(
+      "OrderTrackingUpdated",
+      handleOrderTrackingUpdated,
+    );
+
+    void joinOrder(
+      String(orderId),
+    ).catch(() => {
+      /*
+       * REST detail vẫn dùng được nếu SignalR
+       * tạm thời chưa join được.
+       */
+    });
+
+    return () => {
+      connection.off(
+        "OrderTrackingUpdated",
+        handleOrderTrackingUpdated,
+      );
+
+      void leaveOrder(
+        String(orderId),
+      );
+    };
+  }, [
+    connection,
+    joinOrder,
+    leaveOrder,
+    orderId,
+  ]);
 
   if (state.loading) {
     return (
@@ -195,7 +747,7 @@ const OrderDetailPage = () => {
   const amountPaid = Number(order.amountPaid || 0);
   const amountRemaining = Number(order.amountRemaining || 0);
   const isFullyPaid =
-    Number(order.paymentStatus) === PAYMENT_STATUS.COMPLETED ||
+    isPaymentStatus(order.paymentStatus, "Completed") ||
     (finalTotalAmount > 0 &&
       amountPaid >= finalTotalAmount &&
       amountRemaining === 0);
@@ -206,9 +758,25 @@ const OrderDetailPage = () => {
       finalTotalAmount > 0 ? (amountPaid / finalTotalAmount) * 100 : 0,
     ),
   );
-  const isOrderCompleted = Number(order.orderStatus) === ORDER_STATUS.COMPLETED;
+  const isOrderCompleted = isOrderStatus(
+    order.orderStatus,
+    "Completed",
+  );
 
-  const currentUserId = getUserId(user).toLowerCase();
+  const normalizedDeliveryMethod =
+    String(
+      order.deliveryMethod ?? "",
+    )
+      .trim()
+      .toLowerCase();
+
+  const isGhnDelivery =
+    Number(order.deliveryMethod) === 1 ||
+    normalizedDeliveryMethod ===
+      "ghndelivery";
+
+  const currentUserId =
+    getUserId(user).toLowerCase();
 
   const postOwnerId = String(
     state.post?.ownerId || detail.postOwnerId || order.postOwnerId || "",
@@ -413,6 +981,22 @@ const OrderDetailPage = () => {
           </div>
         </aside>
       </div>
+
+      <OrderTimelinePanel
+        timeline={
+          detail?.timeline ||
+          order?.timeline ||
+          []
+        }
+      />
+
+      {isGhnDelivery && (
+        <GhnShipmentTrackingCard
+          orderId={
+            order.orderId || orderId
+          }
+        />
+      )}
 
       <OrderTransactionActions
         order={order}

@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   APPOINTMENT_PERSPECTIVE,
-  APPOINTMENT_STATUS,
   APPOINTMENT_STATUS_OPTIONS,
   APPOINTMENT_TYPE,
   getAppointmentStatusMeta,
+  isAppointmentStatus,
 } from "../../constants/appointments";
 import { ROLES } from "../../constants/roles";
 import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
 import CollectionSchedulePanel from "../../features/appointments/CollectionSchedulePanel";
-import OrderSettlementPaymentPanel from "../../features/appointments/OrderSettlementPaymentPanel";
 import { useAuth } from "../../hooks/useAuth";
 import appointmentApi from "../../services/apis/appointmentApi";
 import inspectionFormApi from "../../services/apis/inspectionFormApi";
@@ -147,10 +146,6 @@ const AppointmentDetailModal = ({
   const [scheduleOpen, setScheduleOpen] =
     useState(false);
 
-  const [
-    settlementPayment,
-    setSettlementPayment,
-  ] = useState(null);
 
   const loadDetail = useCallback(async () => {
     setState((current) => ({
@@ -184,51 +179,6 @@ const AppointmentDetailModal = ({
             error: "",
           });
 
-          const pendingPaymentId =
-            localStorage.getItem(
-              "homecycle:pending-order-settlement-payment-id",
-            ) || "";
-
-          const pendingOrderId =
-            localStorage.getItem(
-              "homecycle:pending-order-settlement-order-id",
-            ) || "";
-
-          const pendingAmount =
-            localStorage.getItem(
-              "homecycle:pending-order-settlement-amount",
-            ) || "";
-
-          const currentOrderId =
-            String(
-              inspectionForm.orderId ||
-                "",
-            ).trim();
-
-          if (
-            pendingPaymentId &&
-            pendingOrderId &&
-            currentOrderId &&
-            pendingOrderId ===
-              currentOrderId
-          ) {
-            setSettlementPayment({
-              paymentId:
-                pendingPaymentId,
-
-              orderId:
-                pendingOrderId ||
-                inspectionForm.orderId ||
-                "",
-
-              amount:
-                pendingAmount,
-            });
-          } else {
-            setSettlementPayment(
-              null,
-            );
-          }
         } catch (inspectionError) {
           if (
             inspectionError?.name !==
@@ -370,7 +320,7 @@ const AppointmentDetailModal = ({
       : Boolean(base.sellerCheckAt);
   const canCheckIn =
     !base.cancelledAt &&
-    Number(base.appointmentStatus) !== APPOINTMENT_STATUS.COMPLETED &&
+    !isAppointmentStatus(base.appointmentStatus, "Completed") &&
     !isCurrentUserCheckedIn;
   const statusMeta = getAppointmentStatusMeta(base.appointmentStatus);
 
@@ -609,154 +559,18 @@ const AppointmentDetailModal = ({
                                 setScheduleOpen(false);
                                 await loadDetail();
                               }}
-                              onScheduled={async (result) => {
+                              onScheduled={async () => {
                                 setScheduleOpen(false);
 
-                                /*
-                                 * Một schedule response mới phải thay
-                                 * hoàn toàn settlement cũ của màn hình.
-                                 */
-                                localStorage.removeItem(
-                                  "homecycle:pending-order-settlement-payment-id",
+                                setNotice(
+                                  "Đã tạo lịch thu gom thành công.",
                                 );
-
-                                localStorage.removeItem(
-                                  "homecycle:pending-order-settlement-order-id",
-                                );
-
-                                localStorage.removeItem(
-                                  "homecycle:pending-order-settlement-amount",
-                                );
-
-                                setSettlementPayment(
-                                  null,
-                                );
-
-                                if (result?.paymentRequired) {
-                                  const paymentId =
-                                    String(
-                                      result.paymentId ||
-                                        "",
-                                    ).trim();
-
-                                  const orderId =
-                                    String(
-                                      result.orderId ||
-                                        inspectionState.form
-                                          .orderId ||
-                                        "",
-                                    ).trim();
-
-                                  const amount =
-                                    Number(
-                                      result.additionalPaymentAmount,
-                                    );
-
-                                  if (!paymentId) {
-                                    setState((current) => ({
-                                      ...current,
-                                      error:
-                                        "Máy chủ yêu cầu thanh toán bổ sung nhưng chưa trả về mã thanh toán.",
-                                    }));
-                                  } else {
-                                    const nextSettlement = {
-                                      paymentId,
-                                      orderId,
-                                      appointmentId:
-                                        result.appointmentId ||
-                                        "",
-                                      amount:
-                                        Number.isFinite(
-                                          amount,
-                                        )
-                                          ? amount
-                                          : "",
-                                    };
-
-                                    localStorage.setItem(
-                                      "homecycle:pending-order-settlement-payment-id",
-                                      paymentId,
-                                    );
-
-                                    if (orderId) {
-                                      localStorage.setItem(
-                                        "homecycle:pending-order-settlement-order-id",
-                                        orderId,
-                                      );
-                                    }
-
-                                    if (
-                                      Number.isFinite(
-                                        amount,
-                                      )
-                                    ) {
-                                      localStorage.setItem(
-                                        "homecycle:pending-order-settlement-amount",
-                                        String(amount),
-                                      );
-                                    }
-
-                                    setSettlementPayment(
-                                      nextSettlement,
-                                    );
-
-                                    setNotice(
-                                      Number.isFinite(
-                                        amount,
-                                      )
-                                        ? `Đã tạo lịch thu gom. Cần thanh toán phần còn lại ${amount.toLocaleString(
-                                            "vi-VN",
-                                          )} đ.`
-                                        : "Đã tạo lịch thu gom và phát sinh khoản thanh toán bổ sung.",
-                                    );
-                                  }
-                                } else {
-                                  setSettlementPayment(
-                                    null,
-                                  );
-
-                                  setNotice(
-                                    "Đã tạo lịch thu gom thành công.",
-                                  );
-                                }
 
                                 await loadDetail();
                                 onChanged();
                               }}
                             />
                           )}
-
-                        {settlementPayment && (
-                          <OrderSettlementPaymentPanel
-                            settlement={
-                              settlementPayment
-                            }
-                            onCompleted={async () => {
-                              localStorage.removeItem(
-                                "homecycle:pending-order-settlement-payment-id",
-                              );
-
-                              localStorage.removeItem(
-                                "homecycle:pending-order-settlement-order-id",
-                              );
-
-                              localStorage.removeItem(
-                                "homecycle:pending-order-settlement-amount",
-                              );
-
-                              setSettlementPayment(
-                                null,
-                              );
-
-                              setNotice(
-                                "Đã thanh toán phần còn lại thành công.",
-                              );
-
-                              await loadDetail();
-                              onChanged();
-                            }}
-                          />
-                        )}
                       </div>
                     )}
                 </section>
