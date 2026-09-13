@@ -352,7 +352,14 @@ export default function SellerRequestModal({
           </div>
         </header>
 
-        <form onSubmit={handleSubmit}>
+        {/*
+         * noValidate: input Số lượng vẫn giữ min/max/step để hỗ trợ thao
+         * tác (spinner, bàn phím số) nhưng không để trình duyệt tự chặn
+         * submit bằng tooltip tiếng Anh mặc định - handleSubmit đã có kiểm
+         * tra tiếng Việt đầy đủ (bắt buộc, số nguyên, tối thiểu, tối đa
+         * theo số lượng còn lại) nên phải là nơi quyết định duy nhất.
+         */}
+        <form onSubmit={handleSubmit} noValidate>
           <div className="space-y-5 px-6 py-5">
             <div className="rounded-2xl border border-border bg-primary/5 p-4">
               <p className="text-xs font-black uppercase tracking-wide text-primary">
