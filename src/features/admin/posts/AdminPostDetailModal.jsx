@@ -297,43 +297,56 @@ export default function AdminPostDetailModal({
 
           {!isLoading && !detailState.error && post && (
             <div className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                <div>
-                  <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-background">
-                    <EvidenceImage
-                      src={selectedMedia?.url}
-                      alt={post.productName || "Hình ảnh bài đăng"}
-                      bordered={false}
-                      objectFit="contain"
-                      className="h-full w-full"
-                    />
-                  </div>
-
-                  {medias.length > 1 && (
-                    <div className="mt-3 grid grid-cols-5 gap-2">
-                      {medias.slice(0, 5).map((media, index) => (
-                        <button
-                          key={media.mediaId || `${media.url}-${index}`}
-                          type="button"
-                          onClick={() => setSelectedMediaIndex(index)}
-                          aria-label={`Xem ảnh ${index + 1}`}
-                          className={`aspect-square overflow-hidden rounded-lg border-2 bg-background transition ${
-                            selectedMediaIndex === index
-                              ? "border-primary"
-                              : "border-transparent hover:border-border"
-                          }`}
-                        >
-                          <EvidenceImage
-                            src={media.url}
-                            alt=""
-                            bordered={false}
-                            className="h-full w-full"
-                          />
-                        </button>
-                      ))}
+              <div
+                className={
+                  isBuyPost
+                    ? "grid gap-6"
+                    : "grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]"
+                }
+              >
+                {/*
+                 * Tin thu mua (Buy) không có ảnh sản phẩm thật - không hiển
+                 * thị ảnh/placeholder/vùng dự trữ nào, kể cả khi Backend
+                 * còn trả dữ liệu media cũ.
+                 */}
+                {!isBuyPost && (
+                  <div>
+                    <div className="aspect-[4/3] overflow-hidden rounded-xl border border-border bg-background">
+                      <EvidenceImage
+                        src={selectedMedia?.url}
+                        alt={post.productName || "Hình ảnh bài đăng"}
+                        bordered={false}
+                        objectFit="contain"
+                        className="h-full w-full"
+                      />
                     </div>
-                  )}
-                </div>
+
+                    {medias.length > 1 && (
+                      <div className="mt-3 grid grid-cols-5 gap-2">
+                        {medias.slice(0, 5).map((media, index) => (
+                          <button
+                            key={media.mediaId || `${media.url}-${index}`}
+                            type="button"
+                            onClick={() => setSelectedMediaIndex(index)}
+                            aria-label={`Xem ảnh ${index + 1}`}
+                            className={`aspect-square overflow-hidden rounded-lg border-2 bg-background transition ${
+                              selectedMediaIndex === index
+                                ? "border-primary"
+                                : "border-transparent hover:border-border"
+                            }`}
+                          >
+                            <EvidenceImage
+                              src={media.url}
+                              alt=""
+                              bordered={false}
+                              className="h-full w-full"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-5">
                   <div className="flex flex-wrap items-center gap-2">

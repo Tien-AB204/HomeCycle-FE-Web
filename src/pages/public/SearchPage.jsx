@@ -129,6 +129,35 @@ const isCanceledRequest = (error) => {
   );
 };
 
+/*
+ * GET /business-profiles/survey-detail (BusinessProfileService.
+ * GetProcurementPreferenceAsync) trả lỗi 400 với đúng 2 mã hợp đồng đã biết
+ * khi doanh nghiệp chưa có khảo sát: "Survey.NotFound" (chưa có hồ sơ
+ * doanh nghiệp) và "BusinessProfile.NotFound" (có hồ sơ nhưng chưa lưu
+ * khảo sát) - đây là 2 trạng thái nghiệp vụ bình thường, không phải lỗi kỹ
+ * thuật. Chỉ đúng 2 mã này mới được coi là "chưa đặt tiêu chí"; mọi lỗi
+ * khác (mất mạng, timeout, lỗi máy chủ 5xx, lỗi không xác định...) phải đi
+ * tiếp vào luồng lỗi kỹ thuật hiện có, không được giả vờ là trạng thái
+ * "chưa có khảo sát". Đọc theo mã (code), không dựa vào nội dung message
+ * tiếng Anh, vì message có thể đổi mà không phá hợp đồng.
+ */
+const SURVEY_INCOMPLETE_ERROR_CODES = new Set([
+  "Survey.NotFound",
+  "BusinessProfile.NotFound",
+]);
+
+const isSurveyIncompleteError = (error) => {
+  const responseData = error?.response?.data;
+  const code =
+    responseData?.code ||
+    responseData?.error?.code ||
+    "";
+
+  return SURVEY_INCOMPLETE_ERROR_CODES.has(
+    String(code).trim(),
+  );
+};
+
 const getErrorMessage = (error) => {
   const responseData =
     error?.response?.data;
@@ -478,15 +507,23 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             await surveyRequest,
           );
         } catch (surveyError) {
-          if (isCanceledRequest(surveyError)) {
+          if (
+            isCanceledRequest(surveyError) ||
+            !isSurveyIncompleteError(surveyError)
+          ) {
+            /*
+             * Lỗi kỹ thuật thật (mất mạng, timeout, 5xx, ...) hoặc request
+             * bị huỷ - không được che thành trạng thái "chưa đặt tiêu chí".
+             * Ném tiếp để rơi vào catch bên ngoài, hiển thị đúng lỗi kỹ
+             * thuật và cho phép thử lại.
+             */
             throw surveyError;
           }
 
           /*
-           * Doanh nghiệp chưa gửi khảo sát thu mua là một trạng thái bình
-           * thường (chưa đặt tiêu chí), không phải lỗi kỹ thuật - dùng
-           * khảo sát rỗng để rơi đúng vào nhánh "chưa đặt tiêu chí" bên
-           * dưới thay vì hiển thị nguyên văn lỗi kỹ thuật từ Backend.
+           * Chỉ 2 mã lỗi hợp đồng đã biết ở trên (khảo sát/hồ sơ doanh
+           * nghiệp chưa tồn tại) mới là trạng thái bình thường - dùng khảo
+           * sát rỗng để rơi đúng vào nhánh "chưa đặt tiêu chí" bên dưới.
            */
           survey = normalizeBusinessSurvey(null);
         }
