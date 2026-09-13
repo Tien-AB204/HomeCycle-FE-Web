@@ -49,6 +49,8 @@ const LoginPage = () => {
     showPassword,
     setShowPassword,
   ] = useState(false);
+  const [rememberMe, setRememberMe] =
+    useState(false);
   const [loading, setLoading] =
     useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -118,6 +120,7 @@ const LoginPage = () => {
       const loggedInUser = loginWithGoogleTokens(
         data.accessToken,
         data.refreshToken,
+        rememberMe,
       );
 
       navigate(
@@ -204,7 +207,7 @@ const LoginPage = () => {
 
     try {
       const loggedInUser =
-        await login(email, password);
+        await login(email, password, rememberMe);
 
       navigate(
         returnPath ||
@@ -345,7 +348,25 @@ const LoginPage = () => {
             </button>
           </div>
 
-          <div className="mt-2 flex justify-end">
+          <div className="mt-2 flex items-center justify-between">
+            <label
+              htmlFor="login-remember-me"
+              className="flex items-center gap-2 text-xs font-bold text-textLight"
+            >
+              <input
+                id="login-remember-me"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) =>
+                  setRememberMe(
+                    event.target.checked,
+                  )
+                }
+                className="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary/30"
+              />
+              Ghi nhớ đăng nhập
+            </label>
+
             <Link
               to="/auth/forgot-password"
               className="text-xs font-bold text-primary hover:underline"

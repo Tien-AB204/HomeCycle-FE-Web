@@ -7,6 +7,17 @@ import {
 import { ROLES } from "../constants/roles";
 import authApi from "../services/apis/authApi";
 import { userService } from "../services/userService";
+import {
+  REFRESH_TOKEN_KEY,
+  clearAuthStorages,
+  getActiveAuthStorage,
+  getStoredAccessToken,
+  getStoredRefreshToken,
+  getStoredUserRaw,
+  updateStoredTokens,
+  updateStoredUser,
+  writeAuthSession,
+} from "../utils/authStorage";
 import { getUserId, normalizeRole } from "../utils/authUtils";
 import AuthContext from "./auth-context";
 
@@ -35,7 +46,7 @@ const normalizeUser = (userData) => {
 const getStoredUser = () => {
   try {
     const rawUser =
-      localStorage.getItem("user");
+      getStoredUserRaw();
 
     if (!rawUser) {
       return null;
@@ -48,7 +59,7 @@ const getStoredUser = () => {
       normalizeUser(parsedUser);
 
     if (!normalizedUser) {
-      localStorage.removeItem("user");
+      getActiveAuthStorage().removeItem("user");
       return null;
     }
 
@@ -56,23 +67,14 @@ const getStoredUser = () => {
       normalizedUser.role !==
       parsedUser.role
     ) {
-      localStorage.setItem(
-        "user",
-        JSON.stringify(normalizedUser),
-      );
+      updateStoredUser(normalizedUser);
     }
 
     return normalizedUser;
   } catch {
-    localStorage.removeItem("user");
+    getActiveAuthStorage().removeItem("user");
     return null;
   }
-};
-
-const clearStoredSession = () => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
 };
 
 const getAuthResponseData = (
@@ -158,20 +160,16 @@ const initializeStoredSession = () => {
         getStoredUser();
 
       const accessToken =
-        localStorage.getItem(
-          "accessToken",
-        );
+        getStoredAccessToken();
 
       const refreshToken =
-        localStorage.getItem(
-          "refreshToken",
-        );
+        getStoredRefreshToken();
 
       if (
         !storedUser ||
         !refreshToken
       ) {
-        clearStoredSession();
+        clearAuthStorages();
         return null;
       }
 
@@ -209,19 +207,14 @@ const initializeStoredSession = () => {
           );
         }
 
-        localStorage.setItem(
-          "accessToken",
+        updateStoredTokens(
           newAccessToken,
-        );
-
-        localStorage.setItem(
-          "refreshToken",
           newRefreshToken,
         );
 
         return storedUser;
       } catch {
-        clearStoredSession();
+        clearAuthStorages();
         return null;
       }
     })().finally(() => {
@@ -321,10 +314,7 @@ export const AuthProvider = ({
               currentUser.avatarUrl,
           });
 
-          localStorage.setItem(
-            "user",
-            JSON.stringify(updatedUser),
-          );
+          updateStoredUser(updatedUser);
 
           return updatedUser;
         });
@@ -346,6 +336,7 @@ export const AuthProvider = ({
       user: userData,
       accessToken,
       refreshToken,
+      rememberMe = true,
     }) => {
       const normalizedUser =
         normalizeUser(userData);
@@ -368,20 +359,12 @@ export const AuthProvider = ({
         );
       }
 
-      localStorage.setItem(
-        "accessToken",
+      writeAuthSession({
         accessToken,
-      );
-
-      localStorage.setItem(
-        "refreshToken",
         refreshToken,
-      );
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(normalizedUser),
-      );
+        user: normalizedUser,
+        rememberMe: Boolean(rememberMe),
+      });
 
       setUser(normalizedUser);
 
@@ -400,7 +383,7 @@ export const AuthProvider = ({
    * hành (sub, ClaimTypes.Name/Email/Role dạng URI đầy đủ).
    */
   const loginWithGoogleTokens = useCallback(
-    (accessToken, refreshToken) => {
+    (accessToken, refreshToken, rememberMe = true) => {
       const payload = decodeJwtPayload(accessToken);
 
       if (!payload) {
@@ -434,6 +417,7 @@ export const AuthProvider = ({
         user: userInfo,
         accessToken,
         refreshToken,
+        rememberMe,
       });
     },
     [saveSession],
@@ -443,7 +427,7 @@ export const AuthProvider = ({
    * Đăng nhập bằng email và mật khẩu.
    */
   const login = useCallback(
-    async (email, password) => {
+    async (email, password, rememberMe = true) => {
       const normalizedEmail =
         email.trim().toLowerCase();
 
@@ -490,6 +474,7 @@ export const AuthProvider = ({
         user: userInfo,
         accessToken,
         refreshToken,
+        rememberMe,
       });
     },
     [saveSession],
@@ -522,10 +507,7 @@ export const AuthProvider = ({
           return currentUser;
         }
 
-        localStorage.setItem(
-          "user",
-          JSON.stringify(updatedUser),
-        );
+        updateStoredUser(updatedUser);
 
         return updatedUser;
       });
@@ -534,7 +516,7 @@ export const AuthProvider = ({
   );
 
   const logout = useCallback(() => {
-    clearStoredSession();
+    clearAuthStorages();
     setUser(null);
   }, []);
 
@@ -543,7 +525,7 @@ export const AuthProvider = ({
    */
   useEffect(() => {
     const handleSessionExpired = () => {
-      clearStoredSession();
+      clearAuthStorages();
       setUser(null);
       setIsAuthInitializing(false);
     };
@@ -563,6 +545,12 @@ export const AuthProvider = ({
 
   /**
    * Đồng bộ session giữa nhiều tab.
+   *
+   * "storage" chỉ được trình duyệt bắn cho các tab khác khi localStorage
+   * thay đổi (sessionStorage không lan ra ngoài tab hiện tại) - nên việc
+   * đồng bộ đa tab này chỉ có ý nghĩa với phiên "ghi nhớ đăng nhập". Nếu
+   * tab này đang giữ một phiên "không ghi nhớ" riêng trong sessionStorage,
+   * bỏ qua thay đổi localStorage từ tab khác vì đó là hai phiên độc lập.
    */
   useEffect(() => {
     const handleStorageChange = (
@@ -583,18 +571,22 @@ export const AuthProvider = ({
         return;
       }
 
+      if (
+        sessionStorage.getItem(
+          REFRESH_TOKEN_KEY,
+        )
+      ) {
+        return;
+      }
+
       const storedUser =
         getStoredUser();
 
       const storedAccessToken =
-        localStorage.getItem(
-          "accessToken",
-        );
+        getStoredAccessToken();
 
       const storedRefreshToken =
-        localStorage.getItem(
-          "refreshToken",
-        );
+        getStoredRefreshToken();
 
       if (
         !storedUser ||
@@ -624,12 +616,8 @@ export const AuthProvider = ({
   const isAuthenticated = Boolean(
     !isAuthInitializing &&
       user &&
-      localStorage.getItem(
-        "accessToken",
-      ) &&
-      localStorage.getItem(
-        "refreshToken",
-      ),
+      getStoredAccessToken() &&
+      getStoredRefreshToken(),
   );
 
   const contextValue = useMemo(

@@ -1,4 +1,10 @@
 import axios from "axios";
+import {
+  clearAuthStorages,
+  getStoredAccessToken,
+  getStoredRefreshToken,
+  updateStoredTokens,
+} from "../../utils/authStorage";
 import { notifyGlobalApiError } from "../../utils/globalApiError";
 
 const DEFAULT_API_BASE_URL = "https://homecycle-backend.onrender.com/api";
@@ -25,12 +31,6 @@ const isPublicAuthRequest = (url = "") => {
   );
 };
 
-const clearStoredSession = () => {
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
-};
-
 const notifySessionExpired = () => {
   window.dispatchEvent(new Event("auth:session-expired"));
 };
@@ -44,7 +44,7 @@ let refreshPromise = null;
 
 axiosClient.interceptors.request.use(
   (config) => {
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = getStoredAccessToken();
 
     /*
      * Không gửi access token tới các API xác thực công khai.
@@ -79,10 +79,10 @@ axiosClient.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const storedRefreshToken = localStorage.getItem("refreshToken");
+    const storedRefreshToken = getStoredRefreshToken();
 
     if (!storedRefreshToken) {
-      clearStoredSession();
+      clearAuthStorages();
       notifySessionExpired();
 
       return Promise.reject(error);
@@ -120,11 +120,11 @@ axiosClient.interceptors.response.use(
             }
 
             /*
-             * Backend sử dụng refresh-token rotation.
+             * Backend sử dụng refresh-token rotation. Ghi đè lại đúng
+             * storage đang giữ phiên hiện tại (localStorage nếu "ghi nhớ
+             * đăng nhập", sessionStorage nếu không).
              */
-            localStorage.setItem("accessToken", accessToken);
-
-            localStorage.setItem("refreshToken", newRefreshToken);
+            updateStoredTokens(accessToken, newRefreshToken);
 
             return accessToken;
           })
@@ -139,7 +139,7 @@ axiosClient.interceptors.response.use(
 
       return axiosClient(originalRequest);
     } catch (refreshError) {
-      clearStoredSession();
+      clearAuthStorages();
       notifySessionExpired();
       notifyGlobalApiError(refreshError);
 
