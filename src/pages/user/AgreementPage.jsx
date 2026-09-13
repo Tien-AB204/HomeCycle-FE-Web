@@ -572,11 +572,21 @@ const AgreementPage = () => {
           <section className="mt-5 rounded-2xl border border-success/30 bg-success/10 p-5 sm:p-6">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-success">Đơn hàng đã được tạo</p>
             <h2 className="mt-2 text-xl font-black text-success">{order.orderCode || order.orderId}</h2>
-            <div className="mt-4 grid gap-3 text-sm text-success sm:grid-cols-3">
-              <p>Đã thanh toán: <strong>{formatCurrency(order.amountPaid)}</strong></p>
-              <p>Còn lại: <strong>{formatCurrency(order.amountRemaining)}</strong></p>
-              <p>Số lượng: <strong>{order.quantity}</strong></p>
-            </div>
+            {(order.amountPaid !== undefined ||
+              order.amountRemaining !== undefined ||
+              order.quantity !== undefined) && (
+              <div className="mt-4 grid gap-3 text-sm text-success sm:grid-cols-3">
+                {order.amountPaid !== undefined && (
+                  <p>Đã thanh toán: <strong>{formatCurrency(order.amountPaid)}</strong></p>
+                )}
+                {order.amountRemaining !== undefined && (
+                  <p>Còn lại: <strong>{formatCurrency(order.amountRemaining)}</strong></p>
+                )}
+                {order.quantity !== undefined && (
+                  <p>Số lượng: <strong>{order.quantity}</strong></p>
+                )}
+              </div>
+            )}
             <Link
               to={`/don-hang/${order.orderId}`}
               className="mt-5 inline-flex rounded-xl bg-success px-5 py-2.5 text-sm font-black text-white hover:bg-success/90"
