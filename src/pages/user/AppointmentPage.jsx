@@ -5,6 +5,7 @@ import {
   APPOINTMENT_TYPE,
   getAppointmentStatusMeta,
 } from "../../constants/appointments";
+import { getDeliveryMethodLabel } from "../../constants/agreements";
 import { ROLES } from "../../constants/roles";
 import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
 import InspectionFormPanel from "../../features/appointments/InspectionFormPanel";
@@ -428,7 +429,7 @@ const AppointmentDetailModal = ({
                       Giao nhận
                     </dt>
                     <dd className="font-bold text-text">
-                      {specialized.deliveryMethod}
+                      {getDeliveryMethodLabel(specialized.deliveryMethod)}
                     </dd>
                   </div>
                 )}
