@@ -4,6 +4,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import googleLogo from "../../assets/brand/google-logo.svg";
 import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
 import { decodeJwtPayload, getHomePathByRole } from "../../utils/authUtils";
@@ -108,14 +109,24 @@ const LoginPage = () => {
     useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleIconFailed, setGoogleIconFailed] = useState(false);
-  const [googleButtonWidth, setGoogleButtonWidth] = useState(320);
-  const googleButtonWrapperRef = useRef(null);
-  const googleButtonRef = useRef(null);
   const googleCredentialHandlerRef = useRef(null);
   const googleInitializedRef = useRef(false);
+  const googleLoadingWatchdogRef = useRef(null);
+
+  const clearGoogleLoadingWatchdog = () => {
+    if (googleLoadingWatchdogRef.current) {
+      window.clearTimeout(googleLoadingWatchdogRef.current);
+      googleLoadingWatchdogRef.current = null;
+    }
+  };
 
   const handleGoogleCredentialResponse = async (credentialResponse) => {
+    /*
+     * Đã có phản hồi thật từ Google (dù có credential hay không) - không
+     * cần watchdog nữa, từ đây vòng đời loading do chính hàm này quản lý.
+     */
+    clearGoogleLoadingWatchdog();
+
     const idToken = credentialResponse?.credential;
 
     if (!idToken) {
@@ -212,37 +223,9 @@ const LoginPage = () => {
     googleCredentialHandlerRef.current = handleGoogleCredentialResponse;
   });
 
-  /*
-   * Đo chiều rộng thật của khung chứa để nút Google (GIS chỉ nhận width là
-   * số px cố định, không hỗ trợ "100%") luôn vừa khít layout hiện tại thay
-   * vì một con số cố định có thể tràn trên màn hình hẹp. Giới hạn trong
-   * khoảng GIS hỗ trợ (200-400px).
-   */
   useEffect(() => {
-    if (!GOOGLE_CLIENT_ID || !googleButtonWrapperRef.current) {
-      return undefined;
-    }
-
-    const element = googleButtonWrapperRef.current;
-
-    const updateWidth = () => {
-      const measuredWidth = element.getBoundingClientRect().width;
-      const clampedWidth = Math.round(
-        Math.min(400, Math.max(200, measuredWidth || 320)),
-      );
-
-      setGoogleButtonWidth((current) =>
-        current === clampedWidth ? current : clampedWidth,
-      );
-    };
-
-    updateWidth();
-
-    const resizeObserver = new ResizeObserver(updateWidth);
-    resizeObserver.observe(element);
-
     return () => {
-      resizeObserver.disconnect();
+      clearGoogleLoadingWatchdog();
     };
   }, []);
 
@@ -253,59 +236,120 @@ const LoginPage = () => {
 
     let cancelled = false;
 
-    const renderGoogleButton = () => {
+    const initializeGoogleIdentity = () => {
       if (
         cancelled ||
         !window.google?.accounts?.id ||
-        !googleButtonRef.current
+        googleInitializedRef.current
       ) {
         return;
       }
 
-      if (!googleInitializedRef.current) {
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: (credentialResponse) => {
-            void googleCredentialHandlerRef.current?.(credentialResponse);
-          },
-        });
-
-        googleInitializedRef.current = true;
-      }
-
-      /*
-       * renderButton() luôn thêm nút mới vào container thay vì tự thay
-       * thế - phải xoá nội dung cũ trước khi vẽ lại ở độ rộng mới (khi
-       * người dùng đổi kích thước cửa sổ).
-       */
-      googleButtonRef.current.innerHTML = "";
-
-      window.google.accounts.id.renderButton(
-        googleButtonRef.current,
-        {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          shape: "pill",
-          text: "signin_with",
-          locale: "vi",
-          logo_alignment: "left",
-          width: googleButtonWidth,
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: (credentialResponse) => {
+          void googleCredentialHandlerRef.current?.(credentialResponse);
         },
-      );
+      });
+
+      googleInitializedRef.current = true;
     };
 
     loadGoogleIdentityScript()
-      .then(renderGoogleButton)
+      .then(initializeGoogleIdentity)
       .catch(() => {
-        // Bỏ qua - nếu script Google không tải được, khu vực nút sẽ trống
-        // thay vì làm vỡ trang.
+        // Bỏ qua - nếu script Google không tải được, click vào nút sẽ báo
+        // "đang tải" thay vì làm vỡ trang.
       });
 
     return () => {
       cancelled = true;
     };
-  }, [googleButtonWidth]);
+  }, []);
+
+  /*
+   * Nút hiển thị là nút HomeCycle thật (không phải renderButton()/overlay ẩn
+   * của Google) - click gọi thẳng google.accounts.id.prompt() để mở UI chọn
+   * tài khoản Google. Đây chỉ là hành động "kích hoạt hiển thị"; ID token
+   * thật vẫn luôn đến qua callback đã đăng ký ở initialize() phía trên
+   * (handleGoogleCredentialResponse), không đọc/suy luận gì từ prompt().
+   */
+  const handleGoogleButtonClick = () => {
+    if (googleLoading) {
+      return;
+    }
+
+    if (!window.google?.accounts?.id || !googleInitializedRef.current) {
+      setErrorMessage(
+        "Dịch vụ đăng nhập Google đang được tải, vui lòng thử lại sau giây lát.",
+      );
+      return;
+    }
+
+    setErrorMessage("");
+    setGoogleLoading(true);
+
+    /*
+     * GIS cảnh báo (console) rằng isNotDisplayed()/isSkippedMoment()/
+     * isDismissedMoment() có thể không còn được gọi đáng tin cậy khi FedCM
+     * bắt buộc - nếu Google không bao giờ gọi lại callback này (quan sát
+     * được ngay cả ở thời điểm hiện tại), nút không được phép kẹt mãi ở
+     * "Đang xử lý...". Đặt một watchdog timeout làm lưới an toàn cuối
+     * cùng; bị huỷ ngay khi có phản hồi thật (moment hợp lệ hoặc credential
+     * thật đến qua handleGoogleCredentialResponse).
+     */
+    clearGoogleLoadingWatchdog();
+    googleLoadingWatchdogRef.current = window.setTimeout(() => {
+      googleLoadingWatchdogRef.current = null;
+      setGoogleLoading(false);
+    }, 10000);
+
+    window.google.accounts.id.prompt((notification) => {
+      const isNotDisplayed =
+        typeof notification?.isNotDisplayed === "function" &&
+        notification.isNotDisplayed();
+
+      const isSkipped =
+        typeof notification?.isSkippedMoment === "function" &&
+        notification.isSkippedMoment();
+
+      if (isNotDisplayed || isSkipped) {
+        /*
+         * Google không hiển thị được UI chọn tài khoản (vd trình duyệt
+         * chặn bên thứ ba, người dùng vừa tắt gần đây...) - không phải lỗi
+         * hệ thống, chỉ đơn giản chưa có gì để làm tiếp. Trả nút về trạng
+         * thái bình thường để có thể bấm thử lại, không hiện thông báo lỗi
+         * kỹ thuật của Google.
+         */
+        clearGoogleLoadingWatchdog();
+        setGoogleLoading(false);
+        return;
+      }
+
+      const isDismissed =
+        typeof notification?.isDismissedMoment === "function" &&
+        notification.isDismissedMoment();
+
+      if (isDismissed) {
+        const dismissedReason =
+          typeof notification.getDismissedReason === "function"
+            ? notification.getDismissedReason()
+            : "";
+
+        /*
+         * "credential_returned" nghĩa là Google đã trả về ID token -
+         * handleGoogleCredentialResponse sẽ tự xử lý tiếp (kể cả tắt
+         * loading và huỷ watchdog). Mọi lý do dismiss khác (người dùng tự
+         * đóng UI...) không phải sự cố hệ thống - chỉ cần trả nút về
+         * trạng thái bình thường.
+         */
+        if (dismissedReason !== "credential_returned") {
+          clearGoogleLoadingWatchdog();
+          setGoogleLoading(false);
+        }
+      }
+    });
+  };
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -507,26 +551,15 @@ const LoginPage = () => {
         </div>
 
         {GOOGLE_CLIENT_ID ? (
-          <div className="relative flex w-full justify-center">
-            {/*
-             * GIS không có API để một nút tự thiết kế kích hoạt luồng xác
-             * thực - dùng đúng nút Google thật (renderButton), chỉ tuỳ
-             * biến khung chứa xung quanh (căn giữa, giới hạn độ rộng theo
-             * layout hiện tại).
-             */}
-            <div
-              ref={googleButtonWrapperRef}
-              className="w-full max-w-[400px]"
-            >
-              <div ref={googleButtonRef} />
-            </div>
-
-            {googleLoading && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 text-sm font-bold text-primary">
-                Đang xử lý...
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={handleGoogleButtonClick}
+            disabled={googleLoading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-white py-3 text-sm font-bold text-text shadow-sm transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <img src={googleLogo} alt="" className="h-4 w-4" />
+            {googleLoading ? "Đang xử lý..." : "Đăng nhập bằng Google"}
+          </button>
         ) : (
           <button
             type="button"
@@ -534,14 +567,7 @@ const LoginPage = () => {
             title="Chưa cấu hình đăng nhập Google (thiếu VITE_GOOGLE_CLIENT_ID)."
             className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-border bg-white py-3 text-sm font-bold text-textLight opacity-60"
           >
-            {!googleIconFailed && (
-              <img
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt=""
-                onError={() => setGoogleIconFailed(true)}
-                className="h-4 w-4"
-              />
-            )}
+            <img src={googleLogo} alt="" className="h-4 w-4" />
             Google (chưa cấu hình)
           </button>
         )}
