@@ -15,6 +15,59 @@ const GOOGLE_CLIENT_ID = String(
 const GOOGLE_SCRIPT_ID = "google-identity-services-script";
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
+let googleScriptLoadPromise = null;
+
+/*
+ * Dùng chung một Promise ở module-level (giống sessionBootstrapPromise của
+ * AuthContext) thay vì gán trực tiếp script.onload trong effect. React 18
+ * StrictMode chạy effect hai lần lúc dev: lần chạy đầu tạo thẻ script rồi
+ * bị cleanup (cancelled = true) trước khi script tải xong; lần chạy thứ
+ * hai thấy thẻ script đã tồn tại nhưng chưa tải xong nên gọi initialize()
+ * ngay lập tức và bỏ cuộc do window.google chưa sẵn sàng - không bao giờ
+ * thử lại khi script tải xong, vì onload lúc đó chỉ gọi closure đã bị huỷ
+ * của lần chạy đầu. Dùng addEventListener("load") (không ghi đè onload)
+ * để mỗi lần effect chạy đều tự đăng ký callback riêng và tự kiểm tra
+ * cancelled của chính nó.
+ */
+const loadGoogleIdentityScript = () => {
+  if (googleScriptLoadPromise) {
+    return googleScriptLoadPromise;
+  }
+
+  googleScriptLoadPromise = new Promise((resolve, reject) => {
+    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID);
+
+    if (existingScript) {
+      if (window.google?.accounts?.id) {
+        resolve();
+      } else {
+        existingScript.addEventListener("load", () => resolve(), { once: true });
+        existingScript.addEventListener(
+          "error",
+          () => reject(new Error("Không tải được Google Identity Services.")),
+          { once: true },
+        );
+      }
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = GOOGLE_SCRIPT_ID;
+    script.src = GOOGLE_SCRIPT_SRC;
+    script.async = true;
+    script.defer = true;
+    script.addEventListener("load", () => resolve(), { once: true });
+    script.addEventListener(
+      "error",
+      () => reject(new Error("Không tải được Google Identity Services.")),
+      { once: true },
+    );
+    document.body.appendChild(script);
+  });
+
+  return googleScriptLoadPromise;
+};
+
 const getSafeReturnPath = (from) => {
   let returnPath = "";
 
@@ -176,19 +229,12 @@ const LoginPage = () => {
       }
     };
 
-    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID);
-
-    if (existingScript) {
-      initialize();
-    } else {
-      const script = document.createElement("script");
-      script.id = GOOGLE_SCRIPT_ID;
-      script.src = GOOGLE_SCRIPT_SRC;
-      script.async = true;
-      script.defer = true;
-      script.onload = initialize;
-      document.body.appendChild(script);
-    }
+    loadGoogleIdentityScript()
+      .then(initialize)
+      .catch(() => {
+        // Bỏ qua - nếu script Google không tải được, nút vẫn hiển thị dạng
+        // tĩnh (không tương tác) thay vì làm vỡ trang.
+      });
 
     return () => {
       cancelled = true;
@@ -395,14 +441,44 @@ const LoginPage = () => {
         </div>
 
         {GOOGLE_CLIENT_ID ? (
-          <div className="relative flex w-full justify-center">
-            <div ref={googleButtonRef} />
+          <div className="flex w-full justify-center">
+            {/*
+             * Google Identity Services chỉ cho tuỳ biến giao diện rất hạn
+             * chế (theme/shape/size/text có sẵn), không thể khớp hẳn màu
+             * sắc/kiểu chữ HomeCycle. Nút hiển thị bên dưới (span) là nút
+             * HomeCycle tự thiết kế, chỉ để hiển thị (aria-hidden, không
+             * nhận sự kiện); nút Google thật vẫn được render bằng đúng
+             * renderButton() gốc nhưng trong suốt (opacity 0), chồng lên
+             * trên cùng kích thước để nhận click/bàn phím thật - giữ
+             * nguyên toàn bộ luồng xác thực/callback gốc của Google.
+             */}
+            <div className="group relative h-11 w-[320px] max-w-full">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2.5 rounded-xl border border-border bg-white text-sm font-bold text-text shadow-sm transition group-hover:bg-background group-focus-within:border-primary group-focus-within:ring-4 group-focus-within:ring-primary/10"
+              >
+                {!googleIconFailed && (
+                  <img
+                    src="https://www.svgrepo.com/show/475656/google-color.svg"
+                    alt=""
+                    onError={() => setGoogleIconFailed(true)}
+                    className="h-5 w-5"
+                  />
+                )}
+                Tiếp tục với Google
+              </span>
 
-            {googleLoading && (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/70 text-sm font-bold text-primary">
-                Đang xử lý...
-              </div>
-            )}
+              <div
+                ref={googleButtonRef}
+                className="absolute inset-0 overflow-hidden opacity-0"
+              />
+
+              {googleLoading && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 text-sm font-bold text-primary">
+                  Đang xử lý...
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <button

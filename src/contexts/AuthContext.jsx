@@ -292,26 +292,46 @@ export const AuthProvider = ({
           profile.fullName || profile.FullName || "",
         ).trim();
 
-        if (!fullName) {
-          return;
-        }
+        const avatarUrl = String(
+          profile.avatarUrl || profile.AvatarUrl || "",
+        ).trim();
+
+        const username = String(
+          profile.username || profile.Username || "",
+        ).trim();
 
         setUser((currentUser) => {
           if (!currentUser || getUserId(currentUser) !== userId) {
             return currentUser;
           }
 
+          const nextFullName = fullName || currentUser.fullName;
+          const nextUsername = username || currentUser.username;
+          const nextAvatarUrl = avatarUrl || currentUser.avatarUrl;
+
+          /*
+           * Đăng nhập Google không có fullName/avatarUrl ngay từ đầu (JWT
+           * chỉ mang sub/name/email/role). Trước đây avatarUrl bị gộp
+           * chung điều kiện với fullName nên nếu hồ sơ Backend chưa có
+           * fullName thì avatarUrl cũng bị bỏ qua theo - tách hẳn 3 giá
+           * trị để avatarUrl luôn được đồng bộ khi có, không phụ thuộc
+           * fullName. Nếu không có gì thay đổi thật sự thì không tạo user
+           * mới (tránh effect này chạy lại vô ích mỗi khi user đổi tham
+           * chiếu vì fullName vẫn còn thiếu).
+           */
+          if (
+            nextFullName === currentUser.fullName &&
+            nextUsername === currentUser.username &&
+            nextAvatarUrl === currentUser.avatarUrl
+          ) {
+            return currentUser;
+          }
+
           const updatedUser = normalizeUser({
             ...currentUser,
-            fullName,
-            username:
-              profile.username ||
-              profile.Username ||
-              currentUser.username,
-            avatarUrl:
-              profile.avatarUrl ||
-              profile.AvatarUrl ||
-              currentUser.avatarUrl,
+            fullName: nextFullName,
+            username: nextUsername,
+            avatarUrl: nextAvatarUrl,
           });
 
           updateStoredUser(updatedUser);
