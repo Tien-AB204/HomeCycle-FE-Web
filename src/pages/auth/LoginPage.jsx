@@ -286,10 +286,10 @@ const LoginPage = () => {
           type: "standard",
           theme: "outline",
           size: "large",
-          shape: "rectangular",
-          text: "continue_with",
+          shape: "pill",
+          text: "signin_with",
           locale: "vi",
-          logo_alignment: "center",
+          logo_alignment: "left",
           width: googleButtonWidth,
         },
       );
