@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
-import { getHomePathByRole } from "../../utils/authUtils";
+import { decodeJwtPayload, getHomePathByRole } from "../../utils/authUtils";
 
 const GOOGLE_CLIENT_ID = String(
   import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
@@ -109,8 +109,11 @@ const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleIconFailed, setGoogleIconFailed] = useState(false);
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(320);
+  const googleButtonWrapperRef = useRef(null);
   const googleButtonRef = useRef(null);
   const googleCredentialHandlerRef = useRef(null);
+  const googleInitializedRef = useRef(false);
 
   const handleGoogleCredentialResponse = async (credentialResponse) => {
     const idToken = credentialResponse?.credential;
@@ -170,10 +173,25 @@ const LoginPage = () => {
         return;
       }
 
+      /*
+       * Backend hiện không cập nhật AvatarUrl từ Google cho tài khoản đã
+       * tồn tại (chỉ dùng payload.Picture khi tạo user mới) - nên
+       * /personal-profiles/me có thể chưa có avatar dù đăng nhập Google
+       * thật. Chỉ SAU KHI Backend đã xác nhận đăng nhập thành công, giải
+       * mã claim "picture" chuẩn OIDC từ chính idToken Google vừa dùng
+       * (chỉ để hiển thị, không dùng để xác thực/phân quyền) làm avatar
+       * tạm cho phiên này - không tự tạo/suy đoán URL nào khác.
+       */
+      const googleIdTokenPayload = decodeJwtPayload(idToken);
+      const googleAvatarUrl = String(
+        googleIdTokenPayload?.picture || "",
+      ).trim();
+
       const loggedInUser = loginWithGoogleTokens(
         data.accessToken,
         data.refreshToken,
         rememberMe,
+        googleAvatarUrl,
       );
 
       navigate(
@@ -194,6 +212,40 @@ const LoginPage = () => {
     googleCredentialHandlerRef.current = handleGoogleCredentialResponse;
   });
 
+  /*
+   * Đo chiều rộng thật của khung chứa để nút Google (GIS chỉ nhận width là
+   * số px cố định, không hỗ trợ "100%") luôn vừa khít layout hiện tại thay
+   * vì một con số cố định có thể tràn trên màn hình hẹp. Giới hạn trong
+   * khoảng GIS hỗ trợ (200-400px).
+   */
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID || !googleButtonWrapperRef.current) {
+      return undefined;
+    }
+
+    const element = googleButtonWrapperRef.current;
+
+    const updateWidth = () => {
+      const measuredWidth = element.getBoundingClientRect().width;
+      const clampedWidth = Math.round(
+        Math.min(400, Math.max(200, measuredWidth || 320)),
+      );
+
+      setGoogleButtonWidth((current) =>
+        current === clampedWidth ? current : clampedWidth,
+      );
+    };
+
+    updateWidth();
+
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) {
       return undefined;
@@ -201,45 +253,59 @@ const LoginPage = () => {
 
     let cancelled = false;
 
-    const initialize = () => {
-      if (cancelled || !window.google?.accounts?.id) {
+    const renderGoogleButton = () => {
+      if (
+        cancelled ||
+        !window.google?.accounts?.id ||
+        !googleButtonRef.current
+      ) {
         return;
       }
 
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: (credentialResponse) => {
-          void googleCredentialHandlerRef.current?.(credentialResponse);
-        },
-      });
-
-      if (googleButtonRef.current) {
-        window.google.accounts.id.renderButton(
-          googleButtonRef.current,
-          {
-            type: "standard",
-            theme: "outline",
-            size: "large",
-            shape: "rectangular",
-            text: "continue_with",
-            locale: "vi",
-            width: 320,
+      if (!googleInitializedRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: (credentialResponse) => {
+            void googleCredentialHandlerRef.current?.(credentialResponse);
           },
-        );
+        });
+
+        googleInitializedRef.current = true;
       }
+
+      /*
+       * renderButton() luôn thêm nút mới vào container thay vì tự thay
+       * thế - phải xoá nội dung cũ trước khi vẽ lại ở độ rộng mới (khi
+       * người dùng đổi kích thước cửa sổ).
+       */
+      googleButtonRef.current.innerHTML = "";
+
+      window.google.accounts.id.renderButton(
+        googleButtonRef.current,
+        {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          shape: "rectangular",
+          text: "continue_with",
+          locale: "vi",
+          logo_alignment: "center",
+          width: googleButtonWidth,
+        },
+      );
     };
 
     loadGoogleIdentityScript()
-      .then(initialize)
+      .then(renderGoogleButton)
       .catch(() => {
-        // Bỏ qua - nếu script Google không tải được, nút vẫn hiển thị dạng
-        // tĩnh (không tương tác) thay vì làm vỡ trang.
+        // Bỏ qua - nếu script Google không tải được, khu vực nút sẽ trống
+        // thay vì làm vỡ trang.
       });
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [googleButtonWidth]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -441,44 +507,25 @@ const LoginPage = () => {
         </div>
 
         {GOOGLE_CLIENT_ID ? (
-          <div className="flex w-full justify-center">
+          <div className="relative flex w-full justify-center">
             {/*
-             * Google Identity Services chỉ cho tuỳ biến giao diện rất hạn
-             * chế (theme/shape/size/text có sẵn), không thể khớp hẳn màu
-             * sắc/kiểu chữ HomeCycle. Nút hiển thị bên dưới (span) là nút
-             * HomeCycle tự thiết kế, chỉ để hiển thị (aria-hidden, không
-             * nhận sự kiện); nút Google thật vẫn được render bằng đúng
-             * renderButton() gốc nhưng trong suốt (opacity 0), chồng lên
-             * trên cùng kích thước để nhận click/bàn phím thật - giữ
-             * nguyên toàn bộ luồng xác thực/callback gốc của Google.
+             * GIS không có API để một nút tự thiết kế kích hoạt luồng xác
+             * thực - dùng đúng nút Google thật (renderButton), chỉ tuỳ
+             * biến khung chứa xung quanh (căn giữa, giới hạn độ rộng theo
+             * layout hiện tại).
              */}
-            <div className="group relative h-11 w-[320px] max-w-full">
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2.5 rounded-xl border border-border bg-white text-sm font-bold text-text shadow-sm transition group-hover:bg-background group-focus-within:border-primary group-focus-within:ring-4 group-focus-within:ring-primary/10"
-              >
-                {!googleIconFailed && (
-                  <img
-                    src="https://www.svgrepo.com/show/475656/google-color.svg"
-                    alt=""
-                    onError={() => setGoogleIconFailed(true)}
-                    className="h-5 w-5"
-                  />
-                )}
-                Tiếp tục với Google
-              </span>
-
-              <div
-                ref={googleButtonRef}
-                className="absolute inset-0 overflow-hidden opacity-0"
-              />
-
-              {googleLoading && (
-                <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 text-sm font-bold text-primary">
-                  Đang xử lý...
-                </div>
-              )}
+            <div
+              ref={googleButtonWrapperRef}
+              className="w-full max-w-[400px]"
+            >
+              <div ref={googleButtonRef} />
             </div>
+
+            {googleLoading && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-white/80 text-sm font-bold text-primary">
+                Đang xử lý...
+              </div>
+            )}
           </div>
         ) : (
           <button

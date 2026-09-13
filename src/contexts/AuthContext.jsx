@@ -401,9 +401,19 @@ export const AuthProvider = ({
    * thường. userId/username/email/role được lấy trực tiếp từ claim đã
    * xác nhận có trong access token do JwtService.GenerateAccessToken phát
    * hành (sub, ClaimTypes.Name/Email/Role dạng URI đầy đủ).
+   *
+   * googleAvatarUrl: claim "picture" giải mã từ CHÍNH idToken Google mà
+   * LoginPage vừa dùng để đăng nhập thành công (chỉ dữ liệu hiển thị, gọi
+   * sau khi Backend đã xác nhận thành công - không dùng để xác thực).
+   * ExecuteGoogleLoginAsync ở Backend hiện KHÔNG cập nhật AvatarUrl cho
+   * user đã tồn tại (chỉ dùng picture khi tạo user mới), nên /personal-
+   * profiles/me có thể không có avatar dù tài khoản đăng nhập bằng Google
+   * thật. Dùng picture này làm avatar tạm cho phiên hiện tại; nếu Backend
+   * sau đó trả về avatarUrl thật (effect đồng bộ hồ sơ Personal), giá trị
+   * đó vẫn được ưu tiên ghi đè (xem effect đồng bộ hồ sơ ở trên).
    */
   const loginWithGoogleTokens = useCallback(
-    (accessToken, refreshToken, rememberMe = true) => {
+    (accessToken, refreshToken, rememberMe = true, googleAvatarUrl) => {
       const payload = decodeJwtPayload(accessToken);
 
       if (!payload) {
@@ -432,6 +442,12 @@ export const AuthProvider = ({
             "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role"
           ] || "",
       };
+
+      const trimmedGoogleAvatarUrl = String(googleAvatarUrl || "").trim();
+
+      if (trimmedGoogleAvatarUrl) {
+        userInfo.avatarUrl = trimmedGoogleAvatarUrl;
+      }
 
       return saveSession({
         user: userInfo,
