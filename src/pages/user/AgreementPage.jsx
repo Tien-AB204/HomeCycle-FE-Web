@@ -69,6 +69,7 @@ const AgreementPage = () => {
   });
   const [paymentAck, setPaymentAck] = useState(false);
   const pollingRef = useRef(null);
+  const paymentActionLockRef = useRef(false);
 
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
@@ -269,7 +270,7 @@ const AgreementPage = () => {
   const loadWalletBalance = useCallback(async (signal) => {
     setWallet((current) => ({ ...current, loading: true, error: "" }));
     try {
-      const info = await walletApi.getMine({ signal });
+      const info = await walletApi.getMine({ signal, skipGlobalErrorPage: true });
       setWallet({ loading: false, balance: info.availableBalance, error: "" });
     } catch (walletError) {
       if (
@@ -351,74 +352,86 @@ const AgreementPage = () => {
   }, [agreement, loadData, stopPolling]);
 
   const handlePayOs = async () => {
-    const checkoutWindow = window.open("about:blank", "_blank");
-    if (checkoutWindow) checkoutWindow.opener = null;
-    setBusy("payos");
-    setError("");
-
-    let verification;
+    if (paymentActionLockRef.current) return;
+    paymentActionLockRef.current = true;
     try {
-      verification = await verifyAgreementContext();
-    } catch {
-      if (checkoutWindow) checkoutWindow.close();
-      setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
-      setBusy("");
-      return;
-    }
+      const checkoutWindow = window.open("about:blank", "_blank");
+      if (checkoutWindow) checkoutWindow.opener = null;
+      setBusy("payos");
+      setError("");
 
-    if (
-      verification &&
-      (verification.agreementChanges.length ||
-        verification.negotiationChanges.length ||
-        verification.postChanges.length)
-    ) {
-      if (checkoutWindow) checkoutWindow.close();
-      stopForAgreementChange(verification);
-      setBusy("");
-      return;
-    }
-
-    try {
-      localStorage.setItem(PENDING_AGREEMENT_KEY, agreement.agreementId);
-      const origin = window.location.origin;
-      const result = await paymentApi.createPayOsCheckout(
-        agreement.agreementId,
-        {
-          returnUrl: `${origin}/payments/success`,
-          cancelUrl: `${origin}/payments/cancel`,
-        },
-      );
-      if (checkoutWindow) checkoutWindow.location.href = result.checkoutUrl;
-      else window.location.assign(result.checkoutUrl);
-      setNotice("Đã mở trang PayOS ở thẻ mới. Sau khi chuyển khoản, HomeCycle sẽ tự kiểm tra trạng thái.");
-      stopPolling();
-      let attempts = 0;
-      pollingRef.current = window.setInterval(async () => {
-        attempts += 1;
-        await checkPayment({ silent: true });
-        if (attempts >= 36) stopPolling();
-      }, 5000);
-    } catch (requestError) {
-      if (checkoutWindow) checkoutWindow.close();
-      if (isConcurrencyConflict(requestError)) {
-        setStaleWarning({ message: AGREEMENT_CHANGED_WARNING });
-        await refresh();
+      let verification;
+      try {
+        verification = await verifyAgreementContext();
+      } catch {
+        if (checkoutWindow) checkoutWindow.close();
+        setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
+        setBusy("");
         return;
       }
-      setError(getErrorMessage(requestError, "Không thể tạo liên kết thanh toán PayOS."));
+
+      if (
+        verification &&
+        (verification.agreementChanges.length ||
+          verification.negotiationChanges.length ||
+          verification.postChanges.length)
+      ) {
+        if (checkoutWindow) checkoutWindow.close();
+        stopForAgreementChange(verification);
+        setBusy("");
+        return;
+      }
+
+      try {
+        localStorage.setItem(PENDING_AGREEMENT_KEY, agreement.agreementId);
+        const origin = window.location.origin;
+        const result = await paymentApi.createPayOsCheckout(
+          agreement.agreementId,
+          {
+            returnUrl: `${origin}/payments/success`,
+            cancelUrl: `${origin}/payments/cancel`,
+          },
+        );
+        if (checkoutWindow) checkoutWindow.location.href = result.checkoutUrl;
+        else window.location.assign(result.checkoutUrl);
+        setNotice("Đã mở trang PayOS ở thẻ mới. Sau khi chuyển khoản, HomeCycle sẽ tự kiểm tra trạng thái.");
+        stopPolling();
+        let attempts = 0;
+        pollingRef.current = window.setInterval(async () => {
+          attempts += 1;
+          await checkPayment({ silent: true });
+          if (attempts >= 36) stopPolling();
+        }, 5000);
+      } catch (requestError) {
+        if (checkoutWindow) checkoutWindow.close();
+        if (isConcurrencyConflict(requestError)) {
+          setStaleWarning({ message: AGREEMENT_CHANGED_WARNING });
+          await refresh();
+          return;
+        }
+        setError(getErrorMessage(requestError, "Không thể tạo liên kết thanh toán PayOS."));
+      } finally {
+        setBusy("");
+      }
     } finally {
-      setBusy("");
+      paymentActionLockRef.current = false;
     }
   };
 
   const handleWalletPayment = async () => {
-    await runAction(
-      "wallet",
-      () => paymentApi.checkoutWithWallet(agreement.agreementId),
-      "Thanh toán bằng ví thành công.",
-    );
-    // Số dư có thể đã đổi (thanh toán thành công hoặc phát hiện không đủ) - làm mới để hiển thị đúng thực tế.
-    await loadWalletBalance();
+    if (paymentActionLockRef.current) return;
+    paymentActionLockRef.current = true;
+    try {
+      await runAction(
+        "wallet",
+        () => paymentApi.checkoutWithWallet(agreement.agreementId),
+        "Thanh toán bằng ví thành công.",
+      );
+      // Số dư có thể đã đổi (thanh toán thành công hoặc phát hiện không đủ) - làm mới để hiển thị đúng thực tế.
+      await loadWalletBalance();
+    } finally {
+      paymentActionLockRef.current = false;
+    }
   };
 
   const negotiationId = agreement?.negotiationId || preview?.negotiationId || negotiationIdParam;

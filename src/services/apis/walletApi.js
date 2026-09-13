@@ -143,11 +143,12 @@ const normalizeWallet = (
 export const walletApi = {
   getMine: async ({
     signal,
+    skipGlobalErrorPage = false,
   } = {}) => {
     const response =
       await axiosClient.get(
         "/wallet/me",
-        { signal },
+        { signal, skipGlobalErrorPage },
       );
 
     const wallet =
