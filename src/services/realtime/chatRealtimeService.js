@@ -3,6 +3,7 @@ import {
   HubConnectionState,
   LogLevel,
 } from "@microsoft/signalr";
+import { getStoredAccessToken } from "../../utils/authStorage";
 
 const DEFAULT_API_BASE_URL =
   "https://homecycle-backend.onrender.com/api";
@@ -25,7 +26,7 @@ export const CHAT_REALTIME_STATUS = Object.freeze({
 });
 
 const getAccessToken = () => {
-  return localStorage.getItem("accessToken") || "";
+  return getStoredAccessToken();
 };
 
 export const createChatConnection = () => {
