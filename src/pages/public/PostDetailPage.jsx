@@ -1009,50 +1009,63 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
       {post && !isLoading && (
         <>
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-            <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_12px_38px_rgba(23,40,48,0.07)]">
-              <div className="flex h-[300px] items-center justify-center bg-gradient-to-br from-background via-white to-background sm:h-[360px] lg:h-[420px]">
-                <PostThumbnail
-                  src={selectedMedia?.url}
-                  alt={post.productName}
-                  objectFit="contain"
-                  emptyText="Bài đăng chưa có hình ảnh"
-                  className="h-full w-full p-3 sm:p-4"
-                />
-              </div>
-
-              {medias.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto border-t border-border/30 p-3">
-                  {medias.map((media) => (
-                    <button
-                      key={media.mediaId}
-                      type="button"
-                      onClick={() =>
-                        setSelectedMediaId(
-                          media.mediaId,
-                        )
-                      }
-                      aria-label={`Xem ảnh ${media.displayOrder}`}
-                      aria-pressed={
-                        selectedMedia?.mediaId ===
-                        media.mediaId
-                      }
-                      className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-background transition ${
-                        selectedMedia?.mediaId ===
-                        media.mediaId
-                          ? "border-primary"
-                          : "border-transparent hover:border-border"
-                      }`}
-                    >
-                      <PostThumbnail
-                        src={media.url}
-                        className="h-full w-full"
-                      />
-                    </button>
-                  ))}
+          <div
+            className={
+              isBuyPost
+                ? "grid gap-5"
+                : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"
+            }
+          >
+            {/*
+             * Tin thu mua (Buy) không có ảnh sản phẩm thật (chỉ mô tả nhu
+             * cầu) - không hiển thị vùng media/placeholder/chiều cao dự trữ
+             * nào cho loại này, kể cả khi Backend còn trả dữ liệu media cũ.
+             */}
+            {!isBuyPost && (
+              <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_12px_38px_rgba(23,40,48,0.07)]">
+                <div className="flex h-[300px] items-center justify-center bg-gradient-to-br from-background via-white to-background sm:h-[360px] lg:h-[420px]">
+                  <PostThumbnail
+                    src={selectedMedia?.url}
+                    alt={post.productName}
+                    objectFit="contain"
+                    emptyText="Bài đăng chưa có hình ảnh"
+                    className="h-full w-full p-3 sm:p-4"
+                  />
                 </div>
-              )}
-            </section>
+
+                {medias.length > 1 && (
+                  <div className="flex gap-2 overflow-x-auto border-t border-border/30 p-3">
+                    {medias.map((media) => (
+                      <button
+                        key={media.mediaId}
+                        type="button"
+                        onClick={() =>
+                          setSelectedMediaId(
+                            media.mediaId,
+                          )
+                        }
+                        aria-label={`Xem ảnh ${media.displayOrder}`}
+                        aria-pressed={
+                          selectedMedia?.mediaId ===
+                          media.mediaId
+                        }
+                        className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 bg-background transition ${
+                          selectedMedia?.mediaId ===
+                          media.mediaId
+                            ? "border-primary"
+                            : "border-transparent hover:border-border"
+                        }`}
+                      >
+                        <PostThumbnail
+                          src={media.url}
+                          className="h-full w-full"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
 
             <aside className="h-fit rounded-2xl border border-border bg-white p-5 shadow-[0_12px_38px_rgba(23,40,48,0.07)] lg:sticky lg:top-24">
               <div className="flex flex-wrap items-center gap-2">

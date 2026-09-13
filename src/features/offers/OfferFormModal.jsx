@@ -126,7 +126,13 @@ const OfferFormModal = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        {/*
+         * noValidate: input Số lượng vẫn giữ max để hỗ trợ thao tác nhưng
+         * không để trình duyệt tự chặn submit bằng tooltip tiếng Anh mặc
+         * định - handleSubmit đã có kiểm tra tiếng Việt đầy đủ, phải là
+         * nơi quyết định duy nhất.
+         */}
+        <form onSubmit={handleSubmit} noValidate>
           <div className="space-y-5 px-6 py-5">
             {!usesExistingOffer && post && (
               <div className="rounded-xl border border-border bg-primary/5 p-4">

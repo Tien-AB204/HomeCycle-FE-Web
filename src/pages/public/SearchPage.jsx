@@ -6,6 +6,7 @@ import {
 } from "react";
 import logoIcon from "../../assets/brand/logo-icon.png";
 import {
+  Link,
   useLocation,
   useNavigate,
   useSearchParams,
@@ -30,6 +31,7 @@ import productTypeApi from "../../services/apis/productTypeApi";
 import {
   getBusinessRecommendationMismatchMessage,
   getBusinessRecommendations,
+  hasCompletedBusinessSurvey,
   normalizeBusinessSurvey,
 } from "../../utils/businessRecommendationUtils";
 import { getUserId } from "../../utils/authUtils";
@@ -469,18 +471,37 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
       isRefreshing = true;
 
       try {
-        const surveyResponse = await surveyRequest;
-        const survey = normalizeBusinessSurvey(surveyResponse);
-        const posts = await businessRecommendationApi.search({
-          survey,
-          searchCriteria: recommendationRequestPayload,
-          signal: controller.signal,
-        });
-        const items = getBusinessRecommendations({
-          posts,
-          survey,
-          limit: Number.POSITIVE_INFINITY,
-        });
+        let survey;
+
+        try {
+          survey = normalizeBusinessSurvey(
+            await surveyRequest,
+          );
+        } catch (surveyError) {
+          if (isCanceledRequest(surveyError)) {
+            throw surveyError;
+          }
+
+          /*
+           * Doanh nghiệp chưa gửi khảo sát thu mua là một trạng thái bình
+           * thường (chưa đặt tiêu chí), không phải lỗi kỹ thuật - dùng
+           * khảo sát rỗng để rơi đúng vào nhánh "chưa đặt tiêu chí" bên
+           * dưới thay vì hiển thị nguyên văn lỗi kỹ thuật từ Backend.
+           */
+          survey = normalizeBusinessSurvey(null);
+        }
+
+        const items = hasCompletedBusinessSurvey(survey)
+          ? getBusinessRecommendations({
+              posts: await businessRecommendationApi.search({
+                survey,
+                searchCriteria: recommendationRequestPayload,
+                signal: controller.signal,
+              }),
+              survey,
+              limit: Number.POSITIVE_INFINITY,
+            })
+          : [];
 
         if (isActive) {
           setRecommendationSurvey(survey);
@@ -620,6 +641,11 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
     activeSearchState.requestKey === activeRequestKey
       ? activeSearchState.error
       : "";
+
+  const isRecommendationSurveyIncomplete =
+    recommendationMode &&
+    Boolean(recommendationSurvey) &&
+    !hasCompletedBusinessSurvey(recommendationSurvey);
 
   const sortedPosts = useMemo(
     () => {
@@ -1144,15 +1170,27 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
               <div className="col-span-full rounded-2xl border border-dashed border-border bg-white px-6 py-16 text-center shadow-sm">
                 <MarketplaceMark className="mx-auto h-16 w-16 text-4xl" />
                 <h3 className="mt-3 font-bold text-text">
-                  {recommendationMode
-                    ? "Chưa có tin bán phù hợp khảo sát"
-                    : "Không tìm thấy bài đăng phù hợp"}
+                  {isRecommendationSurveyIncomplete
+                    ? "Doanh nghiệp chưa đặt tiêu chí cụ thể."
+                    : recommendationMode
+                      ? "Chưa có tin bán phù hợp khảo sát"
+                      : "Không tìm thấy bài đăng phù hợp"}
                 </h3>
                 <p className="mt-1 text-sm text-textLight">
-                  {recommendationMode
-                    ? "Bạn có thể cập nhật khảo sát hoặc thử lại khi có tin đăng mới."
-                    : "Hãy thử từ khóa hoặc bộ lọc khác."}
+                  {isRecommendationSurveyIncomplete
+                    ? "Thiết lập khảo sát thu mua để HomeCycle đề xuất tin bán phù hợp hơn."
+                    : recommendationMode
+                      ? "Bạn có thể cập nhật khảo sát hoặc thử lại khi có tin đăng mới."
+                      : "Hãy thử từ khóa hoặc bộ lọc khác."}
                 </p>
+                {isRecommendationSurveyIncomplete && (
+                  <Link
+                    to="/ho-so?tab=survey"
+                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90"
+                  >
+                    Cập nhật khảo sát
+                  </Link>
+                )}
               </div>
             ) : null}
           </div>

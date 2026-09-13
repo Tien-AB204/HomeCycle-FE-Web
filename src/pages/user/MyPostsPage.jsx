@@ -352,28 +352,50 @@ const MyPostsPage = ({ expectedPostType }) => {
             {posts.map((post) => {
               const statusMeta = getStatusMeta(post.status);
               const image = getPostImage(post);
+              const isBuyPost =
+                normalizePostType(post?.postType) ===
+                MARKETPLACE_POST_TYPES.BUY;
+
+              const typeBadges = (
+                <>
+                  <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold shadow-sm ${statusMeta.className}`}>
+                    {statusMeta.label}
+                  </span>
+                  <span className="rounded-full border border-white/80 bg-white/90 px-2 py-1 text-[10px] font-bold text-text shadow-sm backdrop-blur">
+                    {post.productTypeName || "Chưa phân loại"}
+                  </span>
+                </>
+              );
 
               return (
                 <article
                   key={post.postId}
                   className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-[0_6px_20px_rgba(23,40,48,0.05)] transition duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_12px_28px_rgba(23,40,48,0.1)]"
                 >
-                  <div className="relative h-40 overflow-hidden from-background to-border/15 sm:h-44 xl:h-40">
-                    <div className="absolute left-2.5 top-2.5 z-10 flex max-w-[calc(100%-1.25rem)] flex-wrap gap-1.5">
-                      <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold shadow-sm ${statusMeta.className}`}>
-                        {statusMeta.label}
-                      </span>
-                      <span className="rounded-full border border-white/80 bg-white/90 px-2 py-1 text-[10px] font-bold text-text shadow-sm backdrop-blur">
-                        {post.productTypeName || "Chưa phân loại"}
-                      </span>
+                  {/*
+                   * Tin thu mua (Buy) không có ảnh sản phẩm thật - không
+                   * hiển thị vùng media/placeholder/chiều cao dự trữ nào,
+                   * kể cả khi Backend còn trả dữ liệu media cũ. Vẫn giữ
+                   * badge trạng thái/loại sản phẩm nhưng ở dạng thường,
+                   * không định vị tuyệt đối trên một vùng ảnh không tồn tại.
+                   */}
+                  {isBuyPost ? (
+                    <div className="flex flex-wrap gap-1.5 p-3 pb-0">
+                      {typeBadges}
                     </div>
+                  ) : (
+                    <div className="relative h-40 overflow-hidden from-background to-border/15 sm:h-44 xl:h-40">
+                      <div className="absolute left-2.5 top-2.5 z-10 flex max-w-[calc(100%-1.25rem)] flex-wrap gap-1.5">
+                        {typeBadges}
+                      </div>
 
-                    <PostThumbnail
-                      src={image}
-                      alt={getPostName(post)}
-                      className="h-full w-full transition duration-500 group-hover:scale-[1.03]"
-                    />
-                  </div>
+                      <PostThumbnail
+                        src={image}
+                        alt={getPostName(post)}
+                        className="h-full w-full transition duration-500 group-hover:scale-[1.03]"
+                      />
+                    </div>
+                  )}
 
                   <div className="flex flex-1 flex-col p-4">
                     <div className="min-w-0 flex-1">
