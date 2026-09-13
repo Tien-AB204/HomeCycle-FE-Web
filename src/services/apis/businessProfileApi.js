@@ -249,10 +249,11 @@ export const businessProfileApi = {
 
   getSurveyDetail: async ({
     signal,
+    skipGlobalErrorPage = false,
   } = {}) => {
     const response = await axiosClient.get(
       "/business-profiles/survey-detail",
-      { signal },
+      { signal, skipGlobalErrorPage },
     );
 
     return ensureSuccessfulResponse(

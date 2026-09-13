@@ -482,6 +482,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
       : businessProfileApi
           .getSurveyDetail({
             signal: controller.signal,
+            skipGlobalErrorPage: true,
           })
           .catch((requestError) => {
             if (surveySnapshot) {
