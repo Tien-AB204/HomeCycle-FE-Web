@@ -8,6 +8,7 @@ import {
   PAYMENT_TYPE_OPTIONS,
 } from "../../constants/agreements";
 import agreementApi from "../../services/apis/agreementApi";
+import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 import GhnCollectionFields from "../appointments/GhnCollectionFields";
 import {
@@ -128,14 +129,17 @@ const getErrorMessage = (
   error,
   fallbackMessage,
 ) =>
-  error?.response?.data
-    ?.error?.message ||
-  error?.response?.data
-    ?.message ||
-  getSafeProblemDetail(
-    error?.response?.data?.detail,
-  ) ||
-  fallbackMessage;
+  getGhnErrorMessage(
+    error,
+    error?.response?.data
+      ?.error?.message ||
+    error?.response?.data
+      ?.message ||
+    getSafeProblemDetail(
+      error?.response?.data?.detail,
+    ) ||
+    fallbackMessage,
+  );
 
 const formatCurrency = (value) => {
   const amount =
@@ -665,6 +669,12 @@ const AgreementForm = ({
           nextErrors.ghnInfo =
             validationMessage;
         } else if (
+          Array.isArray(ghnInfo?.items) &&
+          ghnInfo.items.length > 1
+        ) {
+          nextErrors.ghnInfo =
+            "Hệ thống hiện chưa xác nhận được đơn hàng có từ 2 kiện trở lên qua GHN. Vui lòng gộp về 1 kiện hoặc đổi hình thức giao nhận.";
+        } else if (
           !ghnPreview ||
           Number(
             ghnPreview.totalFee,
@@ -865,6 +875,37 @@ const AgreementForm = ({
     values.deliveryMethod ===
       DELIVERY_METHOD.GHN;
 
+  /*
+   * Không kiểm định + Giao hàng GHN hiện bắt buộc Thanh toán toàn bộ
+   * (PaymentService.CalculatePaymentAmount phía Backend tự ép Full_Payment
+   * và tính basePrice + phí ship cho tổ hợp này, bỏ qua PaymentType đã
+   * lưu) - đồng bộ ngay trong render để không cho người dùng thấy một lựa
+   * chọn Đặt cọc mà Backend âm thầm thu tiền khác đi. Điều chỉnh ngay
+   * trong render (không dùng effect) theo quy ước đã có của form này.
+   */
+  const requiresFullPaymentForGhn = isGhn;
+
+  /*
+   * Backend hiện luôn từ chối xác nhận GHN từ 2 kiện trở lên
+   * (Ghn.MultiParcelDimensionsUnverified) - chặn "Tính phí GHN"/gửi thỏa
+   * thuận ở đây để không tốn công người dùng chờ một lỗi chắc chắn xảy ra,
+   * thay vì cố gộp/áng chừng kích thước hộ Backend.
+   */
+  const hasMultipleGhnParcels =
+    isGhn &&
+    Array.isArray(ghnInfo?.items) &&
+    ghnInfo.items.length > 1;
+
+  if (
+    requiresFullPaymentForGhn &&
+    values.paymentType !== PAYMENT_TYPE.FULL_PAYMENT
+  ) {
+    setValues((current) => ({
+      ...current,
+      paymentType: PAYMENT_TYPE.FULL_PAYMENT,
+    }));
+  }
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -932,9 +973,14 @@ const AgreementForm = ({
             onChange={
               updateField
             }
-            className={
-              inputClass
+            disabled={
+              requiresFullPaymentForGhn
             }
+            className={`${inputClass} ${
+              requiresFullPaymentForGhn
+                ? "cursor-not-allowed opacity-60"
+                : ""
+            }`}
           >
             {PAYMENT_TYPE_OPTIONS.map(
               (option) => (
@@ -951,6 +997,12 @@ const AgreementForm = ({
               ),
             )}
           </select>
+
+          {requiresFullPaymentForGhn && (
+            <span className="mt-1.5 block text-xs font-normal leading-5 text-textLight">
+              Giao hàng GHN cho thỏa thuận không kiểm định hiện yêu cầu thanh toán toàn bộ.
+            </span>
+          )}
         </label>
       </section>
 
@@ -1193,7 +1245,8 @@ const AgreementForm = ({
                   disabled={
                     busy ||
                     previewingGhn ||
-                    loadingParcelInfo
+                    loadingParcelInfo ||
+                    hasMultipleGhnParcels
                   }
                   className="rounded-xl bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -1202,6 +1255,17 @@ const AgreementForm = ({
                     : "Tính phí GHN"}
                 </button>
               </div>
+
+              {hasMultipleGhnParcels && (
+                <p
+                  role="alert"
+                  className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm font-semibold text-warning"
+                >
+                  Hệ thống hiện chưa xác nhận được đơn hàng có từ 2 kiện trở
+                  lên qua GHN. Vui lòng gộp về 1 kiện, hoặc chọn hình thức Tự
+                  vận chuyển/Nhận tại địa chỉ.
+                </p>
+              )}
 
               {ghnError && (
                 <p

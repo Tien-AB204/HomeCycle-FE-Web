@@ -353,6 +353,22 @@ const OrderTimelinePanel = ({
   );
 };
 
+const GHN_CREATION_STATUS_LABEL = Object.freeze({
+  pending: "Đang chờ tạo vận đơn",
+  processing: "Đang gửi yêu cầu đến GHN",
+  success: "Đã tạo vận đơn",
+  failed: "Chưa tạo được vận đơn",
+  uncertain: "Đang xác minh kết quả với GHN",
+});
+
+const getGhnCreationStatusLabel = (creationStatus) => {
+  const normalized = String(creationStatus || "")
+    .trim()
+    .toLowerCase();
+
+  return GHN_CREATION_STATUS_LABEL[normalized] || "";
+};
+
 const GhnShipmentTrackingCard = ({
   orderId,
 }) => {
@@ -508,7 +524,23 @@ const GhnShipmentTrackingCard = ({
 
       {tracking.isStale && (
         <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs font-semibold leading-5 text-warning">
-          GHN tạm thời chưa phản hồi. Đây là trạng thái gần nhất HomeCycle đã lưu.
+          Chưa cập nhật được trạng thái mới nhất. Đây là trạng thái gần nhất HomeCycle đã lưu.
+        </div>
+      )}
+
+      {getGhnCreationStatusLabel(tracking.creationStatus) && (
+        <div className="mt-4">
+          <span
+            className={`inline-flex rounded-full border px-3 py-1 text-xs font-black ${
+              String(tracking.creationStatus).toLowerCase() === "success"
+                ? "border-success/30 bg-success/10 text-success"
+                : String(tracking.creationStatus).toLowerCase() === "failed"
+                  ? "border-error/30 bg-error/10 text-error"
+                  : "border-warning/30 bg-warning/10 text-warning"
+            }`}
+          >
+            {getGhnCreationStatusLabel(tracking.creationStatus)}
+          </span>
         </div>
       )}
 

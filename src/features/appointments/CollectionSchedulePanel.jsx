@@ -16,6 +16,7 @@ import {
 import agreementApi from "../../services/apis/agreementApi";
 import inspectionFormApi from "../../services/apis/inspectionFormApi";
 import orderApi from "../../services/apis/orderApi";
+import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const DIRECT_METHODS = [
@@ -53,10 +54,13 @@ const getErrorMessage = (
   error,
   fallback,
 ) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  getSafeProblemDetail(error?.response?.data?.detail) ||
-  fallback;
+  getGhnErrorMessage(
+    error,
+    error?.response?.data?.error?.message ||
+      error?.response?.data?.message ||
+      getSafeProblemDetail(error?.response?.data?.detail) ||
+      fallback,
+  );
 
 const createInitialForm = () => ({
   collectionDate: "",
@@ -296,6 +300,17 @@ export default function CollectionSchedulePanel({
         return ghnError;
       }
 
+      /*
+       * Backend hiện luôn từ chối xác nhận GHN từ 2 kiện trở lên
+       * (Ghn.MultiParcelDimensionsUnverified) - chặn ở đây thay vì để
+       * người dùng chờ một lỗi chắc chắn xảy ra.
+       */
+      if (
+        Array.isArray(ghnInfo?.items) &&
+        ghnInfo.items.length > 1
+      ) {
+        return "Hệ thống hiện chưa xác nhận được đơn hàng có từ 2 kiện trở lên qua GHN. Vui lòng gộp về 1 kiện hoặc đổi hình thức giao nhận.";
+      }
     } else {
       if (
         !form.pickupAddress.trim()

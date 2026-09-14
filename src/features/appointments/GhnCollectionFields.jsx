@@ -606,6 +606,15 @@ const GhnCollectionFields = ({
             </button>
           </div>
 
+          {value.items.length > 1 && (
+            <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs leading-5 text-warning">
+              Hệ thống hiện chưa xác nhận được đơn hàng có từ 2 kiện trở lên
+              qua GHN. Vui lòng gộp về 1 kiện, hoặc chọn hình thức{" "}
+              <strong>Tự vận chuyển</strong>/<strong>Nhận tại địa chỉ</strong>{" "}
+              nếu không thể gộp.
+            </div>
+          )}
+
           {value.items.map(
             (item, index) => (
               <div
