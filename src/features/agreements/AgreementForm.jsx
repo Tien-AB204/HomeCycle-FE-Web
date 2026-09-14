@@ -510,8 +510,19 @@ const AgreementForm = ({
          * Items - SnapshotHash băm cả hai và bắt buộc khớp tuyệt đối.
          * sanitizeGhnCollectionInfo đã tự suy ra root từ items nên preview
          * và save luôn dùng chung đúng một snapshot đã chuẩn hoá.
+         *
+         * AgreementType/DeliveryMethod cũng bắt buộc phải gửi kèm - Backend
+         * chỉ tính phí GHN khi đúng No_Inspection + GhnDelivery, dùng lại
+         * chính giá trị values đã chuẩn hoá (giống hệt payload lưu thỏa
+         * thuận), không hardcode chuỗi enum.
          */
         const previewPayload = {
+          agreementType:
+            values.agreementType,
+
+          deliveryMethod:
+            values.deliveryMethod,
+
           sender:
             sanitized.sender,
 
