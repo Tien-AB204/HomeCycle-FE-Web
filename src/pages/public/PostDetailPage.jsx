@@ -31,6 +31,10 @@ import offerApi from "../../services/apis/offerApi";
 import postApi from "../../services/apis/postApi";
 import { getUserId, normalizeRole } from "../../utils/authUtils";
 import {
+  isPostCatalogStorageEvent,
+  POST_CATALOG_CHANGED_EVENT,
+} from "../../utils/postCatalogEvents";
+import {
   getPostChangedFields,
   isConcurrencyConflict,
   POST_CHANGED_WARNING,
@@ -429,6 +433,50 @@ const PostDetailPage = ({ ownerMode = false }) => {
       controller.abort();
     };
   }, [ownerMode, postId, requestKey, userId]);
+
+  /*
+   * Post này có thể đổi RemainingQuantity/status ở nơi khác (thanh toán,
+   * hoặc tự chỉnh sửa ở tab khác) - chỉ tải lại khi sự kiện thật sự nhắm
+   * đến đúng Post đang xem (hoặc không rõ postId, vd một số payload cũ),
+   * không suy đoán giá trị mới.
+   */
+  useEffect(() => {
+    const refresh = (eventPostId) => {
+      if (!eventPostId || eventPostId === postId) {
+        setRequestVersion((currentVersion) => currentVersion + 1);
+      }
+    };
+
+    const handlePostCatalogChanged = (event) => {
+      refresh(event?.detail?.postId);
+    };
+
+    const handleStorage = (event) => {
+      if (!isPostCatalogStorageEvent(event)) {
+        return;
+      }
+
+      try {
+        refresh(JSON.parse(event.newValue || "{}")?.postId);
+      } catch {
+        refresh("");
+      }
+    };
+
+    window.addEventListener(
+      POST_CATALOG_CHANGED_EVENT,
+      handlePostCatalogChanged,
+    );
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(
+        POST_CATALOG_CHANGED_EVENT,
+        handlePostCatalogChanged,
+      );
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [postId]);
 
   const missingUserIdError =
     ownerMode && !userId
@@ -1163,12 +1211,19 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 <div className="flex justify-between gap-4 border-b border-border pb-2.5">
                   <dt className="flex items-center gap-2 text-textLight">
                     <InboxOutlined className="text-primary" />
-                    Số lượng còn lại
+                    {isBuyPost ? "Còn cần thu mua" : "Còn lại"}
                   </dt>
                   <dd className="font-bold text-text">
-                    {post.remainingQuantity}
+                    {post.remainingQuantity} / {post.quantity}
                   </dd>
                 </div>
+                {ownerMode &&
+                  String(post.status || "").toLowerCase() === "closed" &&
+                  Number(post.remainingQuantity) === 0 && (
+                    <p className="border-b border-border pb-2.5 text-xs leading-5 text-textLight">
+                      Hết số lượng · Đã đóng. Bài đăng không còn nhận giao dịch mới — bổ sung số lượng để mở lại.
+                    </p>
+                  )}
                 {!isBuyPost && (
                   <div className="flex justify-between gap-4 border-b border-border pb-2.5">
                     <dt className="flex items-center gap-2 text-textLight">

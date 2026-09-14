@@ -10,6 +10,7 @@ import { useChatRealtime } from "../hooks/useChatRealtime";
 import notificationApi, {
   normalizeNotification,
 } from "../services/apis/notificationApi";
+import { notifyPostCatalogChanged } from "../utils/postCatalogEvents";
 import NotificationContext from "./notification-context";
 
 const getPayloadUnreadCount = (
@@ -204,6 +205,19 @@ export const NotificationProvider = ({
             oldest,
           );
         }
+      }
+
+      /*
+       * Thông báo nhắm đến Post (targetType="post", vd sau khi thanh toán
+       * làm đổi RemainingQuantity/status) - không suy luận số lượng/trạng
+       * thái từ message, chỉ báo cho các màn hình đang phụ thuộc Post đó
+       * tự tải lại dữ liệu xác thực từ Backend qua cơ chế đã có sẵn.
+       */
+      if (item.targetType === "post" && item.targetId) {
+        notifyPostCatalogChanged({
+          postId: item.targetId,
+          reason: "notification",
+        });
       }
 
       if (!item.isRead) {

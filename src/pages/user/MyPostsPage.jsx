@@ -22,7 +22,10 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
-import { getManagedPostQuantity } from "../../utils/postFormUtils";
+import {
+  isPostCatalogStorageEvent,
+  POST_CATALOG_CHANGED_EVENT,
+} from "../../utils/postCatalogEvents";
 
 const PAGE_SIZE = 10;
 
@@ -109,10 +112,22 @@ const formatDate = (value) => {
   }).format(date);
 };
 
-const getStatusMeta = (status) => {
+const isClosedExhausted = (status, remainingQuantity) =>
+  String(status || "").trim().toLowerCase() === "closed" &&
+  Number(remainingQuantity) === 0;
+
+const getStatusMeta = (status, remainingQuantity) => {
   const normalizedStatus = String(status || "")
     .trim()
     .toLowerCase();
+
+  if (isClosedExhausted(status, remainingQuantity)) {
+    return {
+      label: "Hết số lượng · Đã đóng",
+      className:
+        "border-border bg-textLight/10 text-textLight",
+    };
+  }
 
   return (
     STATUS_META[normalizedStatus] || {
@@ -121,6 +136,16 @@ const getStatusMeta = (status) => {
         "border-border bg-textLight/10 text-textLight",
     }
   );
+};
+
+const getQuantityLabel = (post, isBuyPost) => {
+  const remaining = Number(post?.remainingQuantity);
+  const total = Number(post?.quantity);
+  const safeRemaining = Number.isFinite(remaining) ? remaining : 0;
+  const safeTotal = Number.isFinite(total) ? total : safeRemaining;
+  const prefix = isBuyPost ? "Còn cần thu mua" : "Còn lại";
+
+  return `${prefix}: ${safeRemaining} / ${safeTotal}`;
 };
 
 const getPostName = (post) => {
@@ -207,6 +232,33 @@ const MyPostsPage = ({ expectedPostType }) => {
       controller.abort();
     };
   }, [pageNumber, requestKey, userId]);
+
+  /*
+   * Một Post trong danh sách có thể đổi RemainingQuantity/status ở nơi
+   * khác (thanh toán làm đổi số lượng, hoặc tự chỉnh sửa ở tab khác) -
+   * lắng nghe sự kiện đã có sẵn (dùng chung bởi postApi sau khi tạo/cập
+   * nhật và bởi thông báo Post) để tải lại danh sách xác thực, không suy
+   * đoán giá trị mới.
+   */
+  useEffect(() => {
+    const refresh = () => {
+      setRequestVersion((currentVersion) => currentVersion + 1);
+    };
+
+    const handleStorage = (event) => {
+      if (isPostCatalogStorageEvent(event)) {
+        refresh();
+      }
+    };
+
+    window.addEventListener(POST_CATALOG_CHANGED_EVENT, refresh);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener(POST_CATALOG_CHANGED_EVENT, refresh);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   const missingUserIdError = !userId
     ? "Phiên đăng nhập không có mã người dùng. Vui lòng đăng xuất và đăng nhập lại."
@@ -350,11 +402,18 @@ const MyPostsPage = ({ expectedPostType }) => {
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {posts.map((post) => {
-              const statusMeta = getStatusMeta(post.status);
-              const image = getPostImage(post);
               const isBuyPost =
                 normalizePostType(post?.postType) ===
                 MARKETPLACE_POST_TYPES.BUY;
+              const statusMeta = getStatusMeta(
+                post.status,
+                post.remainingQuantity,
+              );
+              const image = getPostImage(post);
+              const isExhausted = isClosedExhausted(
+                post.status,
+                post.remainingQuantity,
+              );
 
               const typeBadges = (
                 <>
@@ -408,12 +467,18 @@ const MyPostsPage = ({ expectedPostType }) => {
 
                       <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-background px-2.5 py-2 text-[11px] text-textLight">
                         <span className="inline-flex min-w-0 items-center gap-1.5">
-                          <InboxOutlined /> Số lượng {getManagedPostQuantity(post)}
+                          <InboxOutlined /> {getQuantityLabel(post, isBuyPost)}
                         </span>
                         <span className="inline-flex min-w-0 items-center justify-end gap-1.5 text-right">
                           <ClockCircleOutlined /> {formatDate(post.updatedAt || post.createdAt)}
                         </span>
                       </div>
+
+                      {isExhausted && (
+                        <p className="mt-2 text-[11px] leading-5 text-textLight">
+                          Bài đăng không còn nhận giao dịch mới. Bổ sung số lượng để mở lại.
+                        </p>
+                      )}
 
                       {post.brandName && (
                         <p className="mt-2.5 truncate text-[11px] text-textLight">
@@ -439,6 +504,7 @@ const MyPostsPage = ({ expectedPostType }) => {
                         <PostLifecycleControl
                           postId={post.postId}
                           postName={getPostName(post)}
+                          postType={post.postType}
                           status={post.status}
                           onCompleted={
                             handleLifecycleCompleted
