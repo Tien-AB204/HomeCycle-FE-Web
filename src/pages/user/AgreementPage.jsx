@@ -22,14 +22,24 @@ import {
   VERIFICATION_FAILED_WARNING,
 } from "../../utils/transactionFreshnessUtils";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
 
 const PENDING_AGREEMENT_KEY = "homecycle:pending-payment-agreement-id";
 
+/*
+ * Mã lỗi nghiệp vụ GHN (Ghn.*) phải luôn được ánh xạ sang thông báo tiếng
+ * Việt thân thiện trước, tránh lộ message kỹ thuật thô từ Backend (vd.
+ * "Snapshot đã thay đổi..."). Nếu không phải lỗi GHN đã biết,
+ * getGhnErrorMessage tự rơi về đúng hành vi cũ (fallbackMessage truyền vào).
+ */
 const getErrorMessage = (error, fallbackMessage) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  getSafeProblemDetail(error?.response?.data?.detail) ||
-  fallbackMessage;
+  getGhnErrorMessage(
+    error,
+    error?.response?.data?.error?.message ||
+      error?.response?.data?.message ||
+      getSafeProblemDetail(error?.response?.data?.detail) ||
+      fallbackMessage,
+  );
 
 const getApiErrorCode = (error) =>
   String(

@@ -584,6 +584,25 @@ const AgreementForm = ({
           );
         }
 
+        /*
+         * Content là một phần của SnapshotHash phía Backend (được suy ra
+         * từ tên sản phẩm nếu request không gửi kèm). Phải lưu lại đúng
+         * giá trị canonical này từ response để gửi lại y hệt khi lưu thỏa
+         * thuận - không được tự suy ra từ số lượng thương mại, nhãn UI,
+         * tên kiện, hay tên bài đăng phía client.
+         */
+        const canonicalContent =
+          String(
+            result?.shippingInfo
+              ?.content || "",
+          ).trim();
+
+        if (!canonicalContent) {
+          throw new Error(
+            "Máy chủ chưa trả về nội dung xem trước phí GHN hợp lệ.",
+          );
+        }
+
         const nextPreview = {
           totalFee,
 
@@ -601,6 +620,9 @@ const AgreementForm = ({
             result
               ?.expiresAt ||
             null,
+
+          content:
+            canonicalContent,
         };
 
         setGhnPreview(
@@ -856,9 +878,16 @@ const AgreementForm = ({
          * PreviewToken phải được gửi kèm để Backend xác nhận
          * (ConfirmPreview) và khóa EstimatedShippingFee - đây là token
          * do ghn-preview trả về, không phải dữ liệu do người dùng nhập.
+         *
+         * Content cũng nằm trong SnapshotHash phía Backend - phải gửi lại
+         * đúng giá trị canonical mà ghn-preview đã trả về (ghnPreview.content),
+         * không tự suy ra, nếu không hash sẽ lệch và ConfirmPreview từ chối.
          */
         details.ghnInfo = {
           ...sanitized,
+          content:
+            ghnPreview?.content ||
+            null,
           previewToken:
             ghnPreview?.previewToken ||
             null,
