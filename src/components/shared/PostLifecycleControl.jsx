@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { Link } from "react-router-dom";
 import postApi from "../../services/apis/postApi";
 
 const ACTIONS = {
@@ -70,6 +71,18 @@ const getLifecycleActionName = (status) => {
   return "";
 };
 
+/*
+ * Đã đóng không đồng nghĩa hết hàng - chủ bài đăng có thể đã đóng thủ công
+ * dù còn số lượng. Nút này chỉ đưa đến form chỉnh sửa hiện có (Quantity gửi
+ * lên là TỔNG số lượng mới, không phải số lượng tăng thêm) - không gọi
+ * riêng một API "reactivate" nào ở đây, Backend tự mở lại Active khi
+ * RemainingQuantity > 0 sau khi cập nhật Quantity.
+ */
+const getReplenishLabel = (postType) =>
+  String(postType || "").trim().toLowerCase() === "buy"
+    ? "Tăng số lượng thu mua"
+    : "Bổ sung hàng";
+
 const canDeleteBuyPost = (postType, status) => {
   if (String(postType || "").trim().toLowerCase() !== "buy") {
     return false;
@@ -95,8 +108,13 @@ const PostLifecycleControl = ({
 
   const lifecycleActionName = getLifecycleActionName(status);
   const showDelete = canDeleteBuyPost(postType, status);
+  const showReplenish =
+    String(status || "").trim().toLowerCase() === "closed";
 
-  if (!postId || (!lifecycleActionName && !showDelete)) {
+  if (
+    !postId ||
+    (!lifecycleActionName && !showDelete && !showReplenish)
+  ) {
     return null;
   }
 
@@ -154,6 +172,17 @@ const PostLifecycleControl = ({
           >
             {ACTIONS[lifecycleActionName].buttonLabel}
           </button>
+        )}
+
+        {showReplenish && (
+          <Link
+            to={`/bai-dang/chinh-sua/${encodeURIComponent(postId)}`}
+            className={`inline-flex items-center justify-center rounded-md border border-primary px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary/10 ${
+              fullWidth ? "w-full" : ""
+            }`}
+          >
+            {getReplenishLabel(postType)}
+          </Link>
         )}
 
         {showDelete && (

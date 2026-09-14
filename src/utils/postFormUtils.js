@@ -67,8 +67,21 @@ const FIELD_ERROR_MESSAGES = Object.freeze({
 export const POST_NOT_EDITABLE_MESSAGE =
   "Không thể chỉnh sửa bài đăng không hoạt động.";
 
-export const isPostStatusEditable = (status) =>
-  String(status || "").trim().toLowerCase() === "active";
+/*
+ * Closed vẫn phải chỉnh sửa được (kể cả khi RemainingQuantity = 0) - Backend
+ * cho phép tăng Quantity trên một Post Closed để tự mở lại thành Active
+ * (RemainingQuantity > 0), không có endpoint "reactivate" riêng cho luồng
+ * này. Các trạng thái còn lại (Deleted/Suspended/Expired/Pending/Rejected...)
+ * vẫn bị chặn như cũ.
+ */
+export const isPostStatusEditable = (status) => {
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+
+  return (
+    normalizedStatus === "active" ||
+    normalizedStatus === "closed"
+  );
+};
 
 export const getManagedPostQuantity = (post) => {
   const quantity = Number(post?.quantity);
