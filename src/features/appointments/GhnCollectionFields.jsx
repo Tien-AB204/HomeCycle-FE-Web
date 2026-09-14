@@ -6,6 +6,8 @@ import ghnApi from "../../services/apis/ghnApi";
 import {
   GHN_REQUIRED_NOTES,
   createEmptyGhnAddress,
+  deriveGhnServiceTypeId,
+  getGhnTotalWeightGram,
 } from "./ghnCollectionUtils";
 
 const ContactEditor = ({
@@ -426,6 +428,19 @@ const GhnCollectionFields = ({
     });
   };
 
+  /*
+   * ServiceTypeId luôn được suy ra lại từ tổng khối lượng kiện hàng vật lý
+   * mỗi khi danh sách kiện thay đổi - không còn là lựa chọn thủ công.
+   */
+  const applyItemsUpdate = (items) => {
+    update({
+      items,
+      serviceTypeId: deriveGhnServiceTypeId(
+        getGhnTotalWeightGram(items),
+      ),
+    });
+  };
+
   const updateItem = (
     index,
     field,
@@ -442,38 +457,26 @@ const GhnCollectionFields = ({
             : item,
       );
 
-    update({ items });
+    applyItemsUpdate(items);
   };
 
-  const addItem = () => {
-    update({
-      items: [
-        ...value.items,
-        {
-          name: "",
-          code: "",
-          quantity: 1,
-          weightGram: "",
-          lengthCm: "",
-          widthCm: "",
-          heightCm: "",
-        },
-      ],
-    });
-  };
-
+  /*
+   * Milestone hiện tại chỉ xác nhận được đúng MỘT kiện vật lý - không có
+   * hành động "Thêm kiện" cho luồng mới. "Xóa" chỉ tồn tại để người dùng
+   * có thể rút gọn dữ liệu nhiều kiện cũ (hydrate từ Agreement trước đó)
+   * về đúng 1 kiện hợp lệ, và luôn bị chặn khi chỉ còn 1 kiện.
+   */
   const removeItem = (index) => {
     if (value.items.length <= 1) {
       return;
     }
 
-    update({
-      items:
-        value.items.filter(
-          (_, itemIndex) =>
-            itemIndex !== index,
-        ),
-    });
+    applyItemsUpdate(
+      value.items.filter(
+        (_, itemIndex) =>
+          itemIndex !== index,
+      ),
+    );
   };
 
   return (
@@ -527,193 +530,125 @@ const GhnCollectionFields = ({
         disabled={disabled || loading}
       />
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-xs font-bold text-textLight">
-          Loại hàng
-          <select
-            value={value.serviceTypeId}
-            onChange={(event) => {
-              const serviceTypeId =
-                Number(event.target.value);
-
-              update({
-                serviceTypeId,
-                lightParcel: null,
-              });
-            }}
-            disabled={disabled}
-            className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-text outline-none focus:border-primary"
-          >
-            <option value={2}>
-              Hàng nhẹ
-            </option>
-
-            <option value={5}>
-              Hàng nặng
-            </option>
-          </select>
-        </label>
-
-        <label className="text-xs font-bold text-textLight">
-          Quy định kiểm tra hàng
-          <select
-            value={value.requiredNote}
-            onChange={(event) =>
-              update({
-                requiredNote:
-                  event.target.value,
-              })
-            }
-            disabled={disabled}
-            className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-text outline-none focus:border-primary"
-          >
-            {GHN_REQUIRED_NOTES.map(
-              (item) => (
-                <option
-                  key={item.value}
-                  value={item.value}
-                >
-                  {item.label}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
-      </div>
-
-      {Number(value.serviceTypeId) === 2 && (
-        <div className="rounded-lg border border-primary/15 bg-white px-3 py-2.5 text-xs leading-5 text-textLight">
-          Với hàng nhẹ, cân nặng và kích thước được máy chủ lấy
-          từ thông tin sản phẩm hiện tại. Nếu sản phẩm thiếu dữ liệu,
-          máy chủ sẽ từ chối tạo lịch GHN.
-        </div>
-      )}
-
-      {Number(value.serviceTypeId) === 5 && (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-              Kiện hàng nặng
-            </p>
-
-            <button
-              type="button"
-              onClick={addItem}
-              disabled={disabled}
-              className="rounded-lg border border-primary px-3 py-1.5 text-xs font-black text-primary hover:bg-primary/10 disabled:opacity-50"
-            >
-              Thêm kiện
-            </button>
-          </div>
-
-          {value.items.length > 1 && (
-            <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs leading-5 text-warning">
-              Hệ thống hiện chưa xác nhận được đơn hàng có từ 2 kiện trở lên
-              qua GHN. Vui lòng gộp về 1 kiện, hoặc chọn hình thức{" "}
-              <strong>Tự vận chuyển</strong>/<strong>Nhận tại địa chỉ</strong>{" "}
-              nếu không thể gộp.
-            </div>
-          )}
-
-          {value.items.map(
-            (item, index) => (
-              <div
-                key={index}
-                className="rounded-xl border border-border bg-white p-3"
+      <label className="block text-xs font-bold text-textLight sm:max-w-xs">
+        Quy định kiểm tra hàng
+        <select
+          value={value.requiredNote}
+          onChange={(event) =>
+            update({
+              requiredNote:
+                event.target.value,
+            })
+          }
+          disabled={disabled}
+          className="mt-1.5 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-text outline-none focus:border-primary"
+        >
+          {GHN_REQUIRED_NOTES.map(
+            (item) => (
+              <option
+                key={item.value}
+                value={item.value}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-black text-text">
-                    Kiện {index + 1}
-                  </p>
-
-                  {value.items.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        removeItem(index)
-                      }
-                      disabled={disabled}
-                      className="text-xs font-black text-error"
-                    >
-                      Xóa
-                    </button>
-                  )}
-                </div>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <label className="text-xs font-bold text-textLight sm:col-span-2">
-                    Tên kiện
-                    <input
-                      value={item.name}
-                      onChange={(event) =>
-                        updateItem(
-                          index,
-                          "name",
-                          event.target.value,
-                        )
-                      }
-                      disabled={disabled}
-                      className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-                    />
-                  </label>
-
-                  <label className="text-xs font-bold text-textLight">
-                    Số lượng
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={item.quantity}
-                      onChange={(event) =>
-                        updateItem(
-                          index,
-                          "quantity",
-                          event.target.value,
-                        )
-                      }
-                      disabled={disabled}
-                      className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-                    />
-                  </label>
-
-                  {[
-                    ["weightGram", "Khối lượng (g)", 1600000],
-                    ["lengthCm", "Dài (cm)", 200],
-                    ["widthCm", "Rộng (cm)", 200],
-                    ["heightCm", "Cao (cm)", 200],
-                  ].map(
-                    ([field, label, max]) => (
-                      <label
-                        key={field}
-                        className="text-xs font-bold text-textLight"
-                      >
-                        {label}
-
-                        <input
-                          type="number"
-                          min="1"
-                          max={max}
-                          step="1"
-                          value={item[field]}
-                          onChange={(event) =>
-                            updateItem(
-                              index,
-                              field,
-                              event.target.value,
-                            )
-                          }
-                          disabled={disabled}
-                          className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-                        />
-                      </label>
-                    ),
-                  )}
-                </div>
-              </div>
+                {item.label}
+              </option>
             ),
           )}
-        </section>
-      )}
+        </select>
+      </label>
+
+      <section className="space-y-3">
+        <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+          Kiện hàng
+        </p>
+
+        {value.items.length > 1 && (
+          <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs leading-5 text-warning">
+            Hệ thống hiện chưa xác nhận được đơn hàng có từ 2 kiện trở lên
+            qua GHN. Vui lòng gộp về 1 kiện, hoặc chọn hình thức{" "}
+            <strong>Tự vận chuyển</strong>/<strong>Nhận tại địa chỉ</strong>{" "}
+            nếu không thể gộp.
+          </div>
+        )}
+
+        {value.items.map(
+          (item, index) => (
+            <div
+              key={index}
+              className="rounded-xl border border-border bg-white p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-black text-text">
+                  Kiện {index + 1}
+                </p>
+
+                {value.items.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      removeItem(index)
+                    }
+                    disabled={disabled}
+                    className="text-xs font-black text-error"
+                  >
+                    Xóa
+                  </button>
+                )}
+              </div>
+
+              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <label className="text-xs font-bold text-textLight sm:col-span-2 lg:col-span-3">
+                  Tên kiện
+                  <input
+                    value={item.name}
+                    onChange={(event) =>
+                      updateItem(
+                        index,
+                        "name",
+                        event.target.value,
+                      )
+                    }
+                    disabled={disabled}
+                    className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                  />
+                </label>
+
+                {[
+                  ["weightGram", "Khối lượng (g)", 50000],
+                  ["lengthCm", "Dài (cm)", 200],
+                  ["widthCm", "Rộng (cm)", 200],
+                  ["heightCm", "Cao (cm)", 200],
+                ].map(
+                  ([field, label, max]) => (
+                    <label
+                      key={field}
+                      className="text-xs font-bold text-textLight"
+                    >
+                      {label}
+
+                      <input
+                        type="number"
+                        min="1"
+                        max={max}
+                        step="1"
+                        value={item[field]}
+                        onChange={(event) =>
+                          updateItem(
+                            index,
+                            field,
+                            event.target.value,
+                          )
+                        }
+                        disabled={disabled}
+                        className="mt-1.5 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                      />
+                    </label>
+                  ),
+                )}
+              </div>
+            </div>
+          ),
+        )}
+      </section>
     </section>
   );
 };

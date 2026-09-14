@@ -331,32 +331,28 @@ const AgreementForm = ({
                 id,
               );
 
-          const serviceTypeId =
-            Number(
-              parcelInfo
-                ?.serviceTypeId,
-            ) === 5
-              ? 5
-              : 2;
+          /*
+           * ServiceTypeId trả về từ API chỉ mang tính tham khảo cũ - không
+           * còn được tin trực tiếp. Kiện hàng vật lý (items) là dữ liệu duy
+           * nhất được nạp; serviceTypeId luôn được createGhnCollectionInfo
+           * suy ra lại từ khối lượng thực tế của kiện.
+           */
+          const hasParcelItems =
+            Array.isArray(
+              parcelInfo?.items,
+            ) &&
+            parcelInfo.items.length > 0;
 
           setGhnInfo(
             (current) => {
-              const next = {
-                ...current,
-                serviceTypeId,
-              };
-
-              if (
-                serviceTypeId === 5 &&
-                Array.isArray(
-                  parcelInfo?.items,
-                ) &&
-                parcelInfo
-                  .items.length > 0
-              ) {
-                next.items =
-                  parcelInfo.items;
-              }
+              const next =
+                hasParcelItems
+                  ? {
+                      ...current,
+                      items:
+                        parcelInfo.items,
+                    }
+                  : current;
 
               return createGhnCollectionInfo({
                 existingInfo:
@@ -368,18 +364,21 @@ const AgreementForm = ({
           parcelInfoLoadedRef.current =
             true;
 
-          if (
-            serviceTypeId === 2 &&
+          if (hasParcelItems) {
+            setGhnNotice(
+              "Đã nạp thông tin kiện hàng từ sản phẩm hiện tại.",
+            );
+          } else if (
             parcelInfo
               ?.hasProductDimensions ===
-              false
+            false
           ) {
             setGhnNotice(
-              "Sản phẩm chưa có đủ khối lượng hoặc kích thước. Máy chủ sẽ không thể tính phí GHN cho hàng nhẹ cho đến khi dữ liệu sản phẩm được bổ sung.",
+              "Sản phẩm chưa có đủ khối lượng hoặc kích thước. Vui lòng nhập thủ công thông tin kiện hàng.",
             );
           } else {
             setGhnNotice(
-              "Đã nạp thông tin kiện hàng từ sản phẩm hiện tại.",
+              "Vui lòng nhập thông tin kiện hàng.",
             );
           }
         } catch (error) {
@@ -506,16 +505,11 @@ const AgreementForm = ({
           );
 
         /*
-         * Current BE GhnShippingPreviewRequest:
-         * - Sender / Receiver
-         * - ServiceTypeId
-         * - RequiredNote
-         * - optional top-level light overrides
-         * - Items for heavy goods.
-         *
-         * We intentionally do NOT copy Mobile's nested
-         * lightParcel preview override. For light goods,
-         * Backend resolves dimensions from Product.
+         * Current BE GhnShippingPreviewRequest yêu cầu CẢ root parcel
+         * fields (ParcelCount/WeightGram/LengthCm/WidthCm/HeightCm) LẪN
+         * Items - SnapshotHash băm cả hai và bắt buộc khớp tuyệt đối.
+         * sanitizeGhnCollectionInfo đã tự suy ra root từ items nên preview
+         * và save luôn dùng chung đúng một snapshot đã chuẩn hoá.
          */
         const previewPayload = {
           sender:
@@ -532,13 +526,28 @@ const AgreementForm = ({
             sanitized
               .requiredNote,
 
-          ...(sanitized
-            .serviceTypeId === 5
-            ? {
-                items:
-                  sanitized.items,
-              }
-            : {}),
+          parcelCount:
+            sanitized
+              .parcelCount,
+
+          weightGram:
+            sanitized
+              .weightGram,
+
+          lengthCm:
+            sanitized
+              .lengthCm,
+
+          widthCm:
+            sanitized
+              .widthCm,
+
+          heightCm:
+            sanitized
+              .heightCm,
+
+          items:
+            sanitized.items,
         };
 
         const result =
@@ -570,6 +579,16 @@ const AgreementForm = ({
           expectedDeliveryAt:
             result
               ?.expectedDeliveryAt ||
+            null,
+
+          previewToken:
+            result
+              ?.previewToken ||
+            null,
+
+          expiresAt:
+            result
+              ?.expiresAt ||
             null,
         };
 
@@ -678,10 +697,20 @@ const AgreementForm = ({
           !ghnPreview ||
           Number(
             ghnPreview.totalFee,
-          ) <= 0
+          ) <= 0 ||
+          !ghnPreview.previewToken
         ) {
           nextErrors.ghnInfo =
             "Vui lòng tính lại phí GHN trước khi lưu thỏa thuận.";
+        } else if (
+          ghnPreview.expiresAt &&
+          new Date(
+            ghnPreview.expiresAt,
+          ).getTime() <=
+            Date.now()
+        ) {
+          nextErrors.ghnInfo =
+            "Phí GHN đã tính trước đó đã hết hạn. Vui lòng tính lại phí GHN trước khi lưu thỏa thuận.";
         }
       } else {
         if (
@@ -812,9 +841,17 @@ const AgreementForm = ({
          * - QuoteStatus
          *
          * sanitizeGhnCollectionInfo does not send them.
+         *
+         * PreviewToken phải được gửi kèm để Backend xác nhận
+         * (ConfirmPreview) và khóa EstimatedShippingFee - đây là token
+         * do ghn-preview trả về, không phải dữ liệu do người dùng nhập.
          */
-        details.ghnInfo =
-          sanitized;
+        details.ghnInfo = {
+          ...sanitized,
+          previewToken:
+            ghnPreview?.previewToken ||
+            null,
+        };
 
         details.codValue =
           Math.max(
