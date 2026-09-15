@@ -65,7 +65,7 @@ const authApi = {
     }
 
     return axiosClient.post(
-      "/auth/Personal/Register",
+      "/auth/personal/register",
       formData,
       {
         headers: {
