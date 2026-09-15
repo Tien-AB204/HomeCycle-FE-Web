@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { isOrderStatus } from "../../constants/orders";
 import reviewApi from "../../services/apis/reviewApi";
 import ReviewCard from "./ReviewCard";
 import ReviewFormModal from "./ReviewFormModal";
-import ReviewStars from "./ReviewStars";
 
 const PAGE_SIZE = 10;
 
@@ -15,7 +13,6 @@ const getErrorMessage = (error) =>
 
 const OrderReviewSection = ({
   orderId,
-  orderStatus,
   eligibility,
   counterpartyUserId,
 }) => {
@@ -66,17 +63,10 @@ const OrderReviewSection = ({
   }, [loadReviews]);
 
   const items = useMemo(() => state.page?.items || [], [state.page]);
-  const averageRating =
-    Number(state.page?.averageRating) > 0
-      ? Number(state.page.averageRating)
-      : items.length
-        ? items.reduce((total, review) => total + review.rating, 0) /
-          items.length
-        : 0;
-  const isOrderCompleted = isOrderStatus(orderStatus, "Completed");
-  const serverCanReview = eligibility?.canReview;
-  const isEligible =
-    typeof serverCanReview === "boolean" ? serverCanReview : isOrderCompleted;
+
+  // Quyền tạo đánh giá phải do Backend quyết định.
+  // Không suy đoán chỉ từ trạng thái Completed của đơn hàng.
+  const isEligible = eligibility?.canReview === true;
   const blockedReason = eligibility?.blockedReason || "";
   const canCreate = !state.loading && !state.error && isEligible && !state.mine;
 
@@ -146,10 +136,8 @@ const OrderReviewSection = ({
 
         <div className="flex flex-wrap items-center gap-2">
           {items.length > 0 && (
-            <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2">
-              <ReviewStars value={Math.round(averageRating)} size="text-lg" />
+            <div className="rounded-lg bg-white px-3 py-2">
               <span className="text-sm font-black text-text">
-                {averageRating.toFixed(1)} ·{" "}
                 {state.page?.totalCount || items.length} đánh giá
               </span>
             </div>
@@ -297,11 +285,6 @@ const OrderReviewSection = ({
         </div>
       )}
 
-      {state.mine && !canCreate && state.mine.canEdit !== false && (
-        <p className="mt-4 rounded-lg bg-primary/10 px-4 py-3 text-xs font-semibold leading-5 text-primary">
-          Bạn chỉ được chỉnh sửa đánh giá trong vòng 3 ngày kể từ khi gửi.
-        </p>
-      )}
 
       {modal && (
         <ReviewFormModal

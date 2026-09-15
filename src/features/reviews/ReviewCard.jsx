@@ -49,7 +49,7 @@ const ReviewCard = ({
 
       <div className="flex items-center justify-between gap-3 sm:justify-end">
         <ReviewStars value={review.rating} size="text-xl" />
-        {onEdit && review.canEdit !== false && (
+        {onEdit && review.canEdit === true && (
           <button
             type="button"
             onClick={() => onEdit(review)}
@@ -112,7 +112,7 @@ const ReviewCard = ({
       </div>
     )}
 
-    {review.editableUntil && ownReview && review.canEdit !== false && (
+    {review.editableUntil && ownReview && review.canEdit === true && (
       <p className="mt-3 text-xs font-semibold text-textLight">
         Có thể chỉnh sửa đến {formatDate(review.editableUntil)}.
       </p>
