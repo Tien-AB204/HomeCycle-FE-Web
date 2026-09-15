@@ -42,6 +42,42 @@ const INITIAL_FORM = {
   backIdCardFile: null,
 };
 
+const REGISTER_PERSONAL_DRAFT_KEY =
+  "homecycle.register-personal.draft";
+
+const readRegisterPersonalDraft = () => {
+  try {
+    const rawDraft =
+      window.sessionStorage.getItem(
+        REGISTER_PERSONAL_DRAFT_KEY,
+      );
+
+    if (!rawDraft) {
+      return null;
+    }
+
+    const draft = JSON.parse(rawDraft);
+
+    if (
+      ![
+        STEPS.OTP,
+        STEPS.BASIC,
+        STEPS.OPTIONAL,
+      ].includes(draft?.step)
+    ) {
+      return null;
+    }
+
+    return draft;
+  } catch {
+    window.sessionStorage.removeItem(
+      REGISTER_PERSONAL_DRAFT_KEY,
+    );
+
+    return null;
+  }
+};
+
 const getApiErrorMessage = (
   error,
   fallbackMessage,
@@ -165,21 +201,60 @@ const RegisterPersonalPage = () => {
       )
     : "";
 
-  const [step, setStep] = useState(
-    googleRegistration ? STEPS.BASIC : STEPS.EMAIL,
+  const [restoredDraft] = useState(
+    () => readRegisterPersonalDraft(),
   );
-  const [email, setEmail] = useState(googleEmail);
+
+  const [step, setStep] = useState(() => {
+    if (restoredDraft?.step === STEPS.OPTIONAL) {
+      // Password kh?ng ???c l?u n?n quay l?i BASIC
+      // ?? ng??i d?ng nh?p l?i tr??c khi ti?p t?c.
+      return STEPS.BASIC;
+    }
+
+    if (
+      restoredDraft?.step === STEPS.OTP ||
+      restoredDraft?.step === STEPS.BASIC
+    ) {
+      return restoredDraft.step;
+    }
+
+    return googleRegistration
+      ? STEPS.BASIC
+      : STEPS.EMAIL;
+  });
+
+  const [email, setEmail] = useState(
+    googleEmail || restoredDraft?.email || "",
+  );
+
   const [otp, setOtp] = useState("");
+
   const [
     registrationToken,
     setRegistrationToken,
   ] = useState(
-    googleRegistration?.registrationToken || "",
+    googleRegistration?.registrationToken ||
+      restoredDraft?.registrationToken ||
+      "",
   );
-  const isGoogleRegistration = Boolean(googleRegistration);
 
-  const [form, setForm] =
-    useState(INITIAL_FORM);
+  const isGoogleRegistration = Boolean(
+    googleRegistration ||
+      restoredDraft?.isGoogleRegistration,
+  );
+
+  const [form, setForm] = useState(() => ({
+    ...INITIAL_FORM,
+    ...(restoredDraft?.form || {}),
+
+    // Kh?ng ??a credential/File v?o Web Storage.
+    password: "",
+    confirmPassword: "",
+    avatarFile: null,
+    frontIdCardFile: null,
+    backIdCardFile: null,
+  }));
 
   const [loadingAction, setLoadingAction] =
     useState("");
@@ -214,6 +289,50 @@ const RegisterPersonalPage = () => {
       window.clearInterval(timerId);
     };
   }, [resendCooldown]);
+
+  useEffect(() => {
+    if (
+      step === STEPS.EMAIL ||
+      step === STEPS.SUCCESS
+    ) {
+      window.sessionStorage.removeItem(
+        REGISTER_PERSONAL_DRAFT_KEY,
+      );
+      return;
+    }
+
+    const safeForm = {
+      ...form,
+
+      // Kh?ng persist password v? File object.
+      password: "",
+      confirmPassword: "",
+      avatarFile: null,
+      frontIdCardFile: null,
+      backIdCardFile: null,
+    };
+
+    try {
+      window.sessionStorage.setItem(
+        REGISTER_PERSONAL_DRAFT_KEY,
+        JSON.stringify({
+          step,
+          email,
+          registrationToken,
+          isGoogleRegistration,
+          form: safeForm,
+        }),
+      );
+    } catch {
+      // Storage failure kh?ng ???c ph? flow ??ng k?.
+    }
+  }, [
+    step,
+    email,
+    registrationToken,
+    isGoogleRegistration,
+    form,
+  ]);
 
   const clearMessages = () => {
     setError("");
@@ -655,6 +774,10 @@ const RegisterPersonalPage = () => {
         response?.message ||
           "Đăng ký tài khoản cá nhân thành công.",
       );
+      window.sessionStorage.removeItem(
+        REGISTER_PERSONAL_DRAFT_KEY,
+      );
+
       setStep(STEPS.SUCCESS);
     } catch (registerError) {
       setError(
@@ -678,6 +801,10 @@ const RegisterPersonalPage = () => {
   };
 
   const handleChangeEmail = () => {
+    window.sessionStorage.removeItem(
+      REGISTER_PERSONAL_DRAFT_KEY,
+    );
+
     clearMessages();
     setOtp("");
     setRegistrationToken("");
