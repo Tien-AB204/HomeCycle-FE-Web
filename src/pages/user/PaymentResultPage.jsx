@@ -45,12 +45,14 @@ const PaymentResultPage = () => {
       ) || "",
     ).trim();
 
-  const storedAgreementId =
-    String(
-      localStorage.getItem(
-        PENDING_AGREEMENT_KEY,
-      ) || "",
-    ).trim();
+  const [storedAgreementId] =
+    useState(() =>
+      String(
+        localStorage.getItem(
+          PENDING_AGREEMENT_KEY,
+        ) || "",
+      ).trim(),
+    );
 
   // Callback URL mang agreementId để khôi phục được cả khi localStorage
   // bị mất hoặc PayOS quay về trong một browser/session khác.
@@ -217,6 +219,7 @@ const PaymentResultPage = () => {
     agreementId,
     cancelledByRoute,
     payOsStatus,
+    storedAgreementId,
   ]);
 
   const normalizedStatus =
