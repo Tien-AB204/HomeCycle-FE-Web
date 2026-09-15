@@ -25,6 +25,8 @@ import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal
 import OfferFormModal from "../../features/offers/OfferFormModal";
 import SellerRequestModal from "../../features/offers/SellerRequestModal";
 import BuyPostMatchesPanel from "../../features/posts/BuyPostMatchesPanel";
+import ContentReportModal from "../../features/disputes/ContentReportModal";
+import { DISPUTE_TARGET_TYPE } from "../../constants/disputes";
 import { useAuth } from "../../hooks/useAuth";
 import cartApi from "../../services/apis/cartApi";
 import offerApi from "../../services/apis/offerApi";
@@ -339,6 +341,8 @@ const PostDetailPage = ({ ownerMode = false }) => {
     useState(false);
   const [isAddingToCart, setIsAddingToCart] =
     useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] =
+    useState(false);
   const [cartFeedback, setCartFeedback] =
     useState(null);
   const [offerError, setOfferError] =
@@ -543,7 +547,15 @@ const PostDetailPage = ({ ownerMode = false }) => {
   );
   const isOwnPost = Boolean(
     userId &&
-      String(post?.ownerId || "") === userId,
+      String(post?.ownerId || "").toLowerCase() ===
+        userId.toLowerCase(),
+  );
+  const canReportPost = Boolean(
+    isAuthenticated &&
+      !ownerMode &&
+      !isOwnPost &&
+      (isPersonal || isBusiness) &&
+      (post?.postId || postId),
   );
   const proactiveBuyPostId =
     isBusiness &&
@@ -1377,6 +1389,22 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   </button>
                 )}
 
+              {canReportPost && (
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="mt-2.5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-error/30 bg-white px-4 py-2.5 text-sm font-bold text-error transition hover:bg-error/5"
+                >
+                  <span
+                    className="material-symbols-outlined text-lg"
+                    aria-hidden="true"
+                  >
+                    flag
+                  </span>
+                  Báo cáo bài đăng
+                </button>
+              )}
+
               {cartFeedback && (
                 <p
                   className={`mt-2 text-xs font-semibold ${
@@ -1685,6 +1713,22 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 }
               }}
               onSubmit={handleCreateOffer}
+            />
+          )}
+
+          {isReportModalOpen && (
+            <ContentReportModal
+              open
+              targetType={DISPUTE_TARGET_TYPE.POST}
+              targetId={post.postId || postId}
+              targetLabel={post.productName || "Bài đăng HomeCycle"}
+              onClose={() => setIsReportModalOpen(false)}
+              onSuccess={() => {
+                setIsReportModalOpen(false);
+                setActionMessage(
+                  "Đã gửi báo cáo bài đăng. Nội dung sẽ được giữ nguyên cho đến khi Kiểm duyệt viên đưa ra quyết định.",
+                );
+              }}
             />
           )}
 

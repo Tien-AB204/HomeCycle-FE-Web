@@ -2,6 +2,7 @@ export const DISPUTE_TARGET_TYPE = Object.freeze({
   APPOINTMENT: 1,
   ORDER: 2,
   REVIEW: 3,
+  POST: 4,
 });
 
 export const DISPUTE_CATEGORY = Object.freeze({
@@ -38,6 +39,20 @@ const DISPUTE_STATUS_NAMES = Object.freeze({
   [DISPUTE_STATUS.CLOSED]: "Closed",
   [DISPUTE_STATUS.UNDER_REVIEW]: "UnderReview",
   [DISPUTE_STATUS.AWAITING_RETURN]: "AwaitingReturn",
+});
+
+const DISPUTE_TARGET_TYPE_NAMES = Object.freeze({
+  [DISPUTE_TARGET_TYPE.APPOINTMENT]: "Appointment",
+  [DISPUTE_TARGET_TYPE.ORDER]: "Order",
+  [DISPUTE_TARGET_TYPE.REVIEW]: "Review",
+  [DISPUTE_TARGET_TYPE.POST]: "Post",
+});
+
+const DISPUTE_TARGET_TYPE_LABELS = Object.freeze({
+  [DISPUTE_TARGET_TYPE.APPOINTMENT]: "Lịch hẹn",
+  [DISPUTE_TARGET_TYPE.ORDER]: "Đơn hàng",
+  [DISPUTE_TARGET_TYPE.REVIEW]: "Đánh giá",
+  [DISPUTE_TARGET_TYPE.POST]: "Bài đăng",
 });
 
 const DISPUTE_CATEGORY_NAMES = Object.freeze({
@@ -83,6 +98,9 @@ const normalizeEnumNumber = (value, namesByNumber) => {
 
 export const normalizeDisputeStatus = (value) =>
   normalizeEnumNumber(value, DISPUTE_STATUS_NAMES);
+
+export const normalizeDisputeTargetType = (value) =>
+  normalizeEnumNumber(value, DISPUTE_TARGET_TYPE_NAMES);
 
 export const normalizeDisputeCategory = (value) =>
   normalizeEnumNumber(value, DISPUTE_CATEGORY_NAMES);
@@ -166,6 +184,14 @@ const UNKNOWN_DISPUTE_STATUS_META = Object.freeze({
 });
 
 export const getDisputeCategoryLabel = (category) => {
+  if (category && typeof category === "object") {
+    return (
+      String(category.name || "").trim() ||
+      String(category.code || "").trim() ||
+      "Chưa xác định"
+    );
+  }
+
   const normalizedCategory = normalizeDisputeCategory(category);
 
   if (normalizedCategory === null) {
@@ -188,5 +214,16 @@ export const getDisputeStatusMeta = (status) => {
   return (
     (normalizedStatus !== null && DISPUTE_STATUS_META[normalizedStatus]) ||
     UNKNOWN_DISPUTE_STATUS_META
+  );
+};
+
+export const getDisputeTargetTypeLabel = (targetType) => {
+  const normalizedTargetType =
+    normalizeDisputeTargetType(targetType);
+
+  return (
+    (normalizedTargetType !== null &&
+      DISPUTE_TARGET_TYPE_LABELS[normalizedTargetType]) ||
+    "Chưa xác định"
   );
 };

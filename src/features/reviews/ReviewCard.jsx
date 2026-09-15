@@ -13,7 +13,14 @@ const formatDate = (value) => {
     : "Chưa có thời gian";
 };
 
-const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
+const ReviewCard = ({
+  review,
+  ownReview = false,
+  onEdit,
+  editing = false,
+  onReport,
+  reporting = false,
+}) => (
   <article className="rounded-xl border border-border bg-white p-4 shadow-[0_6px_18px_rgba(23,40,48,0.035)] sm:p-5">
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="flex min-w-0 items-center gap-3">
@@ -53,6 +60,23 @@ const ReviewCard = ({ review, ownReview = false, onEdit, editing = false }) => (
               edit
             </span>
             {editing ? "Đang mở..." : "Chỉnh sửa"}
+          </button>
+        )}
+
+        {onReport && (
+          <button
+            type="button"
+            onClick={() => onReport(review)}
+            disabled={reporting}
+            className="inline-flex items-center gap-1 rounded-lg border border-error/30 px-3 py-1.5 text-xs font-black text-error transition hover:bg-error/5 disabled:opacity-50"
+          >
+            <span
+              className="material-symbols-outlined text-base"
+              aria-hidden="true"
+            >
+              flag
+            </span>
+            {reporting ? "Đang báo cáo..." : "Báo cáo đánh giá"}
           </button>
         )}
       </div>

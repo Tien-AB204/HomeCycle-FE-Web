@@ -1,22 +1,5 @@
-import {
-  DISPUTE_TARGET_TYPE,
-  ORDER_DISPUTE_CATEGORY_OPTIONS,
-} from "../../constants/disputes";
+import { DISPUTE_TARGET_TYPE } from "../../constants/disputes";
 import axiosClient from "./axiosClient";
-
-const MIN_DESCRIPTION_LENGTH = 10;
-const MAX_DESCRIPTION_LENGTH = 2000;
-
-const MIN_EVIDENCE_IMAGES = 3;
-const MAX_EVIDENCE_IMAGES = 5;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-const ALLOWED_EXTENSIONS = Object.freeze([
-  ".jpg",
-  ".jpeg",
-  ".png",
-  ".webp",
-]);
 
 const normalizeIdentifier = (value, message) => {
   const id = String(value || "").trim();
@@ -28,110 +11,42 @@ const normalizeIdentifier = (value, message) => {
   return id;
 };
 
-const normalizeDescription = (value) =>
-  String(value || "").trim();
+const normalizeCategoryId = (value) => {
+  const id = Number(value);
 
-const getFileExtension = (fileName) => {
-  const normalizedName = String(fileName || "")
-    .trim()
-    .toLowerCase();
-
-  const lastDotIndex = normalizedName.lastIndexOf(".");
-
-  return lastDotIndex >= 0
-    ? normalizedName.slice(lastDotIndex)
-    : "";
-};
-
-const validateOrderCategory = (category) => {
-  const normalizedCategory = Number(category);
-
-  const allowedCategories =
-    ORDER_DISPUTE_CATEGORY_OPTIONS.map(
-      (option) => option.value,
-    );
-
-  if (!allowedCategories.includes(normalizedCategory)) {
-    throw new Error(
-      "Loại tranh chấp không hợp lệ đối với đơn hàng.",
-    );
+  if (!Number.isInteger(id) || id <= 0) {
+    throw new Error("Vui lòng chọn lý do báo cáo hợp lệ.");
   }
 
-  return normalizedCategory;
+  return id;
 };
 
-const validateDescription = (description) => {
-  const normalizedDescription =
-    normalizeDescription(description);
-
-  if (
-    normalizedDescription.length <
-    MIN_DESCRIPTION_LENGTH
-  ) {
-    throw new Error(
-      `Mô tả tranh chấp phải có ít nhất ${MIN_DESCRIPTION_LENGTH} ký tự.`,
-    );
-  }
-
-  if (
-    normalizedDescription.length >
-    MAX_DESCRIPTION_LENGTH
-  ) {
-    throw new Error(
-      `Mô tả tranh chấp không được vượt quá ${MAX_DESCRIPTION_LENGTH} ký tự.`,
-    );
-  }
-
-  return normalizedDescription;
-};
-
-const validateEvidenceImages = (evidenceImages) => {
+const normalizeEvidenceImages = (evidenceImages) => {
   const files = Array.from(evidenceImages || []);
 
-  if (
-    files.length < MIN_EVIDENCE_IMAGES ||
-    files.length > MAX_EVIDENCE_IMAGES
-  ) {
-    throw new Error(
-      `Vui lòng cung cấp từ ${MIN_EVIDENCE_IMAGES} đến ${MAX_EVIDENCE_IMAGES} ảnh bằng chứng.`,
-    );
+  if (files.some((file) => !(file instanceof File))) {
+    throw new Error("Danh sách ảnh bằng chứng không hợp lệ.");
   }
 
-  files.forEach((file) => {
-    if (!(file instanceof File)) {
-      throw new Error(
-        "Danh sách ảnh bằng chứng không hợp lệ.",
-      );
-    }
-
-    if (file.size <= 0) {
-      throw new Error(
-        `Ảnh "${file.name}" không có dữ liệu.`,
-      );
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      throw new Error(
-        `Ảnh "${file.name}" vượt quá dung lượng tối đa 5MB.`,
-      );
-    }
-
-    const extension = getFileExtension(file.name);
-
-    if (!ALLOWED_EXTENSIONS.includes(extension)) {
-      throw new Error(
-        `Ảnh "${file.name}" không đúng định dạng. Chỉ chấp nhận JPG, JPEG, PNG hoặc WEBP.`,
-      );
-    }
-  });
-
   return files;
+};
+
+const unwrap = (response) => response?.data ?? response;
+
+const normalizeLimit = (value, label) => {
+  const limit = Number(value);
+
+  if (!Number.isInteger(limit) || limit < 0) {
+    throw new Error(`Máy chủ chưa trả ${label} hợp lệ.`);
+  }
+
+  return limit;
 };
 
 const createFormData = ({
   targetType,
   targetId,
-  category,
+  disputeCategoryId,
   description,
   evidenceImages,
 }) => {
@@ -139,70 +54,182 @@ const createFormData = ({
 
   formData.append("TargetType", String(targetType));
   formData.append("TargetId", targetId);
-  formData.append("Category", String(category));
+  formData.append(
+    "DisputeCategoryId",
+    String(disputeCategoryId),
+  );
   formData.append("Description", description);
 
   evidenceImages.forEach((file) => {
-    formData.append(
-      "EvidenceImages",
-      file,
-      file.name,
-    );
+    formData.append("EvidenceImages", file, file.name);
   });
 
   return formData;
 };
 
+const createDispute = async ({
+  targetType,
+  targetId,
+  disputeCategoryId,
+  description,
+  evidenceImages,
+}) => {
+  const normalizedTargetId = normalizeIdentifier(
+    targetId,
+    "Không tìm thấy nội dung cần báo cáo.",
+  );
+  const normalizedDescription = String(
+    description || "",
+  ).trim();
+  const formData = createFormData({
+    targetType,
+    targetId: normalizedTargetId,
+    disputeCategoryId:
+      normalizeCategoryId(disputeCategoryId),
+    description: normalizedDescription,
+    evidenceImages:
+      normalizeEvidenceImages(evidenceImages),
+  });
+
+  const response = await axiosClient.post(
+    "/disputes",
+    formData,
+    {
+      timeout: 60000,
+      skipGlobalErrorPage: true,
+    },
+  );
+  const result = unwrap(response);
+
+  if (!result?.disputeId) {
+    throw new Error("Phản hồi tạo báo cáo không hợp lệ.");
+  }
+
+  return result;
+};
+
 export const disputeApi = {
-  /**
-   * Tạo tranh chấp trực tiếp trên một Order.
-   */
-  createForOrder: async ({
-    orderId,
-    category,
-    description,
-    evidenceImages,
-  }) => {
-    const targetId = normalizeIdentifier(
-      orderId,
-      "Không tìm thấy mã đơn hàng để tạo tranh chấp.",
+  getOptions: async ({ targetType, signal } = {}) => {
+    const response = await axiosClient.get(
+      "/disputes/options",
+      {
+        params:
+          targetType === undefined || targetType === null
+            ? undefined
+            : { targetType },
+        signal,
+        skipGlobalErrorPage: true,
+      },
     );
+    const source = unwrap(response) || {};
+    const limits = {
+      minimumEvidenceImages: normalizeLimit(
+        source.minimumEvidenceImages,
+        "số ảnh bằng chứng tối thiểu",
+      ),
+      maximumEvidenceImages: normalizeLimit(
+        source.maximumEvidenceImages,
+        "số ảnh bằng chứng tối đa",
+      ),
+      minimumDescriptionLength: normalizeLimit(
+        source.minimumDescriptionLength,
+        "độ dài mô tả tối thiểu",
+      ),
+      maximumDescriptionLength: normalizeLimit(
+        source.maximumDescriptionLength,
+        "độ dài mô tả tối đa",
+      ),
+    };
 
-    const normalizedCategory =
-      validateOrderCategory(category);
-
-    const normalizedDescription =
-      validateDescription(description);
-
-    const normalizedEvidenceImages =
-      validateEvidenceImages(evidenceImages);
-
-    const formData = createFormData({
-      targetType: DISPUTE_TARGET_TYPE.ORDER,
-      targetId,
-      category: normalizedCategory,
-      description: normalizedDescription,
-      evidenceImages: normalizedEvidenceImages,
-    });
-
-    const response = await axiosClient.post(
-      "/disputes",
-      formData,
-    );
-
-    if (!response?.disputeId) {
+    if (
+      limits.minimumEvidenceImages >
+        limits.maximumEvidenceImages ||
+      limits.minimumDescriptionLength >
+        limits.maximumDescriptionLength
+    ) {
       throw new Error(
-        "Response tạo tranh chấp không hợp lệ.",
+        "Máy chủ chưa trả giới hạn báo cáo hợp lệ.",
       );
     }
 
-    return response;
+    return limits;
   },
 
-  /**
-   * Danh sách tranh chấp mà user hiện tại là người gửi
-   * hoặc người bị khiếu nại.
-   */
+  getCategories: async ({ targetType, signal } = {}) => {
+    const response = await axiosClient.get(
+      "/dispute-categories",
+      {
+        params:
+          targetType === undefined || targetType === null
+            ? undefined
+            : { targetType },
+        signal,
+        skipGlobalErrorPage: true,
+      },
+    );
+    const source = unwrap(response);
+    const items = Array.isArray(source)
+      ? source
+      : Array.isArray(source?.items)
+        ? source.items
+        : [];
+
+    return items
+      .map((item) => {
+        const disputeCategoryId = Number(
+          item?.disputeCategoryId,
+        );
+
+        if (
+          !Number.isInteger(disputeCategoryId) ||
+          disputeCategoryId <= 0
+        ) {
+          return null;
+        }
+
+        return {
+          disputeCategoryId,
+          code: String(item.code || "").trim(),
+          name:
+            String(item.name || "").trim() ||
+            String(item.code || "").trim() ||
+            "Lý do chưa đặt tên",
+          description:
+            String(item.description || "").trim() || null,
+        };
+      })
+      .filter(Boolean);
+  },
+
+  createContentReport: async (payload) => {
+    const targetType = Number(payload?.targetType);
+
+    if (
+      targetType !== DISPUTE_TARGET_TYPE.POST &&
+      targetType !== DISPUTE_TARGET_TYPE.REVIEW
+    ) {
+      throw new Error(
+        "Loại nội dung báo cáo không được hỗ trợ.",
+      );
+    }
+
+    return createDispute({ ...payload, targetType });
+  },
+
+  createForOrder: ({
+    orderId,
+    disputeCategoryId,
+    description,
+    evidenceImages,
+  }) =>
+    createDispute({
+      targetType: DISPUTE_TARGET_TYPE.ORDER,
+      targetId: orderId,
+      disputeCategoryId,
+      description,
+      evidenceImages,
+    }),
+
   getMine: async ({
     pageNumber = 1,
     pageSize = 10,
@@ -214,9 +241,10 @@ export const disputeApi = {
         PageSize: pageSize,
       },
       signal,
+      skipGlobalErrorPage: true,
     });
 
-    const source = response?.data ?? response ?? {};
+    const source = unwrap(response) || {};
 
     return {
       items: Array.isArray(source?.items) ? source.items : [],
@@ -229,31 +257,20 @@ export const disputeApi = {
     };
   },
 
-  /**
-   * Đóng tranh chấp do chính người dùng hiện tại gửi,
-   * chỉ khả dụng khi máy chủ cho phép (actions.canCloseDispute).
-   */
   close: async (disputeId) => {
     const id = normalizeIdentifier(
       disputeId,
       "Không tìm thấy mã tranh chấp.",
     );
 
-    const response = await axiosClient.post(
+    return axiosClient.post(
       `/disputes/${encodeURIComponent(id)}/close`,
+      undefined,
+      { skipGlobalErrorPage: true },
     );
-
-    return response;
   },
 
-  /**
-   * Xem chi tiết một tranh chấp mà user hiện tại
-   * là người gửi hoặc người bị khiếu nại.
-   */
-  getById: async (
-    disputeId,
-    { signal } = {},
-  ) => {
+  getById: async (disputeId, { signal } = {}) => {
     const id = normalizeIdentifier(
       disputeId,
       "Không tìm thấy mã tranh chấp.",
@@ -263,16 +280,18 @@ export const disputeApi = {
       `/disputes/${encodeURIComponent(id)}`,
       {
         signal,
+        skipGlobalErrorPage: true,
       },
     );
+    const result = unwrap(response);
 
-    if (!response?.disputeId) {
+    if (!result?.disputeId) {
       throw new Error(
-        "Response chi tiết tranh chấp không hợp lệ.",
+        "Phản hồi chi tiết tranh chấp không hợp lệ.",
       );
     }
 
-    return response;
+    return result;
   },
 };
 
