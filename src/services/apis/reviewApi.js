@@ -180,6 +180,9 @@ export const reviewApi = {
         rating: normalizeRating(rating),
         comment: String(comment || "").trim(),
       },
+      {
+        skipGlobalErrorPage: true,
+      },
     );
 
     return normalizeReview(response);

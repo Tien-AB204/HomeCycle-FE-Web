@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ReviewCard from "../../features/reviews/ReviewCard";
-import ReviewStars from "../../features/reviews/ReviewStars";
 import ContentReportModal from "../../features/disputes/ContentReportModal";
 import { DISPUTE_TARGET_TYPE } from "../../constants/disputes";
 import { ROLES } from "../../constants/roles";
@@ -55,11 +54,6 @@ const ReceivedReviewsPage = () => {
   }, [pageNumber, userId, version]);
 
   const items = useMemo(() => state.page?.items || [], [state.page]);
-  const averageRating = Number(state.page?.averageRating) > 0
-    ? Number(state.page.averageRating)
-    : items.length
-      ? items.reduce((total, review) => total + review.rating, 0) / items.length
-      : 0;
 
   const changePage = (nextPage) => {
     setState((current) => ({ ...current, loading: true, error: "" }));
@@ -84,9 +78,11 @@ const ReceivedReviewsPage = () => {
         </div>
         {items.length > 0 && (
           <div className="rounded-xl border border-border bg-white px-4 py-3 shadow-sm">
-            <ReviewStars value={Math.round(averageRating)} size="text-xl" />
-            <p className="mt-1 text-sm font-black text-text">
-              {averageRating.toFixed(1)}/5 · {state.page?.totalCount || items.length} đánh giá
+            <p className="text-sm font-black text-text">
+              {state.page?.totalCount || items.length} đánh giá
+            </p>
+            <p className="mt-1 text-xs font-semibold text-textLight">
+              Điểm uy tín hiển thị được hệ thống quản lý riêng theo chính sách đánh giá.
             </p>
           </div>
         )}

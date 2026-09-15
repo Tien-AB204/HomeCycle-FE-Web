@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import {
   getOrderStatusMeta,
   getPaymentDisplayMeta,
-  isOrderStatus,
   isPaymentStatus,
 } from "../../constants/orders";
 import OrderTransactionActions from "../../features/orders/OrderTransactionActions";
@@ -789,10 +788,6 @@ const OrderDetailPage = () => {
       finalTotalAmount > 0 ? (amountPaid / finalTotalAmount) * 100 : 0,
     ),
   );
-  const isOrderCompleted = isOrderStatus(
-    order.orderStatus,
-    "Completed",
-  );
 
   const normalizedDeliveryMethod =
     String(
@@ -831,9 +826,10 @@ const OrderDetailPage = () => {
     ? OWN_POST_REVIEW_MESSAGE
     : detail.review?.hasReviewed
       ? `Bạn đã đánh giá ${detail.review.rating || 0}/5 sao.`
-      : (detail.review?.canReview ?? isOrderCompleted)
+      : detail.review?.canReview === true
         ? "Đơn hàng đã đủ điều kiện để đánh giá."
-        : "Bạn có thể đánh giá sau khi đơn hàng hoàn tất.";
+        : detail.review?.blockedReason ||
+          "Đánh giá hiện chưa khả dụng theo trạng thái giao dịch.";
   const disputeDescription = detail.dispute?.hasActiveDispute
     ? "Đơn hàng đang có tranh chấp cần được xử lý."
     : "Đơn hàng hiện không có tranh chấp.";
@@ -1067,7 +1063,6 @@ const OrderDetailPage = () => {
 
       <OrderReviewSection
         orderId={order.orderId || orderId}
-        orderStatus={order.orderStatus}
         eligibility={reviewEligibility}
         counterpartyUserId={counterpartyUserId}
       />
