@@ -38,10 +38,25 @@ const PaymentResultPage = () => {
   const location =
     useLocation();
 
+  const queryAgreementId =
+    String(
+      searchParams.get(
+        "agreementId",
+      ) || "",
+    ).trim();
+
+  const storedAgreementId =
+    String(
+      localStorage.getItem(
+        PENDING_AGREEMENT_KEY,
+      ) || "",
+    ).trim();
+
+  // Callback URL mang agreementId để khôi phục được cả khi localStorage
+  // bị mất hoặc PayOS quay về trong một browser/session khác.
   const agreementId =
-    localStorage.getItem(
-      PENDING_AGREEMENT_KEY,
-    ) || "";
+    queryAgreementId ||
+    storedAgreementId;
 
   const payOsStatus =
     String(
@@ -137,9 +152,14 @@ const PaymentResultPage = () => {
                 order = null;
               }
 
-              localStorage.removeItem(
-                PENDING_AGREEMENT_KEY,
-              );
+              if (
+                storedAgreementId ===
+                agreementId
+              ) {
+                localStorage.removeItem(
+                  PENDING_AGREEMENT_KEY,
+                );
+              }
             }
 
             setState({
