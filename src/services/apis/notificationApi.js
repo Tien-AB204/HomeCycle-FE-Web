@@ -100,6 +100,18 @@ export const normalizeNotificationTargetType = (
     case "withdrawal":
       return "withdrawal";
 
+    case "9":
+    case "businessprofile":
+      return "businessProfile";
+
+    case "10":
+    case "personalprofile":
+      return "personalProfile";
+
+    case "11":
+    case "review":
+      return "review";
+
     default:
       return "";
   }
@@ -275,6 +287,7 @@ export const notificationApi = {
           },
 
           signal,
+          skipGlobalErrorPage: true,
         },
       );
 
@@ -335,10 +348,14 @@ export const notificationApi = {
   },
 
   getUnreadCount:
-    async () => {
+    async ({ signal } = {}) => {
       const response =
         await axiosClient.get(
           "/notifications/unread-count",
+          {
+            signal,
+            skipGlobalErrorPage: true,
+          },
         );
 
       const data =
@@ -371,6 +388,10 @@ export const notificationApi = {
           "/notifications/" +
             encodeURIComponent(id) +
             "/read",
+          undefined,
+          {
+            skipGlobalErrorPage: true,
+          },
         );
 
       return normalizeReadResponse(
@@ -386,6 +407,10 @@ export const notificationApi = {
       const response =
         await axiosClient.patch(
           "/notifications/read-all",
+          undefined,
+          {
+            skipGlobalErrorPage: true,
+          },
         );
 
       return normalizeReadAllResponse(

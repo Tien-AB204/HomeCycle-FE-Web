@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import { useAuth } from "../../hooks/useAuth";
 import Avatar from "../shared/Avatar";
+import NotificationBell from "../shared/NotificationBell";
 
 const getDisplayName = (user, fallbackName) =>
   user?.fullName || user?.username || fallbackName;
@@ -23,6 +24,7 @@ export default function ManagementPortalLayout({
   navAriaLabel,
   openMenuAriaLabel,
   closeMenuAriaLabel,
+  notificationsPath,
 }) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -375,6 +377,8 @@ export default function ManagementPortalLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell allNotificationsPath={notificationsPath} />
+
             <div className="hidden text-right sm:block">
               <p className="max-w-48 truncate text-sm font-bold text-text">
                 {displayName}

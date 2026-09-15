@@ -5,8 +5,9 @@ import { BrowserRouter } from 'react-router-dom';
 import AppRouter from './routes/AppRouter';
 import { AuthProvider } from './contexts/AuthContext';
 import { ChatRealtimeProvider } from './contexts/ChatRealtimeProvider';
-import { NotificationProvider } from './contexts/NotificationContext';
+import { NotificationProvider } from './contexts/NotificationProvider';
 import ApiErrorRedirect from './components/shared/ApiErrorRedirect';
+import NotificationToast from './components/shared/NotificationToast';
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
         <AuthProvider>
           <ChatRealtimeProvider>
             <NotificationProvider>
+              <NotificationToast />
               <AppRouter />
             </NotificationProvider>
           </ChatRealtimeProvider>
