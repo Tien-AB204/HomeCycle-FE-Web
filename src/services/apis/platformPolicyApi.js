@@ -6,6 +6,7 @@ export const PLATFORM_POLICY_TYPES = Object.freeze({
   FILE_UPLOAD: "file-upload",
   PAYMENT: "payment",
   ORDER: "order",
+  RATING: "rating",
 });
 
 const SUPPORTED_POLICY_TYPES = new Set(
@@ -53,7 +54,10 @@ const platformPolicyApi = {
   getAllActive: async ({ signal } = {}) => {
     const result = await axiosClient.get(
       "/admin/platform-policies",
-      { signal },
+      {
+        signal,
+        skipGlobalErrorPage: true,
+      },
     );
 
     return unwrapResult(
@@ -67,7 +71,10 @@ const platformPolicyApi = {
 
     const result = await axiosClient.get(
       `/admin/platform-policies/${normalizedType}`,
-      { signal },
+      {
+        signal,
+        skipGlobalErrorPage: true,
+      },
     );
 
     return unwrapResult(
@@ -86,6 +93,7 @@ const platformPolicyApi = {
     const result = await axiosClient.patch(
       `/admin/platform-policies/${normalizedType}`,
       payload,
+      { skipGlobalErrorPage: true },
     );
 
     return unwrapResult(
@@ -99,7 +107,10 @@ const platformPolicyApi = {
 
     const result = await axiosClient.get(
       `/admin/platform-policies/${normalizedType}/versions`,
-      { signal },
+      {
+        signal,
+        skipGlobalErrorPage: true,
+      },
     );
 
     const data = unwrapResult(
@@ -120,7 +131,10 @@ const platformPolicyApi = {
 
     const result = await axiosClient.get(
       `/admin/platform-policies/${normalizedType}/versions/${normalizedVersion}`,
-      { signal },
+      {
+        signal,
+        skipGlobalErrorPage: true,
+      },
     );
 
     return unwrapResult(
@@ -135,6 +149,8 @@ const platformPolicyApi = {
 
     const result = await axiosClient.post(
       `/admin/platform-policies/${normalizedType}/versions/${normalizedVersion}/restore`,
+      undefined,
+      { skipGlobalErrorPage: true },
     );
 
     return unwrapResult(

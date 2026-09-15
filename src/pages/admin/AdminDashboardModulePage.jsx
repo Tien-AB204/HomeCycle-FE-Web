@@ -11,6 +11,7 @@ import {
   DashboardLineChart,
 } from "../../components/admin/AdminDashboardCharts";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
+import disputeCategoryApi from "../../services/apis/disputeCategoryApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 
 const GROUP_OPTIONS = [
@@ -91,44 +92,6 @@ const DISPUTE_TARGET_OPTIONS = [
   { value: "Appointment", label: "Lịch hẹn" },
   { value: "Order", label: "Đơn hàng" },
   { value: "Review", label: "Đánh giá" },
-];
-
-const DISPUTE_CATEGORY_OPTIONS = [
-  { value: "", label: "Tất cả nguyên nhân" },
-  { value: "NoShow", label: "Không có mặt" },
-  {
-    value: "ItemMismatch",
-    label: "Sản phẩm không đúng thỏa thuận",
-  },
-  {
-    value: "SellerNotShipped",
-    label: "Người bán chưa giao hàng",
-  },
-  {
-    value: "DamagedOrLost",
-    label: "Hư hỏng hoặc thất lạc",
-  },
-  {
-    value: "ItemNotReceived",
-    label: "Chưa nhận được sản phẩm",
-  },
-  {
-    value: "FraudOrScam",
-    label: "Có dấu hiệu gian lận",
-  },
-  {
-    value: "AbusiveReview",
-    label: "Đánh giá không phù hợp",
-  },
-  {
-    value: "PaymentNotCompleted",
-    label: "Thanh toán chưa hoàn tất",
-  },
-  {
-    value: "CommitmentViolation",
-    label: "Vi phạm cam kết",
-  },
-  { value: "Other", label: "Khác" },
 ];
 
 const BUSINESS_MODEL_OPTIONS = [
@@ -874,7 +837,7 @@ const initialFilters = {
   appointmentType: "",
   status: "",
   targetType: "",
-  category: "",
+  disputeCategoryId: "",
   businessModel: "",
   profileStatus: "",
   userStatus: "",
@@ -974,6 +937,21 @@ export default function AdminDashboardModulePage({
   const [
     productTypeError,
     setProductTypeError,
+  ] = useState("");
+
+  const [
+    disputeCategoryOptions,
+    setDisputeCategoryOptions,
+  ] = useState([]);
+
+  const [
+    disputeCategoryLoading,
+    setDisputeCategoryLoading,
+  ] = useState(false);
+
+  const [
+    disputeCategoryError,
+    setDisputeCategoryError,
   ] = useState("");
 
   const usesPeriod =
@@ -1195,6 +1173,104 @@ export default function AdminDashboardModulePage({
     };
   }, [dashboard]);
 
+  /*
+   * Nguyên nhân tranh chấp không còn là enum tĩnh - tải danh mục động
+   * từ Admin API thay vì hard-code danh sách. Chỉ lấy danh mục đang hoạt
+   * động cho bộ lọc (dữ liệu lịch sử vẫn hiển thị đúng tên Backend trả về
+   * qua labelFor, không phụ thuộc danh sách này).
+   */
+  useEffect(() => {
+    if (dashboard !== "disputes") {
+      return undefined;
+    }
+
+    const controller =
+      new AbortController();
+
+    let active = true;
+
+    const loadDisputeCategories =
+      async () => {
+        setDisputeCategoryLoading(
+          true,
+        );
+        setDisputeCategoryError(
+          "",
+        );
+
+        try {
+          const items =
+            await disputeCategoryApi.getAll(
+              {
+                isActive: true,
+                signal:
+                  controller.signal,
+              },
+            );
+
+          if (!active) {
+            return;
+          }
+
+          const options = (
+            Array.isArray(items)
+              ? items
+              : []
+          )
+            .map((item) => ({
+              value: String(
+                item.disputeCategoryId,
+              ),
+              label:
+                item.name ||
+                item.code ||
+                "Danh mục chưa đặt tên",
+            }))
+            .sort((a, b) =>
+              a.label.localeCompare(
+                b.label,
+                "vi",
+              ),
+            );
+
+          setDisputeCategoryOptions(
+            options,
+          );
+        } catch (error) {
+          if (
+            !active ||
+            error?.name ===
+              "CanceledError" ||
+            error?.code ===
+              "ERR_CANCELED"
+          ) {
+            return;
+          }
+
+          setDisputeCategoryOptions(
+            [],
+          );
+
+          setDisputeCategoryError(
+            "Không thể tải danh mục tranh chấp. Các bộ lọc khác vẫn có thể sử dụng.",
+          );
+        } finally {
+          if (active) {
+            setDisputeCategoryLoading(
+              false,
+            );
+          }
+        }
+      };
+
+    loadDisputeCategories();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [dashboard]);
+
   if (!config) {
     return null;
   }
@@ -1215,6 +1291,17 @@ export default function AdminDashboardModulePage({
           : "Tất cả loại sản phẩm",
     },
     ...productTypeOptions,
+  ];
+
+  const disputeCategoryFilterOptions = [
+    {
+      value: "",
+      label:
+        disputeCategoryLoading
+          ? "Đang tải nguyên nhân..."
+          : "Tất cả nguyên nhân",
+    },
+    ...disputeCategoryOptions,
   ];
 
   const applyFilters = (
@@ -1448,8 +1535,8 @@ export default function AdminDashboardModulePage({
           ),
           renderSelect(
             "Nguyên nhân",
-            "category",
-            DISPUTE_CATEGORY_OPTIONS,
+            "disputeCategoryId",
+            disputeCategoryFilterOptions,
           ),
         );
       }
@@ -2730,6 +2817,14 @@ export default function AdminDashboardModulePage({
           productTypeError && (
             <p className="mt-3 text-sm font-semibold text-warning">
               {productTypeError}
+            </p>
+          )}
+
+        {dashboard ===
+          "disputes" &&
+          disputeCategoryError && (
+            <p className="mt-3 text-sm font-semibold text-warning">
+              {disputeCategoryError}
             </p>
           )}
       </form>

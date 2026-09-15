@@ -14,6 +14,13 @@ const POLICY_TABS = [
     icon: "gavel",
   },
   {
+    key: PLATFORM_POLICY_TYPES.RATING,
+    label: "Đánh giá & uy tín",
+    description:
+      "Quy tắc tính điểm sao, ảnh hưởng uy tín và thời hạn chỉnh sửa đánh giá.",
+    icon: "star_rate",
+  },
+  {
     key: PLATFORM_POLICY_TYPES.APPOINTMENT,
     label: "Lịch hẹn",
     description:
@@ -64,6 +71,24 @@ const DISPUTE_EDITABLE_FIELDS = [
     unit: "điểm",
     min: 0,
     max: 100,
+  },
+  {
+    name: "postViolationPenaltyPoints",
+    label: "Điểm phạt khi bài đăng vi phạm",
+    unit: "điểm",
+    min: 1,
+    max: 100,
+    description:
+      "Máy chủ áp dụng mức này khi Kiểm duyệt viên xác nhận một bài đăng vi phạm.",
+  },
+  {
+    name: "reviewViolationPenaltyPoints",
+    label: "Điểm phạt khi đánh giá vi phạm",
+    unit: "điểm",
+    min: 1,
+    max: 100,
+    description:
+      "Máy chủ áp dụng mức này khi Kiểm duyệt viên xác nhận một đánh giá vi phạm.",
   },
 ];
 
@@ -151,6 +176,126 @@ const ORDER_FIELDS = [
     max: 720,
     integer: true,
     step: "1",
+  },
+];
+
+const RATING_FIELDS = [
+  {
+    name: "priorMean",
+    label: "Điểm sao nền",
+    unit: "sao",
+    min: 1,
+    max: 5,
+    integer: false,
+    step: "0.1",
+  },
+  {
+    name: "priorWeight",
+    label: "Trọng số điểm nền",
+    unit: "trọng số",
+    min: 0,
+    max: 100,
+    integer: true,
+  },
+  {
+    name: "fiveStarPoints",
+    label: "Đánh giá 5 sao",
+    unit: "điểm",
+    min: -20,
+    max: 10,
+    integer: true,
+  },
+  {
+    name: "fourStarPoints",
+    label: "Đánh giá 4 sao",
+    unit: "điểm",
+    min: -20,
+    max: 10,
+    integer: true,
+  },
+  {
+    name: "threeStarPoints",
+    label: "Đánh giá 3 sao",
+    unit: "điểm",
+    min: -20,
+    max: 10,
+    integer: true,
+  },
+  {
+    name: "twoStarPoints",
+    label: "Đánh giá 2 sao",
+    unit: "điểm",
+    min: -20,
+    max: 10,
+    integer: true,
+  },
+  {
+    name: "oneStarPoints",
+    label: "Đánh giá 1 sao",
+    unit: "điểm",
+    min: -20,
+    max: 10,
+    integer: true,
+  },
+  {
+    name: "minimumReputationScore",
+    label: "Điểm uy tín tối thiểu",
+    unit: "điểm",
+    min: 0,
+    max: 99,
+    integer: true,
+  },
+  {
+    name: "maximumReputationScore",
+    label: "Điểm uy tín tối đa",
+    unit: "điểm",
+    min: 1,
+    max: 100,
+    integer: true,
+  },
+  {
+    name: "reviewEditWindowDays",
+    label: "Thời hạn sửa đánh giá",
+    unit: "ngày",
+    min: 1,
+    max: 30,
+    integer: true,
+  },
+];
+
+const RATING_FIELD_GROUPS = [
+  {
+    title: "Điểm sao hiển thị",
+    description:
+      "Điểm sao nền và trọng số giúp kết quả hiển thị ổn định hơn khi người dùng mới chỉ có ít đánh giá. Máy chủ chịu trách nhiệm tính điểm hiển thị.",
+    fieldNames: ["priorMean", "priorWeight"],
+  },
+  {
+    title: "Ảnh hưởng đến điểm uy tín",
+    description:
+      "Mỗi mức sao làm thay đổi điểm uy tín theo giá trị bên dưới; một số mức có thể mang giá trị âm.",
+    fieldNames: [
+      "fiveStarPoints",
+      "fourStarPoints",
+      "threeStarPoints",
+      "twoStarPoints",
+      "oneStarPoints",
+    ],
+  },
+  {
+    title: "Giới hạn điểm uy tín",
+    description:
+      "Điểm uy tín sau khi máy chủ xử lý luôn nằm trong khoảng giới hạn đang áp dụng.",
+    fieldNames: [
+      "minimumReputationScore",
+      "maximumReputationScore",
+    ],
+  },
+  {
+    title: "Chỉnh sửa đánh giá",
+    description:
+      "Thời gian người dùng được phép sửa đánh giá do máy chủ kiểm tra.",
+    fieldNames: ["reviewEditWindowDays"],
   },
 ];
 
@@ -245,6 +390,14 @@ const sameExtensions = (left, right) =>
   JSON.stringify(normalizeExtensions(right));
 
 const getDraftInteger = (value) => {
+  if (
+    value === "" ||
+    value === null ||
+    value === undefined
+  ) {
+    return null;
+  }
+
   const parsed = Number(value);
 
   return Number.isInteger(parsed) ? parsed : null;
@@ -284,6 +437,44 @@ const getRelationshipError = (policyType, draft) => {
       rescheduleCutoff < cancellationCutoff
     ) {
       return "Hạn cuối đổi lịch phải lớn hơn hoặc bằng hạn cuối hủy lịch.";
+    }
+  }
+
+  if (policyType === PLATFORM_POLICY_TYPES.RATING) {
+    const minimumReputationScore = getDraftInteger(
+      draft.minimumReputationScore,
+    );
+    const maximumReputationScore = getDraftInteger(
+      draft.maximumReputationScore,
+    );
+
+    if (
+      minimumReputationScore !== null &&
+      maximumReputationScore !== null &&
+      minimumReputationScore >= maximumReputationScore
+    ) {
+      return "Điểm uy tín tối thiểu phải nhỏ hơn điểm uy tín tối đa.";
+    }
+
+    const starPointValues = [
+      "fiveStarPoints",
+      "fourStarPoints",
+      "threeStarPoints",
+      "twoStarPoints",
+      "oneStarPoints",
+    ].map((fieldName) =>
+      getDraftInteger(draft[fieldName]),
+    );
+
+    if (
+      starPointValues.every((value) => value !== null) &&
+      starPointValues.some(
+        (value, index) =>
+          index > 0 &&
+          starPointValues[index - 1] < value,
+      )
+    ) {
+      return "Điểm uy tín theo mức sao phải theo thứ tự: 5 sao lớn hơn hoặc bằng 4 sao, 4 sao lớn hơn hoặc bằng 3 sao, 3 sao lớn hơn hoặc bằng 2 sao và 2 sao lớn hơn hoặc bằng 1 sao.";
     }
   }
 
@@ -363,7 +554,13 @@ function NumberPolicyField({
         {field.label}
       </span>
 
-      <span className="mt-1 block text-xs leading-5 text-textLight">
+      {field.description && (
+        <span className="mt-1 block text-xs leading-5 text-textLight">
+          {field.description}
+        </span>
+      )}
+
+      <span className="mt-1 block text-xs font-semibold leading-5 text-textLight">
         {rangeDescription}
       </span>
 
@@ -386,6 +583,53 @@ function NumberPolicyField({
         </span>
       </div>
     </label>
+  );
+}
+
+function RatingPolicyFields({
+  draft,
+  disabled,
+  onChange,
+}) {
+  return (
+    <div className="space-y-5">
+      {RATING_FIELD_GROUPS.map((group) => {
+        const fields = group.fieldNames
+          .map((fieldName) =>
+            RATING_FIELDS.find(
+              (field) => field.name === fieldName,
+            ),
+          )
+          .filter(Boolean);
+
+        return (
+          <section
+            key={group.title}
+            className="rounded-2xl border border-border bg-background/40 p-4"
+          >
+            <h4 className="text-sm font-black text-text">
+              {group.title}
+            </h4>
+
+            <p className="mt-1 text-xs leading-5 text-textLight">
+              {group.description}
+            </p>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {fields.map((field) => (
+                <NumberPolicyField
+                  key={field.name}
+                  field={field}
+                  value={draft[field.name]}
+                  disabled={disabled}
+                  onChange={onChange}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -479,7 +723,9 @@ function VersionDetail({ detail, policyType }) {
           ? PAYMENT_FIELDS
           : policyType === PLATFORM_POLICY_TYPES.ORDER
             ? ORDER_FIELDS
-            : [];
+            : policyType === PLATFORM_POLICY_TYPES.RATING
+              ? RATING_FIELDS
+              : [];
 
   return (
     <div className="mt-5 rounded-2xl border border-primary/20 bg-background/60 p-5">
@@ -599,6 +845,10 @@ export default function PlatformPolicyPage() {
       return ORDER_FIELDS;
     }
 
+    if (activeTab === PLATFORM_POLICY_TYPES.RATING) {
+      return RATING_FIELDS;
+    }
+
     return [];
   }, [activeTab]);
 
@@ -678,6 +928,24 @@ export default function PlatformPolicyPage() {
       controller.abort();
     };
   }, [activeTab, activeFields, requestVersion]);
+
+  useEffect(() => {
+    if (!restoreTarget || actionLoading) {
+      return undefined;
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setRestoreTarget(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [restoreTarget, actionLoading]);
 
   const refresh = () => {
     setLoading(true);
@@ -1030,9 +1298,10 @@ export default function PlatformPolicyPage() {
           </h2>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-            Quản lý chính sách tranh chấp, lịch hẹn,
-            tải tệp, thanh toán, đơn hàng và lịch sử
-            phiên bản theo máy chủ HomeCycle.
+            Quản lý chính sách tranh chấp, đánh giá,
+            uy tín, lịch hẹn, tải tệp, thanh toán, đơn
+            hàng và lịch sử phiên bản theo máy chủ
+            HomeCycle.
           </p>
         </div>
 
@@ -1168,21 +1437,32 @@ export default function PlatformPolicyPage() {
 
                     <div className="border-t border-border pt-6">
                       {activeTab !==
-                      PLATFORM_POLICY_TYPES.FILE_UPLOAD ? (
+                        PLATFORM_POLICY_TYPES.FILE_UPLOAD ? (
                         <div className="space-y-4">
-                          <div className="grid gap-4 md:grid-cols-2">
-                            {activeFields.map((field) => (
-                              <NumberPolicyField
-                                key={field.name}
-                                field={field}
-                                value={draft[field.name]}
-                                disabled={disabled}
-                                onChange={
-                                  handleStandardChange
-                                }
-                              />
-                            ))}
-                          </div>
+                          {activeTab ===
+                          PLATFORM_POLICY_TYPES.RATING ? (
+                            <RatingPolicyFields
+                              draft={draft}
+                              disabled={disabled}
+                              onChange={
+                                handleStandardChange
+                              }
+                            />
+                          ) : (
+                            <div className="grid gap-4 md:grid-cols-2">
+                              {activeFields.map((field) => (
+                                <NumberPolicyField
+                                  key={field.name}
+                                  field={field}
+                                  value={draft[field.name]}
+                                  disabled={disabled}
+                                  onChange={
+                                    handleStandardChange
+                                  }
+                                />
+                              ))}
+                            </div>
+                          )}
 
                           {relationshipError && (
                             <div
@@ -1195,39 +1475,58 @@ export default function PlatformPolicyPage() {
 
                           {activeTab ===
                             PLATFORM_POLICY_TYPES.DISPUTE && (
-                            <div className="rounded-2xl border border-border bg-background/60 p-4">
-                              <p className="text-sm font-black text-text">
-                                Thông tin chỉ đọc
-                              </p>
+                            <div className="space-y-4">
+                              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                                <p className="text-sm font-black text-text">
+                                  Phạt nội dung vi phạm
+                                </p>
 
-                              <p className="mt-1 text-xs leading-5 text-textLight">
-                                Hai giá trị dưới đây đang được
-                                máy chủ sử dụng nhưng tài liệu
-                                bàn giao hiện chưa mở quyền cập
-                                nhật cho giao diện quản trị.
-                              </p>
-
-                              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                {DISPUTE_READONLY_FIELDS.map(
-                                  (field) => (
-                                    <div
-                                      key={field.name}
-                                      className="rounded-xl border border-border bg-white px-4 py-3"
-                                    >
-                                      <p className="text-xs font-bold text-textLight">
-                                        {field.label}
-                                      </p>
-
-                                      <p className="mt-1 font-black text-text">
-                                        {currentPolicy?.config?.[
-                                          field.name
-                                        ] ?? "—"}{" "}
-                                        {field.unit}
-                                      </p>
-                                    </div>
-                                  ),
-                                )}
+                                <p className="mt-1 text-xs leading-5 text-textLight">
+                                  Điểm phạt bài đăng hoặc đánh giá vi phạm chỉ được máy chủ áp dụng khi Kiểm duyệt viên xác nhận nội dung vi phạm. Đây là quy tắc riêng, không phải mức thay đổi uy tín do số sao trong chính sách Đánh giá &amp; uy tín.
+                                </p>
                               </div>
+
+                              <div className="rounded-2xl border border-border bg-background/60 p-4">
+                                <p className="text-sm font-black text-text">
+                                  Thông tin chỉ đọc
+                                </p>
+
+                                <p className="mt-1 text-xs leading-5 text-textLight">
+                                  Hai giá trị dưới đây đang được
+                                  máy chủ sử dụng nhưng tài liệu
+                                  bàn giao hiện chưa mở quyền cập
+                                  nhật cho giao diện quản trị.
+                                </p>
+
+                                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                  {DISPUTE_READONLY_FIELDS.map(
+                                    (field) => (
+                                      <div
+                                        key={field.name}
+                                        className="rounded-xl border border-border bg-white px-4 py-3"
+                                      >
+                                        <p className="text-xs font-bold text-textLight">
+                                          {field.label}
+                                        </p>
+
+                                        <p className="mt-1 font-black text-text">
+                                          {currentPolicy?.config?.[
+                                            field.name
+                                          ] ?? "—"}{" "}
+                                          {field.unit}
+                                        </p>
+                                      </div>
+                                    ),
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {activeTab ===
+                            PLATFORM_POLICY_TYPES.RATING && (
+                            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-xs leading-5 text-textLight">
+                              Điểm theo số sao ảnh hưởng đến uy tín khi đánh giá được ghi nhận. Nếu chính đánh giá đó bị xác nhận là nội dung vi phạm, mức phạt riêng được lấy từ chính sách Tranh chấp. Mọi phép tính và điều kiện sửa đánh giá đều do máy chủ quyết định.
                             </div>
                           )}
                         </div>
