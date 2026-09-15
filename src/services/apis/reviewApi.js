@@ -45,6 +45,16 @@ export const normalizeReview = (value) => {
   return {
     ...review,
     reviewId: review.reviewId || review.id || "",
+    reviewerId:
+      review.reviewerId ||
+      review.reviewer?.userId ||
+      review.reviewer?.id ||
+      "",
+    revieweeId:
+      review.revieweeId ||
+      review.reviewee?.userId ||
+      review.reviewee?.id ||
+      "",
     rating: Number(review.rating || 0),
     comment: review.comment || "",
     reviewerName:

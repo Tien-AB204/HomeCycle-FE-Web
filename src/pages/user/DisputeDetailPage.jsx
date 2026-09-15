@@ -8,8 +8,11 @@ import {
   useParams,
 } from "react-router-dom";
 import {
+  DISPUTE_TARGET_TYPE,
   getDisputeCategoryLabel,
   getDisputeStatusMeta,
+  getDisputeTargetTypeLabel,
+  normalizeDisputeTargetType,
 } from "../../constants/disputes";
 import {
   getOrderStatusMeta,
@@ -45,6 +48,108 @@ const formatCurrency = (value) => {
     ? `${amount.toLocaleString("vi-VN")} ₫`
     : "—";
 };
+
+const normalizeMediaItems = (items) =>
+  (Array.isArray(items) ? items : [])
+    .map((item, index) => {
+      if (typeof item === "string") {
+        return {
+          key: `${item}-${index}`,
+          url: item,
+          fileName: `Ảnh ${index + 1}`,
+        };
+      }
+
+      const url =
+        item?.url ||
+        item?.imageUrl ||
+        item?.mediaUrl ||
+        item?.fileUrl;
+
+      return url
+        ? {
+            key:
+              item.mediaId ||
+              item.imageId ||
+              `${url}-${index}`,
+            url,
+            fileName:
+              item.fileName || `Ảnh ${index + 1}`,
+          }
+        : null;
+    })
+    .filter(Boolean);
+
+const POST_STATUS_LABELS = {
+  draft: "Bản nháp",
+  pending: "Chờ duyệt",
+  active: "Đang hoạt động",
+  suspended: "Đã đình chỉ",
+  closed: "Đã đóng",
+  rejected: "Bị từ chối",
+  expired: "Hết hạn",
+  completed: "Đã hoàn tất",
+  deleted: "Đã xóa",
+};
+
+const REVIEW_STATUS_LABELS = {
+  1: "Đang hiển thị",
+  2: "Đã chỉnh sửa",
+  3: "Đã ẩn",
+  4: "Đã gỡ",
+  visible: "Đang hiển thị",
+  active: "Đang hiển thị",
+  edited: "Đã chỉnh sửa",
+  hidden: "Đã ẩn",
+  removed: "Đã gỡ",
+  deleted: "Đã xóa",
+};
+
+const getContentStatusLabel = (labels, status) =>
+  labels[String(status || "").toLowerCase()] ||
+  "Chưa xác định";
+
+const getPostTypeLabel = (postType) =>
+  String(postType || "").toLowerCase() === "buy"
+    ? "Tin thu mua"
+    : String(postType || "").toLowerCase() === "sell"
+      ? "Tin đăng bán"
+      : "Chưa xác định";
+
+const MediaGallery = ({ title, description, items }) => (
+  <section className="rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+    <h2 className="font-black text-text">{title}</h2>
+    <p className="mt-1 text-xs leading-5 text-textLight">
+      {description}
+    </p>
+
+    {items.length === 0 ? (
+      <p className="mt-4 text-sm text-textLight">Không có ảnh.</p>
+    ) : (
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((image) => (
+          <a
+            key={image.key}
+            href={image.url}
+            target="_blank"
+            rel="noreferrer"
+            className="overflow-hidden rounded-xl border border-border bg-background"
+          >
+            <EvidenceImage
+              src={image.url}
+              alt={image.fileName}
+              bordered={false}
+              className="h-44 w-full transition hover:scale-[1.02]"
+            />
+            <p className="truncate px-3 py-2 text-xs font-bold text-textLight">
+              {image.fileName}
+            </p>
+          </a>
+        ))}
+      </div>
+    )}
+  </section>
+);
 
 /*
  * Chỉ dùng HTTP status / mã lỗi ổn định của Backend để chọn thông báo.
@@ -205,10 +310,10 @@ const DisputeDetailPage = () => {
           </p>
 
           <Link
-            to="/don-hang"
+            to="/tranh-chap"
             className="mt-5 inline-flex rounded-lg bg-primary px-5 py-2.5 text-sm font-black text-white"
           >
-            Quay lại đơn hàng
+            Quay lại danh sách tranh chấp
           </Link>
         </div>
       </section>
@@ -219,6 +324,20 @@ const DisputeDetailPage = () => {
 
   const order =
     dispute.target?.order || null;
+
+  const post =
+    dispute.target?.post || null;
+
+  const review =
+    dispute.target?.review || null;
+
+  const targetType = normalizeDisputeTargetType(
+    dispute.target?.targetType ?? dispute.targetType,
+  );
+
+  const targetTypeLabel = getDisputeTargetTypeLabel(
+    targetType,
+  );
 
   const disputeStatus =
     getDisputeStatusMeta(
@@ -237,25 +356,70 @@ const DisputeDetailPage = () => {
       )
     : null;
 
-  const evidenceImages =
-    Array.isArray(
-      dispute.evidenceImages,
-    )
-      ? dispute.evidenceImages
-      : [];
+  const evidenceImages = normalizeMediaItems(
+    dispute.evidenceImages,
+  );
+  const postImages = normalizeMediaItems(post?.images);
+  const reviewImages = normalizeMediaItems(review?.images);
+  const timestamps = dispute.timestamps || {};
+  const postTargetId = String(
+    post?.postId || dispute.target?.targetId || "",
+  ).trim();
+  const canOpenPost = Boolean(
+    postTargetId &&
+      post &&
+      ![
+        "draft",
+        "pending",
+        "suspended",
+        "deleted",
+        "rejected",
+      ].includes(
+        String(post.status || "").trim().toLowerCase(),
+      ),
+  );
 
   const canClose = Boolean(
     dispute.actions?.canCloseDispute,
   );
 
+  const backTarget =
+    targetType === DISPUTE_TARGET_TYPE.ORDER && order?.orderId
+      ? {
+          to: `/don-hang/${encodeURIComponent(order.orderId)}`,
+          label: "Quay lại đơn hàng",
+        }
+      : targetType === DISPUTE_TARGET_TYPE.POST && canOpenPost
+        ? {
+            to: `/posts/${encodeURIComponent(postTargetId)}`,
+            label: "Quay lại bài đăng",
+          }
+        : targetType === DISPUTE_TARGET_TYPE.REVIEW &&
+            review?.revieweeId
+          ? {
+              to: `/danh-gia/nguoi-dung/${encodeURIComponent(review.revieweeId)}`,
+              label: "Quay lại danh sách đánh giá",
+            }
+          : {
+              to: "/tranh-chap",
+              label: "Quay lại danh sách tranh chấp",
+            };
+
+  const pageTitle =
+    targetType === DISPUTE_TARGET_TYPE.ORDER && order?.orderCode
+      ? `Đơn ${order.orderCode}`
+      : targetType === DISPUTE_TARGET_TYPE.POST
+        ? post?.productName || "Báo cáo bài đăng"
+        : targetType === DISPUTE_TARGET_TYPE.REVIEW
+          ? `Đánh giá ${String(
+              review?.reviewId || dispute.target?.targetId || "",
+            ).slice(0, 8)}`
+          : `Tranh chấp ${targetTypeLabel.toLowerCase()}`;
+
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-6xl px-4 pb-14 pt-7 sm:px-6">
       <Link
-        to={
-          order?.orderId
-            ? `/don-hang/${order.orderId}`
-            : "/don-hang"
-        }
+        to={backTarget.to}
         className="inline-flex items-center gap-1 text-sm font-bold text-primary transition hover:text-text"
       >
         <span
@@ -265,7 +429,7 @@ const DisputeDetailPage = () => {
           arrow_back
         </span>
 
-        Quay lại đơn hàng
+        {backTarget.label}
       </Link>
 
       <header className="mt-4 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
@@ -275,9 +439,7 @@ const DisputeDetailPage = () => {
           </p>
 
           <h1 className="mt-1 text-2xl font-black text-text sm:text-3xl">
-            {order?.orderCode
-              ? `Đơn ${order.orderCode}`
-              : "Tranh chấp HomeCycle"}
+            {pageTitle}
           </h1>
         </div>
 
@@ -317,6 +479,10 @@ const DisputeDetailPage = () => {
             </div>
 
             <dl className="divide-y divide-border">
+              <DetailRow label="Đối tượng">
+                {targetTypeLabel}
+              </DetailRow>
+
               <DetailRow label="Lý do">
                 {getDisputeCategoryLabel(
                   dispute.category,
@@ -336,26 +502,26 @@ const DisputeDetailPage = () => {
 
               <DetailRow label="Ngày gửi">
                 {formatDate(
-                  dispute.createdAt,
+                  dispute.createdAt ?? timestamps.createdAt,
                 )}
               </DetailRow>
 
               <DetailRow label="Cập nhật">
                 {formatDate(
-                  dispute.updatedAt,
+                  dispute.updatedAt ?? timestamps.updatedAt,
                 )}
               </DetailRow>
 
               <DetailRow label="Ngày xử lý">
                 {formatDate(
-                  dispute.resolvedAt,
+                  dispute.resolvedAt ?? timestamps.resolvedAt,
                 )}
               </DetailRow>
             </dl>
 
             <div className="border-t border-border py-5">
               <p className="text-xs font-black uppercase tracking-wide text-textLight">
-                Mô tả
+                Mô tả bạn đã gửi
               </p>
 
               <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-text">
@@ -379,66 +545,128 @@ const DisputeDetailPage = () => {
             )}
           </section>
 
-          <section className="rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
-            <h2 className="font-black text-text">
-              Ảnh bằng chứng
-            </h2>
+          {post && (
+            <>
+              <section className="rounded-xl border border-border bg-white px-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+                <div className="border-b border-border py-4">
+                  <h2 className="font-black text-text">
+                    Bài đăng gốc
+                  </h2>
+                </div>
 
-            {evidenceImages.length ===
-              0 && (
-              <p className="mt-4 text-sm text-textLight">
-                Không có ảnh bằng chứng.
-              </p>
-            )}
+                <dl className="divide-y divide-border">
+                  <DetailRow label="Tên sản phẩm">
+                    {post.productName || "—"}
+                  </DetailRow>
+                  <DetailRow label="Loại tin">
+                    {getPostTypeLabel(post.postType)}
+                  </DetailRow>
+                  <DetailRow label="Giá cơ bản">
+                    {formatCurrency(post.basePrice)}
+                  </DetailRow>
+                  <DetailRow label="Trạng thái">
+                    {getContentStatusLabel(
+                      POST_STATUS_LABELS,
+                      post.status,
+                    )}
+                  </DetailRow>
+                  <DetailRow label="Chủ bài đăng">
+                    {dispute.targetUser?.username ||
+                      post.ownerId ||
+                      "Người dùng HomeCycle"}
+                  </DetailRow>
+                </dl>
 
-            {evidenceImages.length >
-              0 && (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {evidenceImages.map(
-                  (image, index) => (
-                    <a
-                      key={
-                        image.mediaId ||
-                        `${image.url}-${index}`
-                      }
-                      href={image.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="overflow-hidden rounded-xl border border-border bg-background"
-                    >
-                      <EvidenceImage
-                        src={image.url}
-                        alt={
-                          image.fileName ||
-                          `Bằng chứng ${index + 1}`
-                        }
-                        bordered={false}
-                        className="h-44 w-full transition hover:scale-[1.02]"
-                      />
+                <div className="border-t border-border py-5">
+                  <p className="text-xs font-black uppercase tracking-wide text-textLight">
+                    Mô tả bài đăng
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-text">
+                    {post.description || "Không có mô tả."}
+                  </p>
+                </div>
+              </section>
 
-                      <p className="truncate px-3 py-2 text-xs font-bold text-textLight">
-                        {image.fileName ||
-                          `Ảnh ${index + 1}`}
-                      </p>
-                    </a>
-                  ),
-                )}
-              </div>
-            )}
-          </section>
+              <MediaGallery
+                title="Ảnh nội dung gốc"
+                description="Hình ảnh thuộc bài đăng được báo cáo."
+                items={postImages}
+              />
+            </>
+          )}
+
+          {review && (
+            <>
+              <section className="rounded-xl border border-border bg-white px-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+                <div className="border-b border-border py-4">
+                  <h2 className="font-black text-text">
+                    Đánh giá gốc
+                  </h2>
+                </div>
+
+                <dl className="divide-y divide-border">
+                  <DetailRow label="Số sao">
+                    {review.rating === null ||
+                    review.rating === undefined
+                      ? "—"
+                      : `${review.rating} / 5 sao`}
+                  </DetailRow>
+                  <DetailRow label="Người đánh giá">
+                    {review.reviewerUsername ||
+                      review.reviewerId ||
+                      "Người dùng HomeCycle"}
+                  </DetailRow>
+                  <DetailRow label="Người được đánh giá">
+                    {review.revieweeUsername ||
+                      review.revieweeId ||
+                      "Người dùng HomeCycle"}
+                  </DetailRow>
+                  <DetailRow label="Đơn hàng liên quan">
+                    {review.orderId || "—"}
+                  </DetailRow>
+                  <DetailRow label="Trạng thái">
+                    {getContentStatusLabel(
+                      REVIEW_STATUS_LABELS,
+                      review.status,
+                    )}
+                  </DetailRow>
+                </dl>
+
+                <div className="border-t border-border py-5">
+                  <p className="text-xs font-black uppercase tracking-wide text-textLight">
+                    Nội dung đánh giá
+                  </p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-text">
+                    {review.comment || "Không có nội dung."}
+                  </p>
+                </div>
+              </section>
+
+              <MediaGallery
+                title="Ảnh nội dung gốc"
+                description="Hình ảnh thuộc đánh giá được báo cáo."
+                items={reviewImages}
+              />
+            </>
+          )}
+
+          <MediaGallery
+            title="Ảnh bằng chứng bạn đã gửi"
+            description="Hình ảnh bạn cung cấp khi tạo tranh chấp hoặc báo cáo, tách biệt với nội dung gốc."
+            items={evidenceImages}
+          />
         </div>
 
         <aside className="h-fit rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] lg:sticky lg:top-5">
           <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-            Đơn hàng liên quan
+            {order
+              ? "Đơn hàng liên quan"
+              : post
+                ? "Bài đăng được báo cáo"
+                : review
+                  ? "Đánh giá được báo cáo"
+                  : "Đối tượng liên quan"}
           </p>
-
-          {!order && (
-            <p className="mt-3 text-sm text-textLight">
-              Chưa có thông tin đơn hàng
-              liên quan.
-            </p>
-          )}
 
           {order && (
             <>
@@ -496,6 +724,60 @@ const DisputeDetailPage = () => {
                 className="mt-5 block rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-black text-white transition hover:bg-primary/90"
               >
                 Xem đơn hàng
+              </Link>
+            </>
+          )}
+
+          {post && (
+            <>
+              <h2 className="mt-2 text-xl font-black text-text">
+                {post.productName || "Bài đăng HomeCycle"}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-textLight">
+                Báo cáo không tự động thay đổi trạng thái bài đăng. Nội dung chỉ thay đổi sau quyết định của Kiểm duyệt viên.
+              </p>
+              {canOpenPost && (
+                <Link
+                  to={`/posts/${encodeURIComponent(postTargetId)}`}
+                  className="mt-5 block rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-black text-white transition hover:bg-primary/90"
+                >
+                  Xem bài đăng
+                </Link>
+              )}
+            </>
+          )}
+
+          {review && (
+            <>
+              <h2 className="mt-2 text-xl font-black text-text">
+                {review.rating === null || review.rating === undefined
+                  ? "Đánh giá HomeCycle"
+                  : `${review.rating} / 5 sao`}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-textLight">
+                Nội dung đánh giá và quyết định xử lý được lấy từ hồ sơ tranh chấp trên máy chủ.
+              </p>
+              {review.revieweeId && (
+                <Link
+                  to={`/danh-gia/nguoi-dung/${encodeURIComponent(review.revieweeId)}`}
+                  className="mt-5 block rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-black text-white transition hover:bg-primary/90"
+                >
+                  Xem đánh giá người dùng
+                </Link>
+              )}
+            </>
+          )}
+
+          {!order && !post && !review && (
+            <>
+              <p className="mt-3 text-sm text-textLight">
+                Nội dung chi tiết của đối tượng hiện không còn khả dụng.
+              </p>
+              <Link
+                to="/tranh-chap"
+                className="mt-5 block rounded-lg border border-primary px-4 py-2.5 text-center text-sm font-black text-primary"
+              >
+                Về danh sách tranh chấp
               </Link>
             </>
           )}

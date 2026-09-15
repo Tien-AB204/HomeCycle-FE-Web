@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import ReviewCard from "../../features/reviews/ReviewCard";
 import ReviewStars from "../../features/reviews/ReviewStars";
+import ContentReportModal from "../../features/disputes/ContentReportModal";
+import { DISPUTE_TARGET_TYPE } from "../../constants/disputes";
+import { ROLES } from "../../constants/roles";
+import { useAuth } from "../../hooks/useAuth";
 import reviewApi from "../../services/apis/reviewApi";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
 
 const PAGE_SIZE = 10;
 
@@ -11,11 +16,25 @@ const getErrorMessage = (error) =>
   error?.response?.data?.message ||
   "Không thể tải đánh giá của người dùng.";
 
+const isReviewUnavailableForReport = (status) =>
+  ["3", "4", "hidden", "removed", "deleted"].includes(
+    String(status ?? "").trim().toLowerCase(),
+  );
+
 const ReceivedReviewsPage = () => {
   const { userId } = useParams();
+  const { user, isAuthenticated } = useAuth();
+  const currentUserId = getUserId(user);
+  const currentRole = normalizeRole(user?.role);
+  const canReportReviews =
+    isAuthenticated &&
+    (currentRole === ROLES.PERSONAL ||
+      currentRole === ROLES.BUSINESS);
   const [pageNumber, setPageNumber] = useState(1);
   const [version, setVersion] = useState(0);
   const [state, setState] = useState({ loading: true, page: null, error: "" });
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportSuccess, setReportSuccess] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -96,6 +115,23 @@ const ReceivedReviewsPage = () => {
         </div>
       )}
 
+      {reportSuccess && (
+        <div
+          role="status"
+          className="mt-5 flex items-start justify-between gap-3 rounded-xl border border-success/30 bg-success/10 p-4 text-sm font-semibold text-success"
+        >
+          <p>{reportSuccess}</p>
+          <button
+            type="button"
+            onClick={() => setReportSuccess("")}
+            aria-label="Đóng thông báo"
+            className="font-black"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {!state.loading && !state.error && items.length === 0 && (
         <div className="mt-5 rounded-xl border border-border bg-white p-12 text-center">
           <span className="material-symbols-outlined text-5xl text-border" aria-hidden="true">reviews</span>
@@ -107,7 +143,26 @@ const ReceivedReviewsPage = () => {
       {!state.loading && items.length > 0 && (
         <div className="mt-5 space-y-3">
           {items.map((review, index) => (
-            <ReviewCard key={review.reviewId || `${review.createdAt}-${index}`} review={review} />
+            <ReviewCard
+              key={review.reviewId || `${review.createdAt}-${index}`}
+              review={review}
+              reporting={
+                reportTarget?.reviewId === review.reviewId
+              }
+              onReport={
+                canReportReviews &&
+                review.reviewId &&
+                !isReviewUnavailableForReport(review.status) &&
+                (!review.reviewerId ||
+                  String(review.reviewerId).toLowerCase() !==
+                    currentUserId.toLowerCase())
+                  ? (selectedReview) => {
+                      setReportSuccess("");
+                      setReportTarget(selectedReview);
+                    }
+                  : undefined
+              }
+            />
           ))}
         </div>
       )}
@@ -132,6 +187,22 @@ const ReceivedReviewsPage = () => {
             Sau
           </button>
         </div>
+      )}
+
+      {reportTarget && (
+        <ContentReportModal
+          open
+          targetType={DISPUTE_TARGET_TYPE.REVIEW}
+          targetId={reportTarget.reviewId}
+          targetLabel={`Đánh giá của ${reportTarget.reviewerName || "người dùng HomeCycle"}`}
+          onClose={() => setReportTarget(null)}
+          onSuccess={() => {
+            setReportTarget(null);
+            setReportSuccess(
+              "Đã gửi báo cáo đánh giá. Nội dung sẽ được giữ nguyên cho đến khi Kiểm duyệt viên đưa ra quyết định.",
+            );
+          }}
+        />
       )}
     </section>
   );

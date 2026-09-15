@@ -30,7 +30,10 @@ const publicPlatformPolicyApi = {
   getFileUpload: async ({ signal } = {}) => {
     const result = await axiosClient.get(
       "/platform-policies/file-upload",
-      { signal },
+      {
+        signal,
+        skipGlobalErrorPage: true,
+      },
     );
 
     return unwrapResult(result);

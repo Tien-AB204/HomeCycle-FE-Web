@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  DISPUTE_TARGET_TYPE,
   getDisputeCategoryLabel,
   getDisputeStatusMeta,
+  getDisputeTargetTypeLabel,
+  normalizeDisputeTargetType,
 } from "../../constants/disputes";
 import disputeApi from "../../services/apis/disputeApi";
 
@@ -27,6 +30,37 @@ const formatDate = (value) => {
     month: "2-digit",
     year: "numeric",
   }).format(date);
+};
+
+const getTargetTitle = (dispute) => {
+  const targetType = normalizeDisputeTargetType(
+    dispute?.targetType,
+  );
+  const targetTypeLabel = getDisputeTargetTypeLabel(
+    dispute?.targetType,
+  );
+
+  if (
+    targetType === DISPUTE_TARGET_TYPE.ORDER &&
+    dispute?.orderCode
+  ) {
+    return `Đơn ${dispute.orderCode}`;
+  }
+
+  const context =
+    dispute?.targetName ||
+    dispute?.productName ||
+    dispute?.targetLabel;
+
+  if (context) {
+    return `${targetTypeLabel}: ${context}`;
+  }
+
+  if (dispute?.targetId) {
+    return `${targetTypeLabel} ${String(dispute.targetId).slice(0, 8)}`;
+  }
+
+  return `Tranh chấp ${String(dispute?.disputeId || "").slice(0, 8)}`;
 };
 
 const DisputeListPage = () => {
@@ -113,7 +147,7 @@ const DisputeListPage = () => {
             Tranh chấp của tôi
           </h1>
           <p className="mt-1.5 max-w-2xl text-sm leading-6 text-textLight">
-            Các tranh chấp bạn đã gửi hoặc bị khiếu nại trong các đơn hàng.
+            Các tranh chấp và báo cáo nội dung bạn đã gửi hoặc có liên quan.
           </p>
         </div>
         <button
@@ -172,12 +206,12 @@ const DisputeListPage = () => {
                 >
                   <div className="min-w-0">
                     <p className="truncate font-bold text-text">
-                      {item.orderCode
-                        ? `Đơn ${item.orderCode}`
-                        : `Tranh chấp ${String(item.disputeId).slice(0, 8)}`}
+                      {getTargetTitle(item)}
                     </p>
                     <p className="mt-1 truncate text-xs text-textLight">
-                      {getDisputeCategoryLabel(item.category)} · {formatDate(item.createdAt)}
+                      {getDisputeTargetTypeLabel(item.targetType)} ·{" "}
+                      {getDisputeCategoryLabel(item.category)} ·{" "}
+                      {formatDate(item.createdAt)}
                     </p>
                   </div>
 
