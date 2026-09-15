@@ -10,6 +10,11 @@ const PAYMENT_STATUS_BY_VALUE = {
   6: "Cancelled",
 };
 
+const PAYMENT_TYPE_BY_VALUE = {
+  1: "Deposit",
+  2: "Full_Payment",
+};
+
 const ensureId = (
   value,
   message = "Không tìm thấy mã thỏa thuận.",
@@ -37,6 +42,76 @@ const normalizePaymentStatus = (value) => {
   }
 
   return String(value || "").trim();
+};
+
+const normalizePaymentType = (value) => {
+  if (
+    typeof value === "number" ||
+    /^\d+$/.test(String(value || "").trim())
+  ) {
+    const numericValue = Number(value);
+
+    return (
+      PAYMENT_TYPE_BY_VALUE[numericValue] ||
+      String(value || "").trim()
+    );
+  }
+
+  return String(value || "").trim();
+};
+
+const normalizePaymentQuote = (response) => {
+  const source = response?.data ?? response ?? {};
+
+  const amountToPay = Number(
+    source.amountToPay ??
+      source.AmountToPay,
+  );
+
+  if (
+    !Number.isFinite(amountToPay) ||
+    amountToPay <= 0
+  ) {
+    throw new Error(
+      "Không nhận được báo giá thanh toán hợp lệ.",
+    );
+  }
+
+  return {
+    agreementId:
+      source.agreementId ??
+      source.AgreementId ??
+      null,
+
+    paymentType:
+      normalizePaymentType(
+        source.paymentType ??
+          source.PaymentType,
+      ),
+
+    depositRatePercent:
+      Number(
+        source.depositRatePercent ??
+          source.DepositRatePercent ??
+          0,
+      ) || 0,
+
+    baseAmount:
+      Number(
+        source.baseAmount ??
+          source.BaseAmount ??
+          0,
+      ) || 0,
+
+    shippingFee:
+      Number(
+        source.shippingFee ??
+          source.ShippingFee ??
+          0,
+      ) || 0,
+
+    amountToPay,
+  };
 };
 
 const normalizeStatusResponse = (response) => {
@@ -179,6 +254,29 @@ const normalizeRedirectUrls = ({
 };
 
 export const paymentApi = {
+  getQuote: async (
+    agreementId,
+    { signal } = {},
+  ) => {
+    const id =
+      ensureId(agreementId);
+
+    const response =
+      await axiosClient.get(
+        `/payments/${encodeURIComponent(
+          id,
+        )}/quote`,
+        {
+          signal,
+          skipGlobalErrorPage: true,
+        },
+      );
+
+    return normalizePaymentQuote(
+      response,
+    );
+  },
+
   createPayOsCheckout: async (
     agreementId,
     redirectUrls = {},
@@ -197,6 +295,9 @@ export const paymentApi = {
           id,
         )}`,
         payload,
+        {
+          skipGlobalErrorPage: true,
+        },
       );
 
     if (!response?.checkoutUrl) {
@@ -218,6 +319,10 @@ export const paymentApi = {
       `/payments/wallet/checkout/${encodeURIComponent(
         id,
       )}`,
+      null,
+      {
+        skipGlobalErrorPage: true,
+      },
     );
   },
 
@@ -233,7 +338,10 @@ export const paymentApi = {
         `/payments/${encodeURIComponent(
           id,
         )}/status`,
-        { signal },
+        {
+          signal,
+          skipGlobalErrorPage: true,
+        },
       );
 
     return normalizeStatusResponse(

@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   AGREEMENT_STATUS,
   AGREEMENT_TYPE,
+  PAYMENT_TYPE,
 } from "../../constants/agreements";
 import AgreementForm from "../../features/agreements/AgreementForm";
 import AgreementSummary from "../../features/agreements/AgreementSummary";
@@ -51,6 +52,27 @@ const getApiErrorCode = (error) =>
 const isAgreementRevisionMismatch = (error) =>
   getApiErrorCode(error) === "Agreement.RevisionMismatch";
 
+const isActiveCheckoutConflict = (error) =>
+  getApiErrorCode(error) === "Payment.ActiveCheckoutExists";
+
+const normalizePaymentTypeKey = (value) =>
+  String(value ?? "")
+    .replace(/[\s_-]+/g, "")
+    .toLowerCase();
+
+const hasSamePaymentQuote = (current, latest) =>
+  Boolean(current && latest) &&
+  normalizePaymentTypeKey(current.paymentType) ===
+    normalizePaymentTypeKey(latest.paymentType) &&
+  Number(current.depositRatePercent) ===
+    Number(latest.depositRatePercent) &&
+  Number(current.baseAmount) ===
+    Number(latest.baseAmount) &&
+  Number(current.shippingFee) ===
+    Number(latest.shippingFee) &&
+  Number(current.amountToPay) ===
+    Number(latest.amountToPay);
+
 const formatCurrency = (value) => {
   const amount = Number(value);
   return Number.isFinite(amount) ? `${amount.toLocaleString("vi-VN")} đ` : "—";
@@ -77,16 +99,13 @@ const AgreementPage = () => {
     balance: null,
     error: "",
   });
+  const [paymentQuote, setPaymentQuote] = useState({
+    loading: false,
+    data: null,
+    error: "",
+  });
   const [paymentAck, setPaymentAck] = useState(false);
-  const pollingRef = useRef(null);
   const paymentActionLockRef = useRef(false);
-
-  const stopPolling = useCallback(() => {
-    if (pollingRef.current) {
-      window.clearInterval(pollingRef.current);
-      pollingRef.current = null;
-    }
-  }, []);
 
   const loadData = useCallback(async (signal) => {
     try {
@@ -152,9 +171,8 @@ const AgreementPage = () => {
     return () => {
       window.clearTimeout(timeoutId);
       controller.abort();
-      stopPolling();
     };
-  }, [loadData, stopPolling]);
+  }, [loadData]);
 
   const refresh = async () => {
     await loadData();
@@ -216,7 +234,12 @@ const AgreementPage = () => {
     });
   };
 
-  const runAction = async (key, action, successMessage) => {
+  const runAction = async (
+    key,
+    action,
+    successMessage,
+    { beforeAction } = {},
+  ) => {
     setBusy(key);
     setError("");
     setNotice("");
@@ -242,12 +265,29 @@ const AgreementPage = () => {
       }
     }
 
+    if (beforeAction) {
+      const canContinue =
+        await beforeAction();
+
+      if (!canContinue) {
+        setBusy("");
+        return;
+      }
+    }
+
     try {
       await action();
       setNotice(successMessage);
       setEditing(false);
       await refresh();
     } catch (requestError) {
+      if (isActiveCheckoutConflict(requestError)) {
+        setError(
+          "Đã có một phiên thanh toán đang được xử lý. Không tạo thêm thanh toán mới; hãy kiểm tra trạng thái hiện tại trước.",
+        );
+        return;
+      }
+
       if (
         isConcurrencyConflict(requestError) ||
         isAgreementRevisionMismatch(requestError)
@@ -297,50 +337,164 @@ const AgreementPage = () => {
     }
   }, []);
 
+  const loadPaymentQuote = useCallback(async (agreementId, signal) => {
+    if (!agreementId) {
+      return null;
+    }
+
+    // Một lần reload báo giá có thể trả về số tiền mới.
+    // Consent cũ không được áp dụng cho báo giá mới.
+    setPaymentAck(false);
+
+    setPaymentQuote((current) => ({
+      ...current,
+      loading: true,
+      error: "",
+    }));
+
+    try {
+      const quote = await paymentApi.getQuote(
+        agreementId,
+        { signal },
+      );
+
+      setPaymentQuote({
+        loading: false,
+        data: quote,
+        error: "",
+      });
+
+      return quote;
+    } catch (quoteError) {
+      if (
+        quoteError?.name === "CanceledError" ||
+        quoteError?.code === "ERR_CANCELED"
+      ) {
+        return null;
+      }
+
+      const message = getErrorMessage(
+        quoteError,
+        "Không thể lấy số tiền thanh toán từ hệ thống.",
+      );
+
+      setPaymentQuote((current) => ({
+        loading: false,
+        data: current.data,
+        error: message,
+      }));
+
+      return null;
+    }
+  }, []);
+
   const [walletContextKey, setWalletContextKey] = useState("");
   const buyerAwaitingPayment =
     String(preview?.userRole || "").toLowerCase() === "buyer" &&
     agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
 
-  /*
-   * Với thỏa thuận loại "Deposit" (vd kiểm định), số tiền thực thu chỉ là
-   * một phần giá trị hợp đồng - tỉ lệ đặt cọc do Backend cấu hình
-   * (payment policy DepositRatePercent, chỉ Admin đọc được) và số tiền
-   * chính xác chỉ được Backend xác định tại thời điểm gọi thanh toán.
-   * Web không có trường nào để biết trước con số này, nên KHÔNG cho phép
-   * thanh toán bằng ví cho loại thỏa thuận này (không có bước xác nhận
-   * trung gian như PayOS) - totalAmount hiển thị chỉ là giá trị hợp đồng,
-   * không phải số tiền sẽ bị trừ.
-   */
-  const isDepositPayment =
-    String(agreement?.paymentType || "").toLowerCase() === "deposit";
-  const walletCheckoutEligible = buyerAwaitingPayment && !isDepositPayment;
   const paymentContextKey = `${agreement?.agreementId || ""}:${buyerAwaitingPayment}`;
 
-  // Đổi thỏa thuận hoặc rời khỏi bước chờ thanh toán -> trả xác nhận và số
-  // dư ví về trạng thái ban đầu. Điều chỉnh ngay trong render, không dùng
-  // effect, để tránh lint set-state-in-effect.
+  // Mỗi khi đổi thỏa thuận/bước thanh toán, bỏ mọi xác nhận và dữ liệu
+  // tiền cũ. Quote từ Backend là authority cho số tiền phải trả.
   if (paymentContextKey !== walletContextKey) {
     setWalletContextKey(paymentContextKey);
     setPaymentAck(false);
-    setWallet({ loading: walletCheckoutEligible, balance: null, error: "" });
+    setWallet({
+      loading: buyerAwaitingPayment,
+      balance: null,
+      error: "",
+    });
+    setPaymentQuote({
+      loading: buyerAwaitingPayment,
+      data: null,
+      error: "",
+    });
   }
 
   useEffect(() => {
-    if (!walletCheckoutEligible) {
+    if (
+      !buyerAwaitingPayment ||
+      !agreement?.agreementId
+    ) {
       return undefined;
     }
 
     const controller = new AbortController();
+
     const timeoutId = window.setTimeout(() => {
-      void loadWalletBalance(controller.signal);
+      void Promise.all([
+        loadPaymentQuote(
+          agreement.agreementId,
+          controller.signal,
+        ),
+        loadWalletBalance(
+          controller.signal,
+        ),
+      ]);
     }, 0);
 
     return () => {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [paymentContextKey, walletCheckoutEligible, loadWalletBalance]);
+  }, [
+    agreement?.agreementId,
+    buyerAwaitingPayment,
+    loadPaymentQuote,
+    loadWalletBalance,
+    paymentContextKey,
+  ]);
+
+  const ensureFreshPaymentQuote = async () => {
+    if (!agreement?.agreementId) {
+      return null;
+    }
+
+    const currentQuote = paymentQuote.data;
+
+    try {
+      const latestQuote = await paymentApi.getQuote(
+        agreement.agreementId,
+      );
+
+      setPaymentQuote({
+        loading: false,
+        data: latestQuote,
+        error: "",
+      });
+
+      if (
+        !currentQuote ||
+        !hasSamePaymentQuote(
+          currentQuote,
+          latestQuote,
+        )
+      ) {
+        setPaymentAck(false);
+        setError(
+          "Số tiền thanh toán vừa được hệ thống cập nhật. Vui lòng kiểm tra báo giá mới và xác nhận lại trước khi thanh toán.",
+        );
+        return null;
+      }
+
+      return latestQuote;
+    } catch (quoteError) {
+      const message = getErrorMessage(
+        quoteError,
+        "Không thể xác nhận lại số tiền thanh toán.",
+      );
+
+      setPaymentQuote((current) => ({
+        loading: false,
+        data: current.data,
+        error: message,
+      }));
+      setError(message);
+
+      return null;
+    }
+  };
 
   const checkPayment = useCallback(async ({ silent = false } = {}) => {
     if (!agreement?.agreementId) return "";
@@ -348,7 +502,6 @@ const AgreementPage = () => {
       const status = await paymentApi.getStatus(agreement.agreementId);
       setPaymentStatus(status);
       if (status.toLowerCase() === "completed") {
-        stopPolling();
         setNotice("Thanh toán đã hoàn tất. Hệ thống đang cập nhật đơn hàng và lịch hẹn.");
         await loadData();
       }
@@ -359,7 +512,7 @@ const AgreementPage = () => {
       }
       return "";
     }
-  }, [agreement, loadData, stopPolling]);
+  }, [agreement, loadData]);
 
   const handlePayOs = async () => {
     if (paymentActionLockRef.current) return;
@@ -392,28 +545,51 @@ const AgreementPage = () => {
         return;
       }
 
+      const latestQuote =
+        await ensureFreshPaymentQuote();
+
+      if (!latestQuote) {
+        if (checkoutWindow) checkoutWindow.close();
+        setBusy("");
+        return;
+      }
+
       try {
         localStorage.setItem(PENDING_AGREEMENT_KEY, agreement.agreementId);
         const origin = window.location.origin;
+        const agreementQuery = encodeURIComponent(
+          agreement.agreementId,
+        );
         const result = await paymentApi.createPayOsCheckout(
           agreement.agreementId,
           {
-            returnUrl: `${origin}/payments/success`,
-            cancelUrl: `${origin}/payments/cancel`,
+            returnUrl: `${origin}/payments/success?agreementId=${agreementQuery}`,
+            cancelUrl: `${origin}/payments/cancel?agreementId=${agreementQuery}`,
           },
         );
         if (checkoutWindow) checkoutWindow.location.href = result.checkoutUrl;
         else window.location.assign(result.checkoutUrl);
-        setNotice("Đã mở trang PayOS ở thẻ mới. Sau khi chuyển khoản, HomeCycle sẽ tự kiểm tra trạng thái.");
-        stopPolling();
-        let attempts = 0;
-        pollingRef.current = window.setInterval(async () => {
-          attempts += 1;
-          await checkPayment({ silent: true });
-          if (attempts >= 36) stopPolling();
-        }, 5000);
+        setNotice(
+          "Đã mở trang PayOS ở thẻ mới. Khi PayOS chuyển bạn về HomeCycle, hệ thống sẽ xác nhận lại trạng thái từ Backend.",
+        );
       } catch (requestError) {
         if (checkoutWindow) checkoutWindow.close();
+        if (isActiveCheckoutConflict(requestError)) {
+          const currentStatus =
+            await checkPayment({ silent: true });
+
+          if (
+            currentStatus.toLowerCase() !==
+            "completed"
+          ) {
+            setError(
+              "Đã có một phiên thanh toán PayOS đang được xử lý. Không tạo thêm phiên mới; hãy tiếp tục phiên hiện tại hoặc kiểm tra trạng thái.",
+            );
+          }
+
+          return;
+        }
+
         if (isConcurrencyConflict(requestError)) {
           setStaleWarning({ message: AGREEMENT_CHANGED_WARNING });
           await refresh();
@@ -431,11 +607,20 @@ const AgreementPage = () => {
   const handleWalletPayment = async () => {
     if (paymentActionLockRef.current) return;
     paymentActionLockRef.current = true;
+
     try {
       await runAction(
         "wallet",
         () => paymentApi.checkoutWithWallet(agreement.agreementId),
         "Thanh toán bằng ví thành công.",
+        {
+          // runAction kiểm tra agreement/negotiation/post trước.
+          // Quote được xác nhận lại ngay sau đó, sát thời điểm trừ tiền nhất.
+          beforeAction: async () =>
+            Boolean(
+              await ensureFreshPaymentQuote(),
+            ),
+        },
       );
       // Số dư có thể đã đổi (thanh toán thành công hoặc phát hiện không đủ) - làm mới để hiển thị đúng thực tế.
       await loadWalletBalance();
@@ -449,21 +634,56 @@ const AgreementPage = () => {
   const canRequestEdit = agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
   const canPay = buyerAwaitingPayment;
 
-  const totalAmount = Number(agreement?.totalAmount) || 0;
+  const quotedAmount =
+    Number(paymentQuote.data?.amountToPay);
+
+  const hasPaymentQuote =
+    Number.isFinite(quotedAmount) &&
+    quotedAmount > 0;
+
+  const totalAmount =
+    hasPaymentQuote
+      ? quotedAmount
+      : 0;
+
+  const isDepositPayment =
+    normalizePaymentTypeKey(
+      paymentQuote.data?.paymentType ||
+        agreement?.paymentType,
+    ) ===
+    normalizePaymentTypeKey(
+      PAYMENT_TYPE.DEPOSIT,
+    );
+
   const hasSufficientBalance =
-    wallet.balance !== null && wallet.balance >= totalAmount;
-  const walletUnavailableReason = isDepositPayment
-    ? "Thanh toán bằng ví chưa khả dụng cho hình thức đặt cọc vì số tiền đặt cọc chính xác được Backend xác định tại thời điểm thanh toán. Vui lòng dùng PayOS."
-    : wallet.loading
-      ? "Đang kiểm tra số dư ví..."
-      : wallet.error
-        ? wallet.error
-        : wallet.balance === null
-          ? "Chưa xác định được số dư ví."
-          : !hasSufficientBalance
-            ? "Số dư ví không đủ để thanh toán toàn bộ giá trị thỏa thuận."
-            : "";
-  const walletDisabled = Boolean(walletUnavailableReason);
+    hasPaymentQuote &&
+    wallet.balance !== null &&
+    wallet.balance >= totalAmount;
+
+  const paymentReady =
+    hasPaymentQuote &&
+    !paymentQuote.loading &&
+    !paymentQuote.error;
+
+  const walletUnavailableReason =
+    paymentQuote.loading
+      ? "Đang xác nhận số tiền thanh toán từ hệ thống..."
+      : paymentQuote.error
+        ? paymentQuote.error
+        : !hasPaymentQuote
+          ? "Chưa xác định được số tiền cần thanh toán."
+          : wallet.loading
+            ? "Đang kiểm tra số dư ví..."
+            : wallet.error
+              ? wallet.error
+              : wallet.balance === null
+                ? "Chưa xác định được số dư ví."
+                : !hasSufficientBalance
+                  ? `Số dư ví thấp hơn số tiền cần thanh toán ${formatCurrency(totalAmount)}.`
+                  : "";
+
+  const walletDisabled =
+    Boolean(walletUnavailableReason);
 
   if (loading) {
     return <div className="mx-auto mt-6 max-w-5xl rounded-2xl border border-border bg-white p-14 text-center font-semibold text-textLight shadow-[0_10px_30px_rgba(23,40,48,0.05)]">Đang tải thỏa thuận...</div>;
@@ -520,16 +740,50 @@ const AgreementPage = () => {
             <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">Bước tiếp theo</p>
             <h2 className="mt-1 text-lg font-black text-text">Thanh toán để tiếp tục</h2>
             <p className="mt-2 text-sm leading-6 text-textLight">
-              Tổng giá trị thỏa thuận: <strong className="text-error">{formatCurrency(agreement.totalAmount)}</strong>.{" "}
-              {isDepositPayment
-                ? "Thỏa thuận này chỉ thu một khoản đặt cọc, số tiền chính xác sẽ được xác nhận ngay khi thanh toán."
-                : "Đây là số tiền chính xác sẽ được thanh toán toàn bộ."}
+              Tổng giá trị thỏa thuận: <strong>{formatCurrency(agreement.totalAmount)}</strong>.{" "}
+              {paymentQuote.loading
+                ? "Đang lấy báo giá thanh toán mới nhất từ hệ thống."
+                : paymentQuote.error
+                  ? "Chưa thể xác nhận báo giá thanh toán."
+                  : hasPaymentQuote
+                    ? <>
+                        Số tiền cần thanh toán hiện tại:{" "}
+                        <strong className="text-error">{formatCurrency(totalAmount)}</strong>
+                        {isDepositPayment && Number(paymentQuote.data?.depositRatePercent) > 0
+                          ? ` (${Number(paymentQuote.data.depositRatePercent)}% đặt cọc)`
+                          : ""}.
+                      </>
+                    : "Chưa xác định được số tiền cần thanh toán."}
             </p>
+
+            {paymentQuote.error && (
+              <button
+                type="button"
+                onClick={() =>
+                  loadPaymentQuote(
+                    agreement.agreementId,
+                  )
+                }
+                className="mt-2 text-sm font-bold text-primary underline"
+              >
+                Tải lại báo giá
+              </button>
+            )}
 
             <div className="mt-4 rounded-xl border border-border bg-white p-4">
               <p className="text-xs font-black uppercase tracking-wide text-textLight">Thanh toán bằng ví</p>
-              {isDepositPayment ? (
-                <p className="mt-1 text-sm leading-6 text-textLight">{walletUnavailableReason}</p>
+              {paymentQuote.loading ? (
+                <p className="mt-1 text-sm text-textLight">
+                  Đang xác nhận số tiền thanh toán...
+                </p>
+              ) : paymentQuote.error ? (
+                <p className="mt-1 text-sm font-semibold text-error">
+                  {paymentQuote.error}
+                </p>
+              ) : !hasPaymentQuote ? (
+                <p className="mt-1 text-sm text-textLight">
+                  Chưa xác định được số tiền cần thanh toán.
+                </p>
               ) : wallet.loading ? (
                 <p className="mt-1 text-sm text-textLight">Đang kiểm tra số dư ví...</p>
               ) : wallet.error ? (
@@ -543,7 +797,7 @@ const AgreementPage = () => {
                   <p className={`mt-1 text-xs font-bold ${hasSufficientBalance ? "text-success" : "text-error"}`}>
                     {hasSufficientBalance
                       ? "Đủ số dư để thanh toán bằng ví."
-                      : "Số dư ví hiện thấp hơn giá trị thỏa thuận. Vui lòng nạp thêm ví hoặc chọn thanh toán qua PayOS."}
+                      : `Số dư ví hiện thấp hơn số tiền cần thanh toán ${formatCurrency(totalAmount)}. Vui lòng nạp thêm ví hoặc chọn thanh toán qua PayOS.`}
                   </p>
                 </>
               )}
@@ -553,16 +807,15 @@ const AgreementPage = () => {
               <input
                 type="checkbox"
                 checked={paymentAck}
+                disabled={!paymentReady || Boolean(busy)}
                 onChange={(event) => setPaymentAck(event.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary/30"
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
               />
-              {isDepositPayment
-                ? "Tôi đã kiểm tra đúng thông tin thỏa thuận ở trên và đồng ý tiếp tục thanh toán đặt cọc qua PayOS."
-                : "Tôi đã kiểm tra đúng thông tin thỏa thuận và số tiền thanh toán ở trên, và đồng ý tiếp tục thanh toán."}
+              {`Tôi đã kiểm tra thông tin thỏa thuận và số tiền cần thanh toán ${formatCurrency(totalAmount)}, và đồng ý tiếp tục thanh toán.`}
             </label>
 
             <div className="mt-4 flex flex-wrap gap-3">
-              <button type="button" onClick={handlePayOs} disabled={Boolean(busy) || !paymentAck} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy === "payos" ? "Đang tạo liên kết..." : "Thanh toán qua PayOS"}</button>
+              <button type="button" onClick={handlePayOs} disabled={Boolean(busy) || !paymentAck || !paymentReady} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">{busy === "payos" ? "Đang tạo liên kết..." : "Thanh toán qua PayOS"}</button>
               <button
                 type="button"
                 onClick={handleWalletPayment}
