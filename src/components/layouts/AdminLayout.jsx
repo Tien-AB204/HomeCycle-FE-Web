@@ -104,6 +104,11 @@ const ADMIN_NAV_GROUPS = [
         path: "/admin/policies",
         icon: "policy",
       },
+      {
+        label: "Danh mục tranh chấp",
+        path: "/admin/dispute-categories",
+        icon: "gavel",
+      },
     ],
   },
 ];

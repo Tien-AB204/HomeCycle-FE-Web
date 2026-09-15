@@ -23,10 +23,9 @@ import {
 import {
   ReloadOutlined,
   SearchOutlined,
-  WarningOutlined,
 } from "@ant-design/icons";
-import axiosClient from "../../services/apis/axiosClient";
 import Avatar from "../../components/shared/Avatar";
+import moderatorDisputeApi from "../../services/apis/moderatorDisputeApi";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -40,23 +39,11 @@ const STATUS_OPTIONS = [
   { value: 5, label: "Chờ hoàn trả" },
 ];
 
-const CATEGORY_OPTIONS = [
-  { value: 1, label: "Không xuất hiện" },
-  { value: 2, label: "Sản phẩm không khớp" },
-  { value: 3, label: "Người bán chưa gửi hàng" },
-  { value: 4, label: "Hư hỏng hoặc thất lạc" },
-  { value: 5, label: "Chưa nhận được hàng" },
-  { value: 6, label: "Gian lận / lừa đảo" },
-  { value: 7, label: "Đánh giá mang tính công kích" },
-  { value: 8, label: "Thanh toán chưa hoàn tất" },
-  { value: 9, label: "Vi phạm cam kết" },
-  { value: 99, label: "Khác" },
-];
-
 const TARGET_TYPE_OPTIONS = [
   { value: 1, label: "Lịch hẹn" },
   { value: 2, label: "Đơn hàng" },
   { value: 3, label: "Đánh giá" },
+  { value: 4, label: "Bài đăng" },
 ];
 
 const ENUM_NAME_TO_VALUE = {
@@ -68,22 +55,11 @@ const ENUM_NAME_TO_VALUE = {
     underreview: 4,
     awaitingreturn: 5,
   },
-  category: {
-    noshow: 1,
-    itemmismatch: 2,
-    sellernotshipped: 3,
-    damagedorlost: 4,
-    itemnotreceived: 5,
-    fraudorscam: 6,
-    abusivereview: 7,
-    paymentnotcompleted: 8,
-    commitmentviolation: 9,
-    other: 99,
-  },
   targetType: {
     appointment: 1,
     order: 2,
     review: 3,
+    post: 4,
   },
 };
 
@@ -158,6 +134,14 @@ const SAFE_ACTION_ERRORS = {
     "Chưa đến thời điểm được phép xác minh hoàn trả.",
   DISPUTE_TARGET_NOT_SUPPORTED:
     "Loại đối tượng tranh chấp này hiện chưa hỗ trợ thao tác kết luận.",
+  DISPUTE_CONTENT_UNAVAILABLE:
+    "Nội dung gốc hiện không còn khả dụng. Dữ liệu tranh chấp đã được tải lại.",
+  POST_NOT_FOUND:
+    "Không tìm thấy bài đăng được báo cáo.",
+  "Review.NotFound":
+    "Không tìm thấy đánh giá được báo cáo.",
+  "Review.NotVisible":
+    "Đánh giá được báo cáo hiện không còn hiển thị.",
   "Order.NotDisputing":
     "Đơn hàng hiện không còn ở trạng thái tranh chấp.",
   "Order.InvalidCompletionState":
@@ -206,6 +190,125 @@ const optionLabel = (options, value, type) => {
     options.find(
       (option) => option.value === normalized,
     )?.label || "Chưa xác định"
+  );
+};
+
+const getCategoryLabel = (category) => {
+  if (!category || typeof category !== "object") {
+    return "Chưa xác định";
+  }
+
+  return (
+    String(category.name || "").trim() ||
+    String(category.code || "").trim() ||
+    "Chưa xác định"
+  );
+};
+
+const getPostTypeLabel = (value) => {
+  const normalized = normalizeKey(value);
+
+  if (normalized === "buy" || normalized === "2") {
+    return "Tin thu mua";
+  }
+
+  if (normalized === "sell" || normalized === "1") {
+    return "Tin đăng bán";
+  }
+
+  return "Chưa xác định";
+};
+
+const POST_STATUS_LABELS = {
+  "0": "Bản nháp",
+  draft: "Bản nháp",
+  "1": "Đang hoạt động",
+  active: "Đang hoạt động",
+  "2": "Đã đình chỉ",
+  suspended: "Đã đình chỉ",
+  "3": "Đã đóng",
+  closed: "Đã đóng",
+  "4": "Đã xóa",
+  deleted: "Đã xóa",
+};
+
+const REVIEW_STATUS_LABELS = {
+  "0": "Đang hiển thị",
+  visible: "Đang hiển thị",
+  active: "Đang hiển thị",
+  "1": "Đã ẩn",
+  hidden: "Đã ẩn",
+};
+
+const getContentStatusLabel = (labels, value) =>
+  labels[normalizeKey(value)] || "Chưa xác định";
+
+const normalizeMediaItems = (items) =>
+  (Array.isArray(items) ? items : [])
+    .map((item, index) => {
+      if (typeof item === "string") {
+        return {
+          key: `${item}-${index}`,
+          url: item,
+          fileName: "Ảnh nội dung",
+          displayOrder: index,
+        };
+      }
+
+      const url =
+        item?.url ||
+        item?.imageUrl ||
+        item?.mediaUrl ||
+        item?.fileUrl;
+
+      if (!url) {
+        return null;
+      }
+
+      return {
+        ...item,
+        key:
+          item.mediaId ||
+          item.imageId ||
+          `${url}-${index}`,
+        url,
+        fileName:
+          item.fileName ||
+          item.altText ||
+          "Ảnh nội dung",
+        displayOrder:
+          item.displayOrder ?? index,
+      };
+    })
+    .filter(Boolean)
+    .sort(
+      (a, b) => a.displayOrder - b.displayOrder,
+    );
+
+const getPenaltyPointsApplied = (response) => {
+  const payload = response?.data ?? response;
+  const value = payload?.penaltyPointsApplied;
+
+  return value === null || value === undefined
+    ? null
+    : value;
+};
+
+const shouldRefetchAfterActionError = (error) => {
+  const code = getErrorCode(error);
+
+  return (
+    error?.response?.status === 409 ||
+    [
+      "DISPUTE_ALREADY_CLAIMED",
+      "DISPUTE_NOT_ASSIGNED_MODERATOR",
+      "DISPUTE_DECISION_NOT_ALLOWED",
+      "DISPUTE_TARGET_NOT_SUPPORTED",
+      "DISPUTE_CONTENT_UNAVAILABLE",
+      "POST_NOT_FOUND",
+      "Review.NotFound",
+      "Review.NotVisible",
+    ].includes(code)
   );
 };
 
@@ -296,6 +399,35 @@ const getResolutionOutcomeLabel = (value) => {
   );
 };
 
+const getDisputeResolutionLabel = (
+  resolutionOutcome,
+  targetType,
+  status,
+) => {
+  const normalizedTargetType = normalizeEnumValue(
+    targetType,
+    "targetType",
+  );
+  const normalizedStatus = normalizeEnumValue(
+    status,
+    "status",
+  );
+
+  if ([3, 4].includes(normalizedTargetType)) {
+    if (normalizedStatus === 1) {
+      return "Đã xác nhận vi phạm";
+    }
+
+    if (normalizedStatus === 2) {
+      return "Đã từ chối báo cáo";
+    }
+
+    return "Chưa có";
+  }
+
+  return getResolutionOutcomeLabel(resolutionOutcome);
+};
+
 const formatDateTime = (value) => {
   if (!value) {
     return "Chưa có";
@@ -332,6 +464,34 @@ const formatMoney = (value) => {
   }
 
   return `${number.toLocaleString("vi-VN")} ₫`;
+};
+
+const getDisputeTitle = (dispute) => {
+  const targetType = normalizeEnumValue(
+    dispute?.targetType,
+    "targetType",
+  );
+
+  if (targetType === 2 && dispute?.orderCode) {
+    return dispute.orderCode;
+  }
+
+  const targetLabel = optionLabel(
+    TARGET_TYPE_OPTIONS,
+    targetType,
+    "targetType",
+  );
+  const targetId = String(
+    dispute?.targetId || "",
+  ).trim();
+
+  if (targetId) {
+    return `${targetLabel} ${targetId.slice(0, 8)}`;
+  }
+
+  return `Tranh chấp ${String(
+    dispute?.disputeId || "",
+  ).slice(0, 8)}`;
 };
 
 const extractPagedData = (response) => {
@@ -400,7 +560,15 @@ const getActionFlag = (
   );
 };
 
-const DisputeManagementPage = () => {
+const DisputeManagementPage = ({
+  initialTargetType,
+} = {}) => {
+  const normalizedInitialTargetType =
+    normalizeEnumValue(
+      initialTargetType,
+      "targetType",
+    ) ?? undefined;
+
   const [disputes, setDisputes] =
     useState([]);
   const [loadingList, setLoadingList] =
@@ -427,11 +595,18 @@ const DisputeManagementPage = () => {
     useState("");
   const [status, setStatus] =
     useState(undefined);
-  const [category, setCategory] =
+  const [disputeCategoryId, setDisputeCategoryId] =
     useState(undefined);
   const [targetType, setTargetType] =
-    useState(undefined);
+    useState(normalizedInitialTargetType);
   const [dateRange, setDateRange] =
+    useState(null);
+
+  const [categoryOptions, setCategoryOptions] =
+    useState([]);
+  const [loadingCategories, setLoadingCategories] =
+    useState(false);
+  const [categoryError, setCategoryError] =
     useState(null);
 
   const [pageNumber, setPageNumber] =
@@ -488,8 +663,8 @@ const DisputeManagementPage = () => {
       ...(status !== undefined
         ? { status }
         : {}),
-      ...(category !== undefined
-        ? { category }
+      ...(disputeCategoryId !== undefined
+        ? { disputeCategoryId }
         : {}),
       ...(targetType !== undefined
         ? { targetType }
@@ -506,7 +681,7 @@ const DisputeManagementPage = () => {
     pageSize,
     keyword,
     status,
-    category,
+    disputeCategoryId,
     targetType,
     dateRange,
   ]);
@@ -518,11 +693,8 @@ const DisputeManagementPage = () => {
 
       try {
         const response =
-          await axiosClient.get(
-            "/moderator/disputes",
-            {
-              params: listParams,
-            },
+          await moderatorDisputeApi.getAll(
+            listParams,
           );
 
         const paged =
@@ -577,8 +749,8 @@ const DisputeManagementPage = () => {
 
       try {
         const response =
-          await axiosClient.get(
-            `/moderator/disputes/${disputeId}`,
+          await moderatorDisputeApi.getById(
+            disputeId,
           );
 
         const nextDetail =
@@ -601,6 +773,71 @@ const DisputeManagementPage = () => {
     },
     [],
   );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    const loadCategories = async () => {
+      setLoadingCategories(true);
+      setCategoryError(null);
+
+      try {
+        const categories =
+          await moderatorDisputeApi.getCategories({
+            targetType,
+            signal: controller.signal,
+          });
+
+        if (!active) {
+          return;
+        }
+
+        setCategoryOptions(
+          categories
+            .filter(
+              (item) =>
+                item?.disputeCategoryId !== null &&
+                item?.disputeCategoryId !== undefined,
+            )
+            .map((item) => ({
+              value: item.disputeCategoryId,
+              label:
+                String(item.name || "").trim() ||
+                String(item.code || "").trim() ||
+                "Danh mục chưa đặt tên",
+            }))
+            .sort((a, b) =>
+              a.label.localeCompare(b.label, "vi"),
+            ),
+        );
+      } catch (error) {
+        if (
+          !active ||
+          error?.code === "ERR_CANCELED" ||
+          error?.name === "CanceledError"
+        ) {
+          return;
+        }
+
+        setCategoryOptions([]);
+        setCategoryError(
+          "Không thể tải danh mục tranh chấp. Các bộ lọc khác vẫn có thể sử dụng.",
+        );
+      } finally {
+        if (active) {
+          setLoadingCategories(false);
+        }
+      }
+    };
+
+    void loadCategories();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [targetType]);
 
   useEffect(() => {
     const timeoutId =
@@ -734,8 +971,8 @@ const DisputeManagementPage = () => {
     setKeywordInput("");
     setKeyword("");
     setStatus(undefined);
-    setCategory(undefined);
-    setTargetType(undefined);
+    setDisputeCategoryId(undefined);
+    setTargetType(normalizedInitialTargetType);
     setDateRange(null);
     setPageNumber(1);
   };
@@ -745,9 +982,7 @@ const DisputeManagementPage = () => {
   ) => {
     setActionMode(mode);
     setActionNote("");
-    setResolutionOutcome(
-      "BuyerFavored",
-    );
+    setResolutionOutcome("BuyerFavored");
     setReturnCompleted(true);
     setActionFeedback(null);
   };
@@ -790,59 +1025,78 @@ const DisputeManagementPage = () => {
     try {
       let successMessage =
         "Thao tác đã được thực hiện.";
+      let actionResponse = null;
 
       if (actionMode === "claim") {
-        await axiosClient.post(
-          `/moderator/disputes/${selectedDisputeId}/claim`,
-        );
+        actionResponse =
+          await moderatorDisputeApi.claim(
+            selectedDisputeId,
+          );
 
         successMessage =
           "Đã tiếp nhận tranh chấp.";
       }
 
       if (actionMode === "resolve") {
-        await axiosClient.post(
-          `/moderator/disputes/${selectedDisputeId}/resolve`,
-          {
-            resolutionOutcome,
-            moderatorNote:
-              trimmedActionNote,
-          },
-        );
+        actionResponse =
+          await moderatorDisputeApi.resolve(
+            selectedDisputeId,
+            isOrderTarget
+              ? {
+                  resolutionOutcome,
+                  moderatorNote:
+                    trimmedActionNote,
+                }
+              : {
+                  moderatorNote:
+                    trimmedActionNote,
+                },
+          );
 
-        successMessage =
-          "Đã ghi nhận kết luận tranh chấp.";
+        successMessage = isContentTarget
+          ? "Đã xác nhận nội dung vi phạm."
+          : "Đã ghi nhận kết luận tranh chấp.";
       }
 
       if (actionMode === "reject") {
-        await axiosClient.post(
-          `/moderator/disputes/${selectedDisputeId}/reject`,
-          {
-            moderatorNote:
-              trimmedActionNote,
-          },
-        );
+        actionResponse =
+          await moderatorDisputeApi.reject(
+            selectedDisputeId,
+            {
+              moderatorNote:
+                trimmedActionNote,
+            },
+          );
 
-        successMessage =
-          "Đã từ chối tranh chấp.";
+        successMessage = isContentTarget
+          ? "Đã từ chối báo cáo."
+          : "Đã từ chối tranh chấp.";
       }
 
       if (
         actionMode ===
         "verify-return"
       ) {
-        await axiosClient.post(
-          `/moderator/disputes/${selectedDisputeId}/verify-return`,
-          {
-            isReturnCompleted:
-              returnCompleted,
-            moderatorNote:
-              trimmedActionNote,
-          },
-        );
+        actionResponse =
+          await moderatorDisputeApi.verifyReturn(
+            selectedDisputeId,
+            {
+              isReturnCompleted:
+                returnCompleted,
+              moderatorNote:
+                trimmedActionNote,
+            },
+          );
 
         successMessage =
           "Đã xác minh tình trạng hoàn trả.";
+      }
+
+      const penaltyPointsApplied =
+        getPenaltyPointsApplied(actionResponse);
+
+      if (penaltyPointsApplied !== null) {
+        successMessage += ` Mức phạt thực tế: ${penaltyPointsApplied} điểm uy tín.`;
       }
 
       setActionMode(null);
@@ -862,6 +1116,10 @@ const DisputeManagementPage = () => {
           "Không thể thực hiện thao tác. Vui lòng tải lại dữ liệu và thử lại.",
         ),
       });
+
+      if (shouldRefetchAfterActionError(error)) {
+        await refreshSelected();
+      }
     } finally {
       setSubmittingAction(false);
     }
@@ -916,22 +1174,89 @@ const DisputeManagementPage = () => {
     );
   };
 
+  const renderMediaGallery = (
+    title,
+    description,
+    mediaItems,
+    emptyMessage,
+  ) => (
+    <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-black text-text">
+            {title}
+          </h3>
+
+          {description && (
+            <p className="mt-1 text-xs text-textLight">
+              {description}
+            </p>
+          )}
+        </div>
+
+        <span className="text-xs font-bold text-textLight">
+          {mediaItems.length} tệp
+        </span>
+      </div>
+
+      {mediaItems.length === 0 ? (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={emptyMessage}
+        />
+      ) : (
+        <Image.PreviewGroup>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+            {mediaItems.map((media) => (
+              <div
+                key={media.key}
+                className="overflow-hidden rounded-xl border border-border bg-background"
+              >
+                <Image
+                  src={media.url}
+                  alt={media.fileName}
+                  className="h-40 w-full object-cover"
+                  width="100%"
+                />
+
+                <div className="p-2">
+                  <p className="truncate text-xs font-bold text-textLight">
+                    {media.fileName}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Image.PreviewGroup>
+      )}
+    </div>
+  );
+
   const detailStatus =
     getStatusMeta(detail?.status);
 
   const order =
     detail?.target?.order ?? null;
 
-  const evidenceImages =
-    Array.isArray(
-      detail?.evidenceImages,
-    )
-      ? [...detail.evidenceImages].sort(
-          (a, b) =>
-            (a.displayOrder || 0) -
-            (b.displayOrder || 0),
-        )
-      : [];
+  const post =
+    detail?.target?.post ?? null;
+
+  const review =
+    detail?.target?.review ?? null;
+
+  const evidenceImages = normalizeMediaItems(
+    detail?.evidenceImages,
+  );
+
+  const postImages = normalizeMediaItems(
+    post?.images,
+  );
+
+  const reviewImages = normalizeMediaItems(
+    review?.images,
+  );
+
+  const timestamps = detail?.timestamps ?? {};
 
   const actions =
     detail?.actions ??
@@ -948,6 +1273,15 @@ const DisputeManagementPage = () => {
   const isOrderTarget =
     detailTargetType === 2;
 
+  const isReviewTarget =
+    detailTargetType === 3;
+
+  const isPostTarget =
+    detailTargetType === 4;
+
+  const isContentTarget =
+    isReviewTarget || isPostTarget;
+
   const canClaim =
     getActionFlag(
       actions,
@@ -958,33 +1292,19 @@ const DisputeManagementPage = () => {
     getActionFlag(
       actions,
       "canResolveDispute",
-    ) && isOrderTarget;
+    );
 
   const canReject =
     getActionFlag(
       actions,
       "canRejectDispute",
-    ) && isOrderTarget;
+    );
 
   const canVerifyReturn =
     getActionFlag(
       actions,
       "canVerifyReturn",
     ) && isOrderTarget;
-
-  const backendOffersDecision =
-    getActionFlag(
-      actions,
-      "canResolveDispute",
-    ) ||
-    getActionFlag(
-      actions,
-      "canRejectDispute",
-    );
-
-  const unsupportedDecisionTarget =
-    backendOffersDecision &&
-    !isOrderTarget;
 
   const hasModeratorAction =
     canClaim ||
@@ -994,17 +1314,26 @@ const DisputeManagementPage = () => {
 
   const modalTitle = {
     claim: "Tiếp nhận tranh chấp",
-    resolve:
-      "Đưa ra kết luận tranh chấp",
-    reject: "Từ chối tranh chấp",
+    resolve: isPostTarget
+      ? "Xác nhận bài đăng vi phạm?"
+      : isReviewTarget
+        ? "Xác nhận đánh giá vi phạm?"
+        : "Đưa ra kết luận tranh chấp",
+    reject: isContentTarget
+      ? "Từ chối báo cáo"
+      : "Từ chối tranh chấp",
     "verify-return":
       "Xác minh hoàn trả",
   }[actionMode];
 
   const modalOkText = {
     claim: "Tiếp nhận",
-    resolve: "Xác nhận kết luận",
-    reject: "Từ chối tranh chấp",
+    resolve: isContentTarget
+      ? "Xác nhận vi phạm"
+      : "Xác nhận kết luận",
+    reject: isContentTarget
+      ? "Từ chối báo cáo"
+      : "Từ chối tranh chấp",
     "verify-return": "Xác minh",
   }[actionMode];
 
@@ -1044,7 +1373,7 @@ const DisputeManagementPage = () => {
               prefix={
                 <SearchOutlined className="text-textLight" />
               }
-              placeholder="Tìm mã, người dùng, đơn hàng..."
+              placeholder="Tìm mã, người dùng hoặc nội dung..."
               allowClear
             />
 
@@ -1071,6 +1400,7 @@ const DisputeManagementPage = () => {
                 }
                 onChange={(value) => {
                   setTargetType(value);
+                  setDisputeCategoryId(undefined);
                   setPageNumber(1);
                 }}
               />
@@ -1078,13 +1408,16 @@ const DisputeManagementPage = () => {
               <Select
                 allowClear
                 className="col-span-2"
-                placeholder="Loại tranh chấp"
-                value={category}
-                options={
-                  CATEGORY_OPTIONS
+                placeholder={
+                  loadingCategories
+                    ? "Đang tải lý do báo cáo..."
+                    : "Lý do báo cáo"
                 }
+                value={disputeCategoryId}
+                options={categoryOptions}
+                loading={loadingCategories}
                 onChange={(value) => {
-                  setCategory(value);
+                  setDisputeCategoryId(value);
                   setPageNumber(1);
                 }}
               />
@@ -1104,6 +1437,15 @@ const DisputeManagementPage = () => {
                 allowClear
               />
             </div>
+
+            {categoryError && (
+              <Alert
+                className="mt-3"
+                type="warning"
+                showIcon
+                message={categoryError}
+              />
+            )}
 
             <div className="mt-3 flex items-center justify-between gap-2">
               <Button
@@ -1192,18 +1534,18 @@ const DisputeManagementPage = () => {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-bold text-text">
-                              {item.orderCode ||
-                                `Tranh chấp ${String(
-                                  item.disputeId,
-                                ).slice(
-                                  0,
-                                  8,
-                                )}`}
+                              {getDisputeTitle(item)}
                             </p>
 
                             <p className="mt-1 truncate text-xs text-textLight">
                               Người gửi:{" "}
                               {item.senderUsername ||
+                                "Chưa có"}
+                            </p>
+
+                            <p className="mt-1 truncate text-xs text-textLight">
+                              Người bị báo cáo:{" "}
+                              {item.targetUsername ||
                                 "Chưa có"}
                             </p>
                           </div>
@@ -1230,11 +1572,19 @@ const DisputeManagementPage = () => {
                             "Không có mô tả"}
                         </p>
 
-                        {item.resolutionOutcome && (
+                        {(item.resolutionOutcome ||
+                          [1, 2].includes(
+                            normalizeEnumValue(
+                              item.status,
+                              "status",
+                            ),
+                          )) && (
                           <p className="mt-2 text-xs font-semibold text-primary">
                             Kết quả:{" "}
-                            {getResolutionOutcomeLabel(
+                            {getDisputeResolutionLabel(
                               item.resolutionOutcome,
+                              item.targetType,
+                              item.status,
                             )}
                           </p>
                         )}
@@ -1250,10 +1600,14 @@ const DisputeManagementPage = () => {
 
                         <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-textLight">
                           <span>
-                            {optionLabel(
-                              CATEGORY_OPTIONS,
+                            {getCategoryLabel(
                               item.category,
-                              "category",
+                            )}
+                            {" · "}
+                            {optionLabel(
+                              TARGET_TYPE_OPTIONS,
+                              item.targetType,
+                              "targetType",
                             )}
                           </span>
 
@@ -1353,14 +1707,17 @@ const DisputeManagementPage = () => {
                   </p>
 
                   <h2 className="mt-1 break-all text-xl font-black text-text">
-                    {detail.target?.order
-                      ?.orderCode ||
-                      `Tranh chấp ${String(
-                        detail.disputeId,
-                      ).slice(
-                        0,
-                        8,
-                      )}`}
+                    {order?.orderCode ||
+                      post?.productName ||
+                      (isReviewTarget
+                        ? `Đánh giá ${String(
+                            review?.reviewId ||
+                              detail.target?.targetId ||
+                              "",
+                          ).slice(0, 8)}`
+                        : `Tranh chấp ${String(
+                            detail.disputeId,
+                          ).slice(0, 8)}`)}
                   </h2>
                 </div>
 
@@ -1399,18 +1756,6 @@ const DisputeManagementPage = () => {
                 />
               )}
 
-              {unsupportedDecisionTarget && (
-                <Alert
-                  className="mb-5"
-                  type="warning"
-                  showIcon
-                  icon={
-                    <WarningOutlined />
-                  }
-                  message="Loại đối tượng tranh chấp này hiện chưa hỗ trợ thao tác kết luận hoặc từ chối."
-                />
-              )}
-
               <div className="mb-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <h3 className="text-base font-black text-text">
@@ -1446,7 +1791,9 @@ const DisputeManagementPage = () => {
                           )
                         }
                       >
-                        Đưa ra kết luận
+                        {isContentTarget
+                          ? "Xác nhận vi phạm"
+                          : "Đưa ra kết luận"}
                       </Button>
                     )}
 
@@ -1464,7 +1811,9 @@ const DisputeManagementPage = () => {
                             "#7A1012",
                         }}
                       >
-                        Từ chối tranh chấp
+                        {isContentTarget
+                          ? "Từ chối báo cáo"
+                          : "Từ chối tranh chấp"}
                       </Button>
                     )}
 
@@ -1495,7 +1844,11 @@ const DisputeManagementPage = () => {
                 )}
 
                 {renderUserCard(
-                  "Người bị khiếu nại",
+                  isPostTarget
+                    ? "Chủ bài đăng / Người bị báo cáo"
+                    : isReviewTarget
+                      ? "Người bị báo cáo"
+                      : "Người bị khiếu nại",
                   detail.targetUser,
                 )}
               </div>
@@ -1525,19 +1878,17 @@ const DisputeManagementPage = () => {
                     }
                   </Descriptions.Item>
 
-                  <Descriptions.Item label="Loại tranh chấp">
-                    {optionLabel(
-                      CATEGORY_OPTIONS,
+                  <Descriptions.Item label="Lý do báo cáo">
+                    {getCategoryLabel(
                       detail.category,
-                      "category",
                     )}
                   </Descriptions.Item>
 
                   <Descriptions.Item label="Đối tượng">
                     {optionLabel(
                       TARGET_TYPE_OPTIONS,
-                      detail.target
-                        ?.targetType,
+                      detail.target?.targetType ??
+                        detail.targetType,
                       "targetType",
                     )}
                   </Descriptions.Item>
@@ -1545,12 +1896,15 @@ const DisputeManagementPage = () => {
                   <Descriptions.Item label="Mã đối tượng">
                     {detail.target
                       ?.targetId ||
+                      detail.targetId ||
                       "Chưa có"}
                   </Descriptions.Item>
 
                   <Descriptions.Item label="Kết quả giải quyết">
-                    {getResolutionOutcomeLabel(
+                    {getDisputeResolutionLabel(
                       detail.resolutionOutcome,
+                      detail.target?.targetType,
+                      detail.status,
                     )}
                   </Descriptions.Item>
 
@@ -1561,24 +1915,27 @@ const DisputeManagementPage = () => {
 
                   <Descriptions.Item label="Ngày gửi">
                     {formatDateTime(
-                      detail.createdAt,
+                      detail.createdAt ??
+                        timestamps.createdAt,
                     )}
                   </Descriptions.Item>
 
                   <Descriptions.Item label="Cập nhật lần cuối">
                     {formatDateTime(
-                      detail.updatedAt,
+                      detail.updatedAt ??
+                        timestamps.updatedAt,
                     )}
                   </Descriptions.Item>
 
                   <Descriptions.Item label="Thời gian giải quyết">
                     {formatDateTime(
-                      detail.resolvedAt,
+                      detail.resolvedAt ??
+                        timestamps.resolvedAt,
                     )}
                   </Descriptions.Item>
 
                   <Descriptions.Item
-                    label="Mô tả"
+                    label="Mô tả của người báo cáo"
                     span={2}
                   >
                     <span className="whitespace-pre-wrap">
@@ -1598,6 +1955,181 @@ const DisputeManagementPage = () => {
                   </Descriptions.Item>
                 </Descriptions>
               </div>
+
+              {isPostTarget && !post && (
+                <Alert
+                  className="mt-6"
+                  type="warning"
+                  showIcon
+                  message="Bài đăng gốc hiện không còn khả dụng. Thông tin báo cáo vẫn được giữ nguyên."
+                />
+              )}
+
+              {post && (
+                <>
+                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Bài đăng gốc
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Mã bài đăng">
+                        {post.postId ||
+                          detail.target?.targetId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mã chủ bài đăng">
+                        {post.ownerId ||
+                          detail.targetUser?.userId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Tên sản phẩm">
+                        {post.productName || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Loại tin">
+                        {getPostTypeLabel(post.postType)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Giá cơ bản">
+                        {formatMoney(post.basePrice)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái bài đăng">
+                        {getContentStatusLabel(
+                          POST_STATUS_LABELS,
+                          post.status,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ngày đăng">
+                        {formatDateTime(post.createdAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Cập nhật bài đăng">
+                        {formatDateTime(post.updatedAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item
+                        label="Mô tả bài đăng"
+                        span={2}
+                      >
+                        <span className="whitespace-pre-wrap">
+                          {post.description ||
+                            "Không có mô tả"}
+                        </span>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+
+                  {renderMediaGallery(
+                    "Ảnh bài đăng gốc",
+                    "Hình ảnh thuộc nội dung bài đăng được báo cáo.",
+                    postImages,
+                    "Bài đăng gốc không có ảnh",
+                  )}
+                </>
+              )}
+
+              {isReviewTarget && !review && (
+                <Alert
+                  className="mt-6"
+                  type="warning"
+                  showIcon
+                  message="Đánh giá gốc hiện không còn khả dụng. Thông tin báo cáo vẫn được giữ nguyên."
+                />
+              )}
+
+              {review && (
+                <>
+                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Đánh giá gốc
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Mã đánh giá">
+                        {review.reviewId ||
+                          detail.target?.targetId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mã đơn hàng liên quan">
+                        {review.orderId || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người đánh giá">
+                        {review.reviewerUsername
+                          ? `${review.reviewerUsername} (${review.reviewerId || "chưa có mã"})`
+                          : review.reviewerId || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người được đánh giá">
+                        {review.revieweeUsername
+                          ? `${review.revieweeUsername} (${review.revieweeId || "chưa có mã"})`
+                          : review.revieweeId || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Số sao">
+                        {review.rating === null ||
+                        review.rating === undefined
+                          ? "Chưa có"
+                          : `${review.rating} / 5 sao`}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái đánh giá">
+                        {getContentStatusLabel(
+                          REVIEW_STATUS_LABELS,
+                          review.status,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ngày đánh giá">
+                        {formatDateTime(review.createdAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Cập nhật đánh giá">
+                        {formatDateTime(review.updatedAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item
+                        label="Nội dung đánh giá"
+                        span={2}
+                      >
+                        <span className="whitespace-pre-wrap">
+                          {review.comment ||
+                            "Không có nội dung"}
+                        </span>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+
+                  {renderMediaGallery(
+                    "Ảnh đánh giá gốc",
+                    "Hình ảnh thuộc đánh giá được báo cáo.",
+                    reviewImages,
+                    "Đánh giá gốc không có ảnh",
+                  )}
+                </>
+              )}
 
               {order && (
                 <>
@@ -1718,65 +2250,12 @@ const DisputeManagementPage = () => {
                 </>
               )}
 
-              <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <h3 className="text-base font-black text-text">
-                    Bằng chứng
-                  </h3>
-
-                  <span className="text-xs font-bold text-textLight">
-                    {
-                      evidenceImages.length
-                    }{" "}
-                    tệp
-                  </span>
-                </div>
-
-                {evidenceImages.length ===
-                0 ? (
-                  <Empty
-                    image={
-                      Empty.PRESENTED_IMAGE_SIMPLE
-                    }
-                    description="Không có ảnh bằng chứng"
-                  />
-                ) : (
-                  <Image.PreviewGroup>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                      {evidenceImages.map(
-                        (media) => (
-                          <div
-                            key={
-                              media.mediaId ||
-                              media.url
-                            }
-                            className="overflow-hidden rounded-xl border border-border bg-background"
-                          >
-                            <Image
-                              src={
-                                media.url
-                              }
-                              alt={
-                                media.fileName ||
-                                "Bằng chứng tranh chấp"
-                              }
-                              className="h-40 w-full object-cover"
-                              width="100%"
-                            />
-
-                            <div className="p-2">
-                              <p className="truncate text-xs font-bold text-textLight">
-                                {media.fileName ||
-                                  "Ảnh bằng chứng"}
-                              </p>
-                            </div>
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </Image.PreviewGroup>
-                )}
-              </div>
+              {renderMediaGallery(
+                "Ảnh bằng chứng của người báo cáo",
+                "Hình ảnh do người gửi báo cáo cung cấp, tách biệt với ảnh của nội dung gốc.",
+                evidenceImages,
+                "Không có ảnh bằng chứng từ người báo cáo",
+              )}
             </div>
           ) : null}
         </section>
@@ -1815,6 +2294,15 @@ const DisputeManagementPage = () => {
           void performAction();
         }}
       >
+        {actionFeedback?.type === "error" && (
+          <Alert
+            className="mb-4"
+            type="error"
+            showIcon
+            message={actionFeedback.message}
+          />
+        )}
+
         {actionMode === "claim" && (
           <Alert
             type="info"
@@ -1823,8 +2311,34 @@ const DisputeManagementPage = () => {
           />
         )}
 
+        {actionMode === "resolve" &&
+          isContentTarget && (
+            <Alert
+              className="mb-4"
+              type="warning"
+              showIcon
+              message={
+                isPostTarget
+                  ? "Bài đăng sẽ bị đình chỉ và tác giả có thể bị trừ điểm uy tín theo chính sách hiện hành."
+                  : "Đánh giá sẽ bị ẩn, điểm sao liên quan sẽ được tính lại và tác giả đánh giá có thể bị trừ điểm uy tín theo chính sách hiện hành."
+              }
+              description="Áp dụng mức phạt theo chính sách hiện hành nếu nội dung chưa từng bị xác nhận vi phạm."
+            />
+          )}
+
+        {actionMode === "reject" &&
+          isContentTarget && (
+            <Alert
+              className="mb-4"
+              type="warning"
+              showIcon
+              message="Từ chối báo cáo này? Nội dung hiện tại sẽ không bị thay đổi bởi quyết định này."
+            />
+          )}
+
         {actionMode ===
-          "resolve" && (
+          "resolve" &&
+          isOrderTarget && (
           <>
             <p className="mb-2 font-semibold text-text">
               Kết luận

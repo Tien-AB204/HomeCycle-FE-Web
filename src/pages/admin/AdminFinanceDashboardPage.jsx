@@ -192,6 +192,36 @@ const normalize = (value) =>
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
 
+/*
+ * Doanh thu nền tảng chỉ gồm Phí hoa hồng và Phí gói dịch vụ - không bao
+ * gồm phí vận chuyển GHN (tiền hộ, không phải doanh thu HomeCycle). Dùng
+ * mapping riêng cho khu vực Doanh thu để không phụ thuộc vào cách đặt câu
+ * chữ của khu vực Sổ giao dịch (TRANSACTION_TYPE_LABELS).
+ */
+const REVENUE_SOURCE_LABELS = {
+  commissionfee: "Phí hoa hồng",
+  subscriptionfee: "Phí gói dịch vụ",
+};
+
+const findRevenueSourceAmount = (
+  sources,
+  type,
+) => {
+  const match = Array.isArray(
+    sources,
+  )
+    ? sources.find(
+        (item) =>
+          normalize(
+            item?.key ||
+              item?.label,
+          ) === normalize(type),
+      )
+    : null;
+
+  return match?.amount;
+};
+
 const enumLabel = (
   value,
   dictionary,
@@ -644,6 +674,7 @@ export default function AdminFinanceDashboardPage() {
       cashFlow: null,
       paymentStatus: null,
       health: null,
+      revenue: null,
       errors: {},
     });
 
@@ -705,6 +736,10 @@ export default function AdminFinanceDashboardPage() {
         .getFinanceHealth(
           args,
         ),
+      adminDashboardApi
+        .getFinanceRevenue(
+          args,
+        ),
     ]).then((results) => {
       if (!active) {
         return;
@@ -715,6 +750,7 @@ export default function AdminFinanceDashboardPage() {
         cashFlowResult,
         paymentStatusResult,
         healthResult,
+        revenueResult,
       ] = results;
 
       const errors = {};
@@ -759,6 +795,16 @@ export default function AdminFinanceDashboardPage() {
         errors.health = true;
       }
 
+      if (
+        revenueResult.status ===
+        "rejected" &&
+        !isCanceled(
+          revenueResult.reason,
+        )
+      ) {
+        errors.revenue = true;
+      }
+
       setMainState({
         requestKey:
           mainRequestKey,
@@ -781,6 +827,11 @@ export default function AdminFinanceDashboardPage() {
           healthResult.status ===
           "fulfilled"
             ? healthResult.value
+            : null,
+        revenue:
+          revenueResult.status ===
+          "fulfilled"
+            ? revenueResult.value
             : null,
         errors,
       });
@@ -915,6 +966,9 @@ export default function AdminFinanceDashboardPage() {
   const health =
     mainState.health;
 
+  const revenue =
+    mainState.revenue;
+
   const position =
     overview?.position;
 
@@ -925,7 +979,8 @@ export default function AdminFinanceDashboardPage() {
     overview?.period ||
     cashFlow?.period ||
     paymentStatus?.period ||
-    health?.period;
+    health?.period ||
+    revenue?.period;
 
   const paymentDonutRows =
     Array.isArray(
@@ -1646,6 +1701,77 @@ export default function AdminFinanceDashboardPage() {
               />
             </div>
           </>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            DOANH THU NỀN TẢNG
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-text">
+            Tổng doanh thu theo kỳ
+          </h3>
+
+          <p className="mt-1 text-sm text-textLight">
+            Doanh thu là phần tiền thuộc về HomeCycle, gồm phí hoa hồng và phí gói dịch vụ. Phí vận chuyển GHN không phải doanh thu và không được tính vào đây.
+          </p>
+        </div>
+
+        {mainState.errors
+          .revenue ? (
+          <SectionError
+            message="Không thể tải dữ liệu doanh thu nền tảng."
+            onRetry={
+              refreshAll
+            }
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <MetricCard
+              label="Tổng doanh thu"
+              value={formatMoney(
+                revenue
+                  ?.totalRevenue,
+              )}
+              hint="Chỉ gồm phí hoa hồng và phí gói dịch vụ đã ghi nhận hoàn tất trong kỳ."
+              loading={
+                mainLoading
+              }
+              valueClassName="text-primary"
+            />
+
+            <MetricCard
+              label={
+                REVENUE_SOURCE_LABELS.subscriptionfee
+              }
+              value={formatMoney(
+                findRevenueSourceAmount(
+                  revenue?.sources,
+                  "SubscriptionFee",
+                ),
+              )}
+              loading={
+                mainLoading
+              }
+            />
+
+            <MetricCard
+              label={
+                REVENUE_SOURCE_LABELS.commissionfee
+              }
+              value={formatMoney(
+                findRevenueSourceAmount(
+                  revenue?.sources,
+                  "CommissionFee",
+                ),
+              )}
+              loading={
+                mainLoading
+              }
+            />
+          </div>
         )}
       </section>
 

@@ -39,6 +39,7 @@ import AdminSystemWalletPage from "../pages/admin/AdminSystemWalletPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
+import DisputeCategoryPage from "../pages/admin/DisputeCategoryPage";
 import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
 import PostManagementPage from "../pages/admin/PostManagementPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
@@ -325,6 +326,11 @@ const AppRouter = () => {
           />
 
           <Route path="policies" element={<PlatformPolicyPage />} />
+
+          <Route
+            path="dispute-categories"
+            element={<DisputeCategoryPage />}
+          />
         </Route>
       </Route>
       <Route path="*" element={<ErrorPage notFound />} />

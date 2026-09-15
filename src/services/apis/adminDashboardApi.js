@@ -162,7 +162,7 @@ const adminDashboardApi = {
     groupBy = "Day",
     status,
     targetType,
-    category,
+    disputeCategoryId,
     signal,
   } = {}) =>
     axiosClient.get(
@@ -174,7 +174,7 @@ const adminDashboardApi = {
           groupBy,
           status,
           targetType,
-          category,
+          disputeCategoryId,
         }),
         signal,
         skipGlobalErrorPage: true,
@@ -309,6 +309,25 @@ const adminDashboardApi = {
   } = {}) =>
     axiosClient.get(
       "/admin/dashboard/finance/health",
+      {
+        params: cleanParams({
+          from,
+          to,
+          groupBy,
+        }),
+        signal,
+        skipGlobalErrorPage: true,
+      },
+    ),
+
+  getFinanceRevenue: async ({
+    from,
+    to,
+    groupBy = "Day",
+    signal,
+  } = {}) =>
+    axiosClient.get(
+      "/admin/dashboard/finance/revenue",
       {
         params: cleanParams({
           from,
