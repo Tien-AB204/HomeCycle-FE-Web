@@ -185,12 +185,19 @@ export const reviewApi = {
     return normalizeReview(response);
   },
 
-  getById: async (reviewId, { signal } = {}) => {
+  getById: async (
+    reviewId,
+    {
+      signal,
+      skipGlobalErrorPage = false,
+    } = {},
+  ) => {
     const id = normalizeIdentifier(reviewId, "Không tìm thấy mã đánh giá.");
     const response = await axiosClient.get(
       `/reviews/${encodeURIComponent(id)}`,
       {
         signal,
+        skipGlobalErrorPage,
       },
     );
 

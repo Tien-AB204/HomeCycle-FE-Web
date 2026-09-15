@@ -12,6 +12,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
 import { normalizeRole } from "../../utils/authUtils";
 import Avatar from "../shared/Avatar";
+import NotificationBell from "../shared/NotificationBell";
 
 const PUBLIC_NAVIGATION = [
   { name: "Trang chủ", path: "/" },
@@ -229,30 +230,7 @@ const MainLayout = () => {
                 )}
 
                 {canUseClientAccount && (
-                  <Link
-                    to="/thong-bao"
-                    aria-label={
-                      unreadCount > 0
-                        ? "Thông báo, " + unreadCount + " chưa đọc"
-                        : "Thông báo"
-                    }
-                    className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-primary shadow-sm transition hover:bg-background"
-                  >
-                    <span
-                      className="material-symbols-outlined text-[22px]"
-                      aria-hidden="true"
-                    >
-                      notifications
-                    </span>
-
-                    {unreadCount > 0 && (
-                      <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-error px-1 text-[10px] font-black leading-none text-white">
-                        {unreadCount > 99
-                          ? "99+"
-                          : unreadCount}
-                      </span>
-                    )}
-                  </Link>
+                  <NotificationBell allNotificationsPath="/thong-bao" />
                 )}
 
                 <div className="flex items-center overflow-hidden rounded-full border border-border bg-white shadow-sm">

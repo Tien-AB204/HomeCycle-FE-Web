@@ -1,62 +1,26 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {
   useNavigate,
 } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import { useNotifications } from "../../hooks/useNotifications";
 import notificationApi, {
   normalizeNotification,
   normalizeNotificationTargetType,
 } from "../../services/apis/notificationApi";
-import offerApi from "../../services/apis/offerApi";
+import {
+  formatNotificationTime,
+  NOTIFICATION_TARGET_META,
+  openNotificationTarget,
+} from "../../utils/notificationNavigation";
 
 const PAGE_SIZE = 20;
-
-const TARGET_META = {
-  offer: {
-    icon: "sell",
-    label: "Đề nghị",
-  },
-
-  negotiation: {
-    icon: "forum",
-    label: "Thương lượng",
-  },
-
-  agreement: {
-    icon: "description",
-    label: "Thỏa thuận",
-  },
-
-  order: {
-    icon: "receipt_long",
-    label: "Đơn hàng",
-  },
-
-  dispute: {
-    icon: "gavel",
-    label: "Tranh chấp",
-  },
-
-  post: {
-    icon: "article",
-    label: "Bài đăng",
-  },
-
-  appointment: {
-    icon: "calendar_month",
-    label: "Lịch hẹn",
-  },
-
-  withdrawal: {
-    icon: "account_balance_wallet",
-    label: "Rút tiền",
-  },
-};
 
 const getErrorMessage = (
   error,
@@ -67,88 +31,16 @@ const getErrorMessage = (
       ?.error?.message ||
     error?.response?.data
       ?.message ||
+    error?.message ||
     fallback
   );
-};
-
-const formatTimeAgo = (
-  value,
-) => {
-  if (!value) {
-    return "";
-  }
-
-  const date =
-    new Date(value);
-
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
-    return "";
-  }
-
-  const seconds =
-    Math.max(
-      0,
-      Math.floor(
-        (
-          Date.now() -
-          date.getTime()
-        ) / 1000,
-      ),
-    );
-
-  if (seconds < 60) {
-    return "Vừa xong";
-  }
-
-  const minutes =
-    Math.floor(
-      seconds / 60,
-    );
-
-  if (minutes < 60) {
-    return (
-      minutes +
-      " phút trước"
-    );
-  }
-
-  const hours =
-    Math.floor(
-      minutes / 60,
-    );
-
-  if (hours < 24) {
-    return (
-      hours +
-      " giờ trước"
-    );
-  }
-
-  const days =
-    Math.floor(
-      hours / 24,
-    );
-
-  if (days < 30) {
-    return (
-      days +
-      " ngày trước"
-    );
-  }
-
-  return date
-    .toLocaleDateString(
-      "vi-VN",
-    );
 };
 
 const NotificationPage = () => {
   const navigate =
     useNavigate();
+
+  const { user } = useAuth();
 
   const {
     connection,
@@ -208,11 +100,28 @@ const NotificationPage = () => {
     setNotice,
   ] = useState("");
 
+  const firstPageRequestRef =
+    useRef({ id: 0, controller: null });
+  const loadMoreRequestRef =
+    useRef({ id: 0, controller: null });
+  const mutationVersionRef =
+    useRef(0);
+  const knownIdsRef =
+    useRef(new Set());
+
   const loadFirstPage =
     useCallback(
       async ({
         silent = false,
       } = {}) => {
+        firstPageRequestRef.current.controller?.abort();
+        loadMoreRequestRef.current.controller?.abort();
+
+        const controller = new AbortController();
+        const requestId = firstPageRequestRef.current.id + 1;
+        const mutationVersion = mutationVersionRef.current;
+        firstPageRequestRef.current = { id: requestId, controller };
+
         if (!silent) {
           setLoading(true);
         }
@@ -225,16 +134,59 @@ const NotificationPage = () => {
               .getMine({
                 pageNumber: 1,
                 pageSize: PAGE_SIZE,
+                signal: controller.signal,
               });
 
-          setItems(
-            result.items,
+          if (
+            controller.signal.aborted ||
+            firstPageRequestRef.current.id !== requestId
+          ) {
+            return;
+          }
+
+          result.items.forEach((item) =>
+            knownIdsRef.current.add(item.notificationId),
           );
 
-          setPagination(
-            result,
+          setItems((current) => {
+            if (mutationVersionRef.current === mutationVersion) {
+              knownIdsRef.current = new Set(
+                result.items.map((item) => item.notificationId),
+              );
+              return result.items;
+            }
+
+            const currentIds = new Set(
+              current.map((item) => item.notificationId),
+            );
+            return [
+              ...current,
+              ...result.items.filter(
+                (item) => !currentIds.has(item.notificationId),
+              ),
+            ];
+          });
+
+          setPagination((current) =>
+            mutationVersionRef.current === mutationVersion
+              ? result
+              : {
+                  ...result,
+                  totalCount: Math.max(
+                    current.totalCount,
+                    result.totalCount,
+                  ),
+                },
           );
         } catch (loadError) {
+          if (
+            controller.signal.aborted ||
+            loadError?.name === "CanceledError" ||
+            loadError?.code === "ERR_CANCELED"
+          ) {
+            return;
+          }
+
           setError(
             getErrorMessage(
               loadError,
@@ -242,7 +194,10 @@ const NotificationPage = () => {
             ),
           );
         } finally {
-          if (!silent) {
+          if (
+            !silent &&
+            firstPageRequestRef.current.id === requestId
+          ) {
             setLoading(false);
           }
         }
@@ -266,6 +221,8 @@ const NotificationPage = () => {
       window.clearTimeout(
         timeoutId,
       );
+      firstPageRequestRef.current.controller?.abort();
+      loadMoreRequestRef.current.controller?.abort();
     };
   }, [
     loadFirstPage,
@@ -316,18 +273,15 @@ const NotificationPage = () => {
         return;
       }
 
+      if (knownIdsRef.current.has(item.notificationId)) {
+        return;
+      }
+
+      knownIdsRef.current.add(item.notificationId);
+      mutationVersionRef.current += 1;
+
       setItems(
         (current) => {
-          if (
-            current.some(
-              (existing) =>
-                existing.notificationId ===
-                item.notificationId,
-            )
-          ) {
-            return current;
-          }
-
           return [
             item,
             ...current,
@@ -363,6 +317,8 @@ const NotificationPage = () => {
         return;
       }
 
+      mutationVersionRef.current += 1;
+
       setItems(
         (current) =>
           current.map(
@@ -380,6 +336,7 @@ const NotificationPage = () => {
 
     const handleAllRead =
       () => {
+        mutationVersionRef.current += 1;
         setItems(
           (current) =>
             current.map(
@@ -436,6 +393,11 @@ const NotificationPage = () => {
       setLoadingMore(true);
       setError("");
 
+      loadMoreRequestRef.current.controller?.abort();
+      const controller = new AbortController();
+      const requestId = loadMoreRequestRef.current.id + 1;
+      loadMoreRequestRef.current = { id: requestId, controller };
+
       try {
         const result =
           await notificationApi
@@ -446,7 +408,19 @@ const NotificationPage = () => {
 
               pageSize:
                 PAGE_SIZE,
+              signal: controller.signal,
             });
+
+        if (
+          controller.signal.aborted ||
+          loadMoreRequestRef.current.id !== requestId
+        ) {
+          return;
+        }
+
+        result.items.forEach((item) =>
+          knownIdsRef.current.add(item.notificationId),
+        );
 
         setItems(
           (current) => {
@@ -470,10 +444,19 @@ const NotificationPage = () => {
           },
         );
 
-        setPagination(
-          result,
-        );
+        setPagination((current) => ({
+          ...result,
+          totalCount: Math.max(current.totalCount, result.totalCount),
+        }));
       } catch (loadError) {
+        if (
+          controller.signal.aborted ||
+          loadError?.name === "CanceledError" ||
+          loadError?.code === "ERR_CANCELED"
+        ) {
+          return;
+        }
+
         setError(
           getErrorMessage(
             loadError,
@@ -481,7 +464,9 @@ const NotificationPage = () => {
           ),
         );
       } finally {
-        setLoadingMore(false);
+        if (loadMoreRequestRef.current.id === requestId) {
+          setLoadingMore(false);
+        }
       }
     };
 
@@ -500,6 +485,8 @@ const NotificationPage = () => {
 
       try {
         await markAllNotificationsAsRead();
+
+        mutationVersionRef.current += 1;
 
         setItems(
           (current) =>
@@ -528,124 +515,11 @@ const NotificationPage = () => {
 
   const navigateToTarget =
     async (item) => {
-      const targetType =
-        normalizeNotificationTargetType(
-          item.targetType,
-        );
-
-      const targetId =
-        String(
-          item.targetId || "",
-        ).trim();
-
-      if (
-        !targetType ||
-        !targetId
-      ) {
-        setNotice(
-          "Thông báo này chưa có nội dung chi tiết để mở.",
-        );
-
-        return;
-      }
-
-      switch (targetType) {
-        case "offer": {
-          const offer =
-            await offerApi
-              .getById(
-                targetId,
-              );
-
-          const negotiationId =
-            String(
-              offer
-                ?.negotiationId ||
-                "",
-            ).trim();
-
-          if (negotiationId) {
-            navigate(
-              "/thuong-luong/" +
-                encodeURIComponent(
-                  negotiationId,
-                ),
-            );
-
-            return;
-          }
-
-          navigate(
-            "/thuong-luong",
-          );
-
-          return;
-        }
-
-        case "negotiation":
-          navigate(
-            "/thuong-luong/" +
-              encodeURIComponent(
-                targetId,
-              ),
-          );
-          return;
-
-        case "agreement":
-          navigate(
-            "/thoa-thuan/" +
-              encodeURIComponent(
-                targetId,
-              ),
-          );
-          return;
-
-        case "order":
-          navigate(
-            "/don-hang/" +
-              encodeURIComponent(
-                targetId,
-              ),
-          );
-          return;
-
-        case "dispute":
-          navigate(
-            "/tranh-chap/" +
-              encodeURIComponent(
-                targetId,
-              ),
-          );
-          return;
-
-        case "post":
-          navigate(
-            "/posts/" +
-              encodeURIComponent(
-                targetId,
-              ),
-          );
-          return;
-
-        case "appointment":
-          /*
-           * Web hiện chỉ có trang danh sách lịch hẹn.
-           * Không bịa route detail chưa tồn tại.
-           */
-          navigate(
-            "/lich-hen",
-          );
-          return;
-
-        case "withdrawal":
-          navigate(
-            "/vi",
-          );
-          return;
-
-        default:
-          return;
-      }
+      await openNotificationTarget({
+        item,
+        userRole: user?.role,
+        navigate,
+      });
     };
 
   const openNotification =
@@ -666,6 +540,8 @@ const NotificationPage = () => {
           await markNotificationAsRead(
             item.notificationId,
           );
+
+          mutationVersionRef.current += 1;
 
           setItems(
             (current) =>
@@ -836,7 +712,7 @@ const NotificationPage = () => {
                 );
 
               const meta =
-                TARGET_META[
+                NOTIFICATION_TARGET_META[
                   targetType
                 ] || {
                   icon:
@@ -910,7 +786,7 @@ const NotificationPage = () => {
 
                       {item.createdAt && (
                         <span>
-                          {formatTimeAgo(
+                          {formatNotificationTime(
                             item.createdAt,
                           )}
                         </span>

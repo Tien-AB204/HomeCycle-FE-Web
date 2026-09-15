@@ -204,6 +204,8 @@ const AppRouter = () => {
           {/* ThÃªm Route cho Dashboard má»›i */}
           <Route path="dashboard" element={<ModDashboardPage />} />
 
+          <Route path="notifications" element={<NotificationPage />} />
+
           <Route path="verification" element={<VerificationPage />} />
 
           <Route path="posts" element={<PostModerationPage />} />
@@ -245,6 +247,8 @@ const AppRouter = () => {
           <Route index element={<AdminDashboardPage />} />
 
           <Route path="dashboard" element={<AdminDashboardPage />} />
+
+          <Route path="notifications" element={<NotificationPage />} />
 
           <Route
             path="dashboard/finance"

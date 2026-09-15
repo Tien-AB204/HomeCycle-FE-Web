@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useLocation } from "react-router-dom";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import walletApi from "../../services/apis/walletApi";
@@ -254,6 +255,7 @@ const maskBankAccountNumber = (
 };
 
 const WalletPage = () => {
+  const location = useLocation();
   const { user } =
     useAuth();
 
@@ -372,6 +374,9 @@ const WalletPage = () => {
 
   const detailControllerRef =
     useRef(null);
+
+  const handledNotificationLocationRef =
+    useRef("");
 
   const availableBalance =
     Number(
@@ -570,7 +575,7 @@ const WalletPage = () => {
     };
   }, [loadWithdrawalHistory]);
 
-  const loadWithdrawalDetail = (
+  const loadWithdrawalDetail = useCallback((
     withdrawalId,
   ) => {
     detailControllerRef.current?.abort();
@@ -641,9 +646,9 @@ const WalletPage = () => {
             "Không thể tải chi tiết yêu cầu rút tiền. Vui lòng thử lại.",
         });
       });
-  };
+  }, []);
 
-  const openWithdrawalDetail = (
+  const openWithdrawalDetail = useCallback((
     withdrawalId,
   ) => {
     const id = String(
@@ -664,7 +669,27 @@ const WalletPage = () => {
     setSelectedWithdrawalId(id);
     setIsBankAccountRevealed(false);
     loadWithdrawalDetail(id);
-  };
+  }, [
+    loadWithdrawalDetail,
+    selectedWithdrawalId,
+    withdrawalDetailState.loading,
+  ]);
+
+  useEffect(() => {
+    const withdrawalId = String(
+      location.state?.notificationWithdrawalId || "",
+    ).trim();
+
+    if (
+      !withdrawalId ||
+      handledNotificationLocationRef.current === location.key
+    ) {
+      return;
+    }
+
+    handledNotificationLocationRef.current = location.key;
+    openWithdrawalDetail(withdrawalId);
+  }, [location.key, location.state, openWithdrawalDetail]);
 
   const closeWithdrawalDetail = () => {
     detailControllerRef.current?.abort();

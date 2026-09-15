@@ -264,14 +264,23 @@ export const offerApi = {
     return ensureOffer(response, "Không thể cập nhật đề nghị.");
   },
 
-  getById: async (offerId, { signal } = {}) => {
+  getById: async (
+    offerId,
+    {
+      signal,
+      skipGlobalErrorPage = false,
+    } = {},
+  ) => {
     const normalizedOfferId = normalizeIdentifier(
       offerId,
       "Không tìm thấy mã đề nghị.",
     );
     const response = await axiosClient.get(
       `/offers/${encodeURIComponent(normalizedOfferId)}`,
-      { signal },
+      {
+        signal,
+        skipGlobalErrorPage,
+      },
     );
 
     return ensureOffer(response, "Không thể tải chi tiết đề nghị.");

@@ -126,6 +126,7 @@ export default function AdminLayout() {
       navAriaLabel="Điều hướng quản trị"
       openMenuAriaLabel="Mở menu quản trị"
       closeMenuAriaLabel="Đóng menu quản trị"
+      notificationsPath="/admin/notifications"
     />
   );
 }

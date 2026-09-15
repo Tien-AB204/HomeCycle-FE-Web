@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 import {
   APPOINTMENT_PERSPECTIVE,
   APPOINTMENT_STATUS_OPTIONS,
@@ -659,6 +660,7 @@ const AppointmentDetailModal = ({
 };
 
 const AppointmentPage = () => {
+  const location = useLocation();
   const { user } = useAuth();
   const isBusiness =
     user?.role === ROLES.BUSINESS;
@@ -675,6 +677,38 @@ const AppointmentPage = () => {
     items: [],
     error: "",
   });
+  const handledNotificationLocationRef = useRef("");
+
+  useEffect(() => {
+    if (state.loading || handledNotificationLocationRef.current === location.key) {
+      return;
+    }
+
+    const appointmentId = String(
+      location.state?.notificationAppointmentId || "",
+    ).trim();
+    if (!appointmentId) return;
+
+    handledNotificationLocationRef.current = location.key;
+    const appointment = state.items.find(
+      (item) => String(item.appointmentId) === appointmentId,
+    );
+
+    const timeoutId = window.setTimeout(() => {
+      if (!appointment) {
+        setState((current) => ({
+          ...current,
+          error: "Không tìm thấy lịch hẹn được liên kết với thông báo này.",
+        }));
+        return;
+      }
+
+      setSelectedId(appointment.appointmentId);
+      setSelectedPerspective(appointment.viewPerspective);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [location.key, location.state, state.items, state.loading]);
 
   useEffect(() => {
     const controller = new AbortController();

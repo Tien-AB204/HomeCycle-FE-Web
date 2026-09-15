@@ -9,9 +9,20 @@ import {
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
 import EvidenceImage from "../../components/shared/EvidenceImage";
+import { useLocation } from "react-router-dom";
 
 const VerificationPage = () => {
-  const [activeTab, setActiveTab] = useState("business");
+  const location = useLocation();
+  const notificationProfileId = String(
+    location.state?.notificationProfileId || "",
+  ).trim();
+  const notificationProfileTab =
+    location.state?.notificationProfileType === "personalProfile"
+      ? "personal"
+      : "business";
+  const [activeTab, setActiveTab] = useState(
+    notificationProfileId ? notificationProfileTab : "business",
+  );
   const [profiles, setProfiles] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -87,7 +98,9 @@ const VerificationPage = () => {
         activeTab === "business"
           ? "/moderator/business-profiles/pending"
           : "/moderator/personal-profiles/pending";
-      const res = await axiosClient.get(endpoint);
+      const res = await axiosClient.get(endpoint, {
+        skipGlobalErrorPage: true,
+      });
       const payload = res.data !== undefined ? res.data : res;
       return (
         payload.data || payload.items || (Array.isArray(payload) ? payload : [])
@@ -102,7 +115,9 @@ const VerificationPage = () => {
       activeTab === "business"
         ? `/moderator/business-profiles/${id}`
         : `/moderator/personal-profiles/${id}`;
-    const res = await axiosClient.get(endpoint);
+    const res = await axiosClient.get(endpoint, {
+      skipGlobalErrorPage: true,
+    });
     const payload = res.data !== undefined ? res.data : res;
     return payload.data || payload;
   }, [activeTab]);
@@ -117,6 +132,7 @@ const VerificationPage = () => {
       const res = await axiosClient.post(
         "/moderator/business-profiles/review",
         payload,
+        { skipGlobalErrorPage: true },
       );
       return res.data;
     } else {
@@ -126,6 +142,7 @@ const VerificationPage = () => {
       const res = await axiosClient.post(
         `/moderator/personal-profiles/${id}/review`,
         payload,
+        { skipGlobalErrorPage: true },
       );
       return res.data;
     }
@@ -142,7 +159,11 @@ const VerificationPage = () => {
       if (cancelled) return;
 
       setProfiles(data);
-      setSelectedProfileId(null);
+      setSelectedProfileId(
+        notificationProfileId && activeTab === notificationProfileTab
+          ? notificationProfileId
+          : null,
+      );
       setProfileDetail(null);
       setActionState("idle");
       setRejectReason("");
@@ -155,7 +176,23 @@ const VerificationPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [fetchProfilesList]);
+  }, [
+    activeTab,
+    fetchProfilesList,
+    location.key,
+    notificationProfileId,
+    notificationProfileTab,
+  ]);
+
+  useEffect(() => {
+    if (!notificationProfileId) return undefined;
+
+    const timeoutId = window.setTimeout(
+      () => setActiveTab(notificationProfileTab),
+      0,
+    );
+    return () => window.clearTimeout(timeoutId);
+  }, [location.key, notificationProfileId, notificationProfileTab]);
 
   const filteredProfiles = debouncedKeyword
     ? profiles.filter((p) => {

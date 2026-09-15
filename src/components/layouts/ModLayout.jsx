@@ -76,6 +76,7 @@ export default function ModLayout() {
       navAriaLabel="Điều hướng kiểm duyệt"
       openMenuAriaLabel="Mở menu kiểm duyệt"
       closeMenuAriaLabel="Đóng menu kiểm duyệt"
+      notificationsPath="/mod/notifications"
     />
   );
 }

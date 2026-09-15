@@ -24,6 +24,7 @@ import {
   ReloadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import { useLocation } from "react-router-dom";
 import Avatar from "../../components/shared/Avatar";
 import moderatorDisputeApi from "../../services/apis/moderatorDisputeApi";
 
@@ -563,6 +564,8 @@ const getActionFlag = (
 const DisputeManagementPage = ({
   initialTargetType,
 } = {}) => {
+  const location = useLocation();
+
   const normalizedInitialTargetType =
     normalizeEnumValue(
       initialTargetType,
@@ -580,6 +583,8 @@ const DisputeManagementPage = ({
     selectedDisputeId,
     setSelectedDisputeId,
   ] = useState(null);
+  const handledNotificationLocationRef =
+    useRef("");
   const [detail, setDetail] =
     useState(null);
   const [
@@ -642,6 +647,29 @@ const DisputeManagementPage = ({
     actionFeedback,
     setActionFeedback,
   ] = useState(null);
+
+  useEffect(() => {
+    const disputeId = String(
+      location.state?.notificationDisputeId || "",
+    ).trim();
+
+    if (
+      !disputeId ||
+      handledNotificationLocationRef.current === location.key
+    ) {
+      return undefined;
+    }
+
+    handledNotificationLocationRef.current = location.key;
+    const timeoutId = window.setTimeout(() => {
+      setDetail(null);
+      setDetailError(null);
+      setActionFeedback(null);
+      setSelectedDisputeId(disputeId);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [location.key, location.state]);
 
   const listParams = useMemo(() => {
     const fromDate =
