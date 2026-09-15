@@ -99,6 +99,7 @@ const moderatorWithdrawalApi = {
     const response = await axiosClient.get("/moderator/withdrawals", {
       params,
       signal,
+      skipGlobalErrorPage: true,
     });
 
     return normalizePagedResponse(
@@ -122,7 +123,10 @@ const moderatorWithdrawalApi = {
 
     const response = await axiosClient.get(
       `/moderator/withdrawals/${encodeURIComponent(id)}`,
-      { signal },
+      {
+        signal,
+        skipGlobalErrorPage: true,
+      },
     );
 
     const source = response?.data ?? response ?? {};
@@ -138,6 +142,55 @@ const moderatorWithdrawalApi = {
     }
 
     return source;
+  },
+
+  approve: async (withdrawalId) => {
+    const id = String(withdrawalId || "").trim();
+
+    if (!id) {
+      throw new Error(
+        "Không tìm thấy mã yêu cầu rút tiền.",
+      );
+    }
+
+    const response = await axiosClient.post(
+      `/moderator/withdrawals/${encodeURIComponent(id)}/approve`,
+      undefined,
+      { skipGlobalErrorPage: true },
+    );
+
+    return response?.data ?? response ?? {};
+  },
+
+  reject: async (withdrawalId, reason) => {
+    const id = String(withdrawalId || "").trim();
+    const normalizedReason = String(reason || "").trim();
+
+    if (!id) {
+      throw new Error(
+        "Không tìm thấy mã yêu cầu rút tiền.",
+      );
+    }
+
+    if (!normalizedReason) {
+      throw new Error(
+        "Vui lòng nhập lý do từ chối.",
+      );
+    }
+
+    if (normalizedReason.length > 500) {
+      throw new Error(
+        "Lý do từ chối tối đa 500 ký tự.",
+      );
+    }
+
+    const response = await axiosClient.post(
+      `/moderator/withdrawals/${encodeURIComponent(id)}/reject`,
+      { reason: normalizedReason },
+      { skipGlobalErrorPage: true },
+    );
+
+    return response?.data ?? response ?? {};
   },
 };
 

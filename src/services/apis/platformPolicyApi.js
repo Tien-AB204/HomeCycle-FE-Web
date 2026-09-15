@@ -5,6 +5,7 @@ export const PLATFORM_POLICY_TYPES = Object.freeze({
   APPOINTMENT: "appointment",
   FILE_UPLOAD: "file-upload",
   PAYMENT: "payment",
+  WITHDRAWAL: "withdrawal",
   ORDER: "order",
   RATING: "rating",
 });
