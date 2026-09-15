@@ -42,6 +42,13 @@ const POLICY_TABS = [
     icon: "payments",
   },
   {
+    key: PLATFORM_POLICY_TYPES.WITHDRAWAL,
+    label: "Rút tiền",
+    description:
+      "Giới hạn số tiền cho mỗi yêu cầu và hạn mức rút tiền trong ngày.",
+    icon: "account_balance_wallet",
+  },
+  {
     key: PLATFORM_POLICY_TYPES.ORDER,
     label: "Đơn hàng",
     description:
@@ -162,6 +169,33 @@ const PAYMENT_FIELDS = [
     unit: "phút",
     min: 1,
     max: 1440,
+    integer: true,
+    step: "1",
+  },
+];
+
+const WITHDRAWAL_FIELDS = [
+  {
+    name: "minimumWithdrawalAmount",
+    label: "Số tiền rút tối thiểu",
+    unit: "đ",
+    min: 1,
+    integer: true,
+    step: "1",
+  },
+  {
+    name: "maximumWithdrawalAmount",
+    label: "Số tiền tối đa mỗi yêu cầu",
+    unit: "đ",
+    min: 1,
+    integer: true,
+    step: "1",
+  },
+  {
+    name: "dailyWithdrawalLimit",
+    label: "Hạn mức rút tiền mỗi ngày",
+    unit: "đ",
+    min: 1,
     integer: true,
     step: "1",
   },
@@ -440,6 +474,36 @@ const getRelationshipError = (policyType, draft) => {
     }
   }
 
+  if (policyType === PLATFORM_POLICY_TYPES.WITHDRAWAL) {
+    const minimumWithdrawalAmount = getDraftInteger(
+      draft.minimumWithdrawalAmount,
+    );
+
+    const maximumWithdrawalAmount = getDraftInteger(
+      draft.maximumWithdrawalAmount,
+    );
+
+    const dailyWithdrawalLimit = getDraftInteger(
+      draft.dailyWithdrawalLimit,
+    );
+
+    if (
+      minimumWithdrawalAmount !== null &&
+      maximumWithdrawalAmount !== null &&
+      minimumWithdrawalAmount > maximumWithdrawalAmount
+    ) {
+      return "Số tiền rút tối thiểu không được lớn hơn số tiền tối đa của mỗi yêu cầu.";
+    }
+
+    if (
+      maximumWithdrawalAmount !== null &&
+      dailyWithdrawalLimit !== null &&
+      maximumWithdrawalAmount > dailyWithdrawalLimit
+    ) {
+      return "Số tiền tối đa của mỗi yêu cầu không được lớn hơn hạn mức rút tiền mỗi ngày.";
+    }
+  }
+
   if (policyType === PLATFORM_POLICY_TYPES.RATING) {
     const minimumReputationScore = getDraftInteger(
       draft.minimumReputationScore,
@@ -536,17 +600,27 @@ function NumberPolicyField({
   disabled,
   onChange,
 }) {
-  const rangeDescription = field.minExclusive
-    ? `Lớn hơn ${new Intl.NumberFormat("vi-VN").format(
-        field.min,
-      )} và không vượt quá ${new Intl.NumberFormat(
-        "vi-VN",
-      ).format(field.max)} ${field.unit}.`
-    : `Từ ${new Intl.NumberFormat("vi-VN").format(
-        field.min,
-      )} đến ${new Intl.NumberFormat("vi-VN").format(
-        field.max,
-      )} ${field.unit}.`;
+  const hasMaximum = Number.isFinite(field.max);
+
+  const rangeDescription = hasMaximum
+    ? field.minExclusive
+      ? `Lớn hơn ${new Intl.NumberFormat("vi-VN").format(
+          field.min,
+        )} và không vượt quá ${new Intl.NumberFormat(
+          "vi-VN",
+        ).format(field.max)} ${field.unit}.`
+      : `Từ ${new Intl.NumberFormat("vi-VN").format(
+          field.min,
+        )} đến ${new Intl.NumberFormat("vi-VN").format(
+          field.max,
+        )} ${field.unit}.`
+    : field.minExclusive
+      ? `Lớn hơn ${new Intl.NumberFormat("vi-VN").format(
+          field.min,
+        )} ${field.unit}.`
+      : `Từ ${new Intl.NumberFormat("vi-VN").format(
+          field.min,
+        )} ${field.unit} trở lên.`;
 
   return (
     <label className="block rounded-2xl border border-border bg-background/60 p-4">
@@ -721,11 +795,13 @@ function VersionDetail({ detail, policyType }) {
         ? APPOINTMENT_FIELDS
         : policyType === PLATFORM_POLICY_TYPES.PAYMENT
           ? PAYMENT_FIELDS
-          : policyType === PLATFORM_POLICY_TYPES.ORDER
-            ? ORDER_FIELDS
-            : policyType === PLATFORM_POLICY_TYPES.RATING
-              ? RATING_FIELDS
-              : [];
+          : policyType === PLATFORM_POLICY_TYPES.WITHDRAWAL
+            ? WITHDRAWAL_FIELDS
+            : policyType === PLATFORM_POLICY_TYPES.ORDER
+              ? ORDER_FIELDS
+              : policyType === PLATFORM_POLICY_TYPES.RATING
+                ? RATING_FIELDS
+                : [];
 
   return (
     <div className="mt-5 rounded-2xl border border-primary/20 bg-background/60 p-5">
@@ -839,6 +915,10 @@ export default function PlatformPolicyPage() {
 
     if (activeTab === PLATFORM_POLICY_TYPES.PAYMENT) {
       return PAYMENT_FIELDS;
+    }
+
+    if (activeTab === PLATFORM_POLICY_TYPES.WITHDRAWAL) {
+      return WITHDRAWAL_FIELDS;
     }
 
     if (activeTab === PLATFORM_POLICY_TYPES.ORDER) {
@@ -1047,13 +1127,21 @@ export default function PlatformPolicyPage() {
         ? value <= field.min
         : value < field.min;
 
+      const hasMaximum = Number.isFinite(field.max);
+      const aboveMaximum =
+        hasMaximum && value > field.max;
+
       if (
         belowMinimum ||
-        value > field.max
+        aboveMaximum
       ) {
-        const rangeMessage = field.minExclusive
-          ? `lớn hơn ${field.min} và không vượt quá ${field.max}`
-          : `từ ${field.min} đến ${field.max}`;
+        const rangeMessage = hasMaximum
+          ? field.minExclusive
+            ? `lớn hơn ${field.min} và không vượt quá ${field.max}`
+            : `từ ${field.min} đến ${field.max}`
+          : field.minExclusive
+            ? `lớn hơn ${field.min}`
+            : `từ ${field.min} trở lên`;
 
         throw new Error(
           `"${field.label}" phải ${rangeMessage} ${field.unit}.`,
@@ -1299,9 +1387,9 @@ export default function PlatformPolicyPage() {
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
             Quản lý chính sách tranh chấp, đánh giá,
-            uy tín, lịch hẹn, tải tệp, thanh toán, đơn
-            hàng và lịch sử phiên bản theo máy chủ
-            HomeCycle.
+            uy tín, lịch hẹn, tải tệp, thanh toán, rút
+            tiền, đơn hàng và lịch sử phiên bản theo
+            máy chủ HomeCycle.
           </p>
         </div>
 

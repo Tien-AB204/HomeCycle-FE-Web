@@ -47,8 +47,23 @@ const STATUS_FILTER_OPTIONS = [
   { value: "Failed", label: "Thất bại" },
 ];
 
+const normalizeWithdrawalStatus = (status) => {
+  const raw = String(status ?? "").trim();
+
+  if (!raw) {
+    return "";
+  }
+
+  return (
+    Object.keys(WITHDRAWAL_STATUS_META).find(
+      (key) =>
+        key.toLowerCase() === raw.toLowerCase(),
+    ) || raw
+  );
+};
+
 const getWithdrawalStatusMeta = (status) => {
-  const key = String(status ?? "").trim();
+  const key = normalizeWithdrawalStatus(status);
 
   return (
     WITHDRAWAL_STATUS_META[key] || {
@@ -160,6 +175,55 @@ const maskAccountNumber = (value) => {
   return `${first}${"•".repeat(digits.length - 6)}${last}`;
 };
 
+const getWithdrawalStatusValue = (detail) =>
+  normalizeWithdrawalStatus(
+    detail?.status ?? detail?.Status,
+  );
+
+const getWithdrawalActions = (detail) =>
+  detail?.actions ?? detail?.Actions ?? {};
+
+const canRunWithdrawalAction = (detail, mode) => {
+  if (
+    getWithdrawalStatusValue(detail) !== "Pending"
+  ) {
+    return false;
+  }
+
+  const actions = getWithdrawalActions(detail);
+
+  if (mode === "approve") {
+    return (
+      (actions.canApprove ?? actions.CanApprove) === true
+    );
+  }
+
+  if (mode === "reject") {
+    return (
+      (actions.canReject ?? actions.CanReject) === true
+    );
+  }
+
+  return false;
+};
+
+const getWithdrawalErrorCode = (error) =>
+  String(
+    error?.response?.data?.code ??
+      error?.response?.data?.error?.code ??
+      "",
+  ).trim();
+
+const getWithdrawalActionErrorMessage = (error) => {
+  const responseData = error?.response?.data;
+
+  return (
+    responseData?.message ||
+    responseData?.error?.message ||
+    "Không thể xử lý yêu cầu rút tiền. Vui lòng thử lại."
+  );
+};
+
 const WithdrawalManagementPage = () => {
   const [keywordInput, setKeywordInput] = useState("");
   const [keyword, setKeyword] = useState("");
@@ -186,6 +250,12 @@ const WithdrawalManagementPage = () => {
   });
 
   const [isAccountRevealed, setIsAccountRevealed] = useState(false);
+
+  const [actionMode, setActionMode] = useState("");
+  const [actionReason, setActionReason] = useState("");
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [feedback, setFeedback] = useState(null);
 
   const listRequestRef = useRef(0);
   const listControllerRef = useRef(null);
@@ -362,6 +432,9 @@ const WithdrawalManagementPage = () => {
 
     setSelectedWithdrawalId("");
     setIsAccountRevealed(false);
+    setActionMode("");
+    setActionReason("");
+    setActionError("");
 
     setDetailState({
       withdrawalId: "",
@@ -370,6 +443,184 @@ const WithdrawalManagementPage = () => {
       error: "",
     });
   };
+
+  const closeWithdrawalAction = () => {
+    if (actionBusy) {
+      return;
+    }
+
+    setActionMode("");
+    setActionReason("");
+    setActionError("");
+  };
+
+  const openWithdrawalAction = (mode) => {
+    if (
+      actionBusy ||
+      detailState.loading ||
+      !detailState.data
+    ) {
+      return;
+    }
+
+    if (
+      !canRunWithdrawalAction(
+        detailState.data,
+        mode,
+      )
+    ) {
+      setFeedback({
+        type: "warning",
+        message:
+          "Máy chủ không còn cho phép thực hiện thao tác này. Hãy làm mới dữ liệu trước khi tiếp tục.",
+      });
+
+      void loadWithdrawals();
+      return;
+    }
+
+    setActionMode(mode);
+    setActionReason("");
+    setActionError("");
+  };
+
+  const handleConfirmWithdrawalAction = async () => {
+    if (actionBusy || !actionMode) {
+      return;
+    }
+
+    const withdrawalId =
+      String(selectedWithdrawalId || "").trim();
+
+    if (!withdrawalId) {
+      setActionError(
+        "Không tìm thấy mã yêu cầu rút tiền.",
+      );
+      return;
+    }
+
+    const reason = actionReason.trim();
+
+    if (
+      actionMode === "reject" &&
+      !reason
+    ) {
+      setActionError(
+        "Vui lòng nhập lý do từ chối.",
+      );
+      return;
+    }
+
+    if (
+      actionMode === "reject" &&
+      reason.length > 500
+    ) {
+      setActionError(
+        "Lý do từ chối tối đa 500 ký tự.",
+      );
+      return;
+    }
+
+    setActionBusy(true);
+    setActionError("");
+
+    try {
+      /*
+       * Recheck trạng thái ngay trước mutation để tránh xử lý
+       * một bản chi tiết đã cũ. Backend vẫn là nguồn quyết định cuối.
+       */
+      const latestDetail =
+        await moderatorWithdrawalApi.getWithdrawalById(
+          withdrawalId,
+        );
+
+      if (
+        !canRunWithdrawalAction(
+          latestDetail,
+          actionMode,
+        )
+      ) {
+        setDetailState({
+          withdrawalId,
+          loading: false,
+          data: latestDetail,
+          error: "",
+        });
+
+        setActionMode("");
+        setActionReason("");
+
+        setFeedback({
+          type: "warning",
+          message:
+            "Yêu cầu đã được xử lý hoặc đã thay đổi trạng thái. Dữ liệu vừa được làm mới.",
+        });
+
+        await loadWithdrawals();
+        return;
+      }
+
+      if (actionMode === "approve") {
+        await moderatorWithdrawalApi.approve(
+          withdrawalId,
+        );
+      } else {
+        await moderatorWithdrawalApi.reject(
+          withdrawalId,
+          reason,
+        );
+      }
+
+      setFeedback({
+        type: "success",
+        message:
+          actionMode === "approve"
+            ? "Đã duyệt và hoàn tất yêu cầu rút tiền."
+            : "Đã từ chối yêu cầu rút tiền.",
+      });
+
+      closeWithdrawalDetail();
+
+      await loadWithdrawals();
+    } catch (error) {
+      if (
+        getWithdrawalErrorCode(error) ===
+        "Withdrawal.AlreadyProcessed"
+      ) {
+        setFeedback({
+          type: "warning",
+          message:
+            "Yêu cầu này đã được xử lý trước đó. Danh sách vừa được làm mới.",
+        });
+
+        closeWithdrawalDetail();
+
+        await loadWithdrawals();
+        return;
+      }
+
+      setActionError(
+        getWithdrawalActionErrorMessage(error),
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
+  const selectedWithdrawalActions =
+    getWithdrawalActions(detailState.data);
+
+  const canApproveWithdrawal =
+    (selectedWithdrawalActions.canApprove ??
+      selectedWithdrawalActions.CanApprove) === true &&
+    getWithdrawalStatusValue(detailState.data) ===
+      "Pending";
+
+  const canRejectWithdrawal =
+    (selectedWithdrawalActions.canReject ??
+      selectedWithdrawalActions.CanReject) === true &&
+    getWithdrawalStatusValue(detailState.data) ===
+      "Pending";
 
   const columns = [
     {
@@ -479,6 +730,17 @@ const WithdrawalManagementPage = () => {
         </p>
       </div>
 
+      {feedback && (
+        <Alert
+          type={feedback.type}
+          showIcon
+          closable
+          onClose={() => setFeedback(null)}
+          message={feedback.message}
+          className="mt-5"
+        />
+      )}
+
       <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
         <div className="min-w-[220px] flex-1">
           <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
@@ -568,9 +830,47 @@ const WithdrawalManagementPage = () => {
       <Modal
         title="Chi tiết yêu cầu rút tiền"
         open={Boolean(selectedWithdrawalId)}
-        onCancel={closeWithdrawalDetail}
+        onCancel={() => {
+          if (!actionBusy) {
+            closeWithdrawalDetail();
+          }
+        }}
+        maskClosable={!actionBusy}
+        keyboard={!actionBusy}
+        closable={!actionBusy}
         footer={
-          <Button onClick={closeWithdrawalDetail}>Đóng</Button>
+          <div className="flex flex-wrap justify-end gap-2">
+            {canRejectWithdrawal && (
+              <Button
+                danger
+                disabled={actionBusy}
+                onClick={() =>
+                  openWithdrawalAction("reject")
+                }
+              >
+                Từ chối
+              </Button>
+            )}
+
+            {canApproveWithdrawal && (
+              <Button
+                type="primary"
+                disabled={actionBusy}
+                onClick={() =>
+                  openWithdrawalAction("approve")
+                }
+              >
+                Duyệt yêu cầu
+              </Button>
+            )}
+
+            <Button
+              disabled={actionBusy}
+              onClick={closeWithdrawalDetail}
+            >
+              Đóng
+            </Button>
+          </div>
         }
         destroyOnClose
       >
@@ -832,6 +1132,99 @@ const WithdrawalManagementPage = () => {
               </div>
             );
           })()}
+      </Modal>
+
+      <Modal
+        title={
+          actionMode === "approve"
+            ? "Duyệt yêu cầu rút tiền"
+            : "Từ chối yêu cầu rút tiền"
+        }
+        open={Boolean(actionMode)}
+        onCancel={closeWithdrawalAction}
+        maskClosable={!actionBusy}
+        keyboard={!actionBusy}
+        closable={!actionBusy}
+        destroyOnClose
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              disabled={actionBusy}
+              onClick={closeWithdrawalAction}
+            >
+              Hủy
+            </Button>
+
+            <Button
+              type="primary"
+              danger={actionMode === "reject"}
+              loading={actionBusy}
+              disabled={
+                actionBusy ||
+                (actionMode === "reject" &&
+                  !actionReason.trim())
+              }
+              onClick={() =>
+                void handleConfirmWithdrawalAction()
+              }
+            >
+              {actionMode === "approve"
+                ? "Duyệt và hoàn tất"
+                : "Xác nhận từ chối"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-xl border border-border bg-background/60 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-textLight">
+              Số tiền yêu cầu
+            </p>
+
+            <p className="mt-1 text-lg font-black text-text">
+              {formatCurrency(
+                detailState.data?.amount ??
+                  detailState.data?.Amount,
+              )}
+            </p>
+          </div>
+
+          {actionMode === "approve" ? (
+            <Alert
+              type="warning"
+              showIcon
+              message="Xác nhận xử lý yêu cầu"
+              description="Sau khi duyệt, hệ thống sẽ hoàn tất yêu cầu rút tiền này. Hãy kiểm tra số tiền và thông tin tài khoản ngân hàng trước khi xác nhận."
+            />
+          ) : (
+            <div>
+              <label className="mb-1.5 block text-sm font-bold text-text">
+                Lý do từ chối
+              </label>
+
+              <Input.TextArea
+                rows={4}
+                maxLength={500}
+                showCount
+                value={actionReason}
+                disabled={actionBusy}
+                placeholder="Nhập lý do từ chối yêu cầu rút tiền..."
+                onChange={(event) => {
+                  setActionReason(event.target.value);
+                  setActionError("");
+                }}
+              />
+            </div>
+          )}
+
+          {actionError && (
+            <Alert
+              type="error"
+              showIcon
+              message={actionError}
+            />
+          )}
+        </div>
       </Modal>
     </section>
   );
