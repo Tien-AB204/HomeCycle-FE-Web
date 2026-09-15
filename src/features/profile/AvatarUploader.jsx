@@ -1,19 +1,20 @@
 import {
+  useEffect,
   useRef,
   useState,
 } from "react";
 import { userService } from "../../services/userService";
+import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import avatarPlaceholder from "../../assets/brand/user-avatar-placeholder.svg";
 import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  FILE_UPLOAD_CONTEXT,
+  getFileUploadAccept,
+  getFileUploadDescription,
+  getFileUploadRule,
+  validateFileAgainstRule,
+} from "../../utils/fileUploadPolicy";
 
-const MAX_FILE_SIZE =
-  5 * 1024 * 1024;
-
-const ACCEPTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
 
 const getApiErrorMessage = (
   error,
@@ -32,25 +33,6 @@ const getApiErrorMessage = (
   );
 };
 
-const validateAvatar = (file) => {
-  if (!file) {
-    return "Vui lòng chọn ảnh đại diện.";
-  }
-
-  if (
-    !ACCEPTED_IMAGE_TYPES.includes(
-      file.type,
-    )
-  ) {
-    return "Ảnh đại diện chỉ hỗ trợ định dạng JPG, PNG hoặc WEBP.";
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return "Ảnh đại diện không được vượt quá 5MB.";
-  }
-
-  return "";
-};
 
 export default function AvatarUploader({
   avatarUrl,
@@ -60,6 +42,61 @@ export default function AvatarUploader({
     userService.updateAvatar,
 }) {
   const inputRef = useRef(null);
+
+  const [avatarRule, setAvatarRule] =
+    useState(null);
+
+  const [
+    policyError,
+    setPolicyError,
+  ] = useState("");
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    let active = true;
+
+    publicPlatformPolicyApi
+      .getFileUpload({
+        signal: controller.signal,
+      })
+      .then((policy) => {
+        if (!active) {
+          return;
+        }
+
+        setAvatarRule(
+          getFileUploadRule(
+            policy,
+            FILE_UPLOAD_CONTEXT.AVATAR,
+          ),
+        );
+
+        setPolicyError("");
+      })
+      .catch((loadError) => {
+        if (
+          !active ||
+          loadError?.name === "CanceledError" ||
+          loadError?.code === "ERR_CANCELED"
+        ) {
+          return;
+        }
+
+        setAvatarRule(null);
+
+        setPolicyError(
+          loadError?.message ||
+            "Không thể tải quy định ảnh đại diện.",
+        );
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
 
   const [
     selectedFile,
@@ -118,7 +155,12 @@ export default function AvatarUploader({
       null;
 
     const validationError =
-      validateAvatar(file);
+      validateFileAgainstRule(
+        file,
+        avatarRule,
+        "Ảnh đại diện",
+        { required: true },
+      );
 
     if (validationError) {
       setError(validationError);
@@ -150,7 +192,12 @@ export default function AvatarUploader({
 
   const handleUpload = async () => {
     const validationError =
-      validateAvatar(selectedFile);
+      validateFileAgainstRule(
+        selectedFile,
+        avatarRule,
+        "Ảnh đại diện",
+        { required: true },
+      );
 
     if (validationError) {
       setError(validationError);
@@ -250,9 +297,9 @@ export default function AvatarUploader({
           id="profile-avatar-input"
           name="avatar"
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept={getFileUploadAccept(avatarRule)}
           onChange={handleFileChange}
-          disabled={isUploading}
+          disabled={isUploading || !avatarRule}
           className="sr-only"
         />
       </div>
@@ -282,8 +329,10 @@ export default function AvatarUploader({
       )}
 
       <p className="mt-2 text-center text-[11px] text-textLight">
-        JPG, PNG hoặc WEBP; tối đa
-        5MB
+        {avatarRule
+          ? getFileUploadDescription(avatarRule)
+          : policyError ||
+            "Đang tải quy định ảnh đại diện..."}
       </p>
 
       {error && (

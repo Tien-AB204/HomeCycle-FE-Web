@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import authApi from "../../services/apis/authApi";
+import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import { decodeJwtPayload } from "../../utils/authUtils";
+import {
+  FILE_UPLOAD_CONTEXT,
+  getFileUploadAccept,
+  getFileUploadDescription,
+  getFileUploadRule,
+  validateFileAgainstRule,
+} from "../../utils/fileUploadPolicy";
 
 const STEPS = {
   EMAIL: "EMAIL",
@@ -12,13 +20,6 @@ const STEPS = {
 };
 
 const RESEND_COOLDOWN_SECONDS = 60;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-const ACCEPTED_IMAGE_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
 
 const INITIAL_FORM = {
   username: "",
@@ -89,21 +90,6 @@ const getApiErrorMessage = (
   );
 };
 
-const validateImage = (file, label) => {
-  if (!file) {
-    return "";
-  }
-
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-    return `${label} chỉ hỗ trợ định dạng JPG, PNG hoặc WEBP.`;
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return `${label} không được vượt quá 5MB.`;
-  }
-
-  return "";
-};
 
 const TextInput = ({
   id,
@@ -151,7 +137,8 @@ const FileInput = ({
   label,
   name,
   onChange,
-  description,
+  rule,
+  policyError,
 }) => {
   return (
     <div>
@@ -166,16 +153,18 @@ const FileInput = ({
         id={id}
         name={name}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={getFileUploadAccept(rule)}
         onChange={onChange}
-        className="block w-full rounded-xl border border-border bg-background text-sm text-textLight file:mr-4 file:border-0 file:bg-primary/10 file:px-4 file:py-3 file:font-bold file:text-primary hover:file:bg-primary/20"
+        disabled={!rule}
+        className="block w-full rounded-xl border border-border bg-background text-sm text-textLight file:mr-4 file:border-0 file:bg-primary/10 file:px-4 file:py-3 file:font-bold file:text-primary hover:file:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
       />
 
-      {description && (
-        <p className="mt-1.5 text-xs text-textLight">
-          {description}
-        </p>
-      )}
+      <p className="mt-1.5 text-xs text-textLight">
+        {rule
+          ? getFileUploadDescription(rule)
+          : policyError ||
+            "Đang tải quy định tệp từ hệ thống..."}
+      </p>
     </div>
   );
 };
@@ -272,7 +261,65 @@ const RegisterPersonalPage = () => {
     setRegisteredUser,
   ] = useState(null);
 
+  const [uploadRules, setUploadRules] =
+    useState({
+      avatar: null,
+      identity: null,
+      error: "",
+    });
+
   const isLoading = loadingAction !== "";
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    let active = true;
+
+    publicPlatformPolicyApi
+      .getFileUpload({
+        signal: controller.signal,
+      })
+      .then((policy) => {
+        if (!active) {
+          return;
+        }
+
+        setUploadRules({
+          avatar: getFileUploadRule(
+            policy,
+            FILE_UPLOAD_CONTEXT.AVATAR,
+          ),
+          identity: getFileUploadRule(
+            policy,
+            FILE_UPLOAD_CONTEXT.IDENTITY_DOCUMENT,
+          ),
+          error: "",
+        });
+      })
+      .catch((policyError) => {
+        if (
+          !active ||
+          policyError?.name === "CanceledError" ||
+          policyError?.code === "ERR_CANCELED"
+        ) {
+          return;
+        }
+
+        setUploadRules({
+          avatar: null,
+          identity: null,
+          error:
+            policyError?.message ||
+            "Không thể tải quy định tệp từ hệ thống.",
+        });
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) {
@@ -358,10 +405,17 @@ const RegisterPersonalPage = () => {
       backIdCardFile: "Ảnh CCCD mặt sau",
     };
 
-    const validationError = validateImage(
-      file,
-      labels[name],
-    );
+    const rule =
+      name === "avatarFile"
+        ? uploadRules.avatar
+        : uploadRules.identity;
+
+    const validationError =
+      validateFileAgainstRule(
+        file,
+        rule,
+        labels[name],
+      );
 
     if (validationError) {
       setError(validationError);
@@ -699,20 +753,27 @@ const RegisterPersonalPage = () => {
       [
         form.avatarFile,
         "Ảnh đại diện",
+        uploadRules.avatar,
       ],
       [
         form.frontIdCardFile,
         "Ảnh CCCD mặt trước",
+        uploadRules.identity,
       ],
       [
         form.backIdCardFile,
         "Ảnh CCCD mặt sau",
+        uploadRules.identity,
       ],
     ];
 
-    for (const [file, label] of files) {
+    for (const [file, label, rule] of files) {
       const validationError =
-        validateImage(file, label);
+        validateFileAgainstRule(
+          file,
+          rule,
+          label,
+        );
 
       if (validationError) {
         return validationError;
@@ -1252,6 +1313,8 @@ const RegisterPersonalPage = () => {
             id="registration-avatar"
             label="Ảnh đại diện"
             name="avatarFile"
+          rule={uploadRules.avatar}
+          policyError={uploadRules.error}
             onChange={handleFileChange}
             description="Hỗ trợ JPG, PNG hoặc WEBP; tối đa 5MB."
           />
@@ -1302,6 +1365,8 @@ const RegisterPersonalPage = () => {
             id="registration-front-id-card"
             label="Ảnh CCCD mặt trước"
             name="frontIdCardFile"
+          rule={uploadRules.identity}
+          policyError={uploadRules.error}
             onChange={handleFileChange}
             description="Hỗ trợ JPG, PNG hoặc WEBP; tối đa 5MB."
           />
@@ -1310,6 +1375,8 @@ const RegisterPersonalPage = () => {
             id="registration-back-id-card"
             label="Ảnh CCCD mặt sau"
             name="backIdCardFile"
+          rule={uploadRules.identity}
+          policyError={uploadRules.error}
             onChange={handleFileChange}
             description="Hỗ trợ JPG, PNG hoặc WEBP; tối đa 5MB."
           />

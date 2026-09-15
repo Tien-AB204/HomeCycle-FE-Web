@@ -18,7 +18,7 @@ const PUBLIC_AUTH_ENDPOINTS = [
   "/auth/google-login",
   "/auth/send-otp",
   "/auth/verify-otp",
-  "/auth/Personal/Register",
+  "/auth/personal/register",
   "/auth/business/register",
   "/auth/refresh-token",
 ];

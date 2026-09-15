@@ -4,11 +4,15 @@ import { useAuth } from "../../hooks/useAuth";
 import { userService } from "../../services/userService";
 import AvatarUploader from "../../features/profile/AvatarUploader";
 import SensitiveField from "../../components/shared/SensitiveField";
+import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+import {
+  FILE_UPLOAD_CONTEXT,
+  getFileUploadAccept,
+  getFileUploadDescription,
+  getFileUploadRule,
+  validateFileAgainstRule,
+} from "../../utils/fileUploadPolicy";
 
 const VERIFICATION_STATUS_META = {
   unverified: {
@@ -83,21 +87,6 @@ const getApiErrorMessage = (error, fallbackMessage) => {
   );
 };
 
-const validateImage = (file, label) => {
-  if (!file) {
-    return "";
-  }
-
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-    return `${label} chỉ hỗ trợ định dạng JPG, PNG hoặc WEBP.`;
-  }
-
-  if (file.size > MAX_FILE_SIZE) {
-    return `${label} không được vượt quá 5MB.`;
-  }
-
-  return "";
-};
 
 const fetchProfileData = async () => {
   const response = await userService.getProfile();
@@ -195,7 +184,15 @@ const IdentityImage = ({ label, imageUrl, emptyMessage }) => {
   );
 };
 
-const IdentityFileInput = ({ id, label, name, onChange, previewUrl }) => {
+const IdentityFileInput = ({
+  id,
+  label,
+  name,
+  onChange,
+  previewUrl,
+  rule,
+  policyError,
+}) => {
   return (
     <div>
       <IdentityImage
@@ -208,13 +205,17 @@ const IdentityFileInput = ({ id, label, name, onChange, previewUrl }) => {
         id={id}
         name={name}
         type="file"
-        accept="image/jpeg,image/png,image/webp"
+        accept={getFileUploadAccept(rule)}
         onChange={onChange}
-        className="mt-3 block w-full rounded-xl border border-border bg-white text-sm text-textLight file:mr-4 file:border-0 file:bg-primary/10 file:px-4 file:py-3 file:font-bold file:text-primary hover:file:bg-primary/20"
+        disabled={!rule}
+        className="mt-3 block w-full rounded-xl border border-border bg-white text-sm text-textLight file:mr-4 file:border-0 file:bg-primary/10 file:px-4 file:py-3 file:font-bold file:text-primary hover:file:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
       />
 
       <p className="mt-1 text-xs text-textLight">
-        Hỗ trợ JPG, PNG hoặc WEBP; tối đa 5MB.
+        {rule
+          ? getFileUploadDescription(rule)
+          : policyError ||
+            "Đang tải quy định giấy tờ định danh..."}
       </p>
     </div>
   );
@@ -249,6 +250,63 @@ export default function UserProfilePage() {
   const [error, setError] = useState("");
 
   const [successMessage, setSuccessMessage] = useState("");
+
+  const [
+    identityUploadRule,
+    setIdentityUploadRule,
+  ] = useState(null);
+
+  const [
+    identityPolicyError,
+    setIdentityPolicyError,
+  ] = useState("");
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    let active = true;
+
+    publicPlatformPolicyApi
+      .getFileUpload({
+        signal: controller.signal,
+      })
+      .then((policy) => {
+        if (!active) {
+          return;
+        }
+
+        setIdentityUploadRule(
+          getFileUploadRule(
+            policy,
+            FILE_UPLOAD_CONTEXT.IDENTITY_DOCUMENT,
+          ),
+        );
+
+        setIdentityPolicyError("");
+      })
+      .catch((loadError) => {
+        if (
+          !active ||
+          loadError?.name === "CanceledError" ||
+          loadError?.code === "ERR_CANCELED"
+        ) {
+          return;
+        }
+
+        setIdentityUploadRule(null);
+
+        setIdentityPolicyError(
+          loadError?.message ||
+            "Không thể tải quy định giấy tờ định danh.",
+        );
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
 
   useEffect(() => {
     let isActive = true;
@@ -467,7 +525,12 @@ export default function UserProfilePage() {
 
     const label = isFront ? "Ảnh CCCD mặt trước" : "Ảnh CCCD mặt sau";
 
-    const validationError = validateImage(file, label);
+    const validationError =
+      validateFileAgainstRule(
+        file,
+        identityUploadRule,
+        label,
+      );
 
     if (validationError) {
       setError(validationError);
@@ -536,19 +599,23 @@ export default function UserProfilePage() {
       return "Vui lòng chọn ảnh CCCD mặt sau.";
     }
 
-    const frontImageError = validateImage(
-      identityForm.frontIdCardFile,
-      "Ảnh CCCD mặt trước",
-    );
+    const frontImageError =
+      validateFileAgainstRule(
+        identityForm.frontIdCardFile,
+        identityUploadRule,
+        "Ảnh CCCD mặt trước",
+      );
 
     if (frontImageError) {
       return frontImageError;
     }
 
-    const backImageError = validateImage(
-      identityForm.backIdCardFile,
-      "Ảnh CCCD mặt sau",
-    );
+    const backImageError =
+      validateFileAgainstRule(
+        identityForm.backIdCardFile,
+        identityUploadRule,
+        "Ảnh CCCD mặt sau",
+      );
 
     if (backImageError) {
       return backImageError;
@@ -1035,6 +1102,8 @@ export default function UserProfilePage() {
                       id="identity-front-image"
                       label="ẢNH CCCD MẶT TRƯỚC"
                       name="frontIdCardFile"
+          rule={identityUploadRule}
+          policyError={identityPolicyError}
                       onChange={handleIdentityFileChange}
                       previewUrl={identityPreviews.front}
                     />
@@ -1043,6 +1112,8 @@ export default function UserProfilePage() {
                       id="identity-back-image"
                       label="ẢNH CCCD MẶT SAU"
                       name="backIdCardFile"
+          rule={identityUploadRule}
+          policyError={identityPolicyError}
                       onChange={handleIdentityFileChange}
                       previewUrl={identityPreviews.back}
                     />
