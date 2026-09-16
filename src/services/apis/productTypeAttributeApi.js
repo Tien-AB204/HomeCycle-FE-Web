@@ -1,11 +1,8 @@
 import axiosClient from "./axiosClient";
+import { createProductTypeApiError } from "../../utils/productTypeErrorMessage";
 
-const createApiError = (response, fallbackMessage) => {
-  const message =
-    response?.error?.message || response?.message || fallbackMessage;
-
-  return new Error(message);
-};
+const createApiError = (response, fallbackMessage) =>
+  createProductTypeApiError(response, fallbackMessage);
 
 const ensureSuccessfulResponse = (response, fallbackMessage) => {
   if (response?.isSuccess === false) {
@@ -167,14 +164,15 @@ const createAttributeConfigurationPayload = ({
 
 const createAttributePayload = (attributeData) => {
   const configuration = createAttributeConfigurationPayload(attributeData);
+  const hasOptionsMode =
+    configuration.inputMode === "OptionOnly" ||
+    configuration.inputMode === "OptionOrCustom";
+  const options = hasOptionsMode
+    ? normalizeCreateOptions(attributeData?.options)
+    : [];
 
-  const options = normalizeCreateOptions(attributeData?.options);
-
-  if (
-    configuration.inputMode.toLocaleLowerCase() === "optiononly" &&
-    options.length === 0
-  ) {
-    throw new Error("Thuộc tính dạng OptionOnly phải có ít nhất một lựa chọn.");
+  if (hasOptionsMode && options.length === 0) {
+    throw new Error("Chế độ chọn tùy chọn phải có ít nhất một lựa chọn.");
   }
 
   return {
