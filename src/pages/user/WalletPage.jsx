@@ -13,7 +13,6 @@ import { normalizeRole } from "../../utils/authUtils";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
-const WITHDRAWAL_REFERENCE = 4;
 
 const getErrorCode = (
   error,
@@ -80,22 +79,6 @@ const getBalanceLabel = (
   )
     ? "Tiền đang giữ"
     : "Số dư khả dụng";
-};
-
-const isWithdrawalReference = (
-  value,
-) => {
-  const normalized =
-    normalizeEnum(value);
-
-  return (
-    normalized ===
-      String(
-        WITHDRAWAL_REFERENCE,
-      ) ||
-    normalized ===
-      "withdrawal"
-  );
 };
 
 const formatCurrency = (
@@ -272,6 +255,10 @@ const WalletPage = () => {
     wallet,
     setWallet,
   ] = useState(null);
+  const [
+    withdrawalQuota,
+    setWithdrawalQuota,
+  ] = useState(null);
 
   const [
     ledgerState,
@@ -316,15 +303,7 @@ const WalletPage = () => {
     setWithdrawing,
   ] = useState(false);
 
-  const [
-    syncingId,
-    setSyncingId,
-  ] = useState("");
 
-  const [
-    latestWithdrawalId,
-    setLatestWithdrawalId,
-  ] = useState("");
 
   const [
     withdrawalHistoryState,
@@ -423,6 +402,7 @@ const WalletPage = () => {
           const [
             nextWallet,
             nextLedger,
+            nextQuota,
           ] =
             await Promise.all([
               walletApi
@@ -437,6 +417,12 @@ const WalletPage = () => {
                     PAGE_SIZE,
                   signal,
                 }),
+              walletApi
+                .getWithdrawalQuota({
+                  signal,
+                  skipGlobalErrorPage: true,
+                })
+                .catch(() => null),
             ]);
 
           setWallet(
@@ -445,6 +431,10 @@ const WalletPage = () => {
 
           setLedgerState(
             nextLedger,
+          );
+
+          setWithdrawalQuota(
+            nextQuota,
           );
         } catch (requestError) {
           if (
@@ -745,15 +735,9 @@ const WalletPage = () => {
       setAmountError("");
       setError("");
       setNotice("");
-
-      /*
-       * BE main ac9301a bug:
-       * CreateWithdrawalRequestAsync always selects WalletTypeEnum.Personal.
-       * Business GET wallet/ledger is role-aware, but create withdrawal is not.
-       */
       if (isBusiness) {
         setError(
-          "Tài khoản doanh nghiệp hiện chưa thể gửi yêu cầu rút tiền an toàn. Bạn vẫn có thể xem số dư và lịch sử ví.",
+          "Tài khoản doanh nghiệp hiện chưa hỗ trợ gửi yêu cầu rút tiền. Bạn vẫn có thể xem số dư và lịch sử ví.",
         );
 
         return false;
@@ -782,6 +766,77 @@ const WalletPage = () => {
 
         return false;
       }
+      if (withdrawalQuota) {
+        const minimum =
+          Number(
+            withdrawalQuota
+              .minimumWithdrawalAmount ||
+              0,
+          );
+
+        const maximum =
+          Number(
+            withdrawalQuota
+              .maximumWithdrawalAmount ||
+              0,
+          );
+
+        const dailyLimit =
+          Number(
+            withdrawalQuota
+              .dailyWithdrawalLimit ||
+              0,
+          );
+
+        const remainingDaily =
+          Number(
+            withdrawalQuota
+              .remainingDailyLimitAmount ||
+              0,
+          );
+
+        if (
+          minimum > 0 &&
+          parsedWithdrawalAmount <
+            minimum
+        ) {
+          setAmountError(
+            `Số tiền rút tối thiểu là ${formatCurrency(
+              minimum,
+            )}.`,
+          );
+
+          return false;
+        }
+
+        if (
+          maximum > 0 &&
+          parsedWithdrawalAmount >
+            maximum
+        ) {
+          setAmountError(
+            `Số tiền rút tối đa mỗi lần là ${formatCurrency(
+              maximum,
+            )}.`,
+          );
+
+          return false;
+        }
+
+        if (
+          dailyLimit > 0 &&
+          parsedWithdrawalAmount >
+            remainingDaily
+        ) {
+          setAmountError(
+            `Hạn mức rút còn lại hôm nay là ${formatCurrency(
+              remainingDaily,
+            )}.`,
+          );
+
+          return false;
+        }
+      }
 
       return true;
     };
@@ -799,15 +854,11 @@ const WalletPage = () => {
       setNotice("");
 
       try {
-        const result =
-          await walletApi
-            .createWithdrawal(
-              parsedWithdrawalAmount,
-            );
+        await walletApi
+          .createWithdrawal(
+            parsedWithdrawalAmount,
+          );
 
-        setLatestWithdrawalId(
-          result.withdrawalId,
-        );
 
         setWithdrawalAmount(
           "",
@@ -861,55 +912,6 @@ const WalletPage = () => {
       }
     };
 
-  const syncWithdrawal =
-    async (withdrawalId) => {
-      const id =
-        String(
-          withdrawalId || "",
-        ).trim();
-
-      if (!id || syncingId) {
-        return;
-      }
-
-      setSyncingId(id);
-      setError("");
-      setNotice("");
-
-      try {
-        await walletApi
-          .syncWithdrawal(
-            id,
-          );
-
-        setNotice(
-          "Đã đồng bộ trạng thái yêu cầu rút tiền.",
-        );
-
-        await loadPage(
-          ledgerState.pageNumber,
-          {
-            silent: true,
-          },
-        );
-
-        await loadWithdrawalHistory(
-          withdrawalHistoryState.pageNumber,
-          {
-            silent: true,
-          },
-        );
-      } catch (requestError) {
-        setError(
-          getErrorMessage(
-            requestError,
-            "Không thể đồng bộ trạng thái yêu cầu rút tiền.",
-          ),
-        );
-      } finally {
-        setSyncingId("");
-      }
-    };
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6">
@@ -998,10 +1000,58 @@ const WalletPage = () => {
               Khi tạo yêu cầu, số tiền tương ứng sẽ được khóa khỏi số dư khả dụng và chuyển sang phần đang giữ trong lúc chờ xử lý.
             </p>
 
+            {withdrawalQuota && (
+              <div className="mt-4 rounded-xl border border-border bg-background p-4">
+                <div className="grid gap-3 text-sm sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-bold text-textLight">
+                      Tối thiểu
+                    </p>
+                    <p className="mt-1 font-black text-text">
+                      {formatCurrency(
+                        withdrawalQuota.minimumWithdrawalAmount,
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-textLight">
+                      Tối đa mỗi lần
+                    </p>
+                    <p className="mt-1 font-black text-text">
+                      {formatCurrency(
+                        withdrawalQuota.maximumWithdrawalAmount,
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-textLight">
+                      Còn lại hôm nay
+                    </p>
+                    <p className="mt-1 font-black text-primary">
+                      {formatCurrency(
+                        withdrawalQuota.remainingDailyLimitAmount,
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs font-semibold text-textLight">
+                  Đã sử dụng hạn mức ngày:{" "}
+                  {formatCurrency(
+                    withdrawalQuota.usedDailyLimitAmount,
+                  )}{" "}
+                  /{" "}
+                  {formatCurrency(
+                    withdrawalQuota.dailyWithdrawalLimit,
+                  )}
+                </p>
+              </div>
+            )}
             {isBusiness && (
               <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm leading-6 text-warning">
-                Tài khoản doanh nghiệp hiện chỉ có thể xem ví và biến động số dư.
-                Chức năng tạo yêu cầu rút tiền đang tạm khóa vì Backend hiện chọn ví Personal khi xử lý yêu cầu rút của người dùng.
+                Tài khoản doanh nghiệp hiện chưa hỗ trợ gửi yêu cầu rút tiền. Bạn vẫn có thể xem số dư và lịch sử ví.
               </div>
             )}
 
@@ -1074,27 +1124,6 @@ const WalletPage = () => {
               </button>
             </div>
 
-            {latestWithdrawalId && (
-              <button
-                type="button"
-                onClick={() => {
-                  void syncWithdrawal(
-                    latestWithdrawalId,
-                  );
-                }}
-                disabled={
-                  Boolean(
-                    syncingId,
-                  )
-                }
-                className="mt-4 rounded-lg border border-primary bg-white px-4 py-2.5 text-xs font-black text-primary transition hover:bg-primary/10 disabled:opacity-50"
-              >
-                {syncingId ===
-                latestWithdrawalId
-                  ? "Đang đồng bộ..."
-                  : "Đồng bộ yêu cầu vừa tạo"}
-              </button>
-            )}
           </section>
 
           <section className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6">
@@ -1151,28 +1180,6 @@ const WalletPage = () => {
                             ?.Direction,
                       );
 
-                    const referenceType =
-                      item
-                        ?.referenceType ??
-                      item
-                        ?.ReferenceType;
-
-                    const referenceId =
-                      String(
-                        item
-                          ?.referenceId ??
-                          item
-                            ?.ReferenceId ??
-                          "",
-                      ).trim();
-
-                    const canSyncWithdrawal =
-                      isWithdrawalReference(
-                        referenceType,
-                      ) &&
-                      Boolean(
-                        referenceId,
-                      );
 
                     const ledgerId =
                       item
@@ -1184,7 +1191,7 @@ const WalletPage = () => {
                       <article
                         key={
                           ledgerId ||
-                          `${item?.createdAt}-${referenceId}`
+                          `${item?.createdAt ?? item?.CreatedAt ?? "ledger"}-${item?.amount ?? item?.Amount ?? 0}-${item?.balanceAfter ?? item?.BalanceAfter ?? 0}`
                         }
                         className="border-b border-border bg-white p-4 last:border-b-0"
                       >
@@ -1271,27 +1278,6 @@ const WalletPage = () => {
                               )}
                             </p>
 
-                            {canSyncWithdrawal && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  void syncWithdrawal(
-                                    referenceId,
-                                  );
-                                }}
-                                disabled={
-                                  Boolean(
-                                    syncingId,
-                                  )
-                                }
-                                className="mt-3 rounded-lg border border-primary bg-white px-3 py-1.5 text-xs font-black text-primary transition hover:bg-primary/10 disabled:opacity-50"
-                              >
-                                {syncingId ===
-                                referenceId
-                                  ? "Đang đồng bộ..."
-                                  : "Đồng bộ trạng thái rút tiền"}
-                              </button>
-                            )}
                           </div>
                         </div>
                       </article>

@@ -96,6 +96,7 @@ const HIDDEN_TIMELINE_CODES =
   new Set([
     "collectionschedule",
     "inspectionscheduled",
+    "dispute",
   ]);
 
 const filterTimelineSteps = (
@@ -128,6 +129,114 @@ const sanitizeTimelineText = (
     .replace(/\bBuyer\b/gi, "Người mua")
     .replace(/\bSeller\b/gi, "Người bán");
 
+const isTimelineCompletedStatus = (
+  status,
+) => {
+  const value =
+    normalizeTimelineValue(status);
+
+  return (
+    value === "2" ||
+    value === "completed"
+  );
+};
+
+const shouldShowTimelineDescription = (
+  status,
+) => {
+  const value =
+    normalizeTimelineValue(status);
+
+  return (
+    value === "1" ||
+    value === "inprogress" ||
+    value === "3" ||
+    value === "failed" ||
+    value === "4" ||
+    value === "cancelled" ||
+    value === "canceled"
+  );
+};
+
+const findActiveTimelineText = (
+  steps,
+) => {
+  for (const step of steps) {
+    const status =
+      normalizeTimelineValue(
+        step?.status,
+      );
+
+    if (
+      status === "1" ||
+      status === "inprogress"
+    ) {
+      return (
+        sanitizeTimelineText(
+          step?.description,
+        ) ||
+        sanitizeTimelineText(
+          step?.title,
+        )
+      );
+    }
+
+    const subSteps =
+      Array.isArray(
+        step?.subSteps,
+      )
+        ? step.subSteps
+        : [];
+
+    if (subSteps.length > 0) {
+      const nested =
+        findActiveTimelineText(
+          subSteps,
+        );
+
+      if (nested) {
+        return nested;
+      }
+    }
+  }
+
+  return "";
+};
+
+const flattenTimelineForDisplay = (
+  timeline,
+  deliveryMethod,
+) => {
+  const steps =
+    filterTimelineSteps(
+      timeline,
+    );
+
+  const normalizedMethod =
+    normalizeTimelineValue(
+      deliveryMethod,
+    );
+
+  const isBuyerPickUp =
+    Number(deliveryMethod) === 3 ||
+    normalizedMethod ===
+      "buyerpickup";
+
+  return steps.flatMap(
+    (step) =>
+      isBuyerPickUp &&
+      normalizeTimelineValue(
+        step?.code,
+      ) === "handover" &&
+      Array.isArray(
+        step?.subSteps,
+      ) &&
+      step.subSteps.length > 0
+        ? step.subSteps
+        : [step],
+  );
+};
+
 const getTimelineVisual = (
   status,
 ) => {
@@ -139,7 +248,7 @@ const getTimelineVisual = (
     value === "completed"
   ) {
     return {
-      icon: "check_circle",
+      icon: "check",
       dot:
         "border-success bg-success text-white",
       text:
@@ -165,7 +274,7 @@ const getTimelineVisual = (
     value === "failed"
   ) {
     return {
-      icon: "error",
+      icon: "close",
       dot:
         "border-error bg-error text-white",
       text:
@@ -179,7 +288,7 @@ const getTimelineVisual = (
     value === "canceled"
   ) {
     return {
-      icon: "cancel",
+      icon: "close",
       dot:
         "border-error bg-error text-white",
       text:
@@ -188,12 +297,103 @@ const getTimelineVisual = (
   }
 
   return {
-    icon: "radio_button_unchecked",
+    icon: "circle",
     dot:
       "border-border bg-white text-textLight",
     text:
       "text-textLight",
   };
+};
+
+const CompactOrderTimeline = ({
+  steps,
+}) => {
+  if (steps.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-5 overflow-x-auto pb-1">
+      <div className="flex min-w-[560px] items-start">
+        {steps.map(
+          (step, index) => {
+            const visual =
+              getTimelineVisual(
+                step?.status,
+              );
+
+            const isPassed =
+              isTimelineCompletedStatus(
+                step?.status,
+              );
+
+            const previousPassed =
+              index > 0 &&
+              isTimelineCompletedStatus(
+                steps[index - 1]
+                  ?.status,
+              );
+
+            return (
+              <div
+                key={
+                  String(
+                    step?.code ||
+                      "compact-step",
+                  ) +
+                  "-" +
+                  index
+                }
+                className="min-w-0 flex-1 px-1"
+              >
+                <div className="flex items-center">
+                  <span
+                    className={[
+                      "h-0.5 flex-1",
+                      index === 0
+                        ? "bg-transparent"
+                        : previousPassed
+                          ? "bg-success"
+                          : "bg-border",
+                    ].join(" ")}
+                  />
+
+                  <span
+                    className={[
+                      "material-symbols-outlined flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[15px]",
+                      visual.dot,
+                    ].join(" ")}
+                    aria-hidden="true"
+                  >
+                    {visual.icon}
+                  </span>
+
+                  <span
+                    className={[
+                      "h-0.5 flex-1",
+                      index ===
+                      steps.length - 1
+                        ? "bg-transparent"
+                        : isPassed
+                          ? "bg-success"
+                          : "bg-border",
+                    ].join(" ")}
+                  />
+                </div>
+
+                <p className="mt-2 line-clamp-2 text-center text-[11px] font-black leading-4 text-text">
+                  {sanitizeTimelineText(
+                    step?.title,
+                  ) ||
+                    "Cập nhật"}
+                </p>
+              </div>
+            );
+          },
+        )}
+      </div>
+    </div>
+  );
 };
 
 const OrderTimelineStep = ({
@@ -213,14 +413,35 @@ const OrderTimelineStep = ({
     "Cập nhật đơn hàng";
 
   const description =
-    sanitizeTimelineText(
-      step?.description,
-    );
+    shouldShowTimelineDescription(
+      step?.status,
+    )
+      ? sanitizeTimelineText(
+          step?.description,
+        )
+      : "";
 
   const subSteps =
     filterTimelineSteps(
       step?.subSteps,
     );
+
+  const hasSubSteps =
+    subSteps.length > 0;
+
+  const isCompleted =
+    isTimelineCompletedStatus(
+      step?.status,
+    );
+
+  const [
+    subStepsExpandedOverride,
+    setSubStepsExpandedOverride,
+  ] = useState(null);
+
+  const isSubStepsExpanded =
+    subStepsExpandedOverride ??
+    !isCompleted;
 
   return (
     <div
@@ -246,14 +467,50 @@ const OrderTimelineStep = ({
       </div>
 
       <div className="min-w-0 flex-1 pb-5">
-        <p
-          className={[
-            "text-sm font-black",
-            visual.text,
-          ].join(" ")}
-        >
-          {title}
-        </p>
+        {hasSubSteps ? (
+          <button
+            type="button"
+            onClick={() =>
+              setSubStepsExpandedOverride(
+                (current) =>
+                  current === null
+                    ? isCompleted
+                    : !current,
+              )
+            }
+            className="flex w-full items-start justify-between gap-3 text-left"
+            aria-expanded={
+              isSubStepsExpanded
+            }
+          >
+            <span
+              className={[
+                "text-sm font-black",
+                visual.text,
+              ].join(" ")}
+            >
+              {title}
+            </span>
+
+            <span
+              className="material-symbols-outlined shrink-0 text-lg text-textLight"
+              aria-hidden="true"
+            >
+              {isSubStepsExpanded
+                ? "expand_less"
+                : "expand_more"}
+            </span>
+          </button>
+        ) : (
+          <p
+            className={[
+              "text-sm font-black",
+              visual.text,
+            ].join(" ")}
+          >
+            {title}
+          </p>
+        )}
 
         {description && (
           <p className="mt-1 text-xs leading-5 text-textLight">
@@ -269,33 +526,34 @@ const OrderTimelineStep = ({
           </p>
         )}
 
-        {subSteps.length > 0 && (
-          <div className="mt-3 rounded-xl bg-background px-3 pt-3">
-            {subSteps.map(
-              (
-                subStep,
-                index,
-              ) => (
-                <OrderTimelineStep
-                  key={
-                    String(
-                      subStep?.code ||
-                        "sub-step",
-                    ) +
-                    "-" +
-                    index
-                  }
-                  step={subStep}
-                  isLast={
-                    index ===
-                    subSteps.length - 1
-                  }
-                  nested
-                />
-              ),
-            )}
-          </div>
-        )}
+        {hasSubSteps &&
+          isSubStepsExpanded && (
+            <div className="mt-3 rounded-xl bg-background px-3 pt-3">
+              {subSteps.map(
+                (
+                  subStep,
+                  index,
+                ) => (
+                  <OrderTimelineStep
+                    key={
+                      String(
+                        subStep?.code ||
+                          "sub-step",
+                      ) +
+                      "-" +
+                      index
+                    }
+                    step={subStep}
+                    isLast={
+                      index ===
+                      subSteps.length - 1
+                    }
+                    nested
+                  />
+                ),
+              )}
+            </div>
+          )}
       </div>
     </div>
   );
@@ -303,25 +561,71 @@ const OrderTimelineStep = ({
 
 const OrderTimelinePanel = ({
   timeline,
+  deliveryMethod,
 }) => {
+  const [
+    isExpanded,
+    setIsExpanded,
+  ] = useState(true);
+
   const steps =
-    filterTimelineSteps(
+    flattenTimelineForDisplay(
       timeline,
+      deliveryMethod,
     );
+
+  const compactStatusText =
+    findActiveTimelineText(
+      steps,
+    ) ||
+    (steps.length > 0
+      ? sanitizeTimelineText(
+          steps[
+            steps.length - 1
+          ]?.title,
+        )
+      : "");
 
   return (
     <section className="mt-5 rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
-      <div className="border-b border-border pb-4">
-        <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-          Tiến trình đơn hàng
+      <button
+        type="button"
+        onClick={() =>
+          setIsExpanded(
+            (current) =>
+              !current,
+          )
+        }
+        className="flex w-full items-center justify-between gap-4 border-b border-border pb-4 text-left"
+        aria-expanded={
+          isExpanded
+        }
+      >
+        <span>
+          <span className="block text-xs font-black uppercase tracking-[0.14em] text-primary">
+            Tiến trình đơn hàng
+          </span>
+
+          <span className="mt-1 block text-lg font-black text-text">
+            Trạng thái giao dịch
+          </span>
+        </span>
+
+        <span
+          className="material-symbols-outlined shrink-0 text-2xl text-primary"
+          aria-hidden="true"
+        >
+          {isExpanded
+            ? "expand_less"
+            : "expand_more"}
+        </span>
+      </button>
+
+      {steps.length === 0 ? (
+        <p className="mt-4 rounded-xl bg-background p-4 text-sm font-semibold text-textLight">
+          Tiến trình đơn hàng đang được máy chủ cập nhật.
         </p>
-
-        <h2 className="mt-1 text-lg font-black text-text">
-          Trạng thái giao dịch
-        </h2>
-      </div>
-
-      {steps.length > 0 ? (
+      ) : isExpanded ? (
         <div className="mt-5">
           {steps.map(
             (step, index) => (
@@ -344,14 +648,30 @@ const OrderTimelinePanel = ({
           )}
         </div>
       ) : (
-        <p className="mt-4 rounded-xl bg-background p-4 text-sm font-semibold text-textLight">
-          Tiến trình đơn hàng đang được máy chủ cập nhật.
-        </p>
+        <div>
+          <CompactOrderTimeline
+            steps={steps}
+          />
+
+          {compactStatusText && (
+            <div className="mt-4 flex items-start gap-2 rounded-xl bg-primary/5 px-4 py-3">
+              <span
+                className="material-symbols-outlined mt-0.5 text-lg text-primary"
+                aria-hidden="true"
+              >
+                info
+              </span>
+
+              <p className="text-sm font-bold leading-6 text-text">
+                {compactStatusText}
+              </p>
+            </div>
+          )}
+        </div>
       )}
     </section>
   );
 };
-
 const GHN_CREATION_STATUS_LABEL = Object.freeze({
   pending: "Đang chờ tạo vận đơn",
   processing: "Đang gửi yêu cầu đến GHN",
@@ -1014,6 +1334,9 @@ const OrderDetailPage = () => {
           detail?.timeline ||
           order?.timeline ||
           []
+        }
+        deliveryMethod={
+          order.deliveryMethod
         }
       />
 
