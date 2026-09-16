@@ -333,9 +333,15 @@ export default function UserProfilePage() {
 
         setIdentityUploadRule(null);
 
+        const policyMessage =
+          loadError?.message || "";
+
         setIdentityPolicyError(
-          loadError?.message ||
-            "Không thể tải quy định giấy tờ định danh.",
+          isVietnameseMessage(
+            policyMessage,
+          )
+            ? policyMessage
+            : "Không thể tải quy định giấy tờ định danh.",
         );
       });
 
@@ -437,12 +443,26 @@ export default function UserProfilePage() {
   };
 
   const validateProfileForm = () => {
-    if (profileForm.username.trim().length < 3) {
+    const username =
+      profileForm.username.trim();
+
+    const fullName =
+      profileForm.fullName.trim();
+
+    if (username.length < 3) {
       return "Tên đăng nhập phải có ít nhất 3 ký tự.";
     }
 
-    if (!profileForm.fullName.trim()) {
+    if (username.length > 100) {
+      return "Tên đăng nhập không được vượt quá 100 ký tự.";
+    }
+
+    if (!fullName) {
       return "Vui lòng nhập họ và tên.";
+    }
+
+    if (fullName.length > 255) {
+      return "Họ và tên không được vượt quá 255 ký tự.";
     }
 
     const phoneError =
