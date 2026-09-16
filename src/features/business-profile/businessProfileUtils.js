@@ -94,12 +94,41 @@ export const normalizeBusinessProfile = (
     rawProfile ||
     {};
 
+  const flatBankAccount = {
+    bankCode: pickValue(
+      profile,
+      ["bankCode", "BankCode"],
+    ),
+    bankName: pickValue(
+      profile,
+      ["bankName", "BankName"],
+    ),
+    accountNumber: pickValue(
+      profile,
+      ["accountNumber", "AccountNumber"],
+    ),
+    accountName: pickValue(
+      profile,
+      ["accountName", "AccountName"],
+    ),
+  };
+
+  const hasFlatBankAccount =
+    Object.values(
+      flatBankAccount,
+    ).some(
+      (value) =>
+        String(value ?? "").trim(),
+    );
+
   const bankAccount =
     profile.bankAccount ||
     profile.businessBankAccount ||
-    null;
+    (hasFlatBankAccount
+      ? flatBankAccount
+      : null);
 
-  const serviceAreas = pickValue(
+  const rawServiceAreas = pickValue(
     profile,
     [
       "serviceAreas",
@@ -108,6 +137,15 @@ export const normalizeBusinessProfile = (
     ],
     [],
   );
+
+  const serviceAreas =
+    Array.isArray(rawServiceAreas)
+      ? rawServiceAreas
+      : rawServiceAreas &&
+          typeof rawServiceAreas ===
+            "object"
+        ? [rawServiceAreas]
+        : [];
 
   return {
     ...profile,
@@ -197,11 +235,7 @@ export const normalizeBusinessProfile = (
         "registrationCertificateUrl",
       ]),
     bankAccount,
-    serviceAreas: Array.isArray(
-      serviceAreas,
-    )
-      ? serviceAreas
-      : [],
+    serviceAreas,
     status: pickValue(profile, [
       "verificationStatus",
       "businessProfileStatus",
