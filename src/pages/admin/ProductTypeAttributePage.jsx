@@ -12,15 +12,12 @@ import OptionModal from "../../features/system/productType/OptionModal";
 import productTypeApi from "../../services/apis/productTypeApi";
 import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi";
 import productTypeOptionApi from "../../services/apis/productTypeOptionApi";
-import {
-  isVietnameseMessage,
-  getSafeValidationMessage,
-} from "../../utils/safeErrorMessage";
+import { getProductTypeErrorMessage } from "../../utils/productTypeErrorMessage";
 
 const INPUT_MODE_LABELS = {
   OptionOnly: "Chỉ chọn tùy chọn",
-  FreeText: "Nhập tự do",
-  OptionOrText: "Chọn hoặc nhập",
+  CustomOnly: "Nhập tự do",
+  OptionOrCustom: "Chọn hoặc nhập",
 };
 
 const isCanceledRequest = (error) => {
@@ -30,22 +27,11 @@ const isCanceledRequest = (error) => {
   );
 };
 
-const getErrorMessage = (error) => {
-  const responseData =
-    error?.response?.data;
-
-  return (
-    getSafeValidationMessage(
-      responseData?.errors,
-    ) ||
-    responseData?.error?.message ||
-    responseData?.message ||
-    (!responseData && isVietnameseMessage(error?.message)
-      ? error.message
-      : "") ||
-    "Đã xảy ra lỗi. Vui lòng thử lại."
+const getErrorMessage = (error) =>
+  getProductTypeErrorMessage(
+    error,
+    "Đã xảy ra lỗi. Vui lòng thử lại.",
   );
-};
 
 const getInputModeLabel = (
   inputMode,

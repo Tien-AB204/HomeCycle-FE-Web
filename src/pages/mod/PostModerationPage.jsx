@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   SearchOutlined,
   LoadingOutlined,
@@ -9,7 +9,7 @@ import {
   AppstoreOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
-import { Alert, Button, Input } from "antd";
+import { Alert, Button } from "antd";
 import { postApi } from "../../services/apis/postApi";
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
@@ -75,43 +75,7 @@ const getModeratorDamageLabel = (value) => {
     ] || "Chưa xác định"
   );
 };
-const MODERATOR_POST_UI_ACTIONS = [
-  {
-    key: "approve",
-    label: "Phê duyệt",
-    icon: "check_circle",
-    confirmLabel: "Xác nhận phê duyệt",
-    requiresReason: false,
-  },
-  {
-    key: "reject",
-    label: "Từ chối",
-    icon: "cancel",
-    confirmLabel: "Xác nhận từ chối",
-    requiresReason: true,
-  },
-  {
-    key: "warn",
-    label: "Cảnh cáo",
-    icon: "warning",
-    confirmLabel: "Gửi cảnh cáo",
-    requiresReason: true,
-  },
-  {
-    key: "hide",
-    label: "Ẩn bài",
-    icon: "visibility_off",
-    confirmLabel: "Xác nhận ẩn bài",
-    requiresReason: true,
-  },
-  {
-    key: "remove",
-    label: "Gỡ bài",
-    icon: "delete",
-    confirmLabel: "Xác nhận gỡ bài",
-    requiresReason: true,
-  },
-];
+const PAGE_SIZE = 50;
 
 const PostModerationPage = () => {
   const [posts, setPosts] = useState([]);
@@ -125,6 +89,16 @@ const PostModerationPage = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [sortOption, setSortOption] = useState("newest");
   const [statusFilter, setStatusFilter] = useState("");
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pagination, setPagination] = useState({
+    pageNumber: 1,
+    pageSize: PAGE_SIZE,
+    totalCount: 0,
+    totalPages: 0,
+    hasPreviousPage: false,
+    hasNextPage: false,
+  });
+  const [requestVersion, setRequestVersion] = useState(0);
 
   // --- STATE RESIZABLE CỘT TRÁI ---
   const [sidebarWidth, setSidebarWidth] = useState(380);
@@ -177,36 +151,53 @@ const PostModerationPage = () => {
 
   // Inline Actions
   const [actionState, setActionState] = useState("idle");
-  const [suspendReason, setSuspendReason] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionFeedback, setActionFeedback] = useState(null);
   const [globalFeedback, setGlobalFeedback] = useState(null);
-  const [plannedAction, setPlannedAction] = useState(null);
-  const [plannedReason, setPlannedReason] = useState("");
 
   // =========================================================================
   // API EFFECTS
   // =========================================================================
-  const fetchPosts = useCallback(async () => {
-    setIsLoadingList(true);
-    try {
-      const response = await postApi.getAll({ pageNumber: 1, pageSize: 50 });
-      const postList = response?.items || [];
-      setPosts(postList);
-    } catch {
-      setPosts([]);
-    } finally {
-      setIsLoadingList(false);
-    }
-  }, []);
-
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchPosts();
+    const controller = new AbortController();
+    let isCurrent = true;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsLoadingList(true);
+      postApi
+        .getAll({
+          pageNumber,
+          pageSize: PAGE_SIZE,
+          signal: controller.signal,
+        })
+        .then((response) => {
+          if (!isCurrent) return;
+
+          setPosts(response?.items || []);
+          setPagination({
+            pageNumber: response?.pageNumber ?? pageNumber,
+            pageSize: response?.pageSize ?? PAGE_SIZE,
+            totalCount: response?.totalCount ?? 0,
+            totalPages: response?.totalPages ?? 0,
+            hasPreviousPage: Boolean(response?.hasPreviousPage),
+            hasNextPage: Boolean(response?.hasNextPage),
+          });
+        })
+        .catch((error) => {
+          if (!isCurrent || error?.code === "ERR_CANCELED") return;
+          setPosts([]);
+        })
+        .finally(() => {
+          if (isCurrent) setIsLoadingList(false);
+        });
     }, 0);
 
-    return () => clearTimeout(timeoutId);
-  }, [fetchPosts]);
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [pageNumber, requestVersion]);
 
   // --- LỌC CLIENT-SIDE (Hỗ trợ tìm theo tên, mô tả VÀ ID bài đăng) ---
   const searchedPosts = debouncedSearchQuery
@@ -294,8 +285,6 @@ const PostModerationPage = () => {
     setActionState("idle");
     setActionFeedback(null);
     setGlobalFeedback(null);
-    setPlannedAction(null);
-    setPlannedReason("");
 
     try {
       const data = await postApi.getById(id);
@@ -316,34 +305,22 @@ const PostModerationPage = () => {
   // ACTIONS HANDLERS
   // =========================================================================
   const handleSuspendPost = async () => {
-    if (!suspendReason.trim()) {
-      setActionFeedback({
-        type: "error",
-        text: "Vui lòng nhập lý do đình chỉ bài đăng!",
-      });
-      return;
-    }
-
     setIsProcessing(true);
     setActionFeedback(null);
     try {
       const currentId = selectedPost.postId || selectedPost.id;
-      await axiosClient.patch(`/moderator/posts/${currentId}/suspend`, {
-        reason: suspendReason.trim(),
-      });
+      await axiosClient.patch(`/moderator/posts/${currentId}/suspend`);
 
       setSelectedPost(null);
       setGlobalFeedback({
         type: "success",
         text: "Đã đình chỉ bài đăng thành công!",
       });
-      fetchPosts();
+      setRequestVersion((version) => version + 1);
     } catch (error) {
-      const msg =
-        error.response?.status >= 500
+      const msg = error.response?.status >= 500
           ? "Lỗi máy chủ. Vui lòng thử lại sau."
-          : error.response?.data?.message ||
-            "Có lỗi xảy ra khi gọi API Đình chỉ!";
+          : "Không thể đình chỉ bài đăng. Vui lòng thử lại.";
       setActionFeedback({ type: "error", text: msg });
     } finally {
       setIsProcessing(false);
@@ -406,7 +383,7 @@ const PostModerationPage = () => {
             Quản lý Bài đăng
             {!isLoadingList && (
               <span className="bg-warning/10 text-warning text-xs py-0.5 px-2 rounded-full font-bold">
-                {filteredPosts.length}
+                {pagination.totalCount}
               </span>
             )}
           </h2>
@@ -418,7 +395,7 @@ const PostModerationPage = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên sản phẩm hoặc mã..."
+              placeholder="Tìm trong trang hiện tại..."
               className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-lg focus:ring-1 focus:ring-primary outline-none transition-shadow"
             />
             <SearchOutlined className="absolute left-3 top-2.5 text-textLight" />
@@ -494,6 +471,10 @@ const PostModerationPage = () => {
               </option>
             </select>
           </div>
+
+          <p className="mt-3 text-xs leading-5 text-textLight">
+            Tìm kiếm, trạng thái và sắp xếp hiện áp dụng cho trang đang tải.
+          </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background/60">
@@ -543,6 +524,28 @@ const PostModerationPage = () => {
               );
             })
           )}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-border bg-white px-4 py-3 text-xs text-textLight">
+          <span>
+            Trang {pagination.pageNumber} / {Math.max(pagination.totalPages, 1)}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              size="small"
+              disabled={isLoadingList || !pagination.hasPreviousPage}
+              onClick={() => setPageNumber((page) => Math.max(1, page - 1))}
+            >
+              Trước
+            </Button>
+            <Button
+              size="small"
+              disabled={isLoadingList || !pagination.hasNextPage}
+              onClick={() => setPageNumber((page) => page + 1)}
+            >
+              Sau
+            </Button>
+          </div>
         </div>
 
         {/* Thanh kéo chuột resize */}
@@ -798,61 +801,17 @@ const PostModerationPage = () => {
                 />
               )}
 
-              {actionState === "idle" && !plannedAction && (
+              {actionState === "idle" && (
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <span className="mr-1 text-[11px] font-black uppercase tracking-[0.1em] text-textLight">
                       Xử lý kiểm duyệt
                     </span>
-
-                    {MODERATOR_POST_UI_ACTIONS.map((action) => (
-                      <Button
-                        key={action.key}
-                        size="small"
-                        danger={
-                          action.key === "reject" ||
-                          action.key === "remove"
-                        }
-                        type={
-                          action.key === "approve"
-                            ? "primary"
-                            : "default"
-                        }
-                        onClick={() => {
-                          setPlannedAction(action.key);
-                          setPlannedReason("");
-                          setActionFeedback(null);
-                        }}
-                        className={[
-                          "flex items-center gap-1.5 font-semibold",
-                          action.key === "approve"
-                            ? "border-none bg-success text-white hover:!bg-success/90"
-                            : "",
-                          action.key === "warn"
-                            ? "border-warning/40 text-warning"
-                            : "",
-                          action.key === "hide"
-                            ? "border-primary/30 text-primary"
-                            : "",
-                        ].join(" ")}
-                      >
-                        <span
-                          className="material-symbols-outlined text-[17px]"
-                          aria-hidden="true"
-                        >
-                          {action.icon}
-                        </span>
-                        {action.label}
-                      </Button>
-                    ))}
                   </div>
 
-                  {selectedPost.status?.toUpperCase() === "ACTIVE" && (
+                  {!["SUSPENDED", "DELETED"].includes(selectedPost.status?.toUpperCase()) && (
                     <Button
-                      onClick={() => {
-                        setPlannedAction(null);
-                        setActionState("suspending");
-                      }}
+                      onClick={() => setActionState("suspending")}
                       danger
                       className="flex items-center gap-2 font-semibold"
                     >
@@ -862,112 +821,17 @@ const PostModerationPage = () => {
                 </div>
               )}
 
-              {plannedAction && actionState === "idle" && (
-                <div className="rounded-xl border border-border bg-background/70 p-4">
-                  {(() => {
-                    const selectedAction =
-                      MODERATOR_POST_UI_ACTIONS.find(
-                        (item) => item.key === plannedAction,
-                      );
-
-                    if (!selectedAction) return null;
-
-                    return (
-                      <>
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-primary">
-                              Thao tác kiểm duyệt
-                            </p>
-
-                            <h3 className="mt-1 flex items-center gap-2 text-base font-black text-text">
-                              <span
-                                className="material-symbols-outlined text-[20px] text-primary"
-                                aria-hidden="true"
-                              >
-                                {selectedAction.icon}
-                              </span>
-                              {selectedAction.label}
-                            </h3>
-                          </div>
-
-                          <span className="rounded-full border border-warning/20 bg-warning/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-warning">
-                            Đang hoàn thiện
-                          </span>
-                        </div>
-
-                        {selectedAction.requiresReason ? (
-                          <div className="mt-4">
-                            <label className="mb-1.5 block text-xs font-bold text-text">
-                              Lý do xử lý
-                            </label>
-
-                            <Input.TextArea
-                              rows={3}
-                              value={plannedReason}
-                              onChange={(event) =>
-                                setPlannedReason(event.target.value)
-                              }
-                              placeholder="Nhập lý do xử lý..."
-                            />
-                          </div>
-                        ) : (
-                          <p className="mt-4 rounded-lg border border-border bg-white px-3 py-2 text-sm text-textLight">
-                            Thao tác này không yêu cầu nhập lý do bắt buộc.
-                          </p>
-                        )}
-
-                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-xs text-textLight">
-                            Chức năng này đang được hoàn thiện.
-                          </p>
-
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => {
-                                setPlannedAction(null);
-                                setPlannedReason("");
-                              }}
-                            >
-                              Hủy
-                            </Button>
-
-                            <Button
-                              type="primary"
-                              disabled
-                              className="bg-primary"
-                            >
-                              {selectedAction.confirmLabel}
-                            </Button>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
-
               {actionState === "suspending" && (
                 <div className="bg-error/10 p-4 rounded-lg border border-error/20">
                   <p className="font-semibold text-error mb-2 flex items-center gap-2">
-                    <WarningOutlined /> Lý do đình chỉ:
+                    <WarningOutlined /> Xác nhận đình chỉ bài đăng?
                   </p>
-                  <Input.TextArea
-                    rows={3}
-                    placeholder="Nhập lý do (Ví dụ: Chứa nội dung phản cảm, lừa đảo...)"
-                    value={suspendReason}
-                    onChange={(e) => {
-                      setSuspendReason(e.target.value);
-                      if (actionFeedback) setActionFeedback(null);
-                    }}
-                    className="mb-3"
-                  />
+                  <p className="mb-3 text-sm text-textLight">
+                    Bài đăng sẽ bị đình chỉ và không còn hiển thị công khai.
+                  </p>
                   <div className="flex justify-end gap-2">
                     <Button
-                      onClick={() => {
-                        setActionState("idle");
-                        setSuspendReason("");
-                      }}
+                      onClick={() => setActionState("idle")}
                       disabled={isProcessing}
                     >
                       Hủy

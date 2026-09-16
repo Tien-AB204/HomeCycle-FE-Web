@@ -21,6 +21,21 @@ const normalizeValue = (value) => {
     .toLocaleLowerCase("vi");
 };
 
+const DATA_TYPE_OPTIONS = Object.freeze([
+  { value: "Text", label: "Văn bản" },
+  { value: "Number", label: "Số" },
+  { value: "Boolean", label: "Đúng / Sai" },
+]);
+
+const INPUT_MODE_OPTIONS = Object.freeze([
+  { value: "OptionOnly", label: "Chỉ chọn tùy chọn" },
+  { value: "CustomOnly", label: "Nhập tự do" },
+  { value: "OptionOrCustom", label: "Chọn hoặc nhập" },
+]);
+
+const hasOptionsMode = (inputMode) =>
+  inputMode === "OptionOnly" || inputMode === "OptionOrCustom";
+
 export default function AttributeModal({
   editingAttribute = null,
   defaultDisplayOrder = 1,
@@ -76,13 +91,22 @@ export default function AttributeModal({
       checked,
     } = event.target;
 
-    setForm((currentForm) => ({
-      ...currentForm,
-      [name]:
-        type === "checkbox"
-          ? checked
-          : value,
-    }));
+    setForm((currentForm) => {
+      const nextForm = {
+        ...currentForm,
+        [name]: type === "checkbox" ? checked : value,
+      };
+
+      if (!isEditing && name === "inputMode") {
+        nextForm.options = hasOptionsMode(value)
+          ? currentForm.options.length > 0
+            ? currentForm.options
+            : [createEmptyOption()]
+          : [];
+      }
+
+      return nextForm;
+    });
 
     setClientError("");
   };
@@ -167,6 +191,10 @@ export default function AttributeModal({
       return "";
     }
 
+    if (!hasOptionsMode(form.inputMode)) {
+      return "";
+    }
+
     if (form.options.length === 0) {
       return "Thuộc tính phải có ít nhất một tùy chọn.";
     }
@@ -234,15 +262,16 @@ export default function AttributeModal({
     };
 
     if (!isEditing) {
-      payload.options =
-        form.options.map(
+      payload.options = hasOptionsMode(form.inputMode)
+        ? form.options.map(
           (option, optionIndex) => ({
             optionValue:
               option.optionValue.trim(),
             displayOrder:
               optionIndex + 1,
           }),
-        );
+        )
+        : [];
     }
 
     await onSubmit(payload);
@@ -352,13 +381,20 @@ export default function AttributeModal({
                   Kiểu dữ liệu
                 </label>
 
-                <input
+                <select
                   id="attribute-data-type"
-                  type="text"
+                  name="dataType"
                   value={form.dataType}
-                  disabled
-                  className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-textLight"
-                />
+                  onChange={handleFieldChange}
+                  disabled={submitting}
+                  className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
+                >
+                  {DATA_TYPE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -369,13 +405,20 @@ export default function AttributeModal({
                   Chế độ nhập
                 </label>
 
-                <input
+                <select
                   id="attribute-input-mode"
-                  type="text"
+                  name="inputMode"
                   value={form.inputMode}
-                  disabled
-                  className="w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm text-textLight"
-                />
+                  onChange={handleFieldChange}
+                  disabled={submitting}
+                  className="w-full rounded-md border border-border px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
+                >
+                  {INPUT_MODE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -470,7 +513,7 @@ export default function AttributeModal({
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
                 API cập nhật Attribute không thay đổi Option. Các tùy chọn hiện tại sẽ được giữ nguyên.
               </div>
-            ) : (
+            ) : hasOptionsMode(form.inputMode) ? (
               <section className="border-t border-border pt-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
@@ -479,7 +522,7 @@ export default function AttributeModal({
                     </h4>
 
                     <p className="mt-1 text-xs text-textLight">
-                      Attribute dạng OptionOnly phải có ít nhất một tùy chọn.
+                      Chế độ chọn tùy chọn phải có ít nhất một tùy chọn.
                     </p>
                   </div>
 
@@ -570,7 +613,7 @@ export default function AttributeModal({
                   )}
                 </div>
               </section>
-            )}
+            ) : null}
           </div>
 
           <div className="flex items-center justify-end gap-3 border-t border-border bg-background px-6 py-4">

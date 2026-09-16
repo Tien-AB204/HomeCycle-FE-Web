@@ -1,16 +1,10 @@
 import axiosClient from "./axiosClient";
+import { createProductTypeApiError } from "../../utils/productTypeErrorMessage";
 
 const createApiError = (
   response,
   fallbackMessage,
-) => {
-  const message =
-    response?.error?.message ||
-    response?.message ||
-    fallbackMessage;
-
-  return new Error(message);
-};
+) => createProductTypeApiError(response, fallbackMessage);
 
 const ensureSuccessfulResponse = (
   response,
