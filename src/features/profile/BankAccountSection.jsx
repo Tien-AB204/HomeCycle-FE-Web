@@ -6,7 +6,10 @@ import { bankDirectoryService } from "../../services/bankDirectoryService";
 import { userService } from "../../services/userService";
 import SensitiveField from "../../components/shared/SensitiveField";
 import { maskMiddleValue } from "../../utils/maskMiddleValue";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeValidationMessage,
+  isVietnameseMessage,
+} from "../../utils/safeErrorMessage";
 
 const createBankForm = (
   bankAccount,
@@ -70,12 +73,20 @@ const getApiErrorMessage = (
   const responseData =
     error?.response?.data;
 
+  const responseMessage =
+    responseData?.message ||
+    responseData?.error?.message ||
+    "";
+
   return (
     getSafeValidationMessage(
       responseData?.errors,
     ) ||
-    responseData?.message ||
-    responseData?.error?.message ||
+    (isVietnameseMessage(
+      responseMessage,
+    )
+      ? responseMessage
+      : "") ||
     fallbackMessage
   );
 };
@@ -442,18 +453,38 @@ const BankAccountSection = ({
       return "Vui lòng chọn một ngân hàng trong danh sách gợi ý.";
     }
 
-    if (
-      !/^[0-9]{3,30}$/.test(
-        form.accountNumber.trim(),
-      )
-    ) {
-      return "Số tài khoản chỉ được chứa từ 3 đến 30 chữ số.";
+    const accountNumber =
+      form.accountNumber.trim();
+
+    const accountName =
+      form.accountName.trim();
+
+    if (!accountNumber) {
+      return "Vui lòng nhập số tài khoản.";
     }
 
     if (
-      !form.accountName.trim()
+      !/^[0-9A-Za-z]+$/.test(
+        accountNumber,
+      )
     ) {
+      return "Số tài khoản chỉ được chứa chữ cái và chữ số.";
+    }
+
+    if (
+      accountNumber.length > 50
+    ) {
+      return "Số tài khoản không được vượt quá 50 ký tự.";
+    }
+
+    if (!accountName) {
       return "Vui lòng nhập tên chủ tài khoản.";
+    }
+
+    if (
+      accountName.length > 255
+    ) {
+      return "Tên chủ tài khoản không được vượt quá 255 ký tự.";
     }
 
     return "";
@@ -485,7 +516,9 @@ const BankAccountSection = ({
         form.accountNumber.trim(),
 
       accountName:
-        form.accountName.trim(),
+        form.accountName
+          .trim()
+          .toUpperCase(),
     };
 
     setIsSaving(true);
@@ -855,7 +888,7 @@ const BankAccountSection = ({
               }
               onChange={handleChange}
               required
-              placeholder="Nhập số tài khoản"
+              placeholder="Nhập số tài khoản ngân hàng"
               autoComplete="off"
             />
 
