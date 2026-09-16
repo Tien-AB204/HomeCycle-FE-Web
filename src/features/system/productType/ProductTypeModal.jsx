@@ -28,6 +28,22 @@ const normalizeValue = (value) => {
     .toLocaleLowerCase("vi");
 };
 
+const DATA_TYPE_OPTIONS = [
+  { value: "Text", label: "Văn bản" },
+  { value: "Number", label: "Số" },
+  { value: "Boolean", label: "Đúng / Sai" },
+];
+
+const INPUT_MODE_OPTIONS = [
+  { value: "OptionOnly", label: "Chỉ chọn tùy chọn" },
+  { value: "CustomOnly", label: "Nhập tự do" },
+  { value: "OptionOrCustom", label: "Chọn hoặc nhập" },
+];
+
+const hasOptionsMode = (inputMode) =>
+  inputMode === "OptionOnly" ||
+  inputMode === "OptionOrCustom";
+
 export default function ProductTypeModal({
   categories = [],
   editingProductType = null,
@@ -94,14 +110,26 @@ export default function ProductTypeModal({
       ...currentForm,
       attributes:
         currentForm.attributes.map(
-          (attribute) =>
-            attribute.clientId ===
-            attributeId
-              ? {
-                  ...attribute,
-                  [field]: value,
-                }
-              : attribute,
+          (attribute) => {
+            if (attribute.clientId !== attributeId) {
+              return attribute;
+            }
+
+            const nextAttribute = {
+              ...attribute,
+              [field]: value,
+            };
+
+            if (field === "inputMode") {
+              nextAttribute.options = hasOptionsMode(value)
+                ? attribute.options.length > 0
+                  ? attribute.options
+                  : [createEmptyOption()]
+                : [];
+            }
+
+            return nextAttribute;
+          },
         ),
     }));
 
@@ -290,6 +318,10 @@ export default function ProductTypeModal({
       const attribute =
         form.attributes[index];
 
+      if (!hasOptionsMode(attribute.inputMode)) {
+        continue;
+      }
+
       if (attribute.options.length === 0) {
         return `Thuộc tính "${attribute.attributeName}" phải có ít nhất một lựa chọn.`;
       }
@@ -382,20 +414,21 @@ export default function ProductTypeModal({
         (attribute) => ({
           attributeName:
             attribute.attributeName.trim(),
-          dataType: "Text",
+          dataType: attribute.dataType,
           unit: attribute.unit.trim(),
           isFilterable:
             attribute.isFilterable,
           isRequired:
             attribute.isRequired,
-          inputMode: "OptionOnly",
-          options:
-            attribute.options.map(
+          inputMode: attribute.inputMode,
+          options: hasOptionsMode(attribute.inputMode)
+            ? attribute.options.map(
               (option) => ({
                 optionValue:
                   option.optionValue.trim(),
               }),
-            ),
+            )
+            : [],
         }),
       ),
     });
@@ -624,9 +657,9 @@ export default function ProductTypeModal({
                     </h4>
 
                     <p className="mt-1 text-xs text-textLight">
-                      Hiện tại sử dụng kiểu
-                      Text và lựa chọn cố
-                      định OptionOnly.
+                      Cấu hình kiểu dữ liệu và
+                      chế độ nhập cho từng thuộc
+                      tính ban đầu.
                     </p>
                   </div>
 
@@ -753,6 +786,64 @@ export default function ProductTypeModal({
                               className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
                             />
                           </div>
+
+                          <div>
+                            <label
+                              htmlFor={`attribute-data-type-${attribute.clientId}`}
+                              className="mb-1.5 block text-sm font-medium text-text"
+                            >
+                              Kiểu dữ liệu
+                            </label>
+
+                            <select
+                              id={`attribute-data-type-${attribute.clientId}`}
+                              value={attribute.dataType}
+                              onChange={(event) =>
+                                handleAttributeChange(
+                                  attribute.clientId,
+                                  "dataType",
+                                  event.target.value,
+                                )
+                              }
+                              disabled={submitting}
+                              className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
+                            >
+                              {DATA_TYPE_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label
+                              htmlFor={`attribute-input-mode-${attribute.clientId}`}
+                              className="mb-1.5 block text-sm font-medium text-text"
+                            >
+                              Chế độ nhập
+                            </label>
+
+                            <select
+                              id={`attribute-input-mode-${attribute.clientId}`}
+                              value={attribute.inputMode}
+                              onChange={(event) =>
+                                handleAttributeChange(
+                                  attribute.clientId,
+                                  "inputMode",
+                                  event.target.value,
+                                )
+                              }
+                              disabled={submitting}
+                              className="w-full rounded-md border border-border bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:bg-background"
+                            >
+                              {INPUT_MODE_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
 
                         <div className="mt-4 flex flex-wrap gap-5">
@@ -807,7 +898,8 @@ export default function ProductTypeModal({
                           </label>
                         </div>
 
-                        <div className="mt-5 border-t border-border pt-4">
+                        {hasOptionsMode(attribute.inputMode) && (
+                          <div className="mt-5 border-t border-border pt-4">
                           <div className="mb-3 flex items-center justify-between">
                             <p className="text-sm font-semibold text-text">
                               Các lựa chọn
@@ -900,7 +992,8 @@ export default function ProductTypeModal({
                               ),
                             )}
                           </div>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     ),
                   )}

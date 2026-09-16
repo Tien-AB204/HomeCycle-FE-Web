@@ -86,8 +86,6 @@ const VerificationPage = () => {
   // Inline Actions & Feedback
   const [actionState, setActionState] = useState("idle");
   const [rejectReason, setRejectReason] = useState("");
-  const [supplementRequestNote, setSupplementRequestNote] =
-    useState("");
   const [actionFeedback, setActionFeedback] = useState(null);
   const [globalSuccess, setGlobalSuccess] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -764,23 +762,6 @@ const VerificationPage = () => {
               {actionState === "idle" && (
                 <div className="flex flex-wrap justify-end gap-3">
                   <Button
-                    size="large"
-                    onClick={() => {
-                      setSupplementRequestNote("");
-                      setActionState("requesting-supplement");
-                    }}
-                    className="font-medium text-warning border-warning/40"
-                  >
-                    <span
-                      className="material-symbols-outlined mr-1 text-[18px]"
-                      aria-hidden="true"
-                    >
-                      note_add
-                    </span>
-                    Yêu cầu bổ sung
-                  </Button>
-
-                  <Button
                     danger
                     size="large"
                     icon={<CloseCircleOutlined />}
@@ -799,66 +780,6 @@ const VerificationPage = () => {
                   >
                     Duyệt hồ sơ
                   </Button>
-                </div>
-              )}
-
-              {actionState === "requesting-supplement" && (
-                <div className="rounded-xl border border-warning/20 bg-warning/10 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="flex items-center gap-2 font-semibold text-warning">
-                        <span
-                          className="material-symbols-outlined text-[20px]"
-                          aria-hidden="true"
-                        >
-                          note_add
-                        </span>
-                        Yêu cầu bổ sung giấy tờ
-                      </p>
-
-                      <p className="mt-1 text-xs text-textLight">
-                        Ghi rõ giấy tờ hoặc thông tin người dùng cần bổ sung.
-                      </p>
-                    </div>
-
-                    <span className="rounded-full border border-warning/20 bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-warning">
-                      Đang hoàn thiện
-                    </span>
-                  </div>
-
-                  <Input.TextArea
-                    rows={3}
-                    value={supplementRequestNote}
-                    onChange={(event) =>
-                      setSupplementRequestNote(event.target.value)
-                    }
-                    placeholder="Ví dụ: Vui lòng bổ sung ảnh giấy phép rõ nét hơn..."
-                    className="mt-3"
-                  />
-
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-xs text-textLight">
-                      Nội dung hiện chưa được gửi đi.
-                    </p>
-
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => {
-                          setSupplementRequestNote("");
-                          setActionState("idle");
-                        }}
-                      >
-                        Hủy
-                      </Button>
-
-                      <Button
-                        type="primary"
-                        disabled
-                      >
-                        Gửi yêu cầu
-                      </Button>
-                    </div>
-                  </div>
                 </div>
               )}
 

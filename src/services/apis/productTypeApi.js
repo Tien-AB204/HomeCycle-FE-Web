@@ -1,4 +1,5 @@
 import axiosClient from "./axiosClient";
+import { createProductTypeApiError } from "../../utils/productTypeErrorMessage";
 
 const DEFAULT_PAGE_NUMBER = 1;
 const DEFAULT_PAGE_SIZE = 10;
@@ -6,14 +7,7 @@ const DEFAULT_PAGE_SIZE = 10;
 const createApiError = (
   response,
   fallbackMessage,
-) => {
-  const message =
-    response?.error?.message ||
-    response?.message ||
-    fallbackMessage;
-
-  return new Error(message);
-};
+) => createProductTypeApiError(response, fallbackMessage);
 
 const ensureSuccessfulResponse = (
   response,
