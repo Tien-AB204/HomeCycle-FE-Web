@@ -705,7 +705,7 @@ const AgreementPage = () => {
       {notice && <div className="mb-5 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm font-semibold text-success">{notice}</div>}
 
       {!agreement && preview?.canCreate && (
-        <AgreementForm negotiationId={negotiationId} onSubmit={handleSave} busy={busy === "save"} />
+        <AgreementForm negotiationId={negotiationId} originalPost={transactionContext.post} onSubmit={handleSave} busy={busy === "save"} />
       )}
 
       {!agreement && !preview?.canCreate && (
@@ -717,7 +717,7 @@ const AgreementPage = () => {
       )}
 
       {agreement && editing && (
-        <AgreementForm agreement={agreement} negotiationId={negotiationId} onSubmit={handleSave} onCancel={() => setEditing(false)} busy={busy === "save"} />
+        <AgreementForm agreement={agreement} negotiationId={negotiationId} originalPost={transactionContext.post} onSubmit={handleSave} onCancel={() => setEditing(false)} busy={busy === "save"} />
       )}
 
       {agreement && !editing && <>

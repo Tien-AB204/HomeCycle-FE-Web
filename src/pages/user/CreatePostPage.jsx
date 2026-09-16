@@ -42,6 +42,17 @@ import {
 } from "../../utils/postFormUtils";
 
 const REFERENCE_PAGE_SIZE = 100;
+const GHN_MAX_WEIGHT_KG = 50;
+const GHN_MAX_DIMENSION_CM = 200;
+
+const isGhnDeliveryMethod = (value) => {
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(/[\s_-]/g, "")
+    .toLowerCase();
+
+  return normalized === "1" || normalized === "ghndelivery";
+};
 
 const FORM_STEPS = Object.freeze([
   {
@@ -762,13 +773,38 @@ const CreatePostPage = () => {
     }
 
     if (!isBuyPost) {
-      ["originalPrice", "length", "width", "height", "weight"].forEach(
-        (fieldName) => {
+      if (!isNonNegativeNumber(form.originalPrice)) {
+        nextErrors.originalPrice = "Giá trị phải là số không âm.";
+      }
+
+      if (isGhnDeliveryMethod(form.deliveryMethod)) {
+        const ghnFields = [
+          ["length", "Chiều dài", GHN_MAX_DIMENSION_CM, "cm"],
+          ["width", "Chiều rộng", GHN_MAX_DIMENSION_CM, "cm"],
+          ["height", "Chiều cao", GHN_MAX_DIMENSION_CM, "cm"],
+          ["weight", "Khối lượng", GHN_MAX_WEIGHT_KG, "kg"],
+        ];
+
+        ghnFields.forEach(([fieldName, label, maximum, unit]) => {
+          const value = Number(form[fieldName]);
+
+          if (
+            form[fieldName] === "" ||
+            !Number.isFinite(value) ||
+            value <= 0
+          ) {
+            nextErrors[fieldName] = `${label} GHN phải lớn hơn 0 ${unit}.`;
+          } else if (value > maximum) {
+            nextErrors[fieldName] = `${label} GHN không được vượt quá ${maximum} ${unit}.`;
+          }
+        });
+      } else {
+        ["length", "width", "height", "weight"].forEach((fieldName) => {
           if (!isNonNegativeNumber(form[fieldName])) {
             nextErrors[fieldName] = "Giá trị phải là số không âm.";
           }
-        },
-      );
+        });
+      }
     }
 
     attributes.forEach((attribute) => {
@@ -1476,18 +1512,26 @@ const CreatePostPage = () => {
           {!isBuyPost && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                ["length", "Chiều dài"],
-                ["width", "Chiều rộng"],
-                ["height", "Chiều cao"],
-                ["weight", "Khối lượng"],
-              ].map(([fieldName, label]) => (
+                ["length", "Chiều dài (cm)", GHN_MAX_DIMENSION_CM],
+                ["width", "Chiều rộng (cm)", GHN_MAX_DIMENSION_CM],
+                ["height", "Chiều cao (cm)", GHN_MAX_DIMENSION_CM],
+                ["weight", "Khối lượng (kg)", GHN_MAX_WEIGHT_KG],
+              ].map(([fieldName, label, ghnMaximum]) => (
                 <label key={fieldName} className="block">
                   <span className="mb-1.5 block text-sm font-semibold text-text">
                     {label}
+                    {isGhnDeliveryMethod(form.deliveryMethod) && (
+                      <span className="text-error"> *</span>
+                    )}
                   </span>
                   <input
                     type="number"
-                    min="0"
+                    min={isGhnDeliveryMethod(form.deliveryMethod) ? "0.01" : "0"}
+                    max={
+                      isGhnDeliveryMethod(form.deliveryMethod)
+                        ? ghnMaximum
+                        : undefined
+                    }
                     step="any"
                     value={form[fieldName]}
                     onChange={(event) =>
