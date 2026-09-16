@@ -5,7 +5,10 @@ import { userService } from "../../services/userService";
 import AvatarUploader from "../../features/profile/AvatarUploader";
 import SensitiveField from "../../components/shared/SensitiveField";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeValidationMessage,
+  isVietnameseMessage,
+} from "../../utils/safeErrorMessage";
 import {
   FILE_UPLOAD_CONTEXT,
   getFileUploadAccept,
@@ -76,13 +79,47 @@ const createIdentityForm = (profile) => ({
   backIdCardFile: null,
 });
 
-const getApiErrorMessage = (error, fallbackMessage) => {
-  const responseData = error?.response?.data;
+const normalizeVietnamMobilePhone = (
+  value,
+) =>
+  String(value ?? "")
+    .replace(/[\s.-]/gu, "");
 
-  return (
-    getSafeValidationMessage(responseData?.errors) ||
+const validateVietnamMobilePhone = (
+  value,
+) => {
+  const normalized =
+    normalizeVietnamMobilePhone(
+      value,
+    );
+
+  return /^0[35789]\d{8}$/.test(
+    normalized,
+  )
+    ? ""
+    : "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09.";
+};
+const getApiErrorMessage = (
+  error,
+  fallbackMessage,
+) => {
+  const responseData =
+    error?.response?.data;
+
+  const responseMessage =
     responseData?.message ||
     responseData?.error?.message ||
+    "";
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    (isVietnameseMessage(
+      responseMessage,
+    )
+      ? responseMessage
+      : "") ||
     fallbackMessage
   );
 };
@@ -408,8 +445,13 @@ export default function UserProfilePage() {
       return "Vui lòng nhập họ và tên.";
     }
 
-    if (!/^[0-9]{9,11}$/.test(profileForm.phoneNumber.trim())) {
-      return "Số điện thoại phải gồm từ 9 đến 11 chữ số.";
+    const phoneError =
+      validateVietnamMobilePhone(
+        profileForm.phoneNumber,
+      );
+
+    if (phoneError) {
+      return phoneError;
     }
 
     return "";
@@ -431,7 +473,7 @@ export default function UserProfilePage() {
 
       fullName: profileForm.fullName.trim(),
 
-      phoneNumber: profileForm.phoneNumber.trim(),
+      phoneNumber: normalizeVietnamMobilePhone(profileForm.phoneNumber),
     };
 
     setIsSavingProfile(true);
@@ -591,12 +633,12 @@ export default function UserProfilePage() {
       return "Vui lòng nhập địa chỉ trên CCCD.";
     }
 
-    if (!identityForm.frontIdCardFile && !profile.frontIDCardImage) {
-      return "Vui lòng chọn ảnh CCCD mặt trước.";
+    if (!identityForm.frontIdCardFile) {
+      return "Mỗi lần cập nhật giấy tờ, vui lòng chọn lại ảnh CCCD mặt trước.";
     }
 
-    if (!identityForm.backIdCardFile && !profile.backIDCardImage) {
-      return "Vui lòng chọn ảnh CCCD mặt sau.";
+    if (!identityForm.backIdCardFile) {
+      return "Mỗi lần cập nhật giấy tờ, vui lòng chọn lại ảnh CCCD mặt sau.";
     }
 
     const frontImageError =
@@ -1097,6 +1139,9 @@ export default function UserProfilePage() {
                     />
                   </div>
 
+                  <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm leading-6 text-text">
+                    Mỗi lần cập nhật giấy tờ, vui lòng chọn lại cả ảnh CCCD mặt trước và mặt sau theo yêu cầu xác minh.
+                  </div>
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <IdentityFileInput
                       id="identity-front-image"
