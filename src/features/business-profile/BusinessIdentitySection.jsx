@@ -50,6 +50,74 @@ const formatDate = (value) => {
     : value;
 };
 
+const normalizeIdentityName = (
+  value,
+) =>
+  String(value ?? "")
+    .normalize("NFC")
+    .trim()
+    .replace(/\s+/gu, " ")
+    .toUpperCase();
+
+const parseDateOnly = (value) => {
+  const parts =
+    String(value || "")
+      .split("-")
+      .map(Number);
+
+  if (
+    parts.length !== 3 ||
+    parts.some(
+      (part) =>
+        !Number.isInteger(part),
+    )
+  ) {
+    return null;
+  }
+
+  const [year, month, day] =
+    parts;
+
+  const date = new Date(
+    year,
+    month - 1,
+    day,
+  );
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+
+  return date;
+};
+
+const isAtLeast18YearsOld = (
+  dob,
+) => {
+  const birthDate =
+    parseDateOnly(dob);
+
+  if (!birthDate) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const cutoff = new Date(
+    today.getFullYear() - 18,
+    today.getMonth(),
+    today.getDate(),
+  );
+
+  return birthDate <= cutoff;
+};
 export default function BusinessIdentitySection({
   profile,
   onUpdated,
@@ -76,40 +144,91 @@ export default function BusinessIdentitySection({
   };
 
   const validate = () => {
-    if (!form.fullName.trim()) {
+    const fullName =
+      form.fullName.trim();
+
+    const identityName =
+      form.identityName.trim();
+
+    if (!fullName) {
       return "Vui lòng nhập họ tên người đại diện.";
     }
+
+    if (fullName.length > 255) {
+      return "Họ tên người đại diện không được vượt quá 255 ký tự.";
+    }
+
     if (
-      !/^\d{9,12}$/.test(
+      !/^\d{12}$/.test(
         form.identityNumber.trim(),
       )
     ) {
-      return "Số giấy tờ phải gồm từ 9 đến 12 chữ số.";
+      return "Số CCCD phải gồm đúng 12 chữ số.";
     }
-    if (!form.identityName.trim()) {
-      return "Vui lòng nhập họ tên trên giấy tờ.";
+
+    if (!identityName) {
+      return "Vui lòng nhập họ tên trên CCCD.";
     }
+
+    if (identityName.length > 255) {
+      return "Họ tên trên CCCD không được vượt quá 255 ký tự.";
+    }
+
+    if (
+      normalizeIdentityName(
+        fullName,
+      ) !==
+      normalizeIdentityName(
+        identityName,
+      )
+    ) {
+      return "Họ tên người đại diện phải khớp với họ tên trên CCCD.";
+    }
+
     if (!form.identityDob) {
       return "Vui lòng chọn ngày sinh.";
     }
-    if (
-      new Date(form.identityDob) >
-      new Date()
-    ) {
+
+    const birthDate =
+      parseDateOnly(
+        form.identityDob,
+      );
+
+    if (!birthDate) {
       return "Ngày sinh không hợp lệ.";
     }
-    if (!form.identityAddress.trim()) {
-      return "Vui lòng nhập địa chỉ trên giấy tờ.";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (birthDate > today) {
+      return "Ngày sinh không được lớn hơn ngày hiện tại.";
+    }
+
+    if (
+      !isAtLeast18YearsOld(
+        form.identityDob,
+      )
+    ) {
+      return "Người đại diện phải đủ 18 tuổi trở lên.";
+    }
+
+    if (
+      !form.identityAddress.trim()
+    ) {
+      return "Vui lòng nhập địa chỉ trên CCCD.";
     }
 
     return (
       validateBusinessFile(
         form.cccdFront,
         "Ảnh CCCD mặt trước",
+        { required: true },
       ) ||
       validateBusinessFile(
         form.cccdBack,
         "Ảnh CCCD mặt sau",
+        { required: true },
       )
     );
   };
@@ -166,7 +285,7 @@ export default function BusinessIdentitySection({
       <BusinessSectionIntro
         icon="badge"
         title="Người đại diện & định danh"
-        description="Quản lý thông tin pháp lý của người đại diện. Chỉ chọn lại ảnh CCCD khi bạn thực sự muốn thay đổi giấy tờ đã lưu."
+        description="Quản lý thông tin pháp lý của người đại diện. Mỗi lần cập nhật, vui lòng chọn lại cả ảnh CCCD mặt trước và mặt sau."
       />
       <FormMessage
         error={error}
@@ -334,6 +453,7 @@ export default function BusinessIdentitySection({
           <BusinessFileField
             id="business-cccd-front"
             label="CCCD mặt trước"
+            required
             currentUrl={
               profile.cccdFrontUrl
             }
@@ -349,6 +469,7 @@ export default function BusinessIdentitySection({
           <BusinessFileField
             id="business-cccd-back"
             label="CCCD mặt sau"
+            required
             currentUrl={
               profile.cccdBackUrl
             }
