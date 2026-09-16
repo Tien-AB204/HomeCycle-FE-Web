@@ -2,7 +2,9 @@ import axiosClient from "./axiosClient";
 
 const DEFAULT_PAGE_NUMBER = 1;
 const DEFAULT_PAGE_SIZE = 10;
-const MAX_REVIEW_IMAGES = 3;
+
+export const MAX_REVIEW_IMAGES = 3;
+export const MAX_REVIEW_COMMENT_LENGTH = 2000;
 
 const normalizeIdentifier = (value, message) => {
   const id = String(value || "").trim();
@@ -20,6 +22,21 @@ const normalizeRating = (value) => {
   return rating;
 };
 
+const normalizeComment = (value) => {
+  const comment =
+    String(value || "").trim();
+
+  if (
+    comment.length >
+    MAX_REVIEW_COMMENT_LENGTH
+  ) {
+    throw new Error(
+      `Bình luận đánh giá không được vượt quá ${MAX_REVIEW_COMMENT_LENGTH} ký tự.`,
+    );
+  }
+
+  return comment;
+};
 const unwrapPayload = (response) => response?.data ?? response;
 
 const normalizeImages = (review) => {
@@ -138,7 +155,7 @@ export const reviewApi = {
     const formData = new FormData();
 
     formData.append("Rating", String(normalizeRating(rating)));
-    formData.append("Comment", String(comment || "").trim());
+    formData.append("Comment", normalizeComment(comment));
     validateImages(images).forEach((image) => formData.append("Images", image));
 
     const response = await axiosClient.post(
@@ -178,7 +195,7 @@ export const reviewApi = {
       `/reviews/${encodeURIComponent(id)}`,
       {
         rating: normalizeRating(rating),
-        comment: String(comment || "").trim(),
+        comment: normalizeComment(comment),
       },
       {
         skipGlobalErrorPage: true,
