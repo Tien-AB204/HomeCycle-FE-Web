@@ -116,9 +116,26 @@ const DELIVERY_METHOD_BY_NUMBER = Object.freeze({
   3: DELIVERY_METHOD.BUYER_PICK_UP,
 });
 
-export const getDeliveryMethodLabel = (method) => {
+export const normalizeDeliveryMethod = (method) => {
   const raw = String(method ?? "").trim();
-  const normalized = DELIVERY_METHOD_BY_NUMBER[raw] ?? raw;
+  const byNumber = DELIVERY_METHOD_BY_NUMBER[raw];
+
+  if (byNumber) return byNumber;
+
+  const key = raw.replace(/[\s_-]+/g, "").toLowerCase();
+
+  if (key === "ghndelivery") return DELIVERY_METHOD.GHN;
+  if (key === "sellerdelivers") return DELIVERY_METHOD.SELLER_DELIVERS;
+  if (key === "buyerpickup" || key === "pickup") {
+    return DELIVERY_METHOD.BUYER_PICK_UP;
+  }
+  if (!key || key === "unknown") return DELIVERY_METHOD.UNKNOWN;
+
+  return raw;
+};
+
+export const getDeliveryMethodLabel = (method) => {
+  const normalized = normalizeDeliveryMethod(method);
 
   if (normalized === DELIVERY_METHOD.GHN) return "Giao hàng nhanh (GHN)";
   return DELIVERY_METHOD_OPTIONS.find((option) => option.value === normalized)?.label || "Chưa xác định";
