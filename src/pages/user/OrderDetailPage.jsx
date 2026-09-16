@@ -10,6 +10,10 @@ import OrderReviewSection from "../../features/reviews/OrderReviewSection";
 import orderApi from "../../services/apis/orderApi";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 
@@ -29,10 +33,38 @@ const formatDate = (value) => {
     : "—";
 };
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  "Không thể tải chi tiết đơn hàng.";
+const isBuyPostType = (value) => {
+  const normalized =
+    String(value ?? "")
+      .trim()
+      .toLowerCase();
+
+  return (
+    normalized === "buy" ||
+    normalized === "2"
+  );
+};
+
+const getErrorMessage = (error) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    "Không thể tải chi tiết đơn hàng."
+  );
+};
 
 const DetailRow = ({ label, children }) => (
   <div className="grid gap-1 py-3 sm:grid-cols-[170px_1fr] sm:items-center">
@@ -1092,10 +1124,44 @@ const OrderDetailPage = () => {
     state.post?.productName ||
     detail.postDescription ||
     "Sản phẩm trong đơn hàng";
-  const displayCode = order.orderCode || "Đơn hàng HomeCycle";
-  const finalTotalAmount = Number(order.finalTotalAmount || 0);
-  const amountPaid = Number(order.amountPaid || 0);
-  const amountRemaining = Number(order.amountRemaining || 0);
+  const displayCode =
+    order.orderCode ||
+    "Đơn hàng HomeCycle";
+
+  const isBuyPost =
+    isBuyPostType(
+      state.post?.postType,
+    );
+
+  const originalTotalAmount =
+    Number(
+      order.originalTotalAmount ||
+        0,
+    );
+
+  const finalTotalAmount =
+    Number(
+      order.finalTotalAmount ||
+        0,
+    );
+
+  const shippingFee =
+    Math.max(
+      0,
+      Number(
+        order.shippingFee ??
+          finalTotalAmount -
+            originalTotalAmount,
+      ),
+    );
+
+  const amountPaid =
+    Number(order.amountPaid || 0);
+
+  const amountRemaining =
+    Number(
+      order.amountRemaining || 0,
+    );
   const isFullyPaid =
     isPaymentStatus(order.paymentStatus, "Completed") ||
     (finalTotalAmount > 0 &&
@@ -1200,7 +1266,12 @@ const OrderDetailPage = () => {
         <div className="space-y-5">
           <section className="rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
             <div className="flex flex-col gap-5 sm:flex-row">
-              <OrderProductImage src={detail.thumbnailUrl} alt={productName} />
+              {!isBuyPost && (
+                <OrderProductImage
+                  src={detail.thumbnailUrl}
+                  alt={productName}
+                />
+              )}
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
                   Sản phẩm giao dịch
@@ -1263,12 +1334,6 @@ const OrderDetailPage = () => {
           <p className="mt-2 text-3xl font-black text-error">
             {formatCurrency(order.finalTotalAmount)}
           </p>
-          {Number(order.originalTotalAmount) !==
-            Number(order.finalTotalAmount) && (
-            <p className="mt-1 text-sm text-textLight line-through">
-              {formatCurrency(order.originalTotalAmount)}
-            </p>
-          )}
 
           <div className="mt-5 h-2 overflow-hidden rounded-full bg-border/30">
             <div
@@ -1286,6 +1351,28 @@ const OrderDetailPage = () => {
           </div>
 
           <dl className="mt-5 divide-y divide-border border-y border-border">
+            <div className="flex items-center justify-between gap-4 py-3 text-sm">
+              <dt className="text-textLight">
+                Giá trị sản phẩm
+              </dt>
+              <dd className="font-black text-text">
+                {formatCurrency(
+                  originalTotalAmount,
+                )}
+              </dd>
+            </div>
+
+            <div className="flex items-center justify-between gap-4 py-3 text-sm">
+              <dt className="text-textLight">
+                Phí vận chuyển
+              </dt>
+              <dd className="font-black text-text">
+                {formatCurrency(
+                  shippingFee,
+                )}
+              </dd>
+            </div>
+
             <div className="flex items-center justify-between gap-4 py-3 text-sm">
               <dt className="text-textLight">Đã thanh toán</dt>
               <dd className="font-black text-success">
