@@ -4,6 +4,7 @@ import {
   useState,
 } from "react";
 import provinceApi from "../../services/apis/provinceApi";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const normalizeText = (value) =>
   String(value || "")
@@ -86,7 +87,9 @@ export default function BusinessAddressFields({
       .catch((loadError) => {
         if (!isActive) return;
         setError(
-          loadError?.message ||
+          getSafeProblemDetail(
+            loadError?.message,
+          ) ||
             "Không thể tải tỉnh thành.",
         );
       })
@@ -120,7 +123,9 @@ export default function BusinessAddressFields({
         if (!isActive) return;
         setWards([]);
         setError(
-          loadError?.message ||
+          getSafeProblemDetail(
+            loadError?.message,
+          ) ||
             "Không thể tải phường xã.",
         );
       });
