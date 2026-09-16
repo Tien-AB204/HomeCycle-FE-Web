@@ -42,6 +42,10 @@ import {
   POST_CHANGED_WARNING,
   VERIFICATION_FAILED_WARNING,
 } from "../../utils/transactionFreshnessUtils";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const DELIVERY_METHODS = {
   GhnDelivery: "Giao hàng GHN",
@@ -120,6 +124,18 @@ const isCanceledRequest = (error) => {
   );
 };
 
+const isBuyPostType = (value) => {
+  const normalized =
+    String(value ?? "")
+      .trim()
+      .toLowerCase();
+
+  return (
+    normalized === "buy" ||
+    normalized === "2"
+  );
+};
+
 const getErrorMessage = (
   error,
   fallbackMessage = "Không thể tải chi tiết bài đăng.",
@@ -128,8 +144,18 @@ const getErrorMessage = (
     error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     fallbackMessage
   );
 };
@@ -516,8 +542,9 @@ const PostDetailPage = ({ ownerMode = false }) => {
     ? product.attributeValues
     : [];
   const isBuyPost =
-    String(post?.postType).toLowerCase() ===
-    "buy";
+    isBuyPostType(
+      post?.postType,
+    );
   const fallbackListPath = `${
     isBuyPost
       ? "/tin-thu-mua"
