@@ -1,6 +1,7 @@
 export const FILE_UPLOAD_CONTEXT = Object.freeze({
   AVATAR: "Avatar",
   IDENTITY_DOCUMENT: "IdentityDocument",
+  REVIEW_MEDIA: "ReviewMedia",
 });
 
 const normalizeExtensions = (extensions) =>
