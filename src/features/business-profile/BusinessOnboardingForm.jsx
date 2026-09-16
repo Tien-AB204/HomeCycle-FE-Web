@@ -46,6 +46,9 @@ const createForm = (draft) => {
   const profile =
     normalizeBusinessProfile(draft);
 
+  const serviceArea =
+    profile.serviceAreas?.[0] || {};
+
   return {
     fullName: profile.fullName || "",
     businessName:
@@ -79,9 +82,18 @@ const createForm = (draft) => {
       "",
     accountName:
       profile.bankAccount?.accountName || "",
-    serviceAreaCity: "",
-    serviceAreaWard: "",
-    serviceAreaStreet: "",
+    serviceAreaCity:
+      serviceArea.city ||
+      serviceArea.City ||
+      "",
+    serviceAreaWard:
+      serviceArea.ward ||
+      serviceArea.Ward ||
+      "",
+    serviceAreaStreet:
+      serviceArea.street ||
+      serviceArea.Street ||
+      "",
     cccdFront: null,
     cccdBack: null,
     registrationCertificate: null,
