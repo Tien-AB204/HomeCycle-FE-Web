@@ -34,6 +34,14 @@ const normalizeSearch = (value) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
+const normalizeIdentityName = (
+  value,
+) =>
+  String(value ?? "")
+    .normalize("NFC")
+    .trim()
+    .replace(/\s+/gu, " ")
+    .toUpperCase();
 const createForm = (draft) => {
   const profile =
     normalizeBusinessProfile(draft);
@@ -178,70 +186,161 @@ export default function BusinessOnboardingForm({
 
   const validate = () => {
     const requiredValues = [
-      [form.fullName, "họ tên người đại diện"],
-      [form.businessName, "tên doanh nghiệp"],
       [
-        form.businessDescription,
-        "giới thiệu doanh nghiệp",
+        form.fullName,
+        "họ tên người đại diện",
+      ],
+      [
+        form.businessName,
+        "tên doanh nghiệp",
       ],
       [form.taxCode, "mã số thuế"],
-      [form.identityNumber, "số CCCD"],
+      [
+        form.identityNumber,
+        "số CCCD",
+      ],
       [
         form.identityName,
         "họ tên trên CCCD",
       ],
-      [form.identityDob, "ngày sinh"],
+      [
+        form.identityDob,
+        "ngày sinh",
+      ],
       [
         form.identityAddress,
         "địa chỉ trên CCCD",
       ],
-      [form.city, "tỉnh thành trụ sở"],
-      [form.ward, "phường xã trụ sở"],
+      [
+        form.city,
+        "tỉnh thành trụ sở",
+      ],
+      [
+        form.ward,
+        "phường xã trụ sở",
+      ],
       [
         form.businessAddress,
         "địa chỉ trụ sở",
       ],
       [
-        form.operatingScope,
-        "phạm vi hoạt động",
-      ],
-      [form.bankCode, "ngân hàng"],
-      [form.accountNumber, "số tài khoản"],
-      [form.accountName, "chủ tài khoản"],
-      [
-        form.serviceAreaCity,
-        "tỉnh thành hoạt động",
+        form.bankCode,
+        "ngân hàng",
       ],
       [
-        form.serviceAreaWard,
-        "phường xã hoạt động",
+        form.bankName,
+        "tên ngân hàng",
       ],
       [
-        form.serviceAreaStreet,
-        "địa bàn hoạt động",
+        form.accountNumber,
+        "số tài khoản",
+      ],
+      [
+        form.accountName,
+        "chủ tài khoản",
       ],
     ];
 
-    const missingField = requiredValues.find(
-      ([value]) => !String(value || "").trim(),
-    );
+    if (
+      Number(
+        form.businessModel,
+      ) === 1
+    ) {
+      requiredValues.push(
+        [
+          form.serviceAreaCity,
+          "tỉnh thành hoạt động",
+        ],
+        [
+          form.serviceAreaWard,
+          "phường xã hoạt động",
+        ],
+        [
+          form.serviceAreaStreet,
+          "địa bàn hoạt động",
+        ],
+      );
+    }
+
+    const missingField =
+      requiredValues.find(
+        ([value]) =>
+          !String(
+            value || "",
+          ).trim(),
+      );
 
     if (missingField) {
       return `Vui lòng nhập ${missingField[1]}.`;
     }
+
     if (
-      !/^\d{9,12}$/.test(
-        form.identityNumber,
-      )
+      form.fullName.trim()
+        .length > 255
     ) {
-      return "Số CCCD phải gồm từ 9 đến 12 chữ số.";
+      return "Họ tên người đại diện không được vượt quá 255 ký tự.";
     }
+
     if (
-      !/^\d{3,30}$/.test(
-        form.accountNumber,
+      form.businessName.trim()
+        .length > 255
+    ) {
+      return "Tên doanh nghiệp không được vượt quá 255 ký tự.";
+    }
+
+    if (
+      form.taxCode.trim()
+        .length > 50
+    ) {
+      return "Mã số thuế không được vượt quá 50 ký tự.";
+    }
+
+    if (
+      !/^\d{12}$/.test(
+        form.identityNumber.trim(),
       )
     ) {
-      return "Số tài khoản phải gồm từ 3 đến 30 chữ số.";
+      return "Số CCCD phải gồm đúng 12 chữ số.";
+    }
+
+    if (
+      form.identityName.trim()
+        .length > 255
+    ) {
+      return "Họ tên trên CCCD không được vượt quá 255 ký tự.";
+    }
+
+    if (
+      normalizeIdentityName(
+        form.fullName,
+      ) !==
+      normalizeIdentityName(
+        form.identityName,
+      )
+    ) {
+      return "Họ tên người đại diện phải khớp với họ tên trên CCCD.";
+    }
+
+    const identityDob =
+      new Date(
+        `${form.identityDob}T00:00:00`,
+      );
+
+    const today = new Date();
+    today.setHours(
+      23,
+      59,
+      59,
+      999,
+    );
+
+    if (
+      Number.isNaN(
+        identityDob.getTime(),
+      ) ||
+      identityDob > today
+    ) {
+      return "Ngày sinh không hợp lệ hoặc lớn hơn ngày hiện tại.";
     }
 
     return (
@@ -403,7 +502,6 @@ export default function BusinessOnboardingForm({
                 event.target.value,
               )
             }
-            required
           />
           <BusinessField
             id="onboarding-description"
@@ -419,7 +517,6 @@ export default function BusinessOnboardingForm({
                 event.target.value,
               )
             }
-            required
             className="sm:col-span-2"
           />
         </div>
@@ -630,10 +727,7 @@ export default function BusinessOnboardingForm({
             onChange={(event) =>
               updateField(
                 "accountNumber",
-                event.target.value.replace(
-                  /\D/g,
-                  "",
-                ),
+                event.target.value,
               )
             }
             required
@@ -678,32 +772,35 @@ export default function BusinessOnboardingForm({
         </div>
       </OnboardingSection>
 
-      <OnboardingSection
-        number="04"
-        title="Khu vực hoạt động đầu tiên"
-        description="Bạn có thể thêm nhiều khu vực khác sau khi hồ sơ được tạo."
-      >
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <BusinessAddressFields
-            idPrefix="onboarding-service-area"
-            city={form.serviceAreaCity}
-            ward={form.serviceAreaWard}
-            street={form.serviceAreaStreet}
-            streetLabel="Địa bàn / tuyến đường"
-            onChange={(address) =>
-              setForm((current) => ({
-                ...current,
-                serviceAreaCity:
-                  address.city,
-                serviceAreaWard:
-                  address.ward,
-                serviceAreaStreet:
-                  address.street,
-              }))
-            }
-          />
-        </div>
-      </OnboardingSection>
+      {Number(form.businessModel) ===
+        1 && (
+        <OnboardingSection
+          number="04"
+          title="Khu vực hoạt động đầu tiên"
+          description="Doanh nghiệp cần đăng ký ít nhất một kho bãi hoặc khu vực hoạt động."
+        >
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <BusinessAddressFields
+              idPrefix="onboarding-service-area"
+              city={form.serviceAreaCity}
+              ward={form.serviceAreaWard}
+              street={form.serviceAreaStreet}
+              streetLabel="Địa bàn / tuyến đường"
+              onChange={(address) =>
+                setForm((current) => ({
+                  ...current,
+                  serviceAreaCity:
+                    address.city,
+                  serviceAreaWard:
+                    address.ward,
+                  serviceAreaStreet:
+                    address.street,
+                }))
+              }
+            />
+          </div>
+        </OnboardingSection>
+      )}
 
       <div className="sticky bottom-4 z-10 flex flex-col gap-3 rounded-2xl border border-border bg-white/95 p-4 shadow-[0_14px_38px_rgba(23,40,48,0.16)] backdrop-blur sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-6 text-textLight">

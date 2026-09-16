@@ -142,6 +142,15 @@ const getOnboardingStatusValue = (
   );
 };
 
+const isEnterpriseBusinessModel = (
+  value,
+) =>
+  Number(value) === 1 ||
+  String(value ?? "")
+    .trim()
+    .toLowerCase() ===
+    "enterprise";
+
 const hasMeaningfulProfile = (profile) =>
   Boolean(
     profile?.id ||
@@ -352,14 +361,26 @@ export default function BusinessProfilePage() {
       profile?.taxCode,
       profile?.identityNumber,
       profile?.bankAccount?.accountNumber,
-      profile?.serviceAreas?.length,
-      survey,
     ];
-    const completed = values.filter(
-      Boolean,
-    ).length;
+
+    if (
+      isEnterpriseBusinessModel(
+        profile?.businessModel,
+      )
+    ) {
+      values.push(
+        profile?.serviceAreas?.length,
+      );
+    }
+
+    values.push(survey);
+
+    const completed =
+      values.filter(Boolean).length;
+
     return Math.round(
-      (completed / values.length) * 100,
+      (completed / values.length) *
+        100,
     );
   }, [profile, survey]);
 
@@ -741,6 +762,9 @@ export default function BusinessProfilePage() {
             <BusinessServiceAreasSection
               serviceAreas={
                 profile.serviceAreas
+              }
+              businessModel={
+                profile.businessModel
               }
               onUpdated={() =>
                 loadProfile()

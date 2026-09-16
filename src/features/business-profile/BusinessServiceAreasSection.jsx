@@ -30,8 +30,17 @@ const normalizeArea = (area) => ({
   ]),
 });
 
+const isEnterpriseBusinessModel = (
+  value,
+) =>
+  Number(value) === 1 ||
+  String(value ?? "")
+    .trim()
+    .toLowerCase() ===
+    "enterprise";
 export default function BusinessServiceAreasSection({
   serviceAreas,
+  businessModel,
   onUpdated,
 }) {
   const [form, setForm] = useState(
@@ -47,6 +56,27 @@ export default function BusinessServiceAreasSection({
     useState("");
   const [success, setSuccess] =
     useState("");
+
+  const isEnterprise =
+    isEnterpriseBusinessModel(
+      businessModel,
+    );
+
+  if (!isEnterprise) {
+    return (
+      <div>
+        <BusinessSectionIntro
+          icon="distance"
+          title="Khu vực hoạt động"
+          description="Khu vực thu gom mở rộng chỉ áp dụng cho mô hình Doanh nghiệp."
+        />
+
+        <div className="rounded-2xl border border-border bg-background px-5 py-6 text-sm leading-6 text-textLight">
+          Mô hình Hộ kinh doanh không cần cấu hình kho bãi hoặc khu vực hoạt động mở rộng.
+        </div>
+      </div>
+    );
+  }
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -65,10 +95,19 @@ export default function BusinessServiceAreasSection({
     setError("");
     setSuccess("");
 
+    const city =
+      form.city.trim();
+
+    const ward =
+      form.ward.trim();
+
+    const street =
+      form.street.trim();
+
     if (
-      !form.city ||
-      !form.ward ||
-      !form.street.trim()
+      !city ||
+      !ward ||
+      !street
     ) {
       setError(
         "Vui lòng nhập đầy đủ khu vực hoạt động.",
@@ -76,12 +115,33 @@ export default function BusinessServiceAreasSection({
       return;
     }
 
+    if (city.length > 100) {
+      setError(
+        "Tên tỉnh / thành phố không được vượt quá 100 ký tự.",
+      );
+      return;
+    }
+
+    if (ward.length > 100) {
+      setError(
+        "Tên phường / xã không được vượt quá 100 ký tự.",
+      );
+      return;
+    }
+
+    if (street.length > 255) {
+      setError(
+        "Địa chỉ / tuyến đường không được vượt quá 255 ký tự.",
+      );
+      return;
+    }
+
     setIsSaving(true);
     try {
       const payload = {
-        city: form.city,
-        ward: form.ward,
-        street: form.street.trim(),
+        city,
+        ward,
+        street,
       };
 
       if (editingId) {
