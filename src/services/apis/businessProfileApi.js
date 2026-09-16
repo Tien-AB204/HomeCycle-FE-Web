@@ -165,15 +165,29 @@ const buildSubmitPayload = (data) => {
     ["BankName", data.bankName],
     ["AccountNumber", data.accountNumber],
     ["AccountName", data.accountName],
-    ["ServiceArea.City", data.serviceAreaCity],
-    [
-      "ServiceArea.Street",
-      data.serviceAreaStreet,
-    ],
-    ["ServiceArea.Ward", data.serviceAreaWard],
   ].forEach(([key, value]) => {
     appendText(payload, key, value);
   });
+
+  if (
+    Number(data.businessModel) === 1
+  ) {
+    appendText(
+      payload,
+      "ServiceArea.City",
+      data.serviceAreaCity,
+    );
+    appendText(
+      payload,
+      "ServiceArea.Street",
+      data.serviceAreaStreet,
+    );
+    appendText(
+      payload,
+      "ServiceArea.Ward",
+      data.serviceAreaWard,
+    );
+  }
 
   (data.documents || []).forEach(
     (document, index) => {
