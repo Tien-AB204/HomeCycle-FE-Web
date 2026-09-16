@@ -16,8 +16,8 @@ const LOGISTICS_MAP = {
   need_disassemble: "Cần tháo dỡ",
   motor_friendly: "Chở bằng xe máy",
   GhnDelivery: "Giao hàng GHN",
-  SelfDelivery: "Tự vận chuyển",
-  Pickup: "Nhận tại địa chỉ",
+  SellerDelivers: "Tự vận chuyển",
+  BuyerPickUp: "Nhận tại địa chỉ",
   Unknown: "Thỏa thuận giao nhận",
 };
 

@@ -45,8 +45,8 @@ import {
 
 const DELIVERY_METHODS = {
   GhnDelivery: "Giao hàng GHN",
-  SelfDelivery: "Tự vận chuyển",
-  Pickup: "Nhận tại địa chỉ",
+  SellerDelivers: "Bên bán tự giao",
+  BuyerPickUp: "Bên mua đến lấy",
   Unknown: "Thỏa thuận vận chuyển",
 };
 
