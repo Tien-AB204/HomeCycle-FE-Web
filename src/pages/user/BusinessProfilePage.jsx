@@ -407,17 +407,36 @@ export default function BusinessProfilePage() {
     ).trim();
     const phoneNumber = String(
       data.get("phoneNumber") || "",
-    ).trim();
+    ).replace(/[\s.-]/gu, "");
 
-    if (username.length < 3) {
+    if (
+      username.length < 3 ||
+      username.length > 50
+    ) {
       setError(
-        "Tên đăng nhập phải có ít nhất 3 ký tự.",
+        "Tên đăng nhập phải có từ 3 đến 50 ký tự.",
       );
       return;
     }
-    if (!/^\d{9,11}$/.test(phoneNumber)) {
+
+    if (
+      !/^[A-Za-z0-9_.]+$/.test(
+        username,
+      )
+    ) {
       setError(
-        "Số điện thoại phải gồm từ 9 đến 11 chữ số.",
+        "Tên đăng nhập chỉ được chứa chữ cái, chữ số, dấu gạch dưới và dấu chấm.",
+      );
+      return;
+    }
+
+    if (
+      !/^0[35789]\d{8}$/.test(
+        phoneNumber,
+      )
+    ) {
+      setError(
+        "Số điện thoại phải gồm 10 chữ số và bắt đầu bằng 03, 05, 07, 08 hoặc 09.",
       );
       return;
     }

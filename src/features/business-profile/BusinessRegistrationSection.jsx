@@ -112,6 +112,7 @@ export default function BusinessRegistrationSection({
     return validateBusinessFile(
       form.businessRegistrationCertificate,
       "Giấy chứng nhận đăng ký kinh doanh",
+      { required: true },
     );
   };
 
@@ -167,7 +168,7 @@ export default function BusinessRegistrationSection({
       <BusinessSectionIntro
         icon="corporate_fare"
         title="Thông tin doanh nghiệp"
-        description="Quản lý thông tin pháp nhân và phạm vi hoạt động. Giấy đăng ký hiện tại được giữ nguyên nếu bạn không chọn tệp mới."
+        description="Quản lý thông tin pháp nhân và phạm vi hoạt động. Mỗi lần cập nhật, vui lòng chọn lại giấy chứng nhận đăng ký kinh doanh."
       />
       <FormMessage
         error={error}
@@ -327,6 +328,7 @@ export default function BusinessRegistrationSection({
         <BusinessFileField
           id="registration-certificate"
           label="Giấy chứng nhận đăng ký kinh doanh"
+          required
           currentUrl={
             profile.businessRegistrationCertificateUrl
           }

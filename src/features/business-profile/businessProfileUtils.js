@@ -1,4 +1,7 @@
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeValidationMessage,
+  isVietnameseMessage,
+} from "../../utils/safeErrorMessage";
 
 export const MAX_BUSINESS_FILE_SIZE =
   5 * 1024 * 1024;
@@ -17,12 +20,20 @@ export const getBusinessApiErrorMessage = (
   const responseData =
     error?.response?.data;
 
+  const responseMessage =
+    responseData?.message ||
+    responseData?.error?.message ||
+    "";
+
   return (
     getSafeValidationMessage(
       responseData?.errors,
     ) ||
-    responseData?.message ||
-    responseData?.error?.message ||
+    (isVietnameseMessage(
+      responseMessage,
+    )
+      ? responseMessage
+      : "") ||
     fallbackMessage
   );
 };
