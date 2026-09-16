@@ -6,6 +6,7 @@ import {
   DELIVERY_METHOD_OPTIONS,
   PAYMENT_TYPE,
   PAYMENT_TYPE_OPTIONS,
+  normalizeDeliveryMethod,
 } from "../../constants/agreements";
 import agreementApi from "../../services/apis/agreementApi";
 import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
@@ -180,12 +181,68 @@ const FieldError = ({ children }) =>
     </p>
   ) : null;
 
+const getFirstParcelValue = (...values) =>
+  values.find(
+    (value) =>
+      value !== undefined &&
+      value !== null &&
+      value !== "",
+  ) ?? "";
+
+const createParcelSuggestion = (parcelInfo, currentItem = {}) => {
+  const item = Array.isArray(parcelInfo?.items)
+    ? parcelInfo.items[0] || {}
+    : {};
+  const lightParcel = parcelInfo?.lightParcel || {};
+
+  const suggestion = {
+    name: String(
+      item.name ||
+        currentItem.name ||
+        parcelInfo?.productName ||
+        "Sản phẩm HomeCycle",
+    ),
+    code: String(item.code || currentItem.code || ""),
+    quantity: 1,
+    weightGram: getFirstParcelValue(
+      item.weightGram,
+      lightParcel.weightGram,
+      parcelInfo?.productWeightGram,
+    ),
+    lengthCm: getFirstParcelValue(
+      item.lengthCm,
+      lightParcel.lengthCm,
+      parcelInfo?.productLengthCm,
+    ),
+    widthCm: getFirstParcelValue(
+      item.widthCm,
+      lightParcel.widthCm,
+      parcelInfo?.productWidthCm,
+    ),
+    heightCm: getFirstParcelValue(
+      item.heightCm,
+      lightParcel.heightCm,
+      parcelInfo?.productHeightCm,
+    ),
+  };
+
+  const hasSuggestion = [
+    suggestion.weightGram,
+    suggestion.lengthCm,
+    suggestion.widthCm,
+    suggestion.heightCm,
+  ].some((value) => Number(value) > 0);
+
+  return hasSuggestion ? suggestion : null;
+};
+
 const AgreementForm = ({
   agreement,
   negotiationId,
   onSubmit,
   onCancel,
   busy,
+  originalPost,
 }) => {
   const initialValues =
     useMemo(
@@ -226,6 +283,17 @@ const AgreementForm = ({
   const [ghnPreview, setGhnPreview] =
     useState(initialGhnPreview);
 
+  const originalPostDeliveryMethod =
+    normalizeDeliveryMethod(
+      originalPost?.product?.deliveryMethod ??
+        originalPost?.deliveryMethod,
+    );
+
+  const showOriginalPostGhnWarning =
+    Boolean(originalPost) &&
+    values.deliveryMethod === DELIVERY_METHOD.GHN &&
+    originalPostDeliveryMethod !== DELIVERY_METHOD.GHN;
+
   const [errors, setErrors] =
     useState({});
 
@@ -257,6 +325,7 @@ const AgreementForm = ({
           ?.ghnInfo,
       ),
     );
+  const ghnEditVersionRef = useRef(0);
 
   const inputClass =
     "mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10";
@@ -323,6 +392,7 @@ const AgreementForm = ({
 
         setGhnError("");
         setGhnNotice("");
+        const editVersion = ghnEditVersionRef.current;
 
         try {
           const parcelInfo =
@@ -337,26 +407,24 @@ const AgreementForm = ({
            * nhất được nạp; serviceTypeId luôn được createGhnCollectionInfo
            * suy ra lại từ khối lượng thực tế của kiện.
            */
-          const hasParcelItems =
-            Array.isArray(
-              parcelInfo?.items,
-            ) &&
-            parcelInfo.items.length > 0;
+          const parcelSuggestion =
+            createParcelSuggestion(parcelInfo);
+          const hasParcelSuggestion =
+            Boolean(parcelSuggestion);
 
           setGhnInfo(
             (current) => {
-              const next =
-                hasParcelItems
-                  ? {
-                      ...current,
-                      items:
-                        parcelInfo.items,
-                    }
-                  : current;
+              if (ghnEditVersionRef.current !== editVersion) {
+                return current;
+              }
+
+              if (!parcelSuggestion) return current;
 
               return createGhnCollectionInfo({
-                existingInfo:
-                  next,
+                existingInfo: {
+                  ...current,
+                  items: [parcelSuggestion],
+                },
               });
             },
           );
@@ -364,7 +432,11 @@ const AgreementForm = ({
           parcelInfoLoadedRef.current =
             true;
 
-          if (hasParcelItems) {
+          if (ghnEditVersionRef.current !== editVersion) {
+            setGhnNotice(
+              "Đã giữ nguyên thông tin kiện hàng bạn vừa chỉnh sửa.",
+            );
+          } else if (hasParcelSuggestion) {
             setGhnNotice(
               "Đã nạp thông tin kiện hàng từ sản phẩm hiện tại.",
             );
@@ -441,6 +513,7 @@ const AgreementForm = ({
 
   const handleGhnInfoChange =
     (nextInfo) => {
+      ghnEditVersionRef.current += 1;
       setGhnInfo(nextInfo);
       setGhnPreview(null);
 
@@ -1213,6 +1286,15 @@ const AgreementForm = ({
               />
             </label>
           </div>
+
+          {showOriginalPostGhnWarning && (
+            <p
+              role="status"
+              className="mt-4 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm font-semibold leading-6 text-warning"
+            >
+              Bài đăng ban đầu không sử dụng GHN. Khối lượng và kích thước hiện tại có thể chưa phù hợp với quy định giao hàng nhanh. Vui lòng kiểm tra và điều chỉnh thông tin kiện hàng trước khi tính phí.
+            </p>
+          )}
 
           {!isGhn && (
             <div className="mt-4 grid gap-4 md:grid-cols-2">
