@@ -6,14 +6,34 @@ import { DISPUTE_TARGET_TYPE } from "../../constants/disputes";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import reviewApi from "../../services/apis/reviewApi";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 import { getUserId, normalizeRole } from "../../utils/authUtils";
 
 const PAGE_SIZE = 10;
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  "Không thể tải đánh giá của người dùng.";
+const getErrorMessage = (error) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    "Không thể tải đánh giá của người dùng."
+  );
+};
 
 const isReviewUnavailableForReport = (status) =>
   ["3", "4", "hidden", "removed", "deleted"].includes(

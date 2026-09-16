@@ -1,15 +1,35 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import reviewApi from "../../services/apis/reviewApi";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 import ReviewCard from "./ReviewCard";
 import ReviewFormModal from "./ReviewFormModal";
 
 const PAGE_SIZE = 10;
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  "Không thể tải dữ liệu đánh giá.";
+const getErrorMessage = (error) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    "Không thể tải dữ liệu đánh giá."
+  );
+};
 
 const OrderReviewSection = ({
   orderId,
@@ -82,7 +102,7 @@ const OrderReviewSection = ({
       setState((current) => ({
         ...current,
         error:
-          "Backend chưa trả mã đánh giá nên chưa thể mở chức năng chỉnh sửa.",
+          "Không tìm thấy mã đánh giá nên chưa thể mở chức năng chỉnh sửa. Vui lòng tải lại dữ liệu.",
       }));
       return;
     }
