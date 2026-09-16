@@ -140,6 +140,70 @@ const normalizeWallet = (
   };
 };
 
+const normalizeWithdrawalQuota = (
+  response,
+) => {
+  const source =
+    response?.data ??
+    response ??
+    {};
+
+  return {
+    minimumWithdrawalAmount:
+      Number(
+        source.minimumWithdrawalAmount ??
+          source.MinimumWithdrawalAmount ??
+          0,
+      ) || 0,
+
+    maximumWithdrawalAmount:
+      Number(
+        source.maximumWithdrawalAmount ??
+          source.MaximumWithdrawalAmount ??
+          0,
+      ) || 0,
+
+    dailyWithdrawalLimit:
+      Number(
+        source.dailyWithdrawalLimit ??
+          source.DailyWithdrawalLimit ??
+          0,
+      ) || 0,
+
+    completedTodayAmount:
+      Number(
+        source.completedTodayAmount ??
+          source.CompletedTodayAmount ??
+          0,
+      ) || 0,
+
+    activeReservedAmount:
+      Number(
+        source.activeReservedAmount ??
+          source.ActiveReservedAmount ??
+          0,
+      ) || 0,
+
+    usedDailyLimitAmount:
+      Number(
+        source.usedDailyLimitAmount ??
+          source.UsedDailyLimitAmount ??
+          0,
+      ) || 0,
+
+    remainingDailyLimitAmount:
+      Number(
+        source.remainingDailyLimitAmount ??
+          source.RemainingDailyLimitAmount ??
+          0,
+      ) || 0,
+
+    resetAt:
+      source.resetAt ??
+      source.ResetAt ??
+      null,
+  };
+};
 export const walletApi = {
   getMine: async ({
     signal,
@@ -241,6 +305,23 @@ export const walletApi = {
     );
   },
 
+  getWithdrawalQuota: async ({
+    signal,
+    skipGlobalErrorPage = false,
+  } = {}) => {
+    const response =
+      await axiosClient.get(
+        "/wallet/withdrawals/quota",
+        {
+          signal,
+          skipGlobalErrorPage,
+        },
+      );
+
+    return normalizeWithdrawalQuota(
+      response,
+    );
+  },
   createWithdrawal:
     async (amount) => {
       const normalizedAmount =
@@ -398,25 +479,6 @@ export const walletApi = {
     return source;
   },
 
-  syncWithdrawal:
-    async (withdrawalId) => {
-      const id =
-        String(
-          withdrawalId || "",
-        ).trim();
-
-      if (!id) {
-        throw new Error(
-          "Không tìm thấy mã yêu cầu rút tiền.",
-        );
-      }
-
-      return axiosClient.post(
-        `/wallet/withdrawals/${encodeURIComponent(
-          id,
-        )}/sync`,
-      );
-    },
 };
 
 export default walletApi;

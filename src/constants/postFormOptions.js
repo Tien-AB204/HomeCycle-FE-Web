@@ -44,8 +44,8 @@ export const LEGACY_FUNCTIONALITY_ALIASES = Object.freeze({
 
 export const DELIVERY_METHOD_OPTIONS = Object.freeze([
   { value: "GhnDelivery", label: "Giao hàng GHN" },
-  { value: "SelfDelivery", label: "Tự vận chuyển" },
-  { value: "Pickup", label: "Nhận tại địa chỉ" },
+  { value: "SellerDelivers", label: "Người bán tự giao" },
+  { value: "BuyerPickUp", label: "Người mua đến lấy" },
   { value: "Unknown", label: "Thỏa thuận vận chuyển" },
 ]);
 
