@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import ProductTypeModal from "../../features/system/productType/ProductTypeModal";
 import categoryApi from "../../services/apis/categoryApi";
 import productTypeApi from "../../services/apis/productTypeApi";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import { getProductTypeErrorMessage } from "../../utils/productTypeErrorMessage";
 
 const PAGE_SIZE = 10;
 const CATEGORY_PAGE_SIZE = 100;
@@ -49,19 +49,11 @@ const isCanceledRequest = (error) => {
   );
 };
 
-const getErrorMessage = (error) => {
-  const responseData =
-    error?.response?.data;
-
-  return (
-    getSafeValidationMessage(
-      responseData?.errors,
-    ) ||
-    responseData?.error?.message ||
-    responseData?.message ||
-    "Đã xảy ra lỗi. Vui lòng thử lại."
+const getErrorMessage = (error) =>
+  getProductTypeErrorMessage(
+    error,
+    "Đã xảy ra lỗi. Vui lòng thử lại.",
   );
-};
 
 export default function ProductTypePage() {
   const navigate = useNavigate();
