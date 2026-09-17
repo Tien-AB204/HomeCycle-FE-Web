@@ -39,6 +39,10 @@ import {
   POST_CHANGED_WARNING,
   VERIFICATION_FAILED_WARNING,
 } from "../../utils/transactionFreshnessUtils";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const MESSAGE_PAGE_SIZE = 50;
 const FALLBACK_POLL_INTERVAL_MS = 10000;
@@ -48,9 +52,25 @@ const isCanceledRequest = (error) => {
 };
 
 const getErrorMessage = (error, fallbackMessage) => {
+  const responseData =
+    error?.response?.data;
+
   return (
-    error?.response?.data?.error?.message ||
-    error?.response?.data?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     fallbackMessage
   );
 };
