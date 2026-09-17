@@ -7,6 +7,10 @@ import {
 import { Link } from "react-router-dom";
 import cartApi from "../../services/apis/cartApi";
 import PostThumbnail from "../../components/shared/PostThumbnail";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const formatCurrency = (value) => {
   if (typeof value !== "number" && typeof value !== "string") {
@@ -28,6 +32,33 @@ const formatCurrency = (value) => {
 
 const isCanceledRequest = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
+
+const getErrorMessage = (
+  error,
+  fallback,
+) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    fallback
+  );
+};
 
 const CartPage = () => {
   const [state, setState] = useState({
@@ -118,8 +149,10 @@ const CartPage = () => {
       await loadCart();
     } catch (error) {
       setRemoveError(
-        error?.message ||
+        getErrorMessage(
+          error,
           "Không thể xóa sản phẩm khỏi giỏ hàng. Vui lòng thử lại.",
+        ),
       );
     } finally {
       setRemovingId("");

@@ -7,6 +7,10 @@ import {
   getPaymentDisplayMeta,
 } from "../../constants/orders";
 import orderApi from "../../services/apis/orderApi";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const API_PAGE_SIZE = 100;
@@ -28,10 +32,29 @@ const ORDER_STATUS_OPTIONS = Object.freeze([
 const formatCurrency = (value) =>
   `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  "Không thể tải danh sách đơn hàng.";
+const getErrorMessage = (error) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    "Không thể tải danh sách đơn hàng."
+  );
+};
 
 const loadOrderSource = async ({ source, signal }) => {
   const requestPage = (pageNumber) =>

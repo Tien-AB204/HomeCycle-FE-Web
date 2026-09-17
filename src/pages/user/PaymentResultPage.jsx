@@ -9,16 +9,37 @@ import {
 } from "react-router-dom";
 import orderApi from "../../services/apis/orderApi";
 import paymentApi from "../../services/apis/paymentApi";
-import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PENDING_AGREEMENT_KEY =
   "homecycle:pending-payment-agreement-id";
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  getSafeProblemDetail(error?.response?.data?.detail) ||
-  "Hệ thống chưa thể xác nhận giao dịch.";
+const getErrorMessage = (error) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    "Hệ thống chưa thể xác nhận giao dịch."
+  );
+};
 
 const formatCurrency = (value) => {
   const amount = Number(value);
