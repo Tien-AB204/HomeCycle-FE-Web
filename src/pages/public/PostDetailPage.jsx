@@ -199,23 +199,21 @@ const formatDate = (value) => {
   ).format(date);
 };
 
-const formatFallbackEnum = (value) => {
-  if (!value) {
-    return "—";
-  }
-
-  return String(value)
-    .replaceAll("_", " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2");
-};
-
 const getMappedValue = (
   mapping,
   value,
 ) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "—";
+  }
+
   return (
     mapping[value] ||
-    formatFallbackEnum(value)
+    "Chưa xác định"
   );
 };
 
@@ -226,7 +224,7 @@ const getPostStatusMeta = (status) => {
 
   return (
     POST_STATUS_META[normalizedStatus] || {
-      label: status || "Chưa xác định",
+      label: "Chưa xác định",
       className: "bg-textLight/10 text-textLight",
     }
   );
@@ -787,8 +785,10 @@ const PostDetailPage = ({ ownerMode = false }) => {
     } catch (error) {
       setCartFeedback({
         type: "error",
-        message:
-          error?.message || "Không thể thêm vào giỏ hàng. Vui lòng thử lại.",
+        message: getErrorMessage(
+          error,
+          "Không thể thêm vào giỏ hàng. Vui lòng thử lại.",
+        ),
       });
     } finally {
       setIsAddingToCart(false);
