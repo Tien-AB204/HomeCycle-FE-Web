@@ -23,6 +23,10 @@ import {
   CATEGORY_BACKEND_IDS,
   MAIN_CATEGORIES,
 } from "../../constants/filterOptions";
+import {
+  MARKETPLACE_POST_TYPES,
+  normalizePostType,
+} from "../../constants/marketplace";
 import { useAuth } from "../../hooks/useAuth";
 import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
 import businessProfileApi from "../../services/apis/businessProfileApi";
@@ -48,6 +52,10 @@ import {
   POST_CHANGED_WARNING,
   VERIFICATION_FAILED_WARNING,
 } from "../../utils/transactionFreshnessUtils";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 9;
 
@@ -163,8 +171,15 @@ const getErrorMessage = (error) => {
     error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
     "Không thể tìm kiếm bài đăng."
   );
 };
@@ -1194,9 +1209,10 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                   key={post.postId}
                   data={post}
                   variant={
-                    String(
+                    normalizePostType(
                       post.postType,
-                    ).toLowerCase() === "buy"
+                    ) ===
+                    MARKETPLACE_POST_TYPES.BUY
                       ? "business-buy"
                       : "personal-sell"
                   }
