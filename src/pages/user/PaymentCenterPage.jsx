@@ -9,7 +9,10 @@ import {
 import agreementApi from "../../services/apis/agreementApi";
 import paymentApi from "../../services/apis/paymentApi";
 import PostThumbnail from "../../components/shared/PostThumbnail";
-import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PENDING_PAGE_SIZE = 8;
 const HISTORY_PAGE_SIZE = 20;
@@ -17,15 +20,29 @@ const HISTORY_PAGE_SIZE = 20;
 const getErrorMessage = (
   error,
   fallback,
-) =>
-  error?.response?.data
-    ?.error?.message ||
-  error?.response?.data
-    ?.message ||
-  getSafeProblemDetail(
-    error?.response?.data?.detail,
-  ) ||
-  fallback;
+) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    fallback
+  );
+};
 
 const isRequestCancelled = (
   error,

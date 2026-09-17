@@ -10,7 +10,10 @@ import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import walletApi from "../../services/apis/walletApi";
 import { normalizeRole } from "../../utils/authUtils";
-import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 
@@ -29,15 +32,29 @@ const getErrorCode = (
 const getErrorMessage = (
   error,
   fallback,
-) =>
-  error?.response?.data
-    ?.error?.message ||
-  error?.response?.data
-    ?.message ||
-  getSafeProblemDetail(
-    error?.response?.data?.detail,
-  ) ||
-  fallback;
+) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    fallback
+  );
+};
 
 const isRequestCancelled = (
   error,
