@@ -1,6 +1,14 @@
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  MARKETPLACE_POST_TYPES,
+  normalizePostType,
+} from "../../constants/marketplace";
 import postApi from "../../services/apis/postApi";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const ACTIONS = {
   close: {
@@ -48,9 +56,18 @@ const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
-    error?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     "Không thể thay đổi trạng thái bài đăng."
   );
 };
@@ -79,12 +96,16 @@ const getLifecycleActionName = (status) => {
  * RemainingQuantity > 0 sau khi cập nhật Quantity.
  */
 const getReplenishLabel = (postType) =>
-  String(postType || "").trim().toLowerCase() === "buy"
+  normalizePostType(postType) ===
+  MARKETPLACE_POST_TYPES.BUY
     ? "Tăng số lượng thu mua"
     : "Bổ sung hàng";
 
 const canDeleteBuyPost = (postType, status) => {
-  if (String(postType || "").trim().toLowerCase() !== "buy") {
+  if (
+    normalizePostType(postType) !==
+    MARKETPLACE_POST_TYPES.BUY
+  ) {
     return false;
   }
 

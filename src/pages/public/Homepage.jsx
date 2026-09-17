@@ -12,6 +12,7 @@ import {
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import ProductCard from "../../components/shared/ProductCard";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
+import { normalizePostType } from "../../constants/marketplace";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
@@ -37,6 +38,10 @@ import {
   POST_CHANGED_WARNING,
   VERIFICATION_FAILED_WARNING,
 } from "../../utils/transactionFreshnessUtils";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const HOME_PAGE_SIZE = 20;
 const BUSINESS_POST_LIMIT = 4;
@@ -72,16 +77,38 @@ const BENEFITS = [
 const isCanceledRequest = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 
-const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  "Không thể tải danh sách bài đăng.";
+const getErrorMessage = (error) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    "Không thể tải danh sách bài đăng."
+  );
+};
 
 const isActivePost = (post) =>
   String(post?.status || "").toLowerCase() === "active";
 
-const hasPostType = (post, postType) =>
-  String(post?.postType || "").toLowerCase() === postType.toLowerCase();
+const hasPostType = (post, postType) => {
+  const normalizedPostType =
+    normalizePostType(postType);
+
+  return (
+    Boolean(normalizedPostType) &&
+    normalizePostType(
+      post?.postType,
+    ) === normalizedPostType
+  );
+};
 
 const LoadingCards = ({ count }) => {
   return Array.from({ length: count }, (_, index) => (
