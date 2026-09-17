@@ -23,6 +23,10 @@ import { useAuth } from "../../hooks/useAuth";
 import postApi from "../../services/apis/postApi";
 import { getUserId } from "../../utils/authUtils";
 import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
+import {
   isPostCatalogStorageEvent,
   POST_CATALOG_CHANGED_EVENT,
 } from "../../utils/postCatalogEvents";
@@ -78,8 +82,21 @@ const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     "Không thể tải bài đăng của bạn."
   );
 };

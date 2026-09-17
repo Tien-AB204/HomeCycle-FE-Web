@@ -22,7 +22,10 @@ import {
   isConcurrencyConflict,
   VERIFICATION_FAILED_WARNING,
 } from "../../utils/transactionFreshnessUtils";
-import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
 
 const PENDING_AGREEMENT_KEY = "homecycle:pending-payment-agreement-id";
@@ -33,14 +36,33 @@ const PENDING_AGREEMENT_KEY = "homecycle:pending-payment-agreement-id";
  * "Snapshot đã thay đổi..."). Nếu không phải lỗi GHN đã biết,
  * getGhnErrorMessage tự rơi về đúng hành vi cũ (fallbackMessage truyền vào).
  */
-const getErrorMessage = (error, fallbackMessage) =>
-  getGhnErrorMessage(
+const getErrorMessage = (error, fallbackMessage) => {
+  const responseData =
+    error?.response?.data;
+
+  const safeFallback =
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    fallbackMessage;
+
+  return getGhnErrorMessage(
     error,
-    error?.response?.data?.error?.message ||
-      error?.response?.data?.message ||
-      getSafeProblemDetail(error?.response?.data?.detail) ||
-      fallbackMessage,
+    safeFallback,
   );
+};
 
 const getApiErrorCode = (error) =>
   String(

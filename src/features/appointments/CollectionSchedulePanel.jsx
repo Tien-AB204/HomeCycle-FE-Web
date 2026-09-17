@@ -17,7 +17,10 @@ import agreementApi from "../../services/apis/agreementApi";
 import inspectionFormApi from "../../services/apis/inspectionFormApi";
 import orderApi from "../../services/apis/orderApi";
 import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
-import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const DIRECT_METHODS = [
   DELIVERY_METHOD.BUYER_PICK_UP,
@@ -53,14 +56,33 @@ const toDateTimeLocal = (value) => {
 const getErrorMessage = (
   error,
   fallback,
-) =>
-  getGhnErrorMessage(
+) => {
+  const responseData =
+    error?.response?.data;
+
+  const safeFallback =
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    fallback;
+
+  return getGhnErrorMessage(
     error,
-    error?.response?.data?.error?.message ||
-      error?.response?.data?.message ||
-      getSafeProblemDetail(error?.response?.data?.detail) ||
-      fallback,
+    safeFallback,
   );
+};
 
 const createInitialForm = () => ({
   collectionDate: "",
