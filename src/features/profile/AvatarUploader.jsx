@@ -6,7 +6,10 @@ import {
 import { userService } from "../../services/userService";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import avatarPlaceholder from "../../assets/brand/user-avatar-placeholder.svg";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 import {
   FILE_UPLOAD_CONTEXT,
   getFileUploadAccept,
@@ -27,8 +30,15 @@ const getApiErrorMessage = (
     getSafeValidationMessage(
       responseData?.errors,
     ) ||
-    responseData?.message ||
-    responseData?.error?.message ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     fallbackMessage
   );
 };
@@ -87,7 +97,9 @@ export default function AvatarUploader({
         setAvatarRule(null);
 
         setPolicyError(
-          loadError?.message ||
+          getSafeProblemDetail(
+            loadError?.message,
+          ) ||
             "Không thể tải quy định ảnh đại diện.",
         );
       });
