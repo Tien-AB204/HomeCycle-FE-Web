@@ -40,6 +40,12 @@ const getMessagePreview = (item) => {
   return "Chưa có tin nhắn nào.";
 };
 
+const getConversationTimestamp = (item) =>
+  item?.latestMessageAt ||
+  item?.lastActivityAt ||
+  item?.createdAt ||
+  null;
+
 const ConversationListPage = () => {
   const [pageNumber, setPageNumber] = useState(1);
   const [state, setState] = useState({
@@ -210,7 +216,7 @@ const ConversationListPage = () => {
                         {participant.displayName}
                       </p>
                       <span className="shrink-0 text-xs font-medium text-textLight">
-                        {formatDate(item.lastActivityAt)}
+                        {formatDate(getConversationTimestamp(item))}
                       </span>
                     </div>
                     <p className="mt-0.5 truncate text-sm text-textLight">

@@ -3,6 +3,10 @@ import {
   useMemo,
   useState,
 } from "react";
+import {
+  MARKETPLACE_POST_TYPES,
+  normalizePostType,
+} from "../../constants/marketplace";
 import postApi from "../../services/apis/postApi";
 
 const formatCurrency = (value) => {
@@ -28,9 +32,8 @@ const formatCurrency = (value) => {
 
 const isActiveSellPost = (post) => {
   return (
-    String(post?.postType || "")
-      .trim()
-      .toLowerCase() === "sell" &&
+    normalizePostType(post?.postType) ===
+      MARKETPLACE_POST_TYPES.SELL &&
     String(post?.status || "")
       .trim()
       .toLowerCase() === "active" &&
