@@ -21,6 +21,10 @@ import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import { normalizeRole } from "../../utils/authUtils";
 import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
+import {
   getOfferChangedFields,
   getPostChangedFields,
   isConcurrencyConflict,
@@ -42,8 +46,21 @@ const getErrorMessage = (error, fallbackMessage) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     fallbackMessage
   );
 };

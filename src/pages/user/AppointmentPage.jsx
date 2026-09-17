@@ -12,6 +12,10 @@ import BusinessAppointmentCalendar from "../../features/appointments/BusinessApp
 import InspectionFormPanel from "../../features/appointments/InspectionFormPanel";
 import { useAuth } from "../../hooks/useAuth";
 import appointmentApi from "../../services/apis/appointmentApi";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const API_PAGE_SIZE = 100;
@@ -43,10 +47,32 @@ const APPOINTMENT_SOURCES = Object.freeze([
   },
 ]);
 
-const getErrorMessage = (error, fallback = "Không thể xử lý lịch hẹn.") =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  fallback;
+const getErrorMessage = (
+  error,
+  fallback = "Không thể xử lý lịch hẹn.",
+) => {
+  const responseData =
+    error?.response?.data;
+
+  return (
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    fallback
+  );
+};
 
 const formatDate = (value) => {
   const date = new Date(value);
