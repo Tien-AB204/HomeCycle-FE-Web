@@ -1,3 +1,8 @@
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "./safeErrorMessage";
+
 export const GLOBAL_API_ERROR_EVENT = "homecycle:api-error";
 
 let lastErrorAt = 0;
@@ -16,12 +21,21 @@ export const getGlobalErrorDetail = (error) => {
   const status = Number(error?.response?.status) || 0;
   const responseData = error?.response?.data;
 
+  const safeMessage =
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    );
+
   return {
     status,
-    code: responseData?.code || responseData?.error?.code || "",
     message:
-      responseData?.error?.message ||
-      responseData?.message ||
+      safeMessage ||
       (status === 0
         ? "Không thể kết nối đến máy chủ."
         : "Máy chủ đang gặp sự cố khi xử lý yêu cầu."),

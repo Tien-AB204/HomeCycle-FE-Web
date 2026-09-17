@@ -18,6 +18,10 @@ import {
   getOrderStatusMeta,
   getPaymentStatusMeta,
 } from "../../constants/orders";
+import {
+  MARKETPLACE_POST_TYPES,
+  normalizePostType,
+} from "../../constants/marketplace";
 import disputeApi from "../../services/apis/disputeApi";
 import EvidenceImage from "../../components/shared/EvidenceImage";
 
@@ -109,12 +113,26 @@ const getContentStatusLabel = (labels, status) =>
   labels[String(status || "").toLowerCase()] ||
   "Chưa xác định";
 
-const getPostTypeLabel = (postType) =>
-  String(postType || "").toLowerCase() === "buy"
-    ? "Tin thu mua"
-    : String(postType || "").toLowerCase() === "sell"
-      ? "Tin đăng bán"
-      : "Chưa xác định";
+const getPostTypeLabel = (postType) => {
+  const normalizedPostType =
+    normalizePostType(postType);
+
+  if (
+    normalizedPostType ===
+    MARKETPLACE_POST_TYPES.BUY
+  ) {
+    return "Tin thu mua";
+  }
+
+  if (
+    normalizedPostType ===
+    MARKETPLACE_POST_TYPES.SELL
+  ) {
+    return "Tin đăng bán";
+  }
+
+  return "Chưa xác định";
+};
 
 const MediaGallery = ({ title, description, items }) => (
   <section className="rounded-xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
