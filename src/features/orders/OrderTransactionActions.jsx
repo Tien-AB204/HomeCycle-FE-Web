@@ -187,7 +187,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
   const confirmSellerReady = () => {
     if (!shipmentId) {
       setError(
-        "Máy chủ cho phép xác nhận chuẩn bị hàng nhưng chưa trả về mã vận chuyển.",
+        "Chưa có thông tin vận chuyển để xác nhận hàng sẵn sàng. Vui lòng làm mới và thử lại.",
       );
 
       return;
@@ -210,7 +210,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
     runAction({
       key: "cancel-order",
       confirmation:
-        "Hủy giao dịch này? Chỉ thực hiện khi kết quả kiểm định đã bị từ chối và máy chủ cho phép hủy.",
+        "Hủy giao dịch này? Chỉ thực hiện khi kết quả kiểm định đã bị từ chối và giao dịch đang cho phép hủy.",
       action: () =>
         orderApi.cancelAfterRejectedInspection(
           order.orderId,
@@ -411,8 +411,8 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
               </h3>
 
               <p className="mt-1 text-xs leading-5 text-textLight">
-                Các thao tác bên dưới chỉ xuất hiện khi máy chủ xác nhận tài
-                khoản hiện tại đủ điều kiện thực hiện.
+                Các thao tác bên dưới chỉ xuất hiện khi tài khoản hiện tại
+                đủ điều kiện thực hiện.
               </p>
             </div>
 
@@ -506,8 +506,8 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
 
           {detail?.dispute?.hasActiveDispute && !latestDisputeId && (
             <p className="mt-3 text-xs font-semibold text-warning">
-              Backend đã ghi nhận tranh chấp nhưng chưa trả mã tranh chấp để mở
-              trang chi tiết.
+              Tranh chấp đã được ghi nhận nhưng chưa thể mở trang chi tiết.
+              Vui lòng làm mới và thử lại.
             </p>
           )}
         </div>

@@ -592,7 +592,7 @@ const AgreementPage = () => {
         if (checkoutWindow) checkoutWindow.location.href = result.checkoutUrl;
         else window.location.assign(result.checkoutUrl);
         setNotice(
-          "Đã mở trang PayOS ở thẻ mới. Khi PayOS chuyển bạn về HomeCycle, hệ thống sẽ xác nhận lại trạng thái từ Backend.",
+          "Đã mở trang PayOS ở thẻ mới. Khi PayOS chuyển bạn về HomeCycle, hệ thống sẽ kiểm tra lại trạng thái giao dịch.",
         );
       } catch (requestError) {
         if (checkoutWindow) checkoutWindow.close();
