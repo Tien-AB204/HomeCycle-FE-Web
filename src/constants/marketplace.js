@@ -11,11 +11,17 @@ export const normalizePostType = (postType) => {
     .trim()
     .toLowerCase();
 
-  if (normalizedValue === "sell") {
+  if (
+    normalizedValue === "sell" ||
+    normalizedValue === "1"
+  ) {
     return MARKETPLACE_POST_TYPES.SELL;
   }
 
-  if (normalizedValue === "buy") {
+  if (
+    normalizedValue === "buy" ||
+    normalizedValue === "2"
+  ) {
     return MARKETPLACE_POST_TYPES.BUY;
   }
 
