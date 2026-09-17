@@ -96,6 +96,11 @@ export default function ProductTypePage() {
   const [statusFilter, setStatusFilter] =
     useState("all");
 
+  const [
+    expandedDescriptionIds,
+    setExpandedDescriptionIds,
+  ] = useState(() => new Set());
+
   const [requestVersion, setRequestVersion] =
     useState(0);
 
@@ -148,6 +153,27 @@ export default function ProductTypePage() {
 
   const isLoadingProductTypeDetails =
     Boolean(loadingProductTypeId);
+
+  const toggleDescription = (
+    productTypeId,
+  ) => {
+    setExpandedDescriptionIds(
+      (currentIds) => {
+        const nextIds =
+          new Set(currentIds);
+
+        if (
+          nextIds.has(productTypeId)
+        ) {
+          nextIds.delete(productTypeId);
+        } else {
+          nextIds.add(productTypeId);
+        }
+
+        return nextIds;
+      },
+    );
+  };
 
   useEffect(() => {
     const controller =
@@ -1041,7 +1067,16 @@ export default function ProductTypePage() {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-left">
+        <table className="w-full min-w-[1080px] table-fixed border-collapse text-left">
+          <colgroup>
+            <col className="w-[17%]" />
+            <col className="w-[15%]" />
+            <col className="w-[34%]" />
+            <col className="w-[12%]" />
+            <col className="w-[11%]" />
+            <col className="w-[11%]" />
+          </colgroup>
+
           <thead>
             <tr className="border-b border-border bg-background text-xs uppercase tracking-wider text-textLight">
               <th className="p-4 font-semibold">
@@ -1060,11 +1095,11 @@ export default function ProductTypePage() {
                 Ngày tạo
               </th>
 
-              <th className="p-4 font-semibold">
+              <th className="whitespace-nowrap p-4 font-semibold">
                 Trạng thái
               </th>
 
-              <th className="p-4 text-right font-semibold">
+              <th className="whitespace-nowrap p-4 text-right font-semibold">
                 Thao tác
               </th>
             </tr>
@@ -1105,6 +1140,20 @@ export default function ProductTypePage() {
                     loadingProductTypeId ===
                     productType.productTypeId;
 
+                  const description =
+                    String(
+                      productType.description ||
+                        "",
+                    ).trim();
+
+                  const isDescriptionExpanded =
+                    expandedDescriptionIds.has(
+                      productType.productTypeId,
+                    );
+
+                  const canToggleDescription =
+                    description.length > 90;
+
                   return (
                     <tr
                       key={
@@ -1129,11 +1178,36 @@ export default function ProductTypePage() {
                           "Không xác định"}
                       </td>
 
-                      <td className="max-w-[420px] p-4 text-textLight">
-                        <p className="line-clamp-2">
-                          {productType.description ||
+                      <td className="p-4 align-top text-textLight">
+                        <p
+                          className={
+                            isDescriptionExpanded
+                              ? "whitespace-pre-line break-words"
+                              : "line-clamp-2 break-words"
+                          }
+                        >
+                          {description ||
                             "Không có mô tả"}
                         </p>
+
+                        {canToggleDescription && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              toggleDescription(
+                                productType.productTypeId,
+                              )
+                            }
+                            className="mt-1 text-xs font-semibold text-primary hover:underline"
+                            aria-expanded={
+                              isDescriptionExpanded
+                            }
+                          >
+                            {isDescriptionExpanded
+                              ? "Thu gọn"
+                              : "Xem thêm"}
+                          </button>
+                        )}
                       </td>
 
                       <td className="whitespace-nowrap p-4 text-textLight">
@@ -1142,10 +1216,10 @@ export default function ProductTypePage() {
                         )}
                       </td>
 
-                      <td className="p-4">
+                      <td className="whitespace-nowrap p-4 align-top">
                         <span
                           className={[
-                            "inline-block rounded-full px-3 py-1 text-xs font-semibold",
+                            "inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold",
                             productType.isActive
                               ? "bg-success/10 text-success"
                               : "bg-background text-textLight",
@@ -1157,7 +1231,8 @@ export default function ProductTypePage() {
                         </span>
                       </td>
 
-                      <td className="space-x-2 p-4 text-right">
+                      <td className="p-4 text-right align-top">
+                        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() =>
@@ -1230,6 +1305,7 @@ export default function ProductTypePage() {
                             visibility_off
                           </span>
                         </button>
+                        </div>
                       </td>
                     </tr>
                   );
