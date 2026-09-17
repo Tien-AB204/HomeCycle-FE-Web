@@ -19,6 +19,10 @@ import {
   NOTIFICATION_TARGET_META,
   openNotificationTarget,
 } from "../../utils/notificationNavigation";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 20;
 
@@ -26,12 +30,25 @@ const getErrorMessage = (
   error,
   fallback,
 ) => {
+  const responseData =
+    error?.response?.data;
+
   return (
-    error?.response?.data
-      ?.error?.message ||
-    error?.response?.data
-      ?.message ||
-    error?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     fallback
   );
 };

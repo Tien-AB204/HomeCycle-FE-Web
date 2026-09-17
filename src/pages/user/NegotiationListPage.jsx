@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import { getNegotiationStatusMeta } from "../../constants/negotiations";
 import negotiationApi from "../../services/apis/negotiationApi";
 import Avatar from "../../components/shared/Avatar";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 
@@ -11,9 +15,25 @@ const isCanceledRequest = (error) => {
 };
 
 const getErrorMessage = (error, fallbackMessage) => {
+  const responseData =
+    error?.response?.data;
+
   return (
-    error?.response?.data?.error?.message ||
-    error?.response?.data?.message ||
+    getSafeValidationMessage(
+      responseData?.errors,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
     fallbackMessage
   );
 };
