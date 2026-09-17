@@ -10,7 +10,10 @@ import {
 } from "../../constants/agreements";
 import agreementApi from "../../services/apis/agreementApi";
 import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
-import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 import GhnCollectionFields from "../appointments/GhnCollectionFields";
 import {
   createGhnCollectionInfo,
@@ -129,18 +132,33 @@ const createInitialGhnPreview = (
 const getErrorMessage = (
   error,
   fallbackMessage,
-) =>
-  getGhnErrorMessage(
-    error,
-    error?.response?.data
-      ?.error?.message ||
-    error?.response?.data
-      ?.message ||
-    getSafeProblemDetail(
-      error?.response?.data?.detail,
+) => {
+  const responseData =
+    error?.response?.data;
+
+  const safeFallback =
+    getSafeValidationMessage(
+      responseData?.errors,
     ) ||
-    fallbackMessage,
+    getSafeProblemDetail(
+      responseData?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.message,
+    ) ||
+    getSafeProblemDetail(
+      responseData?.detail,
+    ) ||
+    getSafeProblemDetail(
+      error?.message,
+    ) ||
+    fallbackMessage;
+
+  return getGhnErrorMessage(
+    error,
+    safeFallback,
   );
+};
 
 const formatCurrency = (value) => {
   const amount =
