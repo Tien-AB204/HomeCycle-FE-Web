@@ -8,6 +8,12 @@ import googleLogo from "../../assets/brand/google-logo.svg";
 import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
 import { decodeJwtPayload, getHomePathByRole } from "../../utils/authUtils";
+import {
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  validateEmail,
+  validatePassword,
+} from "../../utils/formValidation";
 
 const GOOGLE_CLIENT_ID = String(
   import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
@@ -358,12 +364,39 @@ const LoginPage = () => {
       return;
     }
 
+    const cleanEmail =
+      email.trim();
+
+    const emailValidationError =
+      validateEmail(cleanEmail);
+
+    if (emailValidationError) {
+      setErrorMessage(
+        emailValidationError,
+      );
+      return;
+    }
+
+    const passwordValidationError =
+      validatePassword(password);
+
+    if (passwordValidationError) {
+      setErrorMessage(
+        passwordValidationError,
+      );
+      return;
+    }
+
     setLoading(true);
     setErrorMessage("");
 
     try {
       const loggedInUser =
-        await login(email, password, rememberMe);
+        await login(
+          cleanEmail,
+          password,
+          rememberMe,
+        );
 
       navigate(
         returnPath ||
@@ -443,6 +476,7 @@ const LoginPage = () => {
               type="email"
               required
               autoComplete="email"
+              maxLength={EMAIL_MAX_LENGTH}
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -472,6 +506,7 @@ const LoginPage = () => {
               }
               required
               autoComplete="current-password"
+              maxLength={PASSWORD_MAX_LENGTH}
               value={password}
               onChange={(event) => {
                 setPassword(event.target.value);
