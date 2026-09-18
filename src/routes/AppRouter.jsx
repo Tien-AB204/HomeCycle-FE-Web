@@ -37,6 +37,7 @@ import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
 import AdminSystemWalletPage from "../pages/admin/AdminSystemWalletPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
+import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
 import DisputeCategoryPage from "../pages/admin/DisputeCategoryPage";
@@ -334,6 +335,11 @@ const AppRouter = () => {
           <Route
             path="dispute-categories"
             element={<DisputeCategoryPage />}
+          />
+
+          <Route
+            path="audit-logs"
+            element={<AuditLogPage />}
           />
         </Route>
       </Route>

@@ -109,6 +109,11 @@ const ADMIN_NAV_GROUPS = [
         path: "/admin/dispute-categories",
         icon: "gavel",
       },
+      {
+        label: "Nhật ký hệ thống",
+        path: "/admin/audit-logs",
+        icon: "history",
+      },
     ],
   },
 ];
