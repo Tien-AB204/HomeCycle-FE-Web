@@ -15,6 +15,24 @@ const normalizePositiveInteger = (
     : fallback;
 };
 
+const normalizeNullableFiniteNumber = (
+  value,
+) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return null;
+  }
+
+  const normalized = Number(value);
+
+  return Number.isFinite(normalized)
+    ? normalized
+    : null;
+};
+
 const normalizePagedResponse = (
   response,
   fallbackPage,
@@ -202,6 +220,24 @@ const normalizeWithdrawalQuota = (
       source.resetAt ??
       source.ResetAt ??
       null,
+
+    dailyWithdrawalCountLimit:
+      normalizeNullableFiniteNumber(
+        source.dailyWithdrawalCountLimit ??
+          source.DailyWithdrawalCountLimit,
+      ),
+
+    usedDailyWithdrawalCount:
+      normalizeNullableFiniteNumber(
+        source.usedDailyWithdrawalCount ??
+          source.UsedDailyWithdrawalCount,
+      ),
+
+    remainingDailyWithdrawalCount:
+      normalizeNullableFiniteNumber(
+        source.remainingDailyWithdrawalCount ??
+          source.RemainingDailyWithdrawalCount,
+      ),
   };
 };
 export const walletApi = {
