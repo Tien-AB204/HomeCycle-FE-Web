@@ -45,6 +45,7 @@ import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
 import PostManagementPage from "../pages/admin/PostManagementPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
+import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
 import UserManagementPage from "../pages/admin/UserManagementPage";
 
 // User Pages
@@ -340,6 +341,11 @@ const AppRouter = () => {
           <Route
             path="audit-logs"
             element={<AuditLogPage />}
+          />
+
+          <Route
+            path="subscription-packages"
+            element={<SubscriptionPackagePage />}
           />
         </Route>
       </Route>
