@@ -1205,7 +1205,6 @@ const WithdrawalManagementPage = () => {
               <Input.TextArea
                 rows={4}
                 maxLength={500}
-                showCount
                 value={actionReason}
                 disabled={actionBusy}
                 placeholder="Nhập lý do từ chối yêu cầu rút tiền..."
@@ -1214,6 +1213,10 @@ const WithdrawalManagementPage = () => {
                   setActionError("");
                 }}
               />
+
+              <p className="mt-1 text-right text-xs text-textLight">
+                {actionReason.length} / 500
+              </p>
             </div>
           )}
 

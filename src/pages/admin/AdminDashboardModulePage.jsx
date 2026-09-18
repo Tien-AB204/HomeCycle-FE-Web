@@ -676,10 +676,27 @@ const PaymentMethodTable = ({
     </div>
   </section>
 );
+const isSupportedTradePair = (item) => {
+  const buyerRole = normalize(item?.buyerRole);
+  const sellerRole = normalize(item?.sellerRole);
+
+  return (
+    (buyerRole === "business" &&
+      sellerRole === "personal") ||
+    (buyerRole === "personal" &&
+      sellerRole === "personal")
+  );
+};
+
 const TradeTable = ({
   title,
   rows,
-}) => (
+}) => {
+  const supportedRows = Array.isArray(rows)
+    ? rows.filter(isSupportedTradePair)
+    : [];
+
+  return (
   <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
     <h3 className="text-lg font-black text-text">
       {title}
@@ -705,8 +722,7 @@ const TradeTable = ({
         </thead>
 
         <tbody>
-          {!Array.isArray(rows) ||
-          rows.length === 0 ? (
+          {supportedRows.length === 0 ? (
             <tr>
               <td
                 colSpan={4}
@@ -716,7 +732,7 @@ const TradeTable = ({
               </td>
             </tr>
           ) : (
-            rows.map(
+            supportedRows.map(
               (item, index) => (
                 <tr
                   key={`${item.buyerRole}-${item.sellerRole}-${index}`}
@@ -753,7 +769,8 @@ const TradeTable = ({
       </table>
     </div>
   </section>
-);
+  );
+};
 
 const DemandGroup = ({
   title,
