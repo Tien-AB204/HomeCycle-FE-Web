@@ -853,6 +853,25 @@ const WalletPage = () => {
 
           return false;
         }
+
+        const dailyCountLimit =
+          withdrawalQuota.dailyWithdrawalCountLimit;
+
+        const remainingDailyCount =
+          withdrawalQuota.remainingDailyWithdrawalCount;
+
+        if (
+          dailyCountLimit != null &&
+          dailyCountLimit > 0 &&
+          remainingDailyCount != null &&
+          remainingDailyCount <= 0
+        ) {
+          setAmountError(
+            "Bạn đã sử dụng hết lượt rút tiền trong ngày.",
+          );
+
+          return false;
+        }
       }
 
       return true;
@@ -913,6 +932,18 @@ const WalletPage = () => {
 
           "Withdrawal.InvalidRequest":
             "Số tiền rút chưa hợp lệ.",
+
+          "Withdrawal.BelowMinimum":
+            "Số tiền rút thấp hơn mức tối thiểu cho phép.",
+
+          "Withdrawal.AboveMaximum":
+            "Số tiền rút vượt quá mức tối đa cho mỗi yêu cầu.",
+
+          "Withdrawal.DailyLimitExceeded":
+            "Bạn đã vượt quá hạn mức rút tiền trong ngày.",
+
+          "Withdrawal.DailyCountLimitExceeded":
+            "Bạn đã sử dụng hết lượt rút tiền trong ngày.",
         };
 
         setError(
@@ -924,6 +955,27 @@ const WalletPage = () => {
               "Không thể tạo yêu cầu rút tiền.",
             ),
         );
+
+        if (
+          code ===
+            "Withdrawal.DailyLimitExceeded" ||
+          code ===
+            "Withdrawal.DailyCountLimitExceeded"
+        ) {
+          try {
+            const nextQuota =
+              await walletApi
+                .getWithdrawalQuota({
+                  skipGlobalErrorPage: true,
+                });
+
+            setWithdrawalQuota(
+              nextQuota,
+            );
+          } catch {
+            // Giữ nguyên lỗi tạo yêu cầu rút tiền ở trên nếu làm mới hạn mức thất bại.
+          }
+        }
       } finally {
         setWithdrawing(false);
       }
@@ -1064,6 +1116,20 @@ const WalletPage = () => {
                     withdrawalQuota.dailyWithdrawalLimit,
                   )}
                 </p>
+
+                {withdrawalQuota.dailyWithdrawalCountLimit !=
+                  null && (
+                  <p className="mt-2 text-xs font-semibold text-textLight">
+                    Số lượt rút hôm nay: đã dùng{" "}
+                    {withdrawalQuota.usedDailyWithdrawalCount ??
+                      "—"}{" "}
+                    / {withdrawalQuota.dailyWithdrawalCountLimit}{" "}
+                    lượt · còn lại{" "}
+                    {withdrawalQuota.remainingDailyWithdrawalCount ??
+                      "—"}{" "}
+                    lượt
+                  </p>
+                )}
               </div>
             )}
             {isBusiness && (
