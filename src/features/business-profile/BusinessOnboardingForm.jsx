@@ -1,10 +1,17 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { bankDirectoryService } from "../../services/bankDirectoryService";
+import { useState } from "react";
+import AddressPickerField from "../../components/shared/AddressPickerField";
+import BankPickerField from "../../components/shared/BankPickerField";
+import SensitiveField from "../../components/shared/SensitiveField";
 import businessProfileApi from "../../services/apis/businessProfileApi";
+import {
+  FULL_NAME_MAX_LENGTH,
+  validateFullName,
+} from "../../utils/formValidation";
+import {
+  capitalizeWordInitials,
+  toTitleCaseText,
+  toUppercaseText,
+} from "../../utils/textFormat";
 import BusinessAddressFields from "./BusinessAddressFields";
 import {
   BusinessField,
@@ -28,20 +35,19 @@ const BUSINESS_MODELS = [
   },
 ];
 
-const normalizeSearch = (value) =>
-  String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+const OPERATING_SCOPE_OPTIONS = [
+  "Toàn quốc",
+  "Khu vực miền Bắc",
+  "Khu vực miền Trung",
+  "Khu vực miền Nam",
+];
 
 const normalizeIdentityName = (
   value,
 ) =>
-  String(value ?? "")
-    .normalize("NFC")
+  toUppercaseText(value)
     .trim()
-    .replace(/\s+/gu, " ")
-    .toUpperCase();
+    .replace(/\s+/gu, " ");
 const createForm = (draft) => {
   const profile =
     normalizeBusinessProfile(draft);
@@ -132,61 +138,16 @@ export default function BusinessOnboardingForm({
   const [form, setForm] = useState(() =>
     createForm(registrationDetail),
   );
-  const [banks, setBanks] =
-    useState([]);
-  const [bankQuery, setBankQuery] =
-    useState(form.bankName);
-  const [isBankOpen, setIsBankOpen] =
-    useState(false);
-  const [isLoadingBanks, setIsLoadingBanks] =
-    useState(true);
+
+  const [
+    isAccountNameManuallyEdited,
+    setIsAccountNameManuallyEdited,
+  ] = useState(false);
+
   const [isSubmitting, setIsSubmitting] =
     useState(false);
   const [error, setError] =
     useState("");
-
-  useEffect(() => {
-    let isActive = true;
-
-    bankDirectoryService
-      .getBanks()
-      .then((items) => {
-        if (isActive) setBanks(items);
-      })
-      .catch(() => {
-        if (isActive) {
-          setError(
-            "Không thể tải danh sách ngân hàng. Bạn có thể thử lại sau.",
-          );
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          setIsLoadingBanks(false);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  const filteredBanks = useMemo(() => {
-    const query = normalizeSearch(bankQuery);
-
-    return banks
-      .filter((bank) =>
-        normalizeSearch(
-          [
-            bank.name,
-            bank.shortName,
-            bank.code,
-            bank.bin,
-          ].join(" "),
-        ).includes(query),
-      )
-      .slice(0, 12);
-  }, [bankQuery, banks]);
 
   const updateField = (name, value) => {
     setForm((current) => ({
@@ -194,6 +155,105 @@ export default function BusinessOnboardingForm({
       [name]: value,
     }));
     setError("");
+  };
+
+  const handleBankChange = (
+    bank,
+  ) => {
+    setForm((current) => ({
+      ...current,
+      bankCode: String(
+        bank.bin || "",
+      ),
+      bankName: String(
+        bank.shortName ||
+          bank.name ||
+          "",
+      ).trim(),
+    }));
+
+    setError("");
+  };
+
+  const handleBankClear = () => {
+    setForm((current) => ({
+      ...current,
+      bankCode: "",
+      bankName: "",
+    }));
+
+    setError("");
+  };
+
+  const handleFullNameChange = (
+    rawValue,
+  ) => {
+    const nextFullName =
+      capitalizeWordInitials(
+        rawValue,
+      );
+
+    const nextIdentityName =
+      toUppercaseText(
+        nextFullName,
+      );
+
+    setForm((current) => ({
+      ...current,
+      fullName:
+        nextFullName,
+      identityName:
+        nextIdentityName,
+      accountName:
+        isAccountNameManuallyEdited
+          ? current.accountName
+          : nextIdentityName,
+    }));
+
+    setError("");
+  };
+
+  const handleIdentityNameChange = (
+    rawValue,
+  ) => {
+    const nextIdentityName =
+      toUppercaseText(
+        rawValue,
+      );
+
+    const nextFullName =
+      toTitleCaseText(
+        nextIdentityName,
+      );
+
+    setForm((current) => ({
+      ...current,
+      identityName:
+        nextIdentityName,
+      fullName:
+        nextFullName,
+      accountName:
+        isAccountNameManuallyEdited
+          ? current.accountName
+          : nextIdentityName,
+    }));
+
+    setError("");
+  };
+
+  const handleAccountNameChange = (
+    rawValue,
+  ) => {
+    setIsAccountNameManuallyEdited(
+      true,
+    );
+
+    updateField(
+      "accountName",
+      toUppercaseText(
+        rawValue,
+      ),
+    );
   };
 
   const validate = () => {
@@ -286,11 +346,22 @@ export default function BusinessOnboardingForm({
       return `Vui lòng nhập ${missingField[1]}.`;
     }
 
+
+
+    const fullNameError =
+      validateFullName(
+        form.fullName,
+      );
+
+    if (fullNameError) {
+      return fullNameError;
+    }
+
     if (
-      form.fullName.trim()
-        .length > 255
+      form.businessDescription.trim()
+        .length > 1000
     ) {
-      return "Họ tên người đại diện không được vượt quá 255 ký tự.";
+      return "Giới thiệu doanh nghiệp không được vượt quá 1000 ký tự.";
     }
 
     if (
@@ -320,6 +391,20 @@ export default function BusinessOnboardingForm({
         .length > 255
     ) {
       return "Họ tên trên CCCD không được vượt quá 255 ký tự.";
+    }
+
+    if (
+      form.accountName.trim()
+        .length > 255
+    ) {
+      return "Tên chủ tài khoản không được vượt quá 255 ký tự.";
+    }
+
+    if (
+      form.identityAddress.trim()
+        .length > 500
+    ) {
+      return "Địa chỉ trên CCCD không được vượt quá 500 ký tự.";
     }
 
     if (
@@ -473,6 +558,8 @@ export default function BusinessOnboardingForm({
           <BusinessField
             id="onboarding-tax-code"
             label="Mã số thuế"
+            inputMode="numeric"
+            maxLength={50}
             value={form.taxCode}
             onChange={(event) =>
               updateField(
@@ -507,6 +594,7 @@ export default function BusinessOnboardingForm({
           <BusinessField
             id="onboarding-scope"
             label="Phạm vi hoạt động"
+            as="select"
             value={form.operatingScope}
             onChange={(event) =>
               updateField(
@@ -514,12 +602,43 @@ export default function BusinessOnboardingForm({
                 event.target.value,
               )
             }
-          />
+          >
+            <option value="">
+              Không chọn / không gửi
+            </option>
+
+            {form.operatingScope &&
+              !OPERATING_SCOPE_OPTIONS.includes(
+                form.operatingScope,
+              ) && (
+                <option
+                  value={
+                    form.operatingScope
+                  }
+                >
+                  {
+                    form.operatingScope
+                  }
+                </option>
+              )}
+
+            {OPERATING_SCOPE_OPTIONS.map(
+              (scope) => (
+                <option
+                  key={scope}
+                  value={scope}
+                >
+                  {scope}
+                </option>
+              ),
+            )}
+          </BusinessField>
           <BusinessField
             id="onboarding-description"
             label="Giới thiệu doanh nghiệp"
             as="textarea"
             rows={4}
+            maxLength={1000}
             value={
               form.businessDescription
             }
@@ -563,38 +682,47 @@ export default function BusinessOnboardingForm({
             label="Họ tên người đại diện"
             value={form.fullName}
             onChange={(event) =>
-              updateField(
-                "fullName",
+              handleFullNameChange(
                 event.target.value,
               )
             }
+            maxLength={FULL_NAME_MAX_LENGTH}
             required
           />
-          <BusinessField
+          <SensitiveField
             id="onboarding-identity-number"
             label="Số CCCD"
+            name="identityNumber"
             value={form.identityNumber}
             onChange={(event) =>
               updateField(
                 "identityNumber",
-                event.target.value.replace(
-                  /\D/g,
-                  "",
-                ),
+                event.target.value
+                  .replace(
+                    /\D/g,
+                    "",
+                  )
+                  .slice(
+                    0,
+                    12,
+                  ),
               )
             }
+            inputMode="numeric"
+            maxLength={12}
             required
+            placeholder="Nhập 12 chữ số CCCD"
           />
           <BusinessField
             id="onboarding-identity-name"
             label="Họ tên trên CCCD"
             value={form.identityName}
             onChange={(event) =>
-              updateField(
-                "identityName",
+              handleIdentityNameChange(
                 event.target.value,
               )
             }
+            maxLength={255}
             required
           />
           <BusinessField
@@ -613,19 +741,38 @@ export default function BusinessOnboardingForm({
             }
             required
           />
-          <BusinessField
-            id="onboarding-identity-address"
-            label="Địa chỉ trên CCCD"
-            value={form.identityAddress}
-            onChange={(event) =>
-              updateField(
-                "identityAddress",
-                event.target.value,
-              )
-            }
-            required
-            className="sm:col-span-2"
-          />
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
+              Địa chỉ thường trú
+              <span className="text-error">
+                {" "}*
+              </span>
+            </label>
+
+            <AddressPickerField
+              value={
+                form.identityAddress
+              }
+              onChange={(
+                nextAddress,
+              ) =>
+                updateField(
+                  "identityAddress",
+                  nextAddress,
+                )
+              }
+              onClear={() =>
+                updateField(
+                  "identityAddress",
+                  "",
+                )
+              }
+              disabled={
+                isSubmitting
+              }
+              placeholder="Chọn địa chỉ thường trú trên CCCD"
+            />
+          </div>
         </div>
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
           <BusinessFileField
@@ -663,78 +810,44 @@ export default function BusinessOnboardingForm({
         description="Tài khoản phục vụ giao dịch và giấy tờ chứng minh tư cách pháp nhân."
       >
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div className="relative sm:col-span-2">
-            <label
-              htmlFor="onboarding-bank"
-              className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight"
-            >
-              Ngân hàng <span className="text-error">*</span>
+          <div className="sm:col-span-2">
+            <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
+              Ngân hàng thụ hưởng
+              <span className="text-error">
+                {" "}*
+              </span>
             </label>
-            <input
-              id="onboarding-bank"
-              type="text"
-              value={bankQuery}
-              onChange={(event) => {
-                setBankQuery(
-                  event.target.value,
-                );
-                updateField("bankCode", "");
-                updateField("bankName", "");
-                setIsBankOpen(true);
-              }}
-              onFocus={() =>
-                setIsBankOpen(true)
+
+            <BankPickerField
+              bankBin={
+                form.bankCode
               }
-              onBlur={() =>
-                window.setTimeout(
-                  () =>
-                    setIsBankOpen(false),
-                  120,
+              bankName={
+                form.bankName
+              }
+              onChange={
+                handleBankChange
+              }
+              onClear={
+                handleBankClear
+              }
+              disabled={
+                isSubmitting
+              }
+              hasError={
+                Boolean(error) &&
+                (
+                  !form.bankCode ||
+                  !form.bankName
                 )
               }
-              placeholder={
-                isLoadingBanks
-                  ? "Đang tải ngân hàng..."
-                  : "Tìm MB Bank, Vietcombank..."
-              }
-              autoComplete="off"
-              className="w-full rounded-xl border border-border bg-white px-3 py-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              placeholder="Chọn ngân hàng của bạn..."
             />
-            {isBankOpen &&
-              filteredBanks.length > 0 && (
-                <div className="absolute z-20 mt-2 max-h-64 w-full overflow-y-auto rounded-2xl border border-border bg-white p-2 shadow-xl">
-                  {filteredBanks.map((bank) => (
-                    <button
-                      key={bank.bin}
-                      type="button"
-                      onMouseDown={(event) =>
-                        event.preventDefault()
-                      }
-                      onClick={() => {
-                        setForm((current) => ({
-                          ...current,
-                          bankCode: bank.bin,
-                          bankName: bank.name,
-                        }));
-                        setBankQuery(bank.name);
-                        setIsBankOpen(false);
-                      }}
-                      className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-primary/10"
-                    >
-                      <span className="text-sm font-bold text-text">
-                        {bank.name}
-                      </span>
-                      <span className="text-xs text-textLight">
-                        {bank.bin}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
           </div>
-          <BusinessField
+          <SensitiveField
             id="onboarding-account-number"
             label="Số tài khoản"
+            name="accountNumber"
             value={form.accountNumber}
             onChange={(event) =>
               updateField(
@@ -742,18 +855,20 @@ export default function BusinessOnboardingForm({
                 event.target.value,
               )
             }
+            inputMode="numeric"
             required
+            placeholder="Nhập số tài khoản ngân hàng"
           />
           <BusinessField
             id="onboarding-account-name"
             label="Tên chủ tài khoản"
             value={form.accountName}
             onChange={(event) =>
-              updateField(
-                "accountName",
-                event.target.value.toUpperCase(),
+              handleAccountNameChange(
+                event.target.value,
               )
             }
+            maxLength={255}
             required
           />
         </div>

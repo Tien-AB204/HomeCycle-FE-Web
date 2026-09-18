@@ -32,6 +32,7 @@ const SensitiveField = ({
   required = false,
   autoComplete,
   inputMode,
+  maxLength,
   placeholder = "",
 }) => {
   const [revealed, setRevealed] = useState(false);
@@ -95,6 +96,7 @@ const SensitiveField = ({
             required={required}
             autoComplete={autoComplete}
             inputMode={inputMode}
+            maxLength={maxLength}
             placeholder={placeholder}
             className="w-full rounded-xl border border-border bg-white px-3 py-3 pr-10 text-sm text-text outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10"
           />

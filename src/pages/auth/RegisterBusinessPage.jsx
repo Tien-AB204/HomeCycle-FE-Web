@@ -10,6 +10,12 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
 import { decodeJwtPayload } from "../../utils/authUtils";
+import {
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  validateEmail,
+  validatePassword as validatePasswordValue,
+} from "../../utils/formValidation";
 import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
 const STEPS = {
@@ -201,9 +207,14 @@ const RegisterBusinessPage = () => {
     const normalizedEmail =
       email.trim().toLowerCase();
 
-    if (!normalizedEmail) {
+    const emailValidationError =
+      validateEmail(
+        normalizedEmail,
+      );
+
+    if (emailValidationError) {
       setError(
-        "Vui lòng nhập địa chỉ email.",
+        emailValidationError,
       );
       return;
     }
@@ -368,8 +379,13 @@ const RegisterBusinessPage = () => {
       return "Phiên xác thực email không hợp lệ. Vui lòng xác thực lại.";
     }
 
-    if (password.length < 6) {
-      return "Mật khẩu phải có ít nhất 6 ký tự.";
+    const passwordValidationError =
+      validatePasswordValue(
+        password,
+      );
+
+    if (passwordValidationError) {
+      return passwordValidationError;
     }
 
     if (
@@ -549,6 +565,7 @@ const RegisterBusinessPage = () => {
                 }
                 required
                 autoComplete="email"
+                maxLength={EMAIL_MAX_LENGTH}
                 placeholder="Nhập email doanh nghiệp"
                 className="w-full rounded-xl border border-border bg-background py-3 pl-10 pr-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
@@ -735,8 +752,9 @@ const RegisterBusinessPage = () => {
                 }
                 required
                 minLength={6}
+                maxLength={PASSWORD_MAX_LENGTH}
                 autoComplete="new-password"
-                placeholder="Tối thiểu 6 ký tự"
+                placeholder="Từ 6 đến 50 ký tự"
                 className="w-full rounded-xl border border-border bg-background py-3 pl-3 pr-11 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
               />
 
@@ -791,6 +809,7 @@ const RegisterBusinessPage = () => {
               }
               required
               minLength={6}
+              maxLength={PASSWORD_MAX_LENGTH}
               autoComplete="new-password"
               placeholder="Nhập lại mật khẩu"
               className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"

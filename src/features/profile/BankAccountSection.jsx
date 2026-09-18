@@ -1,9 +1,6 @@
-import {
-  useMemo,
-  useState,
-} from "react";
-import { bankDirectoryService } from "../../services/bankDirectoryService";
+import { useState } from "react";
 import { userService } from "../../services/userService";
+import BankPickerField from "../../components/shared/BankPickerField";
 import SensitiveField from "../../components/shared/SensitiveField";
 import { maskMiddleValue } from "../../utils/maskMiddleValue";
 import {
@@ -23,48 +20,6 @@ const createBankForm = (
   accountName:
     bankAccount?.accountName || "",
 });
-
-const normalizeSearchValue = (
-  value,
-) => {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(
-      /[\u0300-\u036f]/g,
-      "",
-    )
-    .toLowerCase()
-    .replace(/đ/g, "d")
-    .replace(/[^a-z0-9]/g, "");
-};
-
-const findMatchingBank = (
-  bankList,
-  bankForm,
-) => {
-  const bankCode = String(
-    bankForm?.bankCode || "",
-  );
-
-  const normalizedBankName =
-    normalizeSearchValue(
-      bankForm?.bankName,
-    );
-
-  return (
-    bankList.find(
-      (bank) =>
-        bank.bin === bankCode,
-    ) ||
-    bankList.find(
-      (bank) =>
-        normalizeSearchValue(
-          bank.name,
-        ) === normalizedBankName,
-    ) ||
-    null
-  );
-};
 
 const getApiErrorMessage = (
   error,
@@ -133,35 +88,6 @@ const BankField = ({
   );
 };
 
-const BankLogo = ({ src }) => {
-  const [failed, setFailed] = useState(false);
-  const [trackedSrc, setTrackedSrc] = useState(src);
-
-  if (src !== trackedSrc) {
-    setTrackedSrc(src);
-    setFailed(false);
-  }
-
-  if (!src || failed) {
-    return (
-      <div className="flex h-9 w-9 items-center justify-center rounded bg-background">
-        <span className="material-symbols-outlined text-textLight">
-          account_balance
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={src}
-      alt=""
-      onError={() => setFailed(true)}
-      className="h-9 w-9 rounded object-contain"
-    />
-  );
-};
-
 const MaskedAccountNumber = ({ value }) => {
   const [revealed, setRevealed] = useState(false);
   const stringValue = String(value || "");
@@ -203,37 +129,6 @@ const BankAccountSection = ({
       ),
     );
 
-  const [banks, setBanks] =
-    useState([]);
-
-  const [
-    selectedBank,
-    setSelectedBank,
-  ] = useState(null);
-
-  const [
-    bankSearch,
-    setBankSearch,
-  ] = useState(
-    initialBankAccount?.bankName ||
-      "",
-  );
-
-  const [
-    isBankListOpen,
-    setIsBankListOpen,
-  ] = useState(false);
-
-  const [
-    isLoadingBanks,
-    setIsLoadingBanks,
-  ] = useState(false);
-
-  const [
-    bankLoadError,
-    setBankLoadError,
-  ] = useState("");
-
   const [
     isEditing,
     setIsEditing,
@@ -252,205 +147,92 @@ const BankAccountSection = ({
     setSuccessMessage,
   ] = useState("");
 
-  const filteredBanks =
-    useMemo(() => {
-      const normalizedQuery =
-        normalizeSearchValue(
-          bankSearch,
-        );
-
-      if (!normalizedQuery) {
-        return banks.slice(0, 15);
-      }
-
-      return banks
-        .filter((bank) => {
-          const searchableValue =
-            normalizeSearchValue(
-              [
-                bank.name,
-                bank.shortName,
-                bank.code,
-                bank.bin,
-              ].join(" "),
-            );
-
-          return searchableValue.includes(
-            normalizedQuery,
-          );
-        })
-        .slice(0, 15);
-    }, [banks, bankSearch]);
-
-  const loadBanks = async (
-    forceRefresh = false,
-    targetForm = form,
-  ) => {
-    setIsLoadingBanks(true);
-    setBankLoadError("");
-
-    try {
-      const bankList =
-        await bankDirectoryService.getBanks(
-          {
-            forceRefresh,
-          },
-        );
-
-      setBanks(bankList);
-
-      const matchingBank =
-        findMatchingBank(
-          bankList,
-          targetForm,
-        );
-
-      if (matchingBank) {
-        setSelectedBank(
-          matchingBank,
-        );
-
-        setBankSearch(
-          matchingBank.name,
-        );
-
-        setForm(
-          (currentForm) => ({
-            ...currentForm,
-            bankCode:
-              matchingBank.bin,
-            bankName:
-              matchingBank.name,
-          }),
-        );
-      }
-    } catch (loadError) {
-      setBankLoadError(
-        getApiErrorMessage(
-          loadError,
-          "Không thể tải danh sách ngân hàng.",
-        ),
-      );
-    } finally {
-      setIsLoadingBanks(false);
-    }
-  };
-
   const handleChange = (
     event,
   ) => {
     const { name, value } =
       event.target;
 
-    setForm(
-      (currentForm) => ({
-        ...currentForm,
-        [name]: value,
-      }),
-    );
-  };
-
-  const handleBankSearchChange = (
-    event,
-  ) => {
-    const value =
-      event.target.value;
-
-    setBankSearch(value);
-    setSelectedBank(null);
-    setError("");
-    setIsBankListOpen(true);
+    const nextValue =
+      name === "accountNumber"
+        ? value.replace(
+            /[^0-9]/g,
+            "",
+          )
+        : name === "accountName"
+          ? value.toUpperCase()
+          : value;
 
     setForm(
       (currentForm) => ({
         ...currentForm,
-        bankName: "",
-        bankCode: "",
+        [name]: nextValue,
       }),
     );
-  };
-
-  const handleSelectBank = (
-    bank,
-  ) => {
-    setSelectedBank(bank);
-    setBankSearch(bank.name);
-    setIsBankListOpen(false);
-    setError("");
-
-    setForm(
-      (currentForm) => ({
-        ...currentForm,
-        bankName: bank.name,
-        bankCode: bank.bin,
-      }),
-    );
-  };
-
-  const handleStartEditing = () => {
-    const nextForm =
-      createBankForm(bankAccount);
 
     setError("");
     setSuccessMessage("");
-    setBankLoadError("");
-    setForm(nextForm);
-    setBankSearch(
-      nextForm.bankName,
+  };
+
+  const handleBankChange = (
+    bank,
+  ) => {
+    setForm(
+      (currentForm) => ({
+        ...currentForm,
+        bankCode: String(
+          bank.bin || "",
+        ),
+        bankName: String(
+          bank.shortName ||
+            bank.name ||
+            "",
+        ).trim(),
+      }),
+    );
+
+    setError("");
+    setSuccessMessage("");
+  };
+
+  const handleBankClear = () => {
+    setForm(
+      (currentForm) => ({
+        ...currentForm,
+        bankCode: "",
+        bankName: "",
+      }),
+    );
+
+    setError("");
+    setSuccessMessage("");
+  };
+  const handleStartEditing = () => {
+    setError("");
+    setSuccessMessage("");
+    setForm(
+      createBankForm(
+        bankAccount,
+      ),
     );
     setIsEditing(true);
-
-    const matchingBank =
-      findMatchingBank(
-        banks,
-        nextForm,
-      );
-
-    setSelectedBank(
-      matchingBank,
-    );
-
-    if (banks.length === 0) {
-      void loadBanks(
-        false,
-        nextForm,
-      );
-    }
   };
 
   const handleCancelEditing = () => {
-    const previousForm =
-      createBankForm(bankAccount);
-
     setError("");
-    setBankLoadError("");
-    setForm(previousForm);
-    setBankSearch(
-      previousForm.bankName,
-    );
-    setSelectedBank(
-      findMatchingBank(
-        banks,
-        previousForm,
+    setForm(
+      createBankForm(
+        bankAccount,
       ),
     );
-    setIsBankListOpen(false);
     setIsEditing(false);
   };
-
   const validateForm = () => {
-    if (isLoadingBanks) {
-      return "Vui lòng chờ danh sách ngân hàng tải xong.";
-    }
-
     if (
-      !selectedBank ||
-      selectedBank.bin !==
-        form.bankCode ||
-      selectedBank.name !==
-        form.bankName
+      !form.bankCode.trim() ||
+      !form.bankName.trim()
     ) {
-      return "Vui lòng chọn một ngân hàng trong danh sách gợi ý.";
+      return "Vui lòng chọn ngân hàng thụ hưởng.";
     }
 
     const accountNumber =
@@ -464,11 +246,11 @@ const BankAccountSection = ({
     }
 
     if (
-      !/^[0-9A-Za-z]+$/.test(
+      !/^[0-9]+$/.test(
         accountNumber,
       )
     ) {
-      return "Số tài khoản chỉ được chứa chữ cái và chữ số.";
+      return "Số tài khoản chỉ được chứa chữ số.";
     }
 
     if (
@@ -507,10 +289,10 @@ const BankAccountSection = ({
 
     const payload = {
       bankCode:
-        selectedBank.bin,
+        form.bankCode.trim(),
 
       bankName:
-        selectedBank.name,
+        form.bankName.trim(),
 
       accountNumber:
         form.accountNumber.trim(),
@@ -569,17 +351,6 @@ const BankAccountSection = ({
         createBankForm(
           updatedBankAccount,
         ),
-      );
-
-      setBankSearch(
-        updatedBankAccount.bankName,
-      );
-
-      setSelectedBank(
-        findMatchingBank(
-          banks,
-          updatedBankAccount,
-        ) || selectedBank,
       );
 
       setIsEditing(false);
@@ -693,13 +464,6 @@ const BankAccountSection = ({
               {bankAccount.bankName}
             </p>
 
-            <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/60">
-              Mã ngân hàng
-            </p>
-
-            <p className="mb-6 font-medium">
-              {bankAccount.bankCode}
-            </p>
 
             <p className="mb-1 text-xs font-bold uppercase tracking-wider text-white/60">
               Số tài khoản
@@ -727,157 +491,40 @@ const BankAccountSection = ({
           className="space-y-5"
         >
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <div className="relative sm:col-span-2">
-              <label
-                htmlFor="bank-search"
-                className="mb-1.5 block text-xs font-black text-textLight"
-              >
-                TÊN NGÂN HÀNG
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-xs font-black text-textLight">
+                NGÂN HÀNG THỤ HƯỞNG
                 <span className="text-error">
                   {" "}*
                 </span>
               </label>
 
-              <div className="relative">
-                <input
-                  id="bank-search"
-                  type="text"
-                  value={bankSearch}
-                  onChange={
-                    handleBankSearchChange
-                  }
-                  onFocus={() =>
-                    setIsBankListOpen(
-                      true,
-                    )
-                  }
-                  onBlur={() =>
-                    setIsBankListOpen(
-                      false,
-                    )
-                  }
-                  disabled={
-                    isLoadingBanks
-                  }
-                  placeholder="Nhập MB Bank, Vietcombank, ACB..."
-                  autoComplete="off"
-                  className="w-full rounded-xl border border-border bg-white py-3 pl-10 pr-10 text-sm text-text outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:bg-background"
-                />
-
-                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[19px] text-textLight">
-                  search
-                </span>
-
-                {isLoadingBanks && (
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[19px] text-primary">
-                    refresh
-                  </span>
-                )}
-              </div>
-
-              {isBankListOpen &&
-                !isLoadingBanks &&
-                banks.length > 0 && (
-                  <div className="absolute z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-border bg-white py-1 shadow-xl">
-                    {filteredBanks.length >
-                    0 ? (
-                      filteredBanks.map(
-                        (bank) => (
-                          <button
-                            key={
-                              bank.id
-                            }
-                            type="button"
-                            onMouseDown={(
-                              event,
-                            ) => {
-                              event.preventDefault();
-
-                              handleSelectBank(
-                                bank,
-                              );
-                            }}
-                            className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-primary/10"
-                          >
-                            <BankLogo src={bank.logo} />
-
-                            <div className="min-w-0 flex-1">
-                              <p className="font-bold text-text">
-                                {
-                                  bank.shortName
-                                }
-                              </p>
-
-                              <p className="truncate text-xs text-textLight">
-                                {
-                                  bank.name
-                                }
-                              </p>
-                            </div>
-
-                            <span className="text-xs font-medium text-textLight">
-                              {
-                                bank.bin
-                              }
-                            </span>
-                          </button>
-                        ),
-                      )
-                    ) : (
-                      <p className="px-4 py-5 text-center text-sm text-textLight">
-                        Không tìm thấy
-                        ngân hàng phù
-                        hợp.
-                      </p>
-                    )}
-                  </div>
-                )}
-
-              {selectedBank && (
-                <div className="mt-2 flex items-center gap-2 text-xs text-success">
-                  <span className="material-symbols-outlined text-[17px]">
-                    check_circle
-                  </span>
-
-                  Đã chọn{" "}
-                  {
-                    selectedBank.shortName
-                  }
-                  {" — BIN "}
-                  {selectedBank.bin}
-                </div>
-              )}
-
-              {bankLoadError && (
-                <div className="mt-2 flex items-center gap-3 rounded-md bg-error/10 px-3 py-2 text-xs text-error">
-                  <span className="flex-1">
-                    {bankLoadError}
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void loadBanks(
-                        true,
-                        form,
-                      )
-                    }
-                    className="font-bold underline"
-                  >
-                    Thử lại
-                  </button>
-                </div>
-              )}
+              <BankPickerField
+                bankBin={
+                  form.bankCode
+                }
+                bankName={
+                  form.bankName
+                }
+                onChange={
+                  handleBankChange
+                }
+                onClear={
+                  handleBankClear
+                }
+                disabled={
+                  isSaving
+                }
+                hasError={
+                  Boolean(error) &&
+                  (
+                    !form.bankCode ||
+                    !form.bankName
+                  )
+                }
+                placeholder="Chọn ngân hàng thụ hưởng"
+              />
             </div>
-
-            <BankField
-              id="bank-code"
-              label="BANK CODE (BIN)"
-              name="bankCode"
-              value={form.bankCode}
-              readOnly
-              placeholder="Tự động điền"
-            />
 
             <SensitiveField
               id="bank-account-number"
@@ -923,10 +570,7 @@ const BankAccountSection = ({
 
             <button
               type="submit"
-              disabled={
-                isSaving ||
-                isLoadingBanks
-              }
+              disabled={isSaving}
               className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving
