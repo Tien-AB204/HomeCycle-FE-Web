@@ -199,6 +199,17 @@ const WITHDRAWAL_FIELDS = [
     integer: true,
     step: "1",
   },
+  {
+    name: "dailyWithdrawalCountLimit",
+    label: "Số lần rút tối đa mỗi ngày",
+    unit: "lần",
+    min: 1,
+    integer: true,
+    step: "1",
+    optionalKeepCurrent: true,
+    description:
+      "Để trống nếu muốn giữ nguyên giá trị hiện tại.",
+  },
 ];
 
 const ORDER_FIELDS = [
@@ -1096,11 +1107,16 @@ export default function PlatformPolicyPage() {
     for (const field of activeFields) {
       const rawValue = draft[field.name];
 
-      if (
+      const isBlank =
         rawValue === "" ||
         rawValue === null ||
-        rawValue === undefined
-      ) {
+        rawValue === undefined;
+
+      if (field.optionalKeepCurrent && isBlank) {
+        continue;
+      }
+
+      if (isBlank) {
         throw new Error(
           `Vui lòng nhập "${field.label}".`,
         );
