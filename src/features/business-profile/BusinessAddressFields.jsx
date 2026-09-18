@@ -4,6 +4,7 @@ import {
   useState,
 } from "react";
 import provinceApi from "../../services/apis/provinceApi";
+import { capitalizeWordInitials } from "../../utils/textFormat";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const normalizeText = (value) =>
@@ -265,7 +266,10 @@ export default function BusinessAddressFields({
                 selectedProvince?.name ||
                 city,
               ward,
-              street: event.target.value,
+              street:
+                capitalizeWordInitials(
+                  event.target.value,
+                ),
             })
           }
           required={required}

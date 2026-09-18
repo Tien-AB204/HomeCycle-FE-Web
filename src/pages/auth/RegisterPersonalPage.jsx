@@ -1,8 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import AddressPickerField from "../../components/shared/AddressPickerField";
+import BankPickerField from "../../components/shared/BankPickerField";
+import SensitiveField from "../../components/shared/SensitiveField";
 import authApi from "../../services/apis/authApi";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import { decodeJwtPayload } from "../../utils/authUtils";
+import {
+  EMAIL_MAX_LENGTH,
+  FULL_NAME_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
+  normalizeVietnamPhone,
+  validateEmail,
+  validateFullName,
+  validatePassword,
+  validateUsername,
+  validateVietnamPhone,
+} from "../../utils/formValidation";
+import {
+  capitalizeWordInitials,
+  toUppercaseText,
+} from "../../utils/textFormat";
 import {
   FILE_UPLOAD_CONTEXT,
   getFileUploadAccept,
@@ -102,6 +121,9 @@ const TextInput = ({
   placeholder = "",
   autoComplete,
   minLength,
+  maxLength,
+  inputMode,
+  max,
 }) => {
   return (
     <div>
@@ -126,6 +148,9 @@ const TextInput = ({
         placeholder={placeholder}
         autoComplete={autoComplete}
         minLength={minLength}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        max={max}
         className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
       />
     </div>
@@ -387,12 +412,98 @@ const RegisterPersonalPage = () => {
   };
 
   const handleFormChange = (event) => {
-    const { name, value } = event.target;
+    const { name, value } =
+      event.target;
 
+    let nextValue = value;
+
+    if (
+      name === "fullName"
+    ) {
+      nextValue =
+        capitalizeWordInitials(
+          value,
+        );
+    }
+
+    if (
+      name === "representativeCode"
+    ) {
+      nextValue =
+        value
+          .replace(/\D/g, "")
+          .slice(0, 12);
+    }
+
+    if (
+      name === "accountNumber"
+    ) {
+      nextValue =
+        value
+          .replace(/[^0-9]/g, "")
+          .slice(0, 50);
+    }
+
+    if (
+      name === "representativeName" ||
+      name === "accountName"
+    ) {
+      nextValue =
+        toUppercaseText(value);
+    }
+
+    setForm((currentForm) => {
+      const nextForm = {
+        ...currentForm,
+        [name]: nextValue,
+      };
+
+      /*
+       * Mobile personal verification dùng cùng legalName
+       * cho tên CCCD và tên chủ tài khoản.
+       */
+      if (
+        name === "representativeName" ||
+        name === "accountName"
+      ) {
+        nextForm.representativeName =
+          nextValue;
+
+        nextForm.accountName =
+          nextValue;
+      }
+
+      return nextForm;
+    });
+
+    setError("");
+  };
+
+  const handleBankChange = (bank) => {
     setForm((currentForm) => ({
       ...currentForm,
-      [name]: value,
+      bankCode: String(
+        bank.bin || "",
+      ),
+      bankName:
+        toUppercaseText(
+          bank.shortName ||
+            bank.name ||
+            "",
+        ).trim(),
     }));
+
+    setError("");
+  };
+
+  const handleBankClear = () => {
+    setForm((currentForm) => ({
+      ...currentForm,
+      bankCode: "",
+      bankName: "",
+    }));
+
+    setError("");
   };
 
   const handleFileChange = (event) => {
@@ -439,9 +550,14 @@ const RegisterPersonalPage = () => {
       .trim()
       .toLowerCase();
 
-    if (!normalizedEmail) {
+    const emailValidationError =
+      validateEmail(
+        normalizedEmail,
+      );
+
+    if (emailValidationError) {
       setError(
-        "Vui lòng nhập địa chỉ email.",
+        emailValidationError,
       );
       return;
     }
@@ -573,30 +689,47 @@ const RegisterPersonalPage = () => {
       return "Phiên xác thực email không hợp lệ. Vui lòng xác thực lại OTP.";
     }
 
-    if (form.username.trim().length < 3) {
-      return "Tên đăng nhập phải có ít nhất 3 ký tự.";
+    const usernameError =
+      validateUsername(
+        form.username,
+      );
+
+    if (usernameError) {
+      return usernameError;
     }
 
-    if (!form.fullName.trim()) {
-      return "Vui lòng nhập họ và tên.";
+    const fullNameError =
+      validateFullName(
+        form.fullName,
+      );
+
+    if (fullNameError) {
+      return fullNameError;
     }
 
-    if (form.password.length < 6) {
-      return "Mật khẩu phải có ít nhất 6 ký tự.";
+    const passwordError =
+      validatePassword(
+        form.password,
+      );
+
+    if (passwordError) {
+      return passwordError;
     }
 
     if (
-      form.password !== form.confirmPassword
+      form.password !==
+      form.confirmPassword
     ) {
       return "Mật khẩu và xác nhận mật khẩu không khớp.";
     }
 
-    if (
-      !/^[0-9]{9,11}$/.test(
-        form.phoneNumber.trim(),
-      )
-    ) {
-      return "Số điện thoại phải gồm từ 9 đến 11 chữ số.";
+    const phoneError =
+      validateVietnamPhone(
+        form.phoneNumber,
+      );
+
+    if (phoneError) {
+      return phoneError;
     }
 
     return "";
@@ -615,16 +748,6 @@ const RegisterPersonalPage = () => {
       setError(validationError);
       return;
     }
-
-    setForm((currentForm) => ({
-      ...currentForm,
-      representativeName:
-        currentForm.representativeName ||
-        currentForm.fullName,
-      accountName:
-        currentForm.accountName ||
-        currentForm.fullName,
-    }));
 
     setStep(STEPS.OPTIONAL);
   };
@@ -666,7 +789,9 @@ const RegisterPersonalPage = () => {
     );
     payload.append(
       "PhoneNumber",
-      form.phoneNumber.trim(),
+      normalizeVietnamPhone(
+        form.phoneNumber,
+      ),
     );
 
     if (!includeOptionalInformation) {
@@ -748,6 +873,144 @@ const RegisterPersonalPage = () => {
     return payload;
   };
 
+  const validateOptionalInformation = () => {
+    const hasIdentityData =
+      Boolean(
+        form.representativeCode.trim() ||
+          form.representativeName.trim() ||
+          form.representativeDob.trim() ||
+          form.representativeAddress.trim() ||
+          form.frontIdCardFile ||
+          form.backIdCardFile,
+      );
+
+    const hasBankData =
+      Boolean(
+        form.bankCode.trim() ||
+          form.bankName.trim() ||
+          form.accountNumber.trim() ||
+          form.accountName.trim(),
+      );
+
+    if (hasIdentityData) {
+      if (
+        !/^\d{12}$/.test(
+          form.representativeCode.trim(),
+        )
+      ) {
+        return "Số CCCD phải gồm đúng 12 chữ số.";
+      }
+
+      if (
+        !form.representativeName.trim()
+      ) {
+        return "Vui lòng nhập họ tên theo CCCD.";
+      }
+
+      if (
+        form.representativeName.trim()
+          .length > 255
+      ) {
+        return "Họ tên trên CCCD không được vượt quá 255 ký tự.";
+      }
+
+      if (
+        !form.representativeDob.trim()
+      ) {
+        return "Vui lòng chọn ngày sinh.";
+      }
+
+            const identityDob =
+        new Date(
+          form.representativeDob +
+            "T00:00:00",
+        );
+
+      const today = new Date();
+
+      today.setHours(
+        23,
+        59,
+        59,
+        999,
+      );
+
+      if (
+        Number.isNaN(
+          identityDob.getTime(),
+        ) ||
+        identityDob > today
+      ) {
+        return "Ngày sinh không hợp lệ hoặc lớn hơn ngày hiện tại.";
+      }
+
+      if (
+        !form.representativeAddress.trim()
+      ) {
+        return "Vui lòng chọn địa chỉ thường trú.";
+      }
+
+      if (
+        form.representativeAddress.trim()
+          .length > 500
+      ) {
+        return "Địa chỉ trên CCCD không được vượt quá 500 ký tự.";
+      }
+
+      if (
+        !form.frontIdCardFile ||
+        !form.backIdCardFile
+      ) {
+        return "Vui lòng cung cấp đủ mặt trước và mặt sau CCCD.";
+      }
+    }
+
+    if (hasBankData) {
+      if (
+        !form.bankCode.trim() ||
+        !form.bankName.trim()
+      ) {
+        return "Vui lòng chọn ngân hàng thụ hưởng.";
+      }
+
+      if (
+        !form.accountNumber.trim()
+      ) {
+        return "Vui lòng nhập số tài khoản.";
+      }
+
+      if (
+        !/^[0-9]+$/.test(
+          form.accountNumber.trim(),
+        )
+      ) {
+        return "Số tài khoản chỉ được chứa chữ số.";
+      }
+
+      if (
+        form.accountNumber.trim()
+          .length > 50
+      ) {
+        return "Số tài khoản không được vượt quá 50 chữ số.";
+      }
+
+      if (
+        !form.accountName.trim()
+      ) {
+        return "Vui lòng nhập tên chủ tài khoản.";
+      }
+
+      if (
+        form.accountName.trim()
+          .length > 255
+      ) {
+        return "Tên chủ tài khoản không được vượt quá 255 ký tự.";
+      }
+    }
+
+    return "";
+  };
+
   const validateOptionalFiles = () => {
     const files = [
       [
@@ -798,6 +1061,16 @@ const RegisterPersonalPage = () => {
     }
 
     if (includeOptionalInformation) {
+      const optionalValidationError =
+        validateOptionalInformation();
+
+      if (optionalValidationError) {
+        setError(
+          optionalValidationError,
+        );
+        return;
+      }
+
       const fileValidationError =
         validateOptionalFiles();
 
@@ -1066,6 +1339,7 @@ const RegisterPersonalPage = () => {
               }
               required
               autoComplete="email"
+              maxLength={EMAIL_MAX_LENGTH}
               placeholder="Nhập địa chỉ email"
               className="w-full rounded-xl border border-border bg-background px-3 py-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10"
             />
@@ -1222,6 +1496,7 @@ const RegisterPersonalPage = () => {
             required
             placeholder="Nhập tên đăng nhập"
             autoComplete="username"
+            maxLength={USERNAME_MAX_LENGTH}
           />
 
           <TextInput
@@ -1233,6 +1508,7 @@ const RegisterPersonalPage = () => {
             required
             placeholder="Nhập họ và tên"
             autoComplete="name"
+            maxLength={FULL_NAME_MAX_LENGTH}
           />
 
           <TextInput
@@ -1245,6 +1521,7 @@ const RegisterPersonalPage = () => {
             type="tel"
             placeholder="Nhập số điện thoại"
             autoComplete="tel"
+            maxLength={20}
           />
 
           <TextInput
@@ -1256,6 +1533,7 @@ const RegisterPersonalPage = () => {
             required
             type="password"
             minLength={6}
+            maxLength={PASSWORD_MAX_LENGTH}
             placeholder="Tạo mật khẩu"
             autoComplete="new-password"
           />
@@ -1269,6 +1547,7 @@ const RegisterPersonalPage = () => {
             required
             type="password"
             minLength={6}
+            maxLength={PASSWORD_MAX_LENGTH}
             placeholder="Nhập lại mật khẩu"
             autoComplete="new-password"
           />
@@ -1325,13 +1604,15 @@ const RegisterPersonalPage = () => {
             Thông tin định danh
           </h3>
 
-          <TextInput
+          <SensitiveField
             id="registration-representative-code"
             label="Số CCCD"
             name="representativeCode"
             value={form.representativeCode}
             onChange={handleFormChange}
-            placeholder="Nhập số CCCD"
+            inputMode="numeric"
+            maxLength={12}
+            placeholder="Nhập 12 chữ số CCCD"
           />
 
           <TextInput
@@ -1340,7 +1621,8 @@ const RegisterPersonalPage = () => {
             name="representativeName"
             value={form.representativeName}
             onChange={handleFormChange}
-            placeholder="Nhập họ tên trên CCCD"
+            placeholder="VD: NGUYEN VAN A"
+            maxLength={255}
           />
 
           <TextInput
@@ -1350,16 +1632,48 @@ const RegisterPersonalPage = () => {
             value={form.representativeDob}
             onChange={handleFormChange}
             type="date"
+            max={new Date()
+              .toISOString()
+              .slice(0, 10)}
           />
 
-          <TextInput
-            id="registration-representative-address"
-            label="Địa chỉ trên CCCD"
-            name="representativeAddress"
-            value={form.representativeAddress}
-            onChange={handleFormChange}
-            placeholder="Nhập địa chỉ trên CCCD"
-          />
+          <div>
+            <label className="mb-1.5 block text-xs font-black text-textLight">
+              Địa chỉ thường trú
+            </label>
+
+            <AddressPickerField
+              value={
+                form.representativeAddress
+              }
+              onChange={(
+                nextAddress,
+              ) => {
+                setForm(
+                  (currentForm) => ({
+                    ...currentForm,
+                    representativeAddress:
+                      nextAddress,
+                  }),
+                );
+                setError("");
+              }}
+              onClear={() => {
+                setForm(
+                  (currentForm) => ({
+                    ...currentForm,
+                    representativeAddress:
+                      "",
+                  }),
+                );
+                setError("");
+              }}
+              disabled={
+                isLoading
+              }
+              placeholder="Chọn địa chỉ theo CCCD"
+            />
+          </div>
 
           <FileInput
             id="registration-front-id-card"
@@ -1387,30 +1701,39 @@ const RegisterPersonalPage = () => {
             Thông tin ngân hàng
           </h3>
 
-          <TextInput
-            id="registration-bank-name"
-            label="Tên ngân hàng"
-            name="bankName"
-            value={form.bankName}
-            onChange={handleFormChange}
-            placeholder="Ví dụ: MB Bank"
-          />
+          <div>
+            <label className="mb-1.5 block text-xs font-black text-textLight">
+              Ngân hàng thụ hưởng
+            </label>
 
-          <TextInput
-            id="registration-bank-code"
-            label="Mã ngân hàng"
-            name="bankCode"
-            value={form.bankCode}
-            onChange={handleFormChange}
-            placeholder="Nhập mã ngân hàng"
-          />
+            <BankPickerField
+              bankBin={
+                form.bankCode
+              }
+              bankName={
+                form.bankName
+              }
+              onChange={
+                handleBankChange
+              }
+              onClear={
+                handleBankClear
+              }
+              disabled={
+                isLoading
+              }
+              placeholder="Chọn ngân hàng của bạn..."
+            />
+          </div>
 
-          <TextInput
+          <SensitiveField
             id="registration-account-number"
             label="Số tài khoản"
             name="accountNumber"
             value={form.accountNumber}
             onChange={handleFormChange}
+            inputMode="numeric"
+            maxLength={50}
             placeholder="Nhập số tài khoản"
           />
 
@@ -1420,7 +1743,8 @@ const RegisterPersonalPage = () => {
             name="accountName"
             value={form.accountName}
             onChange={handleFormChange}
-            placeholder="Nhập tên chủ tài khoản"
+            placeholder="VD: NGUYEN VAN A"
+            maxLength={255}
           />
 
           <button
