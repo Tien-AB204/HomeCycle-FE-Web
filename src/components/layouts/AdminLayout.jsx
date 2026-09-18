@@ -114,6 +114,11 @@ const ADMIN_NAV_GROUPS = [
         path: "/admin/audit-logs",
         icon: "history",
       },
+      {
+        label: "Gói đăng ký",
+        path: "/admin/subscription-packages",
+        icon: "workspace_premium",
+      },
     ],
   },
 ];
