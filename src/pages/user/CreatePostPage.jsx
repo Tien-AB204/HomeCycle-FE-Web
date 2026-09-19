@@ -643,8 +643,13 @@ const CreatePostPage = () => {
       nextErrors.productName = "Tên sản phẩm phải có ít nhất 3 ký tự.";
     }
 
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      nextErrors.quantity = "Số lượng phải là số nguyên lớn hơn 0.";
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > 99999
+    ) {
+      nextErrors.quantity =
+        "Số lượng phải là số nguyên từ 1 đến 99.999.";
     }
 
     if (
