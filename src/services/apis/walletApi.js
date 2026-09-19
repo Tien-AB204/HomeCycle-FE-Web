@@ -182,11 +182,10 @@ const normalizeWithdrawalQuota = (
       ) || 0,
 
     dailyWithdrawalLimit:
-      Number(
+      normalizeNullableFiniteNumber(
         source.dailyWithdrawalLimit ??
-          source.DailyWithdrawalLimit ??
-          0,
-      ) || 0,
+          source.DailyWithdrawalLimit,
+      ),
 
     completedTodayAmount:
       Number(
@@ -210,11 +209,10 @@ const normalizeWithdrawalQuota = (
       ) || 0,
 
     remainingDailyLimitAmount:
-      Number(
+      normalizeNullableFiniteNumber(
         source.remainingDailyLimitAmount ??
-          source.RemainingDailyLimitAmount ??
-          0,
-      ) || 0,
+          source.RemainingDailyLimitAmount,
+      ),
 
     resetAt:
       source.resetAt ??
