@@ -47,6 +47,7 @@ import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
 import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
 import UserManagementPage from "../pages/admin/UserManagementPage";
+import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 
 // User Pages
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
@@ -232,6 +233,11 @@ const AppRouter = () => {
           />
 
           <Route
+            path="finance-operations"
+            element={<FinanceOperationsPage />}
+          />
+
+          <Route
             path="appointments"
             element={<AppointmentMonitoringPage />}
           />
@@ -329,6 +335,11 @@ const AppRouter = () => {
           <Route
             path="system-wallet"
             element={<AdminSystemWalletPage />}
+          />
+
+          <Route
+            path="finance-operations"
+            element={<FinanceOperationsPage admin />}
           />
 
           <Route path="policies" element={<PlatformPolicyPage />} />
