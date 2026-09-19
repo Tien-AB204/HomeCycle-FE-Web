@@ -61,6 +61,14 @@ const formatSellerAddress = (sellerInfo) =>
     .filter(Boolean)
     .join(", ");
 
+const sanitizeSellerInfo = (value = {}) => ({
+  fullName: String(value?.fullName || "").trim() || null,
+  phone: String(value?.phone || "").trim() || null,
+  streetAddress: String(value?.streetAddress || "").trim() || null,
+  ward: String(value?.ward || "").trim() || null,
+  city: String(value?.city || "").trim() || null,
+});
+
 const createInitialSellerInfo = (agreement) =>
   normalizeSellerInfo(
     agreement?.agreementDetails?.sellerInfo || {},
@@ -1023,7 +1031,7 @@ const AgreementForm = ({
         null,
 
       sellerInfo:
-        normalizeSellerInfo(sellerInfo),
+        sanitizeSellerInfo(sellerInfo),
     };
 
     if (
