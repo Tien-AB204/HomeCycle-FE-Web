@@ -55,12 +55,17 @@ const formatResetTime = (value) => {
 };
 
 export default function BuyPostMatchesPanel({ buyPostId }) {
+  const [requestVersion, setRequestVersion] = useState(0);
+  const requestKey = `${buyPostId}:${requestVersion}`;
+
   const [state, setState] = useState({
-    loading: true,
+    requestKey: "",
     error: "",
     data: null,
   });
-  const [requestVersion, setRequestVersion] = useState(0);
+
+  const loading =
+    Boolean(buyPostId) && state.requestKey !== requestKey;
 
   const load = useCallback(
     (signal) =>
@@ -78,17 +83,11 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
     const controller = new AbortController();
     let active = true;
 
-    setState((current) => ({
-      ...current,
-      loading: true,
-      error: "",
-    }));
-
     load(controller.signal)
       .then((data) => {
         if (!active) return;
         setState({
-          loading: false,
+          requestKey,
           error: "",
           data,
         });
@@ -104,7 +103,7 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
         if (!active) return;
 
         setState({
-          loading: false,
+          requestKey,
           error:
             error?.response?.data?.message ||
             error?.response?.data?.error?.message ||
@@ -118,7 +117,7 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
       active = false;
       controller.abort();
     };
-  }, [buyPostId, load, requestVersion]);
+  }, [buyPostId, load, requestKey]);
 
   const data = state.data;
   const items = Array.isArray(data?.matches) ? data.matches : [];
@@ -159,11 +158,17 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
 
           <button
             type="button"
-            onClick={() => setRequestVersion((value) => value + 1)}
-            disabled={state.loading}
+            onClick={() => {
+              setState((current) => ({
+                ...current,
+                error: "",
+              }));
+              setRequestVersion((value) => value + 1);
+            }}
+            disabled={loading}
             className="rounded-xl border border-primary px-3 py-2 text-xs font-black text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {state.loading ? "Đang cập nhật..." : "Làm mới gợi ý"}
+            {loading ? "Đang cập nhật..." : "Làm mới gợi ý"}
           </button>
         </div>
       </div>
@@ -184,7 +189,7 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
         </div>
       )}
 
-      {state.loading && (
+      {loading && (
         <div
           role="status"
           className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
@@ -198,7 +203,7 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
         </div>
       )}
 
-      {state.error && (
+      {!loading && state.error && (
         <div
           role="alert"
           className="mt-5 rounded-xl border border-error/20 bg-error/10 p-4 text-sm font-semibold text-error"
@@ -207,7 +212,7 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
         </div>
       )}
 
-      {!state.loading &&
+      {!loading &&
         !state.error &&
         items.length === 0 && (
           <div className="mt-5 rounded-xl border border-dashed border-border bg-background/50 p-8 text-center">
@@ -225,7 +230,7 @@ export default function BuyPostMatchesPanel({ buyPostId }) {
           </div>
         )}
 
-      {!state.loading &&
+      {!loading &&
         !state.error &&
         items.length > 0 && (
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

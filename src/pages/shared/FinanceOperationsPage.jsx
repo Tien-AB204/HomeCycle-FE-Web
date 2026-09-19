@@ -133,8 +133,9 @@ export default function FinanceOperationsPage({ admin = false }) {
     status: "",
   });
   const [pageNumber, setPageNumber] = useState(1);
+  const transactionsRequestKey = `${filters.transactionType}|${filters.referenceType}|${filters.status}|${pageNumber}`;
   const [transactions, setTransactions] = useState({
-    loading: true,
+    requestKey: "",
     error: "",
     page: {
       items: [],
@@ -144,13 +145,14 @@ export default function FinanceOperationsPage({ admin = false }) {
       totalPages: 0,
     },
   });
+  const transactionsLoading =
+    transactions.requestKey !== transactionsRequestKey;
   const [detailId, setDetailId] = useState("");
   const [detail, setDetail] = useState({ loading: false, data: null, error: "" });
 
   const loadFunds = useCallback(() => {
-    if (!admin) return;
+    if (!admin) return undefined;
     const controller = new AbortController();
-    setFunds((current) => ({ ...current, loading: true, error: "" }));
     financeOperationsApi
       .getFunds({ signal: controller.signal })
       .then((data) => setFunds({ loading: false, data, error: "" }))
@@ -167,7 +169,6 @@ export default function FinanceOperationsPage({ admin = false }) {
 
   const loadHolds = useCallback(() => {
     const controller = new AbortController();
-    setHolds((current) => ({ ...current, loading: true, error: "" }));
     financeOperationsApi
       .getHolds({ signal: controller.signal })
       .then((data) => setHolds({ loading: false, data, error: "" }))
@@ -182,12 +183,21 @@ export default function FinanceOperationsPage({ admin = false }) {
     return () => controller.abort();
   }, []);
 
+  const handleReloadFunds = () => {
+    setFunds((current) => ({ ...current, loading: true, error: "" }));
+    loadFunds();
+  };
+
+  const handleReloadHolds = () => {
+    setHolds((current) => ({ ...current, loading: true, error: "" }));
+    loadHolds();
+  };
+
   useEffect(() => loadFunds(), [loadFunds]);
   useEffect(() => loadHolds(), [loadHolds]);
 
   useEffect(() => {
     const controller = new AbortController();
-    setTransactions((current) => ({ ...current, loading: true, error: "" }));
 
     financeOperationsApi
       .getTransactions({
@@ -198,7 +208,7 @@ export default function FinanceOperationsPage({ admin = false }) {
       })
       .then((page) =>
         setTransactions({
-          loading: false,
+          requestKey: transactionsRequestKey,
           error: "",
           page,
         }),
@@ -207,22 +217,20 @@ export default function FinanceOperationsPage({ admin = false }) {
         if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") return;
         setTransactions((current) => ({
           ...current,
-          loading: false,
+          requestKey: transactionsRequestKey,
           error: getErrorMessage(error, "Không thể tải giao dịch tài chính."),
         }));
       });
 
     return () => controller.abort();
-  }, [filters, pageNumber]);
+  }, [filters, pageNumber, transactionsRequestKey]);
 
   useEffect(() => {
     if (!detailId) {
-      setDetail({ loading: false, data: null, error: "" });
       return undefined;
     }
 
     const controller = new AbortController();
-    setDetail({ loading: true, data: null, error: "" });
 
     financeOperationsApi
       .getTransactionById(detailId, { signal: controller.signal })
@@ -247,19 +255,23 @@ export default function FinanceOperationsPage({ admin = false }) {
           <button
             type="button"
             className="text-left font-bold text-primary hover:underline"
-            onClick={() =>
-              setDetailId(
-                String(
-                  findValue(
-                    item,
-                    "walletTransactionId",
-                    "transactionId",
-                    "WalletTransactionId",
-                    "TransactionId",
-                  ) || "",
-                ),
-              )
-            }
+            onClick={() => {
+              const nextDetailId = String(
+                findValue(
+                  item,
+                  "walletTransactionId",
+                  "transactionId",
+                  "WalletTransactionId",
+                  "TransactionId",
+                ) || "",
+              );
+
+              if (nextDetailId) {
+                setDetail({ loading: true, data: null, error: "" });
+              }
+
+              setDetailId(nextDetailId);
+            }}
           >
             {findValue(
               item,
@@ -329,7 +341,7 @@ export default function FinanceOperationsPage({ admin = false }) {
         <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
             <h2 className="text-lg font-black text-text">Tổng quan số dư</h2>
-            <Button onClick={loadFunds}>Tải lại</Button>
+            <Button onClick={handleReloadFunds}>Tải lại</Button>
           </div>
           <FundsPanel {...funds} />
         </div>
@@ -338,7 +350,7 @@ export default function FinanceOperationsPage({ admin = false }) {
       <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-black text-text">Các khoản tiền đang hold</h2>
-          <Button onClick={loadHolds}>Tải lại</Button>
+          <Button onClick={handleReloadHolds}>Tải lại</Button>
         </div>
         <HoldsPanel {...holds} />
       </div>
@@ -412,7 +424,7 @@ export default function FinanceOperationsPage({ admin = false }) {
               ) ?? index,
             )
           }
-          loading={transactions.loading}
+          loading={transactionsLoading}
           columns={transactionColumns}
           dataSource={transactions.page.items}
           scroll={{ x: 1000 }}
@@ -430,7 +442,10 @@ export default function FinanceOperationsPage({ admin = false }) {
         title="Chi tiết financial transaction"
         width={720}
         open={Boolean(detailId)}
-        onClose={() => setDetailId("")}
+        onClose={() => {
+          setDetailId("");
+          setDetail({ loading: false, data: null, error: "" });
+        }}
       >
         {detail.loading ? (
           <div className="flex justify-center py-14"><Spin /></div>

@@ -330,7 +330,7 @@ const AgreementForm = ({
     useState(() => createInitialSellerInfo(agreement));
 
   const [sellerInfoLoading, setSellerInfoLoading] =
-    useState(false);
+    useState(() => Boolean(!agreement && negotiationId));
 
   const [sellerInfoError, setSellerInfoError] =
     useState("");
@@ -394,8 +394,6 @@ const AgreementForm = ({
     }
 
     const controller = new AbortController();
-    setSellerInfoLoading(true);
-    setSellerInfoError("");
 
     agreementApi
       .getSellerInfo(negotiationId, { signal: controller.signal })

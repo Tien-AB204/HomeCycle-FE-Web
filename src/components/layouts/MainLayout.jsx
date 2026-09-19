@@ -100,7 +100,6 @@ const MainLayout = () => {
 
   useEffect(() => {
     if (!canUseClientAccount) {
-      setVipState({ active: false, expiresAt: null });
       return undefined;
     }
 
@@ -308,7 +307,7 @@ const MainLayout = () => {
                   >
                     <Avatar src={user?.avatarUrl} alt={displayName} className="h-9 w-9 shrink-0" />
                     <span className="truncate">{displayName}</span>
-                    {vipState.active && (
+                    {canUseClientAccount && vipState.active && (
                       <span
                         className="material-symbols-outlined text-[18px] text-warning"
                         title={`VIP còn hiệu lực đến ${new Intl.DateTimeFormat(
