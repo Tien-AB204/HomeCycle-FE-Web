@@ -7,6 +7,12 @@ import { normalizeRole } from "../../utils/authUtils";
 
 const PENDING_SUBSCRIPTION_KEY = "homecycle:pending-subscription-id";
 
+const notifySubscriptionChanged = () => {
+  window.dispatchEvent(
+    new CustomEvent("homecycle:subscription-changed"),
+  );
+};
+
 const getErrorMessage = (error, fallback) =>
   error?.response?.data?.error?.message ||
   error?.response?.data?.message ||
@@ -116,12 +122,6 @@ export default function SubscriptionPage() {
       }));
     }
   }, [targetRole]);
-
-  const notifySubscriptionChanged = () => {
-    window.dispatchEvent(
-      new CustomEvent("homecycle:subscription-changed"),
-    );
-  };
 
   useEffect(() => {
     const controller = new AbortController();
