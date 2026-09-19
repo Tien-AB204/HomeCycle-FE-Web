@@ -100,6 +100,11 @@ const ADMIN_NAV_GROUPS = [
         icon: "account_balance_wallet",
       },
       {
+        label: "Vận hành tài chính",
+        path: "/admin/finance-operations",
+        icon: "receipt_long",
+      },
+      {
         label: "Chính sách hệ thống",
         path: "/admin/policies",
         icon: "policy",

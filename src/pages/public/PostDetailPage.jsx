@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -316,6 +317,14 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const isBusiness =
     normalizedRole === ROLES.BUSINESS;
 
+  const getCurrentPostDetail = useCallback(
+    (id, options = {}) =>
+      isAuthenticated
+        ? postApi.getTypedDetail(id, options)
+        : postApi.getById(id, options),
+    [isAuthenticated],
+  );
+
   const buyPostIdParam = String(
     searchParams.get("buyPostId") || "",
   ).trim();
@@ -424,7 +433,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
             signal: controller.signal,
           },
         )
-      : postApi.getById(postId, {
+      : getCurrentPostDetail(postId, {
           signal: controller.signal,
         });
 
@@ -460,7 +469,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
       isActive = false;
       controller.abort();
     };
-  }, [ownerMode, postId, requestKey, userId]);
+  }, [getCurrentPostDetail, ownerMode, postId, requestKey, userId]);
 
   /*
    * Post này có thể đổi RemainingQuantity/status ở nơi khác (thanh toán,
@@ -533,16 +542,18 @@ const PostDetailPage = ({ ownerMode = false }) => {
         media.mediaId === selectedMediaId,
     ) || medias[0];
 
-  const product = post?.product || {};
+  const isBuyPost =
+    isBuyPostType(
+      post?.postType,
+    );
+  const product = isBuyPost
+    ? post?.requirement || {}
+    : post?.product || {};
   const attributes = Array.isArray(
     product.attributeValues,
   )
     ? product.attributeValues
     : [];
-  const isBuyPost =
-    isBuyPostType(
-      post?.postType,
-    );
   const fallbackListPath = `${
     isBuyPost
       ? "/tin-thu-mua"
@@ -593,11 +604,16 @@ const PostDetailPage = ({ ownerMode = false }) => {
     String(post?.status || "").toLowerCase() ===
     "active";
   const remainingQuantity = Number(
-    post?.remainingQuantity,
+    isBuyPost
+      ? post?.progress?.remainingTargetQuantity ??
+          post?.remainingQuantity
+      : post?.remainingQuantity,
   );
   const hasAvailableQuantity =
     Number.isFinite(remainingQuantity) &&
-    remainingQuantity > 0;
+    remainingQuantity > 0 &&
+    (!isBuyPost || !post?.progress?.isTargetReached) &&
+    !post?.isExpired;
 
   useEffect(() => {
     if (
@@ -664,7 +680,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
       try {
         const latestPost =
-          await postApi.getById(post.postId);
+          await getCurrentPostDetail(post.postId);
 
         const verifiedPost = {
           ...post,
@@ -736,7 +752,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
     setIsVerifyingPost(true);
     try {
-      const latestPost = await postApi.getById(post.postId);
+      const latestPost = await getCurrentPostDetail(post.postId);
       const verifiedPost = {
         ...post,
         ...latestPost,
@@ -804,7 +820,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
     setOfferError("");
 
     try {
-      const latestPost = await postApi.getById(post.postId);
+      const latestPost = await getCurrentPostDetail(post.postId);
       const verifiedPost = {
         ...post,
         ...latestPost,
@@ -894,7 +910,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
       try {
         const latestBuyPost =
-          await postApi.getById(
+          await getCurrentPostDetail(
             post.postId,
           );
 
@@ -1247,15 +1263,50 @@ const PostDetailPage = ({ ownerMode = false }) => {
               </div>
 
               <dl className="mt-4 space-y-2.5 text-sm">
-                <div className="flex justify-between gap-4 border-b border-border pb-2.5">
-                  <dt className="flex items-center gap-2 text-textLight">
-                    <InboxOutlined className="text-primary" />
-                    {isBuyPost ? "Còn cần thu mua" : "Còn lại"}
-                  </dt>
-                  <dd className="font-bold text-text">
-                    {post.remainingQuantity} / {post.quantity}
-                  </dd>
-                </div>
+                {isBuyPost && post.progress ? (
+                  <div className="border-b border-border pb-3">
+                    <div className="flex justify-between gap-4">
+                      <dt className="flex items-center gap-2 text-textLight">
+                        <InboxOutlined className="text-primary" />
+                        Đã lập hợp đồng
+                      </dt>
+                      <dd className="font-bold text-text">
+                        {post.progress.agreedQuantity} / {post.progress.targetQuantity} sản phẩm
+                      </dd>
+                    </div>
+                    <div className="mt-2 flex justify-between gap-4 text-sm">
+                      <span className="text-textLight">Còn cần</span>
+                      <span className="font-bold text-text">
+                        {post.progress.remainingTargetQuantity} sản phẩm
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-border/30">
+                      <div
+                        className="h-full rounded-full bg-primary transition-[width]"
+                        style={{
+                          width: `${Math.max(
+                            0,
+                            Math.min(100, Number(post.progress.progressPercent) || 0),
+                          )}%`,
+                        }}
+                        aria-label={`Tiến trình thu mua ${post.progress.progressPercent || 0}%`}
+                      />
+                    </div>
+                    <p className="mt-1.5 text-right text-xs font-semibold text-textLight">
+                      {post.progress.progressPercent || 0}%
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex justify-between gap-4 border-b border-border pb-2.5">
+                    <dt className="flex items-center gap-2 text-textLight">
+                      <InboxOutlined className="text-primary" />
+                      {isBuyPost ? "Còn cần thu mua" : "Còn lại"}
+                    </dt>
+                    <dd className="font-bold text-text">
+                      {post.remainingQuantity} / {post.quantity}
+                    </dd>
+                  </div>
+                )}
                 {ownerMode &&
                   String(post.status || "").toLowerCase() === "closed" &&
                   Number(post.remainingQuantity) === 0 && (

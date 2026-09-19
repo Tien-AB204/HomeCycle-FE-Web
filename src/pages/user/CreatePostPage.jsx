@@ -10,6 +10,7 @@ import {
   useParams,
 } from "react-router-dom";
 import DynamicAttributeFields from "../../features/posts/DynamicAttributeFields";
+import DraftSupplierSuggestionPanel from "../../features/posts/DraftSupplierSuggestionPanel";
 import MediaUploadField from "../../features/posts/MediaUploadField";
 import PostAddressFields from "../../features/posts/PostAddressFields";
 import PostThumbnail from "../../components/shared/PostThumbnail";
@@ -643,8 +644,13 @@ const CreatePostPage = () => {
       nextErrors.productName = "Tên sản phẩm phải có ít nhất 3 ký tự.";
     }
 
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      nextErrors.quantity = "Số lượng phải là số nguyên lớn hơn 0.";
+    if (
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > 99999
+    ) {
+      nextErrors.quantity =
+        "Số lượng phải là số nguyên từ 1 đến 99.999.";
     }
 
     if (
@@ -1020,6 +1026,59 @@ const CreatePostPage = () => {
     );
   }
 
+  const supplierDraftQuantity = Number(form.quantity);
+  const supplierDraftPriceFrom =
+    form.priceFrom === "" ? null : Number(form.priceFrom);
+  const supplierDraftPriceTo =
+    form.price === "" ? null : Number(form.price);
+
+  const requiredAttributesReady = attributes.every(
+    (attribute) =>
+      !attribute.isRequired ||
+      hasAttributeValue(
+        attribute,
+        attributeValues[attribute.attributeId],
+      ),
+  );
+
+  const supplierDraftReady =
+    Boolean(form.productTypeId || form.categoryId) &&
+    Number.isInteger(supplierDraftQuantity) &&
+    supplierDraftQuantity >= 1 &&
+    supplierDraftQuantity <= 99999 &&
+    (supplierDraftPriceFrom === null ||
+      (Number.isFinite(supplierDraftPriceFrom) &&
+        supplierDraftPriceFrom >= 0)) &&
+    (supplierDraftPriceTo === null ||
+      (Number.isFinite(supplierDraftPriceTo) &&
+        supplierDraftPriceTo >= 0)) &&
+    !(
+      Number.isFinite(supplierDraftPriceFrom) &&
+      Number.isFinite(supplierDraftPriceTo) &&
+      supplierDraftPriceFrom > supplierDraftPriceTo
+    ) &&
+    requiredAttributesReady &&
+    !isLoadingAttributes &&
+    !attributeLoadError;
+
+  const supplierDraftPayload = {
+    categoryId: form.categoryId || null,
+    productTypeId: form.productTypeId || null,
+    brandId: form.brandId || null,
+    modelNumber: form.modelNumber?.trim() || null,
+    functionalityStatus: form.functionalityStatus || null,
+    damageLevel: form.damageLevel || null,
+    usageDuration:
+      Number.isFinite(Number(form.usageDuration))
+        ? Number(form.usageDuration)
+        : null,
+    priceFrom: supplierDraftPriceFrom,
+    priceTo: supplierDraftPriceTo,
+    quantity: supplierDraftQuantity,
+    city: form.city?.trim() || null,
+    attributeValues: buildAttributeValues(attributes, attributeValues),
+  };
+
   const inputClassName =
     "w-full rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-text outline-none transition placeholder:text-textLight hover:border-primary focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-background disabled:text-textLight";
 
@@ -1327,6 +1386,7 @@ const CreatePostPage = () => {
               <input
                 type="number"
                 min="1"
+                max="99999"
                 step="1"
                 value={form.quantity}
                 onChange={(event) =>
@@ -1460,41 +1520,39 @@ const CreatePostPage = () => {
               <FieldError message={fieldErrors.usageDuration} />
             </label>
 
-            {!isBuyPost && (
-              <>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-text">
-                    Mã model
-                  </span>
-                  <input
-                    type="text"
-                    value={form.modelNumber}
-                    onChange={(event) =>
-                      updateField("modelNumber", event.target.value)
-                    }
-                    disabled={isSubmitting}
-                    className={inputClassName}
-                  />
-                  <FieldError message={fieldErrors.modelNumber} />
-                </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-semibold text-text">
+                Mã model
+              </span>
+              <input
+                type="text"
+                value={form.modelNumber}
+                onChange={(event) =>
+                  updateField("modelNumber", event.target.value)
+                }
+                disabled={isSubmitting}
+                className={inputClassName}
+              />
+              <FieldError message={fieldErrors.modelNumber} />
+            </label>
 
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-text">
-                    Giá mua ban đầu
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.originalPrice}
-                    onChange={(event) =>
-                      updateField("originalPrice", event.target.value)
-                    }
-                    disabled={isSubmitting}
-                    className={inputClassName}
-                  />
-                  <FieldError message={fieldErrors.originalPrice} />
-                </label>
-              </>
+            {!isBuyPost && (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-text">
+                  Giá mua ban đầu
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.originalPrice}
+                  onChange={(event) =>
+                    updateField("originalPrice", event.target.value)
+                  }
+                  disabled={isSubmitting}
+                  className={inputClassName}
+                />
+                <FieldError message={fieldErrors.originalPrice} />
+              </label>
             )}
           </div>
 
@@ -1694,6 +1752,13 @@ const CreatePostPage = () => {
           </div>
           )}
         </section>
+
+        {isBuyPost && !isEditing && (
+          <DraftSupplierSuggestionPanel
+            payload={supplierDraftPayload}
+            ready={supplierDraftReady}
+          />
+        )}
 
         <div className="sticky bottom-4 z-20 rounded-2xl border border-border bg-white/95 p-4 shadow-[0_16px_45px_rgba(23,40,48,0.14)] backdrop-blur">
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
