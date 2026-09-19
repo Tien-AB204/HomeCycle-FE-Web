@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -316,6 +317,14 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const isBusiness =
     normalizedRole === ROLES.BUSINESS;
 
+  const getCurrentPostDetail = useCallback(
+    (id, options = {}) =>
+      isAuthenticated
+        ? getCurrentPostDetail(id, options)
+        : postApi.getById(id, options),
+    [isAuthenticated],
+  );
+
   const buyPostIdParam = String(
     searchParams.get("buyPostId") || "",
   ).trim();
@@ -424,7 +433,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
             signal: controller.signal,
           },
         )
-      : postApi.getTypedDetail(postId, {
+      : getCurrentPostDetail(postId, {
           signal: controller.signal,
         });
 
@@ -460,7 +469,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
       isActive = false;
       controller.abort();
     };
-  }, [ownerMode, postId, requestKey, userId]);
+  }, [getCurrentPostDetail, ownerMode, postId, requestKey, userId]);
 
   /*
    * Post này có thể đổi RemainingQuantity/status ở nơi khác (thanh toán,
@@ -671,7 +680,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
       try {
         const latestPost =
-          await postApi.getTypedDetail(post.postId);
+          await getCurrentPostDetail(post.postId);
 
         const verifiedPost = {
           ...post,
@@ -743,7 +752,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
     setIsVerifyingPost(true);
     try {
-      const latestPost = await postApi.getTypedDetail(post.postId);
+      const latestPost = await getCurrentPostDetail(post.postId);
       const verifiedPost = {
         ...post,
         ...latestPost,
@@ -811,7 +820,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
     setOfferError("");
 
     try {
-      const latestPost = await postApi.getTypedDetail(post.postId);
+      const latestPost = await getCurrentPostDetail(post.postId);
       const verifiedPost = {
         ...post,
         ...latestPost,
@@ -901,7 +910,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
 
       try {
         const latestBuyPost =
-          await postApi.getTypedDetail(
+          await getCurrentPostDetail(
             post.postId,
           );
 
