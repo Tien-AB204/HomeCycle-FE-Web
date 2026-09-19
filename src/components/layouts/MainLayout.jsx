@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Link,
   NavLink,
@@ -10,6 +10,7 @@ import homeCycleLogo from "../../assets/brand/homecycle-logo.png";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
 import { useNotifications } from "../../hooks/useNotifications";
+import subscriptionApi from "../../services/apis/subscriptionApi";
 import { normalizeRole } from "../../utils/authUtils";
 import Avatar from "../shared/Avatar";
 import NotificationBell from "../shared/NotificationBell";
@@ -31,6 +32,7 @@ const ACCOUNT_NAVIGATION = [
   { name: "Đơn hàng", path: "/don-hang" },
   { name: "Thanh toán", path: "/thanh-toan" },
   { name: "Ví", path: "/vi" },
+  { name: "Gói VIP", path: "/goi-dang-ky" },
   { name: "Hồ sơ", path: "/ho-so" },
 ];
 
@@ -91,6 +93,71 @@ const MainLayout = () => {
     return true;
   });
   const canUseClientAccount = isAuthenticated && !isManager;
+  const [vipState, setVipState] = useState({
+    active: false,
+    expiresAt: null,
+  });
+
+  useEffect(() => {
+    if (!canUseClientAccount) {
+      return undefined;
+    }
+
+    let active = true;
+    const controller = new AbortController();
+
+    const loadSubscription = () => {
+      subscriptionApi
+        .getMySubscription({ signal: controller.signal })
+        .then((subscription) => {
+          if (!active) return;
+
+          const expiresAt = subscription?.expiresAt || null;
+          const isVip =
+            String(subscription?.status || "").toLowerCase() === "active" &&
+            Boolean(expiresAt) &&
+            Date.parse(expiresAt) > Date.now();
+
+          setVipState({
+            active: isVip,
+            expiresAt: isVip ? expiresAt : null,
+          });
+        })
+        .catch((error) => {
+          if (
+            error?.name === "CanceledError" ||
+            error?.code === "ERR_CANCELED"
+          ) {
+            return;
+          }
+
+          if (active) {
+            setVipState({ active: false, expiresAt: null });
+          }
+        });
+    };
+
+    loadSubscription();
+
+    const handleSubscriptionChanged = () => {
+      loadSubscription();
+    };
+
+    window.addEventListener(
+      "homecycle:subscription-changed",
+      handleSubscriptionChanged,
+    );
+
+    return () => {
+      active = false;
+      controller.abort();
+      window.removeEventListener(
+        "homecycle:subscription-changed",
+        handleSubscriptionChanged,
+      );
+    };
+  }, [canUseClientAccount, user?.userId, user?.id]);
+
   const navigationItems = canUseClientAccount
     ? [...roleBasedPublicNavigation, ...ACCOUNT_NAVIGATION]
     : PUBLIC_NAVIGATION;
@@ -240,6 +307,17 @@ const MainLayout = () => {
                   >
                     <Avatar src={user?.avatarUrl} alt={displayName} className="h-9 w-9 shrink-0" />
                     <span className="truncate">{displayName}</span>
+                    {canUseClientAccount && vipState.active && (
+                      <span
+                        className="material-symbols-outlined text-[18px] text-warning"
+                        title={`VIP còn hiệu lực đến ${new Intl.DateTimeFormat(
+                          "vi-VN",
+                        ).format(new Date(vipState.expiresAt))}`}
+                        aria-label="Tài khoản VIP"
+                      >
+                        workspace_premium
+                      </span>
+                    )}
                   </Link>
                   <button
                     type="button"

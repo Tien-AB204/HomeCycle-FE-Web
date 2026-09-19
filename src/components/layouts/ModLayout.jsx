@@ -50,6 +50,11 @@ const MOD_NAV_GROUPS = [
         icon: "receipt_long",
       },
       {
+        label: "Vận hành tài chính",
+        path: "/mod/finance-operations",
+        icon: "account_balance",
+      },
+      {
         label: "Lịch hẹn",
         path: "/mod/appointments",
         icon: "event_available",

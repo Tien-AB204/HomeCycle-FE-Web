@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AGREEMENT_TYPE,
   AGREEMENT_TYPE_OPTIONS,
@@ -42,6 +42,37 @@ const toDateTimeLocal = (value) => {
     .toISOString()
     .slice(0, 16);
 };
+
+const normalizeSellerInfo = (value = {}) => ({
+  fullName: String(value?.fullName || "").trim(),
+  phone: String(value?.phone || "").trim(),
+  streetAddress: String(value?.streetAddress || "").trim(),
+  ward: String(value?.ward || "").trim(),
+  city: String(value?.city || "").trim(),
+});
+
+const formatSellerAddress = (sellerInfo) =>
+  [
+    sellerInfo?.streetAddress,
+    sellerInfo?.ward,
+    sellerInfo?.city,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(", ");
+
+const sanitizeSellerInfo = (value = {}) => ({
+  fullName: String(value?.fullName || "").trim() || null,
+  phone: String(value?.phone || "").trim() || null,
+  streetAddress: String(value?.streetAddress || "").trim() || null,
+  ward: String(value?.ward || "").trim() || null,
+  city: String(value?.city || "").trim() || null,
+});
+
+const createInitialSellerInfo = (agreement) =>
+  normalizeSellerInfo(
+    agreement?.agreementDetails?.sellerInfo || {},
+  );
 
 const createInitialValues = (agreement) => {
   const details =
@@ -295,6 +326,15 @@ const AgreementForm = ({
   const [values, setValues] =
     useState(initialValues);
 
+  const [sellerInfo, setSellerInfo] =
+    useState(() => createInitialSellerInfo(agreement));
+
+  const [sellerInfoLoading, setSellerInfoLoading] =
+    useState(() => Boolean(!agreement && negotiationId));
+
+  const [sellerInfoError, setSellerInfoError] =
+    useState("");
+
   const [ghnInfo, setGhnInfo] =
     useState(initialGhnInfo);
 
@@ -347,6 +387,79 @@ const AgreementForm = ({
 
   const inputClass =
     "mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10";
+
+  useEffect(() => {
+    if (agreement || !negotiationId) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    agreementApi
+      .getSellerInfo(negotiationId, { signal: controller.signal })
+      .then((info) => {
+        const normalized = normalizeSellerInfo(info);
+        setSellerInfo(normalized);
+
+        const suggestedPickup =
+          String(info?.fullAddress || "").trim() ||
+          formatSellerAddress(normalized);
+
+        if (suggestedPickup) {
+          setValues((current) => ({
+            ...current,
+            pickupAddress:
+              current.pickupAddress?.trim() || suggestedPickup,
+          }));
+        }
+      })
+      .catch((error) => {
+        if (
+          error?.name === "CanceledError" ||
+          error?.code === "ERR_CANCELED"
+        ) {
+          return;
+        }
+
+        setSellerInfoError(
+          getErrorMessage(
+            error,
+            "Không thể tự động lấy thông tin người bán. Bạn vẫn có thể nhập thủ công.",
+          ),
+        );
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setSellerInfoLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [agreement, negotiationId]);
+
+  const updateSellerField = (event) => {
+    const { name, value } = event.target;
+
+    setSellerInfo((current) => {
+      const previousAddress = formatSellerAddress(current);
+      const next = {
+        ...current,
+        [name]: value,
+      };
+      const nextAddress = formatSellerAddress(next);
+
+      setValues((currentValues) => ({
+        ...currentValues,
+        pickupAddress:
+          !currentValues.pickupAddress?.trim() ||
+          currentValues.pickupAddress.trim() === previousAddress
+            ? nextAddress
+            : currentValues.pickupAddress,
+      }));
+
+      return next;
+    });
+  };
 
   const updateField = (event) => {
     const {
@@ -914,6 +1027,9 @@ const AgreementForm = ({
 
       estimatedShippingFee:
         null,
+
+      sellerInfo:
+        sanitizeSellerInfo(sellerInfo),
     };
 
     if (
@@ -1172,6 +1288,85 @@ const AgreementForm = ({
             </span>
           )}
         </label>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">
+              Thông tin người bán
+            </p>
+            <p className="mt-1 text-xs leading-5 text-textLight">
+              Dữ liệu được lấy từ hồ sơ người bán khi tạo thỏa thuận. Bạn có thể chỉnh sửa trước khi gửi.
+            </p>
+          </div>
+          {sellerInfoLoading && (
+            <span className="text-xs font-semibold text-textLight">
+              Đang tải thông tin người bán...
+            </span>
+          )}
+        </div>
+
+        {sellerInfoError && (
+          <p className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-xs font-semibold text-warning">
+            {sellerInfoError}
+          </p>
+        )}
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="text-sm font-bold text-text">
+            Họ tên người bán
+            <input
+              name="fullName"
+              value={sellerInfo.fullName}
+              onChange={updateSellerField}
+              className={inputClass}
+              placeholder="Nguyễn Văn A"
+            />
+          </label>
+
+          <label className="text-sm font-bold text-text">
+            Số điện thoại
+            <input
+              name="phone"
+              value={sellerInfo.phone}
+              onChange={updateSellerField}
+              className={inputClass}
+              placeholder="0901234567"
+            />
+          </label>
+
+          <label className="text-sm font-bold text-text md:col-span-2">
+            Địa chỉ chi tiết
+            <input
+              name="streetAddress"
+              value={sellerInfo.streetAddress}
+              onChange={updateSellerField}
+              className={inputClass}
+              placeholder="123 Nguyễn Trãi"
+            />
+          </label>
+
+          <label className="text-sm font-bold text-text">
+            Phường / Xã
+            <input
+              name="ward"
+              value={sellerInfo.ward}
+              onChange={updateSellerField}
+              className={inputClass}
+            />
+          </label>
+
+          <label className="text-sm font-bold text-text">
+            Tỉnh / Thành phố
+            <input
+              name="city"
+              value={sellerInfo.city}
+              onChange={updateSellerField}
+              className={inputClass}
+            />
+          </label>
+        </div>
       </section>
 
       {isInspection && (

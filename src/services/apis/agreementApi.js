@@ -63,6 +63,31 @@ export const agreementApi = {
     return axiosClient.patch(`/agreements/${encodeURIComponent(id)}/request-edit`);
   },
 
+  getSellerInfo: async (negotiationId, { signal } = {}) => {
+    const id = normalizeIdentifier(
+      negotiationId,
+      "Không tìm thấy mã phiên thương lượng để lấy thông tin người bán.",
+    );
+
+    const response = await axiosClient.get(
+      `/agreements/negotiations/${encodeURIComponent(id)}/seller-info`,
+      { signal },
+    );
+
+    if (!response || typeof response !== "object") {
+      throw new Error("Response thông tin người bán không hợp lệ.");
+    }
+
+    return {
+      fullName: String(response.fullName || "").trim(),
+      phone: String(response.phone || "").trim(),
+      streetAddress: String(response.streetAddress || "").trim(),
+      ward: String(response.ward || "").trim(),
+      city: String(response.city || "").trim(),
+      fullAddress: String(response.fullAddress || "").trim(),
+    };
+  },
+
   getGhnParcelInfo: async (negotiationId, { signal } = {}) => {
     const id = normalizeIdentifier(
       negotiationId,

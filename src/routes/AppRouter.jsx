@@ -47,6 +47,7 @@ import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
 import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
 import UserManagementPage from "../pages/admin/UserManagementPage";
+import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 
 // User Pages
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
@@ -70,6 +71,7 @@ import WalletPage from "../pages/user/WalletPage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
+import SubscriptionPage from "../pages/user/SubscriptionPage";
 
 const AppRouter = () => {
   return (
@@ -133,6 +135,18 @@ const AppRouter = () => {
           />
 
           <Route path="/vi" element={<WalletPage />} />
+
+          <Route path="/goi-dang-ky" element={<SubscriptionPage />} />
+
+          <Route
+            path="/goi-dang-ky/payment-return"
+            element={<SubscriptionPage />}
+          />
+
+          <Route
+            path="/goi-dang-ky/payment-cancel"
+            element={<SubscriptionPage />}
+          />
 
           <Route path="/payments/success" element={<PaymentResultPage />} />
 
@@ -229,6 +243,11 @@ const AppRouter = () => {
           <Route
             path="transactions"
             element={<TransactionOrderManagementPage />}
+          />
+
+          <Route
+            path="finance-operations"
+            element={<FinanceOperationsPage />}
           />
 
           <Route
@@ -329,6 +348,11 @@ const AppRouter = () => {
           <Route
             path="system-wallet"
             element={<AdminSystemWalletPage />}
+          />
+
+          <Route
+            path="finance-operations"
+            element={<FinanceOperationsPage admin />}
           />
 
           <Route path="policies" element={<PlatformPolicyPage />} />
