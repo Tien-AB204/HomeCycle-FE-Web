@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import ghnApi from "../../services/apis/ghnApi";
 
@@ -124,6 +124,18 @@ export default function GhnWebhookSimulator() {
 
   const lookupControllerRef = useRef(null);
 
+  useEffect(() => {
+    if (!successMessage) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSuccessMessage("");
+    }, 5000);
+
+    return () => window.clearTimeout(timer);
+  }, [successMessage]);
+
   if (!isSimulatorEnabled) {
     return null;
   }
@@ -237,7 +249,7 @@ export default function GhnWebhookSimulator() {
       await ghnApi.simulateWebhook(payload);
 
       setConfirmOpen(false);
-      setSuccessMessage("Cập nhật trạng thái thành công");
+      setSuccessMessage("Mô phỏng webhook thành công. Trạng thái HomeCycle đã được cập nhật.");
 
       await runLookup({ clearSubmitStatus: false });
     } catch (error) {
@@ -330,9 +342,32 @@ export default function GhnWebhookSimulator() {
       )}
 
       {successMessage && (
-        <p className="mt-3 text-sm font-semibold text-success">
-          {successMessage}
-        </p>
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed right-5 top-5 z-[100] flex max-w-[420px] items-start gap-3 rounded-2xl border border-success/30 bg-white px-4 py-3 shadow-[0_18px_48px_rgba(24,63,65,0.18)]"
+        >
+          <span
+            className="material-symbols-outlined mt-0.5 text-[22px] text-success"
+            aria-hidden="true"
+          >
+            check_circle
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black text-success">Thành công</p>
+            <p className="mt-0.5 text-sm leading-5 text-text">{successMessage}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage("")}
+            className="rounded-lg p-1 text-textLight transition hover:bg-background hover:text-text"
+            aria-label="Đóng thông báo"
+          >
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">
+              close
+            </span>
+          </button>
+        </div>
       )}
 
       {shipment && (
