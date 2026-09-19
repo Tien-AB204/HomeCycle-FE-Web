@@ -95,13 +95,8 @@ const ADMIN_NAV_GROUPS = [
         icon: "inventory_2",
       },
       {
-        label: "Ví hệ thống",
-        path: "/admin/system-wallet",
-        icon: "account_balance_wallet",
-      },
-      {
-        label: "Vận hành tài chính",
-        path: "/admin/finance-operations",
+        label: "Quản lý tài chính",
+        path: "/admin/finance-management",
         icon: "receipt_long",
       },
       {

@@ -1,826 +1,189 @@
+import { Alert, Button, Empty, Spin, Table, Tabs } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Button, Drawer, Empty, Input, Select, Spin, Table, Tag } from "antd";
+import { useSearchParams } from "react-router-dom";
+import FinancialPartyDisplay from "../../features/finance/FinancialPartyDisplay";
+import FinancialTransactionsPanel from "../../features/finance/FinancialTransactionsPanel";
+import {
+  formatFinanceCurrency,
+  getFinanceLabel,
+  REFERENCE_TYPE_LABELS,
+  SYSTEM_PURPOSE_LABELS,
+  USER_ROLE_LABELS,
+  WALLET_TYPE_LABELS,
+} from "../../features/finance/financePresentation";
 import financeOperationsApi from "../../services/apis/financeOperationsApi";
 
-const PAGE_SIZE = 10;
+const VALID_TABS = new Set(["funds", "holds", "transactions"]);
+const isCanceled = (error) =>
+  error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 
-const TRANSACTION_TYPE_LABELS = {
-  Escrow_Deposit: "Nạp tiền ký quỹ",
-  Wallet_Payment: "Thanh toán qua ví",
-  Payout_Release: "Giải ngân cho người bán",
-  Order_Refund: "Hoàn tiền đơn hàng",
-  Withdrawal_Lock: "Khóa tiền cho yêu cầu rút",
-  Withdrawal_Success: "Rút tiền thành công",
-  Withdrawal_Revert: "Hoàn tiền yêu cầu rút",
-  Commission_Fee: "Phí hoa hồng",
-  Subscription_Fee: "Phí gói đăng ký",
-  Shipping_Fee_Collected: "Thu phí vận chuyển",
-};
-
-const REFERENCE_TYPE_LABELS = {
-  Order: "Đơn hàng",
-  Subscription: "Gói đăng ký",
-  Dispute: "Tranh chấp",
-  Withdrawal: "Yêu cầu rút tiền",
-};
-
-const TRANSACTION_STATUS_LABELS = {
-  Pending: "Đang chờ",
-  Completed: "Hoàn tất",
-  Failed: "Thất bại",
-  Cancelled: "Đã hủy",
-};
-
-const USER_ROLE_LABELS = {
-  Personal: "Cá nhân",
-  Business: "Doanh nghiệp",
-  Moderator: "Kiểm duyệt viên",
-  Admin: "Quản trị viên",
-};
-
-const WALLET_TYPE_LABELS = {
-  Personal: "Cá nhân",
-  Business: "Doanh nghiệp",
-  System: "Hệ thống",
-};
-
-const SYSTEM_PURPOSE_LABELS = {
-  Shipping_Escrow: "Ký quỹ vận chuyển",
-  Platform_Revenue: "Doanh thu nền tảng",
-};
-
-const LEDGER_DIRECTION_LABELS = {
-  In: "Vào",
-  Out: "Ra",
-};
-
-const LEDGER_BALANCE_TYPE_LABELS = {
-  Available: "Khả dụng",
-  Hold: "Đang giữ",
-};
-
-const formatEnumFallback = (value) =>
-  String(value || "")
-    .split("_")
-    .filter(Boolean)
-    .join(" ");
-
-const getLabel = (map, value) => {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
-
-  return map[value] || formatEnumFallback(value) || "—";
-};
-
-const shortenId = (value) => {
-  const id = String(value || "").trim();
-
-  if (!id) {
-    return "";
-  }
-
-  return id.length > 8 ? `${id.slice(0, 8)}…` : id;
-};
-
-const getReferenceLabel = (referenceType, referenceCode, referenceId) => {
-  const typeLabel = referenceType
-    ? getLabel(REFERENCE_TYPE_LABELS, referenceType)
-    : "";
-
-  if (referenceCode) {
-    return typeLabel ? `${typeLabel} · ${referenceCode}` : referenceCode;
-  }
-
-  if (referenceId) {
-    const shortened = shortenId(referenceId);
-    return typeLabel ? `${typeLabel} · ${shortened}` : shortened;
-  }
-
-  return typeLabel || "—";
-};
-
-const getPartyDisplayName = (party) => {
-  if (!party) {
-    return "—";
-  }
-
-  if (party.username) {
-    return party.username;
-  }
-
-  if (party.systemPurpose) {
-    return getLabel(SYSTEM_PURPOSE_LABELS, party.systemPurpose);
-  }
-
-  return getLabel(WALLET_TYPE_LABELS, party.walletType);
-};
-
-const getPartySubLabel = (party) => {
-  if (!party) {
-    return "";
-  }
-
-  if (party.username) {
-    return getLabel(USER_ROLE_LABELS, party.role);
-  }
-
-  return getLabel(WALLET_TYPE_LABELS, party.walletType);
-};
-
-const getErrorMessage = (error, fallback) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
-  error?.message ||
-  fallback;
-
-const formatCurrency = (value) => {
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return "—";
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const formatDateTime = (value) => {
-  if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? "—"
-    : new Intl.DateTimeFormat("vi-VN", {
-        dateStyle: "short",
-        timeStyle: "medium",
-      }).format(date);
-};
-
-const toIsoStartOfDay = (value) =>
-  value ? new Date(`${value}T00:00:00`).toISOString() : undefined;
-
-const toIsoEndOfDay = (value) =>
-  value ? new Date(`${value}T23:59:59`).toISOString() : undefined;
-
-const DetailField = ({ label, value }) => (
-  <div>
-    <p className="text-xs font-semibold uppercase text-textLight">{label}</p>
-    <p className="mt-1 break-all text-sm font-bold text-text">
-      {value === null || value === undefined || value === "" ? "—" : value}
-    </p>
-  </div>
+const SummaryCard = ({ label, value, description }) => (
+  <article className="rounded-2xl border border-border bg-white p-4">
+    <p className="text-xs font-black uppercase tracking-wide text-textLight">{label}</p>
+    <p className="mt-2 text-xl font-black text-text">{formatFinanceCurrency(value)}</p>
+    {description && <p className="mt-2 text-xs leading-5 text-textLight">{description}</p>}
+  </article>
 );
 
-const PartyCard = ({ title, party }) => (
-  <div className="rounded-xl border border-border bg-background/60 p-4">
-    <p className="text-xs font-black uppercase tracking-wide text-primary">{title}</p>
-    <p className="mt-2 text-sm font-black text-text">{getPartyDisplayName(party)}</p>
-    <p className="mt-1 text-xs text-textLight">{getPartySubLabel(party)}</p>
-  </div>
-);
+function FundsPanel() {
+  const [version, setVersion] = useState(0);
+  const [state, setState] = useState({ loading: true, data: null, error: "" });
 
-const FundsPanel = ({ data, loading, error }) => {
-  if (loading) return <Spin />;
-  if (error) return <Alert type="error" showIcon message={error} />;
-  if (!data) return null;
-
-  const primaryRows = [
-    ["Tổng số dư khả dụng người dùng", data.totalUserAvailable],
-    ["Tổng tiền người dùng đang giữ", data.totalUserHold],
-    ["Tổng số dư khả dụng ví hệ thống", data.totalSystemAvailable],
-    ["Tổng tiền ví hệ thống đang giữ", data.totalSystemHold],
-    ["Tổng số dư được ghi nhận", data.totalRecordedBalance],
-  ];
-
-  const breakdownRows = [
-    ["Cá nhân · Khả dụng", data.totalPersonalAvailable],
-    ["Cá nhân · Đang giữ", data.totalPersonalHold],
-    ["Doanh nghiệp · Khả dụng", data.totalBusinessAvailable],
-    ["Doanh nghiệp · Đang giữ", data.totalBusinessHold],
-  ];
-
-  const systemWallets = Array.isArray(data.systemWallets)
-    ? data.systemWallets
-    : [];
-
-  return (
-    <div className="space-y-5">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {primaryRows.map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-border bg-white p-4">
-            <div className="text-xs font-bold uppercase tracking-wide text-textLight">
-              {label}
-            </div>
-            <div className="mt-2 text-xl font-black text-text">
-              {formatCurrency(value)}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div>
-        <p className="mb-2 text-xs font-black uppercase tracking-wide text-textLight">
-          Theo loại tài khoản
-        </p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {breakdownRows.map(([label, value]) => (
-            <div
-              key={label}
-              className="rounded-xl border border-border bg-background/60 p-3"
-            >
-              <div className="text-xs font-bold text-textLight">{label}</div>
-              <div className="mt-1 text-base font-black text-text">
-                {formatCurrency(value)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {systemWallets.length > 0 && (
-        <div>
-          <p className="mb-2 text-xs font-black uppercase tracking-wide text-textLight">
-            Ví hệ thống
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {systemWallets.map((wallet) => (
-              <div
-                key={wallet.walletId}
-                className="rounded-xl border border-border bg-white p-3"
-              >
-                <p className="text-sm font-black text-text">
-                  {wallet.purpose
-                    ? getLabel(SYSTEM_PURPOSE_LABELS, wallet.purpose)
-                    : getLabel(WALLET_TYPE_LABELS, wallet.walletType)}
-                </p>
-                <p className="mt-1 text-xs text-textLight">
-                  Khả dụng {formatCurrency(wallet.availableBalance)} · Đang giữ{" "}
-                  {formatCurrency(wallet.holdBalance)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const HoldsPanel = ({ data, loading, error }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-
-  if (loading) return <Spin />;
-  if (error) return <Alert type="error" showIcon message={error} />;
-
-  const items = Array.isArray(data) ? data : [];
-
-  if (!items.length) {
-    return <Empty description="Không có khoản tiền đang giữ." />;
-  }
-
-  const normalizedSearch = searchTerm.trim().toLowerCase();
-  const filteredItems = normalizedSearch
-    ? items.filter((item) => {
-        const haystack = [
-          item.owner?.username,
-          getLabel(REFERENCE_TYPE_LABELS, item.referenceType),
-          item.referenceCode,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return haystack.includes(normalizedSearch);
-      })
-    : items;
-
-  const columns = [
-    {
-      title: "Chủ ví",
-      render: (_, item) => (
-        <div>
-          <p className="font-bold text-text">
-            {getPartyDisplayName(item.owner)}
-          </p>
-          <p className="text-xs text-textLight">
-            {getPartySubLabel(item.owner)}
-          </p>
-        </div>
-      ),
-    },
-    {
-      title: "Tham chiếu",
-      render: (_, item) =>
-        getReferenceLabel(
-          item.referenceType,
-          item.referenceCode,
-          item.referenceId,
-        ),
-    },
-    {
-      title: "Số tiền đang giữ",
-      align: "right",
-      render: (_, item) => formatCurrency(item.holdAmount),
-    },
-  ];
-
-  return (
-    <div>
-      <Input
-        allowClear
-        placeholder="Tìm theo chủ ví hoặc mã tham chiếu..."
-        value={searchTerm}
-        onChange={(event) => setSearchTerm(event.target.value)}
-        className="mb-3 max-w-sm"
-      />
-
-      <Table
-        rowKey={(item, index) =>
-          `${item.walletId}-${item.referenceId ?? index}`
-        }
-        pagination={{
-          defaultPageSize: 10,
-          pageSizeOptions: [10, 20, 50],
-          showSizeChanger: true,
-        }}
-        locale={{ emptyText: "Không có kết quả phù hợp." }}
-        columns={columns}
-        dataSource={filteredItems}
-        scroll={{ x: 720 }}
-      />
-    </div>
-  );
-};
-
-export default function FinanceOperationsPage({ admin = false }) {
-  const [funds, setFunds] = useState({ loading: admin, data: null, error: "" });
-  const [holds, setHolds] = useState({ loading: true, data: null, error: "" });
-  const [filters, setFilters] = useState({
-    transactionType: "",
-    referenceType: "",
-    status: "",
-    fromDate: "",
-    toDate: "",
-  });
-  const [pageNumber, setPageNumber] = useState(1);
-  const transactionsRequestKey = `${filters.transactionType}|${filters.referenceType}|${filters.status}|${filters.fromDate}|${filters.toDate}|${pageNumber}`;
-  const [transactions, setTransactions] = useState({
-    requestKey: "",
-    error: "",
-    page: {
-      items: [],
-      pageNumber: 1,
-      pageSize: PAGE_SIZE,
-      totalCount: 0,
-      totalPages: 0,
-    },
-  });
-  const transactionsLoading =
-    transactions.requestKey !== transactionsRequestKey;
-  const [detailId, setDetailId] = useState("");
-  const [detail, setDetail] = useState({ loading: false, data: null, error: "" });
-
-  const loadFunds = useCallback(() => {
-    if (!admin) return undefined;
+  useEffect(() => {
     const controller = new AbortController();
+    void Promise.resolve().then(() =>
+      setState((current) => ({ ...current, loading: true, error: "" })),
+    );
     financeOperationsApi
       .getFunds({ signal: controller.signal })
-      .then((data) => setFunds({ loading: false, data, error: "" }))
+      .then((data) => setState({ loading: false, data, error: "" }))
       .catch((error) => {
-        if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") return;
-        setFunds({
-          loading: false,
-          data: null,
-          error: getErrorMessage(error, "Không thể tải tổng quan số dư."),
-        });
+        if (isCanceled(error)) return;
+        setState({ loading: false, data: null, error: "Không thể tải tổng quan quỹ." });
       });
     return () => controller.abort();
-  }, [admin]);
+  }, [version]);
 
-  const loadHolds = useCallback(() => {
+  if (state.loading) return <div className="flex min-h-40 items-center justify-center"><Spin /></div>;
+  if (state.error) return <Alert type="error" showIcon message={state.error} action={<Button onClick={() => setVersion((current) => current + 1)}>Thử lại</Button>} />;
+
+  const data = state.data || {};
+  const personalTotal = Number(data.totalPersonalAvailable || 0) + Number(data.totalPersonalHold || 0);
+  const businessTotal = Number(data.totalBusinessAvailable || 0) + Number(data.totalBusinessHold || 0);
+  const userTotal = Number(data.totalUserAvailable || 0) + Number(data.totalUserHold || 0);
+  const systemWallets = Array.isArray(data.systemWallets) ? data.systemWallets : [];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-black text-text">Số dư người dùng</h2>
+          <Button onClick={() => setVersion((current) => current + 1)}>Làm mới</Button>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <SummaryCard label="Tổng số dư người dùng" value={userTotal} description="Số dư thuộc người dùng được hệ thống ghi nhận. Không phải doanh thu HomeCycle." />
+          <SummaryCard label="Khả dụng" value={data.totalUserAvailable} />
+          <SummaryCard label="Đang giữ" value={data.totalUserHold} />
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-background/50 p-4">
+          <h3 className="font-black text-text">Cá nhân</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <SummaryCard label="Khả dụng" value={data.totalPersonalAvailable} />
+            <SummaryCard label="Đang giữ" value={data.totalPersonalHold} />
+            <SummaryCard label="Tổng" value={personalTotal} />
+          </div>
+        </section>
+        <section className="rounded-2xl border border-border bg-background/50 p-4">
+          <h3 className="font-black text-text">Doanh nghiệp</h3>
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <SummaryCard label="Khả dụng" value={data.totalBusinessAvailable} />
+            <SummaryCard label="Đang giữ" value={data.totalBusinessHold} />
+            <SummaryCard label="Tổng" value={businessTotal} />
+          </div>
+        </section>
+      </div>
+
+      <section>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SummaryCard label="Tổng số dư ví hệ thống" value={Number(data.totalSystemAvailable || 0) + Number(data.totalSystemHold || 0)} />
+          <SummaryCard label="Tổng số dư được ghi nhận" value={data.totalRecordedBalance} />
+        </div>
+        <h3 className="mb-3 mt-5 font-black text-text">Các ví hệ thống</h3>
+        {systemWallets.length === 0 ? (
+          <Empty description="Chưa có ví hệ thống." />
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {systemWallets.map((wallet) => (
+              <article key={wallet.walletId} className="rounded-2xl border border-border bg-white p-4">
+                <p className="font-black text-text">{getFinanceLabel(SYSTEM_PURPOSE_LABELS, wallet.purpose)}</p>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
+                  <div><p className="text-xs text-textLight">Khả dụng</p><p className="font-bold">{formatFinanceCurrency(wallet.availableBalance)}</p></div>
+                  <div><p className="text-xs text-textLight">Đang giữ</p><p className="font-bold">{formatFinanceCurrency(wallet.holdBalance)}</p></div>
+                  <div><p className="text-xs text-textLight">Tổng</p><p className="font-bold">{formatFinanceCurrency(Number(wallet.availableBalance || 0) + Number(wallet.holdBalance || 0))}</p></div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function HoldsPanel() {
+  const [version, setVersion] = useState(0);
+  const [state, setState] = useState({ loading: true, items: [], error: "" });
+  const load = useCallback(() => setVersion((current) => current + 1), []);
+
+  useEffect(() => {
     const controller = new AbortController();
+    void Promise.resolve().then(() =>
+      setState((current) => ({ ...current, loading: true, error: "" })),
+    );
     financeOperationsApi
       .getHolds({ signal: controller.signal })
-      .then((data) => setHolds({ loading: false, data, error: "" }))
+      .then((data) => setState({ loading: false, items: Array.isArray(data) ? data : [], error: "" }))
       .catch((error) => {
-        if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") return;
-        setHolds({
-          loading: false,
-          data: null,
-          error: getErrorMessage(error, "Không thể tải các khoản tiền đang giữ."),
-        });
+        if (isCanceled(error)) return;
+        setState({ loading: false, items: [], error: "Không thể tải các khoản tiền đang giữ." });
       });
     return () => controller.abort();
-  }, []);
+  }, [version]);
 
-  const handleReloadFunds = () => {
-    setFunds((current) => ({ ...current, loading: true, error: "" }));
-    loadFunds();
-  };
+  const columns = useMemo(() => [
+    { title: "Người dùng", render: (_, item) => <FinancialPartyDisplay party={item.owner} /> },
+    { title: "Vai trò", render: (_, item) => getFinanceLabel(USER_ROLE_LABELS, item.owner?.role) },
+    { title: "Loại ví", render: (_, item) => getFinanceLabel(WALLET_TYPE_LABELS, item.owner?.walletType) },
+    { title: "Loại tham chiếu", dataIndex: "referenceType", render: (value) => getFinanceLabel(REFERENCE_TYPE_LABELS, value) },
+    {
+      title: "Mã tham chiếu",
+      render: (_, item) => (
+        <div><p className="font-bold text-text">{item.referenceCode || "—"}</p>{item.referenceId && <p title={item.referenceId} className="font-mono text-[11px] text-textLight">{item.referenceId}</p>}</div>
+      ),
+    },
+    { title: "Số tiền đang giữ", dataIndex: "holdAmount", align: "right", render: formatFinanceCurrency },
+  ], []);
 
-  const handleReloadHolds = () => {
-    setHolds((current) => ({ ...current, loading: true, error: "" }));
-    loadHolds();
-  };
-
-  useEffect(() => loadFunds(), [loadFunds]);
-  useEffect(() => loadHolds(), [loadHolds]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    financeOperationsApi
-      .getTransactions({
-        ...filters,
-        fromDate: toIsoStartOfDay(filters.fromDate),
-        toDate: toIsoEndOfDay(filters.toDate),
-        pageNumber,
-        pageSize: PAGE_SIZE,
-        signal: controller.signal,
-      })
-      .then((page) =>
-        setTransactions({
-          requestKey: transactionsRequestKey,
-          error: "",
-          page,
-        }),
-      )
-      .catch((error) => {
-        if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") return;
-        setTransactions((current) => ({
-          ...current,
-          requestKey: transactionsRequestKey,
-          error: getErrorMessage(error, "Không thể tải giao dịch tài chính."),
-        }));
-      });
-
-    return () => controller.abort();
-  }, [filters, pageNumber, transactionsRequestKey]);
-
-  useEffect(() => {
-    if (!detailId) {
-      return undefined;
-    }
-
-    const controller = new AbortController();
-
-    financeOperationsApi
-      .getTransactionById(detailId, { signal: controller.signal })
-      .then((data) => setDetail({ loading: false, data, error: "" }))
-      .catch((error) => {
-        if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") return;
-        setDetail({
-          loading: false,
-          data: null,
-          error: getErrorMessage(error, "Không thể tải chi tiết giao dịch."),
-        });
-      });
-
-    return () => controller.abort();
-  }, [detailId]);
-
-  const openDetail = (item) => {
-    const nextDetailId = String(item.walletTransactionId || "");
-
-    if (nextDetailId) {
-      setDetail({ loading: true, data: null, error: "" });
-    }
-
-    setDetailId(nextDetailId);
-  };
-
-  const transactionColumns = useMemo(
-    () => [
-      {
-        title: "Giao dịch",
-        render: (_, item) => (
-          <button
-            type="button"
-            className="text-left font-bold text-primary hover:underline"
-            onClick={() => openDetail(item)}
-          >
-            {item.referenceCode ||
-              shortenId(item.walletTransactionId) ||
-              "Xem chi tiết"}
-          </button>
-        ),
-      },
-      {
-        title: "Loại giao dịch",
-        render: (_, item) =>
-          getLabel(TRANSACTION_TYPE_LABELS, item.transactionType),
-      },
-      {
-        title: "Tham chiếu",
-        render: (_, item) =>
-          getReferenceLabel(
-            item.referenceType,
-            item.referenceCode,
-            item.referenceId,
-          ),
-      },
-      {
-        title: "Trạng thái",
-        render: (_, item) => (
-          <Tag>{getLabel(TRANSACTION_STATUS_LABELS, item.status)}</Tag>
-        ),
-      },
-      {
-        title: "Số tiền",
-        align: "right",
-        render: (_, item) => formatCurrency(item.amount),
-      },
-      {
-        title: "Thời gian",
-        render: (_, item) => formatDateTime(item.createdAt),
-      },
-    ],
-    [],
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3">
+        <div><h2 className="text-lg font-black text-text">Tiền đang Hold</h2><p className="mt-1 text-sm text-textLight">Chỉ hiển thị các khoản đang được giữ với số dư hiện tại lớn hơn 0.</p></div>
+        <Button onClick={load}>Làm mới</Button>
+      </div>
+      {state.error && <Alert type="error" showIcon message={state.error} />}
+      <Table rowKey={(item) => `${item.walletId}-${item.referenceId || "hold"}`} columns={columns} dataSource={state.items} loading={state.loading} locale={{ emptyText: <Empty description="Không có khoản tiền đang giữ." /> }} pagination={{ defaultPageSize: 10, pageSizeOptions: [10, 20, 50], showSizeChanger: true }} scroll={{ x: 1050 }} />
+    </div>
   );
+}
 
-  const detailData = detail.data;
-  const ledgers = Array.isArray(detailData?.ledgers) ? detailData.ledgers : [];
+export default function FinanceOperationsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab") || "funds";
+  const activeTab = VALID_TABS.has(requestedTab) ? requestedTab : "funds";
+
+  const changeTab = (tab) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    setSearchParams(next);
+  };
 
   return (
     <section className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <header className="rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">
-          {admin ? "Trung tâm quản trị" : "Trung tâm kiểm duyệt"}
-        </p>
-        <h1 className="mt-2 text-2xl font-black sm:text-3xl">
-          Vận hành tài chính
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-          Theo dõi số dư, các khoản tiền đang giữ và lịch sử giao dịch tài chính của hệ thống.
-        </p>
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">Vận hành hệ thống</p>
+        <h1 className="mt-2 text-2xl font-black sm:text-3xl">Quản lý tài chính</h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">Theo dõi quỹ, các khoản tiền đang giữ và giao dịch tài chính của hệ thống.</p>
       </header>
-
-      {admin && (
-        <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-black text-text">Tổng quan số dư</h2>
-            <Button onClick={handleReloadFunds}>Tải lại</Button>
-          </div>
-          <FundsPanel {...funds} />
-        </div>
-      )}
-
-      <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-black text-text">Các khoản tiền đang giữ</h2>
-          <Button onClick={handleReloadHolds}>Tải lại</Button>
-        </div>
-        <HoldsPanel {...holds} />
+      <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
+        <Tabs activeKey={activeTab} onChange={changeTab} items={[
+          { key: "funds", label: "Tổng quan quỹ", children: activeTab === "funds" ? <FundsPanel /> : null },
+          { key: "holds", label: "Tiền đang Hold", children: activeTab === "holds" ? <HoldsPanel /> : null },
+          { key: "transactions", label: "Giao dịch", children: activeTab === "transactions" ? <FinancialTransactionsPanel admin /> : null },
+        ]} />
       </div>
-
-      <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-black text-text">Giao dịch tài chính</h2>
-          <p className="mt-1 text-sm text-textLight">
-            Lọc theo loại giao dịch, đối tượng tham chiếu và trạng thái. Bấm vào một giao dịch để xem chi tiết sao kê liên quan.
-          </p>
-        </div>
-
-        <div className="mb-4 grid gap-3 md:grid-cols-3 lg:grid-cols-5">
-          <Select
-            allowClear
-            placeholder="Loại giao dịch"
-            value={filters.transactionType || undefined}
-            onChange={(value) => {
-              setPageNumber(1);
-              setFilters((current) => ({
-                ...current,
-                transactionType: value ?? "",
-              }));
-            }}
-            options={Object.entries(TRANSACTION_TYPE_LABELS).map(
-              ([value, label]) => ({ value, label }),
-            )}
-          />
-
-          <Select
-            allowClear
-            placeholder="Loại tham chiếu"
-            value={filters.referenceType || undefined}
-            onChange={(value) => {
-              setPageNumber(1);
-              setFilters((current) => ({
-                ...current,
-                referenceType: value ?? "",
-              }));
-            }}
-            options={Object.entries(REFERENCE_TYPE_LABELS).map(
-              ([value, label]) => ({ value, label }),
-            )}
-          />
-
-          <Select
-            allowClear
-            placeholder="Trạng thái"
-            value={filters.status || undefined}
-            onChange={(value) => {
-              setPageNumber(1);
-              setFilters((current) => ({
-                ...current,
-                status: value ?? "",
-              }));
-            }}
-            options={Object.entries(TRANSACTION_STATUS_LABELS).map(
-              ([value, label]) => ({ value, label }),
-            )}
-          />
-
-          <input
-            type="date"
-            value={filters.fromDate}
-            onChange={(event) => {
-              setPageNumber(1);
-              setFilters((current) => ({
-                ...current,
-                fromDate: event.target.value,
-              }));
-            }}
-            className="rounded-lg border border-border px-3 py-2 text-sm text-text outline-none transition focus:border-primary"
-          />
-
-          <input
-            type="date"
-            value={filters.toDate}
-            onChange={(event) => {
-              setPageNumber(1);
-              setFilters((current) => ({
-                ...current,
-                toDate: event.target.value,
-              }));
-            }}
-            className="rounded-lg border border-border px-3 py-2 text-sm text-text outline-none transition focus:border-primary"
-          />
-        </div>
-
-        {transactions.error && (
-          <Alert className="mb-4" type="error" showIcon message={transactions.error} />
-        )}
-
-        <Table
-          rowKey={(item, index) =>
-            String(item.walletTransactionId ?? index)
-          }
-          loading={transactionsLoading}
-          columns={transactionColumns}
-          dataSource={transactions.page.items}
-          scroll={{ x: 1000 }}
-          pagination={{
-            current: transactions.page.pageNumber,
-            pageSize: transactions.page.pageSize,
-            total: transactions.page.totalCount,
-            showSizeChanger: false,
-            onChange: setPageNumber,
-          }}
-        />
-      </div>
-
-      <Drawer
-        title="Chi tiết giao dịch tài chính"
-        width={720}
-        open={Boolean(detailId)}
-        onClose={() => {
-          setDetailId("");
-          setDetail({ loading: false, data: null, error: "" });
-        }}
-      >
-        {detail.loading ? (
-          <div className="flex justify-center py-14"><Spin /></div>
-        ) : detail.error ? (
-          <Alert type="error" showIcon message={detail.error} />
-        ) : detailData ? (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-background/60 p-4">
-              <p className="text-xs font-black uppercase tracking-wide text-primary">
-                Tổng quan
-              </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <DetailField
-                  label="Loại giao dịch"
-                  value={getLabel(
-                    TRANSACTION_TYPE_LABELS,
-                    detailData.transactionType,
-                  )}
-                />
-                <DetailField
-                  label="Trạng thái"
-                  value={getLabel(
-                    TRANSACTION_STATUS_LABELS,
-                    detailData.status,
-                  )}
-                />
-                <DetailField
-                  label="Số tiền"
-                  value={formatCurrency(detailData.amount)}
-                />
-                <DetailField
-                  label="Thời gian"
-                  value={formatDateTime(detailData.createdAt)}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-background/60 p-4">
-              <p className="text-xs font-black uppercase tracking-wide text-primary">
-                Đối tượng tham chiếu
-              </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <DetailField
-                  label="Loại tham chiếu"
-                  value={getLabel(
-                    REFERENCE_TYPE_LABELS,
-                    detailData.referenceType,
-                  )}
-                />
-                <div>
-                  <p className="text-xs font-semibold uppercase text-textLight">
-                    Mã tham chiếu
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-text">
-                    {detailData.referenceCode ||
-                      shortenId(detailData.referenceId) ||
-                      "—"}
-                  </p>
-                  {detailData.referenceCode && detailData.referenceId && (
-                    <p
-                      className="mt-0.5 font-mono text-[11px] text-textLight"
-                      title={detailData.referenceId}
-                    >
-                      {shortenId(detailData.referenceId)}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <PartyCard title="Từ" party={detailData.from} />
-              <PartyCard title="Đến" party={detailData.to} />
-            </div>
-
-            <div className="rounded-xl border border-border bg-background/60 p-4">
-              <p className="text-xs font-black uppercase tracking-wide text-primary">
-                Sao kê liên quan
-              </p>
-
-              {ledgers.length === 0 ? (
-                <p className="mt-2 text-sm text-textLight">
-                  Chưa có bút toán liên quan.
-                </p>
-              ) : (
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full min-w-[640px] border-collapse text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-border text-textLight">
-                        <th className="px-2 py-2">Thời gian</th>
-                        <th className="px-2 py-2">Hướng</th>
-                        <th className="px-2 py-2">Loại số dư</th>
-                        <th className="px-2 py-2 text-right">Số tiền</th>
-                        <th className="px-2 py-2 text-right">Trước → Sau</th>
-                        <th className="px-2 py-2">Nội dung</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {ledgers.map((ledger) => (
-                        <tr key={ledger.ledgerId}>
-                          <td className="whitespace-nowrap px-2 py-2">
-                            {formatDateTime(ledger.createdAt)}
-                          </td>
-                          <td className="px-2 py-2">
-                            {getLabel(
-                              LEDGER_DIRECTION_LABELS,
-                              ledger.direction,
-                            )}
-                          </td>
-                          <td className="px-2 py-2">
-                            {getLabel(
-                              LEDGER_BALANCE_TYPE_LABELS,
-                              ledger.balanceType,
-                            )}
-                          </td>
-                          <td className="whitespace-nowrap px-2 py-2 text-right font-bold text-text">
-                            {formatCurrency(ledger.amount)}
-                          </td>
-                          <td className="whitespace-nowrap px-2 py-2 text-right text-textLight">
-                            {formatCurrency(ledger.balanceBefore)} →{" "}
-                            {formatCurrency(ledger.balanceAfter)}
-                          </td>
-                          <td className="px-2 py-2 text-textLight">
-                            {ledger.description || "—"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-      </Drawer>
     </section>
   );
 }

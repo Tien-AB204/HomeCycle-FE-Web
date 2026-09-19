@@ -15,20 +15,9 @@ import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal
 import { normalizePostType } from "../../constants/marketplace";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
-import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
-import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
-import {
-  getBusinessRecommendationMismatchMessage,
-  getBusinessRecommendations,
-  hasCompletedBusinessSurvey,
-  normalizeBusinessSurvey,
-} from "../../utils/businessRecommendationUtils";
-import { getUserId, normalizeRole } from "../../utils/authUtils";
-import {
-  getBusinessSurveySnapshot,
-  isFreshBusinessSurveySnapshot,
-} from "../../utils/businessSurveySession";
+import { normalizeRole } from "../../utils/authUtils";
+import { BUSINESS_DISCOVERY_REFRESH_EVENT } from "../../utils/businessDiscoveryEvents";
 import {
   isPostCatalogStorageEvent,
   POST_CATALOG_CHANGED_EVENT,
@@ -248,18 +237,16 @@ const Homepage = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
-  const [businessSurvey, setBusinessSurvey] = useState(null);
-  const [recommendationSourcePosts, setRecommendationSourcePosts] = useState([]);
-  const [recommendationLoading, setRecommendationLoading] = useState(false);
-  const [recommendationNotice, setRecommendationNotice] = useState("");
+  const [discoveryState, setDiscoveryState] = useState({
+    status: "idle",
+    items: [],
+  });
   const [staleWarning, setStaleWarning] = useState(null);
-  const [surveyLoading, setSurveyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
   const normalizedRole = normalizeRole(user?.role);
-  const isBusinessUser = normalizedRole === ROLES.BUSINESS;
-  const businessUserId = getUserId(user);
+  const isBusinessUser = isAuthenticated && normalizedRole === ROLES.BUSINESS;
   const preferredDisplayName =
     user?.fullName ||
     user?.FullName ||
@@ -322,110 +309,35 @@ const Homepage = () => {
       return undefined;
     }
 
-    const controller = new AbortController();
     let isActive = true;
-    const surveySnapshot = getBusinessSurveySnapshot(businessUserId);
-
-    Promise.resolve()
-      .then(() => {
-        if (isActive) {
-          setSurveyLoading(true);
-        }
-
-        if (isFreshBusinessSurveySnapshot(surveySnapshot)) {
-          return surveySnapshot.survey;
-        }
-
-        return businessProfileApi.getSurveyDetail({
-          signal: controller.signal,
-        });
-      })
-      .then((surveyResponse) => {
-        if (!isActive) return;
-
-        setBusinessSurvey(
-          normalizeBusinessSurvey(
-            surveyResponse,
-          ),
-        );
-      })
-      .catch(() => {
-        if (isActive) {
-          setBusinessSurvey(
-            surveySnapshot
-              ? normalizeBusinessSurvey(surveySnapshot.survey)
-              : null,
-          );
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          setSurveyLoading(false);
-        }
-      });
-
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
-  }, [businessUserId, isBusinessUser, requestVersion]);
-
-  useEffect(() => {
-    if (
-      !isBusinessUser ||
-      !hasCompletedBusinessSurvey(businessSurvey)
-    ) {
-      return undefined;
-    }
-
-    const controller = new AbortController();
-    let isActive = true;
-    let isRefreshing = false;
-    let refreshQueued = false;
+    let activeController = null;
 
     const refreshRecommendations = async (showLoading = false) => {
-      if (isRefreshing) {
-        refreshQueued = true;
-        return;
-      }
-
-      isRefreshing = true;
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
 
       if (showLoading && isActive) {
-        setRecommendationLoading(true);
+        setDiscoveryState((current) => ({ ...current, status: "loading" }));
       }
 
       try {
-        const result = await businessRecommendationApi.search({
-          survey: businessSurvey,
-          searchCriteria: {
-            sortBy: "Newest",
-          },
+        const result = await postApi.discoverBusiness({
+          pageNumber: 1,
+          pageSize: 12,
           signal: controller.signal,
         });
-
         if (isActive) {
-          setRecommendationSourcePosts(result || []);
+          setDiscoveryState({ status: "ready", items: result.items || [] });
         }
       } catch (requestError) {
-        if (
-          isActive &&
-          showLoading &&
-          !isCanceledRequest(requestError)
-        ) {
-          setRecommendationSourcePosts([]);
-          setError(getErrorMessage(requestError));
-        }
-      } finally {
-        isRefreshing = false;
-
-        if (showLoading && isActive) {
-          setRecommendationLoading(false);
-        }
-
-        if (refreshQueued && isActive) {
-          refreshQueued = false;
-          void refreshRecommendations(false);
+        if (!isActive || isCanceledRequest(requestError)) return;
+        const responseData = requestError?.response?.data;
+        const errorCode = responseData?.code || responseData?.error?.code;
+        if (Number(requestError?.response?.status) === 409 && errorCode === "SURVEY_REQUIRED") {
+          setDiscoveryState({ status: "surveyRequired", items: [] });
+        } else {
+          setDiscoveryState({ status: "error", items: [] });
         }
       }
     };
@@ -449,15 +361,23 @@ const Homepage = () => {
       POST_CATALOG_CHANGED_EVENT,
       refreshWhenVisible,
     );
+    window.addEventListener(
+      BUSINESS_DISCOVERY_REFRESH_EVENT,
+      refreshWhenVisible,
+    );
     window.addEventListener("storage", handleStorage);
     document.addEventListener("visibilitychange", refreshWhenVisible);
 
     return () => {
       isActive = false;
-      controller.abort();
+      activeController?.abort();
       window.removeEventListener("focus", refreshWhenVisible);
       window.removeEventListener(
         POST_CATALOG_CHANGED_EVENT,
+        refreshWhenVisible,
+      );
+      window.removeEventListener(
+        BUSINESS_DISCOVERY_REFRESH_EVENT,
         refreshWhenVisible,
       );
       window.removeEventListener("storage", handleStorage);
@@ -466,9 +386,9 @@ const Homepage = () => {
         refreshWhenVisible,
       );
     };
-  }, [businessSurvey, isBusinessUser, requestVersion]);
+  }, [isBusinessUser, requestVersion]);
 
-  const businessPosts = useMemo(
+  const buyPosts = useMemo(
     () =>
       posts
         .filter((post) => isActivePost(post) && hasPostType(post, "Buy"))
@@ -484,46 +404,14 @@ const Homepage = () => {
     [posts],
   );
 
-  const recommendedPosts = useMemo(
-    () =>
-      getBusinessRecommendations({
-        posts: recommendationSourcePosts,
-        survey: businessSurvey,
-        limit: PERSONAL_POST_LIMIT,
-      }),
-    [businessSurvey, recommendationSourcePosts],
-  );
+  const recommendedPosts = discoveryState.items;
 
   const handleRecommendationOpen = useCallback(
     async (post) => {
       try {
         const latestPost = await postApi.getById(post.postId);
-        const verifiedPost = {
-          ...post,
-          ...latestPost,
-          productTypeId:
-            latestPost.productTypeId || post.productTypeId,
-          product: {
-            ...(post.product || {}),
-            ...(latestPost.product || {}),
-          },
-        };
+        const verifiedPost = { ...post, ...latestPost };
         const changedFields = getPostChangedFields(post, verifiedPost);
-        const mismatchMessage =
-          getBusinessRecommendationMismatchMessage(
-            verifiedPost,
-            businessSurvey,
-          );
-
-        if (mismatchMessage) {
-          setStaleWarning({
-            postId: post.postId,
-            title: "Bài đăng không còn phù hợp khảo sát",
-            message: mismatchMessage,
-            changedFields,
-          });
-          return false;
-        }
 
         if (changedFields.length > 0) {
           setStaleWarning({
@@ -534,21 +422,19 @@ const Homepage = () => {
           return false;
         }
 
-        setRecommendationNotice("");
-        setRecommendationSourcePosts((currentPosts) =>
-          currentPosts.map((currentPost) =>
-            currentPost.postId === post.postId
-              ? verifiedPost
-              : currentPost,
+        setDiscoveryState((current) => ({
+          ...current,
+          items: current.items.map((currentPost) =>
+            currentPost.postId === post.postId ? verifiedPost : currentPost,
           ),
-        );
+        }));
         return true;
       } catch {
         setStaleWarning({ message: VERIFICATION_FAILED_WARNING });
         return false;
       }
     },
-    [businessSurvey],
+    [],
   );
 
   const handlePostOpen = useCallback(async (post) => {
@@ -581,11 +467,6 @@ const Homepage = () => {
       return false;
     }
   }, []);
-
-  const hasBusinessSurvey =
-    hasCompletedBusinessSurvey(
-      businessSurvey,
-    );
 
   const handleRetry = () => {
     setLoading(true);
@@ -754,15 +635,12 @@ const Homepage = () => {
           </div>
         )}
 
-        {isBusinessUser &&
-          !surveyLoading &&
-          !hasBusinessSurvey && (
-            <BusinessSurveyPrompt />
-          )}
+        {isBusinessUser && discoveryState.status === "surveyRequired" && (
+          <BusinessSurveyPrompt />
+        )}
 
         {isBusinessUser &&
-          (surveyLoading ||
-            hasBusinessSurvey) && (
+          discoveryState.status !== "surveyRequired" && (
             <section className="pb-12">
               <div className="overflow-hidden rounded-[2rem] border border-border bg-gradient-to-br from-background via-white to-background p-5 shadow-[0_12px_36px_rgba(23,40,48,0.06)] sm:p-7">
                 <SectionHeader
@@ -772,17 +650,18 @@ const Homepage = () => {
                   to="/tin-dang-ban?view=recommended"
                 />
 
-                {recommendationNotice && (
+                {discoveryState.status === "error" && (
                   <div
                     role="alert"
-                    className="mb-5 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm font-semibold text-warning"
+                    className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm font-semibold text-error"
                   >
-                    {recommendationNotice}
+                    <span>Không thể tải nguồn hàng phù hợp lúc này.</span>
+                    <button type="button" onClick={handleRetry} className="rounded-full bg-error px-4 py-2 text-xs font-black text-white">Thử lại</button>
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-                  {surveyLoading || recommendationLoading ? (
+                  {discoveryState.status === "error" ? null : discoveryState.status === "loading" || discoveryState.status === "idle" ? (
                     <LoadingCards
                       count={
                         PERSONAL_POST_LIMIT
@@ -800,7 +679,7 @@ const Homepage = () => {
                       ),
                     )
                   ) : (
-                    <EmptyPosts message="Chưa có tin bán phù hợp với khảo sát hiện tại. Bạn có thể cập nhật khảo sát trong Hồ sơ doanh nghiệp." />
+                    <EmptyPosts message="Hiện chưa có bài bán phù hợp với nhu cầu thu mua của doanh nghiệp." />
                   )}
                 </div>
 
@@ -819,25 +698,27 @@ const Homepage = () => {
             </section>
           )}
 
-        <section className="pb-12">
-          <SectionHeader
-            eyebrow="Đang cần tìm"
-            title="Nhu cầu thu mua mới"
-            description="Kết nối với người đang tìm đúng sản phẩm bạn có và chủ động gửi đề nghị phù hợp."
-            to="/tin-thu-mua"
-          />
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {loading ? (
-              <LoadingCards count={BUSINESS_POST_LIMIT} />
-            ) : businessPosts.length > 0 ? (
-              businessPosts.map((post) => (
-                <ProductCard key={post.postId} data={post} variant="business-buy" onBeforeOpen={handlePostOpen} />
-              ))
-            ) : (
-              <EmptyPosts message="Hiện chưa có tin thu mua đang hoạt động." />
-            )}
-          </div>
-        </section>
+        {!isBusinessUser && (
+          <section className="pb-12">
+            <SectionHeader
+              eyebrow="Đang cần tìm"
+              title="Nhu cầu thu mua mới"
+              description="Kết nối với người đang tìm đúng sản phẩm bạn có và chủ động gửi đề nghị phù hợp."
+              to="/tin-thu-mua"
+            />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {loading ? (
+                <LoadingCards count={BUSINESS_POST_LIMIT} />
+              ) : buyPosts.length > 0 ? (
+                buyPosts.map((post) => (
+                  <ProductCard key={post.postId} data={post} variant="business-buy" onBeforeOpen={handlePostOpen} />
+                ))
+              ) : (
+                <EmptyPosts message="Hiện chưa có tin thu mua đang hoạt động." />
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       <section className="bg-background py-16">

@@ -35,7 +35,6 @@ import RoleRoute from "./RoleRoute";
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
-import AdminSystemWalletPage from "../pages/admin/AdminSystemWalletPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
@@ -247,7 +246,7 @@ const AppRouter = () => {
 
           <Route
             path="finance-operations"
-            element={<FinanceOperationsPage />}
+            element={<Navigate to="/mod/transactions?tab=finance" replace />}
           />
 
           <Route
@@ -346,13 +345,18 @@ const AppRouter = () => {
           <Route path="posts" element={<PostManagementPage />} />
 
           <Route
+            path="finance-management"
+            element={<FinanceOperationsPage />}
+          />
+
+          <Route
             path="system-wallet"
-            element={<AdminSystemWalletPage />}
+            element={<Navigate to="/admin/finance-management?tab=funds" replace />}
           />
 
           <Route
             path="finance-operations"
-            element={<FinanceOperationsPage admin />}
+            element={<Navigate to="/admin/finance-management?tab=transactions" replace />}
           />
 
           <Route path="policies" element={<PlatformPolicyPage />} />
