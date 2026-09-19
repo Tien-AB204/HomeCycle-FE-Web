@@ -31,6 +31,7 @@ const ACCOUNT_NAVIGATION = [
   { name: "Đơn hàng", path: "/don-hang" },
   { name: "Thanh toán", path: "/thanh-toan" },
   { name: "Ví", path: "/vi" },
+  { name: "Gói VIP", path: "/goi-dang-ky" },
   { name: "Hồ sơ", path: "/ho-so" },
 ];
 
