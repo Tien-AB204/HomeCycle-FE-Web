@@ -71,6 +71,7 @@ import WalletPage from "../pages/user/WalletPage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
+import SubscriptionPage from "../pages/user/SubscriptionPage";
 
 const AppRouter = () => {
   return (
@@ -134,6 +135,18 @@ const AppRouter = () => {
           />
 
           <Route path="/vi" element={<WalletPage />} />
+
+          <Route path="/goi-dang-ky" element={<SubscriptionPage />} />
+
+          <Route
+            path="/goi-dang-ky/payment-return"
+            element={<SubscriptionPage />}
+          />
+
+          <Route
+            path="/goi-dang-ky/payment-cancel"
+            element={<SubscriptionPage />}
+          />
 
           <Route path="/payments/success" element={<PaymentResultPage />} />
 
