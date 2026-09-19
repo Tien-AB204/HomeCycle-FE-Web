@@ -21,7 +21,12 @@ export const DAMAGE_LEVEL_OPTIONS = Object.freeze([
     label: "Trầy xước ngoại quan",
   },
   { value: "Minor_Damage", label: "Hư hỏng nhẹ" },
+  {
+    value: "Moderate_Damage",
+    label: "Hư hỏng trung bình",
+  },
   { value: "Severe_Damage", label: "Hư hỏng nặng" },
+  { value: "Total_Loss", label: "Tổn thất toàn bộ" },
 ]);
 
 export const FUNCTIONALITY_BY_DAMAGE_LEVEL = Object.freeze({
