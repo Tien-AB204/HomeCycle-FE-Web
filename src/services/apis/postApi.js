@@ -273,21 +273,49 @@ const normalizePagination = (data, fallbackPageNumber, fallbackPageSize) => {
 
 const normalizePostDetail = (post) => {
   const product = post?.product || {};
+  const requirement = post?.requirement || {};
+  const detailSource =
+    Object.keys(product).length > 0 ? product : requirement;
 
   return {
     ...post,
     productId:
-      product.productId ||
+      detailSource.productId ||
       (post?.productId !== ZERO_GUID ? post?.productId : ""),
-    productName: product.productName || post?.productName || "",
-    productTypeName: product.productTypeName || post?.productTypeName || "",
-    categoryName: product.categoryName || post?.categoryName || "",
-    brandName: product.brandName || post?.brandName || "",
+    productName:
+      detailSource.productName ||
+      detailSource.title ||
+      post?.title ||
+      post?.productName ||
+      "",
+    productTypeName:
+      detailSource.productTypeName || post?.productTypeName || "",
+    categoryName:
+      detailSource.categoryName || post?.categoryName || "",
+    brandName:
+      detailSource.brandName || post?.brandName || "",
     medias: normalizeMedias(post?.medias),
     product: {
       ...product,
       attributeValues: normalizeAttributeValues(product.attributeValues),
     },
+    requirement: {
+      ...requirement,
+      attributeValues: normalizeAttributeValues(requirement.attributeValues),
+    },
+    progress: post?.progress
+      ? {
+          targetQuantity: Number(post.progress.targetQuantity) || 0,
+          agreedQuantity: Number(post.progress.agreedQuantity) || 0,
+          remainingTargetQuantity:
+            Number(post.progress.remainingTargetQuantity) || 0,
+          progressPercent: Math.max(
+            0,
+            Math.min(100, Number(post.progress.progressPercent) || 0),
+          ),
+          isTargetReached: Boolean(post.progress.isTargetReached),
+        }
+      : null,
   };
 };
 
@@ -861,6 +889,65 @@ export const postApi = {
       hasPreviousPage: false,
       hasNextPage: false,
     };
+  },
+
+
+  getSellDetail: async (postId, { signal } = {}) => {
+    const normalizedPostId = normalizeRequiredIdentifier(
+      postId,
+      "Không tìm thấy mã tin đăng bán.",
+    );
+
+    const response = await axiosClient.get(
+      `/posts/sell/${encodeURIComponent(normalizedPostId)}`,
+      { signal },
+    );
+
+    const post = unwrapResponse(
+      response,
+      "Không thể tải chi tiết tin đăng bán.",
+    );
+
+    if (!post?.postId) {
+      throw new Error("Response chi tiết tin đăng bán không hợp lệ.");
+    }
+
+    return normalizePostDetail(post);
+  },
+
+  getBuyDetail: async (postId, { signal } = {}) => {
+    const normalizedPostId = normalizeRequiredIdentifier(
+      postId,
+      "Không tìm thấy mã tin thu mua.",
+    );
+
+    const response = await axiosClient.get(
+      `/posts/buy/${encodeURIComponent(normalizedPostId)}`,
+      { signal },
+    );
+
+    const post = unwrapResponse(
+      response,
+      "Không thể tải chi tiết tin thu mua.",
+    );
+
+    if (!post?.postId) {
+      throw new Error("Response chi tiết tin thu mua không hợp lệ.");
+    }
+
+    return normalizePostDetail(post);
+  },
+
+  getTypedDetail: async (postId, { signal } = {}) => {
+    try {
+      return await postApi.getSellDetail(postId, { signal });
+    } catch (error) {
+      if (Number(error?.response?.status) !== 404) {
+        throw error;
+      }
+    }
+
+    return postApi.getBuyDetail(postId, { signal });
   },
 
   getById: async (postId, { signal } = {}) => {
