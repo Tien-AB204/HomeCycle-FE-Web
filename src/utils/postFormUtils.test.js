@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   POST_NOT_EDITABLE_MESSAGE,
-  getFunctionalityForDamageLevel,
   getManagedPostQuantity,
   getPostConditionFieldErrors,
   getPostFormApiErrors,
@@ -10,19 +9,26 @@ import {
   normalizePostConditionValues,
 } from "./postFormUtils.js";
 
-test("maps every supported damage level to the required functionality", () => {
-  assert.equal(getFunctionalityForDamageLevel("None"), "FullyFunctional");
-  assert.equal(
-    getFunctionalityForDamageLevel("Cosmetic_Damage"),
-    "FullyFunctional",
+test("preserves current backend damage/functionality values independently", () => {
+  assert.deepEqual(
+    normalizePostConditionValues(
+      "Moderate_Damage",
+      "FullyFunctional",
+    ),
+    {
+      damageLevel: "Moderate_Damage",
+      functionalityStatus: "FullyFunctional",
+    },
   );
-  assert.equal(
-    getFunctionalityForDamageLevel("Minor_Damage"),
-    "PartiallyFunctional",
-  );
-  assert.equal(
-    getFunctionalityForDamageLevel("Severe_Damage"),
-    "NonFunctional",
+  assert.deepEqual(
+    normalizePostConditionValues(
+      "Total_Loss",
+      "NonFunctional",
+    ),
+    {
+      damageLevel: "Total_Loss",
+      functionalityStatus: "NonFunctional",
+    },
   );
 });
 
@@ -34,23 +40,48 @@ test("normalizes legacy edit values to backend-supported enum values", () => {
       functionalityStatus: "NonFunctional",
     },
   );
+});
+
+test("returns no errors for any valid independent condition combination", () => {
   assert.deepEqual(
-    normalizePostConditionValues("Total_Loss", "NonFunctional"),
-    {
-      damageLevel: "Severe_Damage",
-      functionalityStatus: "NonFunctional",
-    },
+    getPostConditionFieldErrors("Minor_Damage", "FullyFunctional"),
+    {},
   );
 });
 
-test("returns Vietnamese inline errors for an incompatible condition pair", () => {
+test("validates damage level and functionality status independently", () => {
   assert.deepEqual(
-    getPostConditionFieldErrors("Minor_Damage", "FullyFunctional"),
+    getPostConditionFieldErrors(
+      "INVALID_DAMAGE",
+      "FullyFunctional",
+    ),
     {
       damageLevel:
-        "Mức độ hư hỏng chưa phù hợp với tình trạng hoạt động.",
+        "Mức độ hư hỏng không hợp lệ.",
+    },
+  );
+
+  assert.deepEqual(
+    getPostConditionFieldErrors(
+      "None",
+      "INVALID_FUNCTIONALITY",
+    ),
+    {
       functionalityStatus:
-        "Với “Hư hỏng nhẹ”, tình trạng hoạt động phải là “Hoạt động một phần”.",
+        "Tình trạng hoạt động không hợp lệ.",
+    },
+  );
+
+  assert.deepEqual(
+    getPostConditionFieldErrors(
+      "INVALID_DAMAGE",
+      "INVALID_FUNCTIONALITY",
+    ),
+    {
+      damageLevel:
+        "Mức độ hư hỏng không hợp lệ.",
+      functionalityStatus:
+        "Tình trạng hoạt động không hợp lệ.",
     },
   );
 });
@@ -96,9 +127,9 @@ test("shows the quantity configured by the post owner instead of remaining stock
   assert.equal(getManagedPostQuantity({ remainingQuantity: 3 }), 3);
 });
 
-test("allows editing only while the post is active", () => {
+test("allows editing active and closed posts", () => {
   assert.equal(isPostStatusEditable("Active"), true);
-  assert.equal(isPostStatusEditable("Closed"), false);
+  assert.equal(isPostStatusEditable("Closed"), true);
   assert.equal(isPostStatusEditable("Suspended"), false);
   assert.equal(
     POST_NOT_EDITABLE_MESSAGE,

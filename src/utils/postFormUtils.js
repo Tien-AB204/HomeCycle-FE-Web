@@ -1,6 +1,5 @@
 import {
   DAMAGE_LEVEL_OPTIONS,
-  FUNCTIONALITY_BY_DAMAGE_LEVEL,
   FUNCTIONALITY_OPTIONS,
   LEGACY_DAMAGE_LEVEL_ALIASES,
   LEGACY_FUNCTIONALITY_ALIASES,
@@ -206,69 +205,56 @@ export const getPostFormApiErrors = (
   };
 };
 
-export const normalizeDamageLevel = (value) =>
-  LEGACY_DAMAGE_LEVEL_ALIASES[value] || value || "None";
+const isValidOptionValue = (options, value) =>
+  options.some((option) => option.value === value);
+
+/*
+ * LEGACY_DAMAGE_LEVEL_ALIASES vẫn chứa Moderate_Damage/Total_Loss ->
+ * Severe_Damage vì Business Survey (businessSurveyConditionUtils.js) đọc
+ * trực tiếp từ hằng số đó cho logic riêng của nó. Ở luồng đăng bài, hai giá
+ * trị này là enum Backend hợp lệ nên phải được kiểm tra và giữ nguyên
+ * TRƯỚC khi tra bảng alias, để không bị gộp nhầm về Severe_Damage.
+ */
+export const normalizeDamageLevel = (value) => {
+  if (isValidOptionValue(DAMAGE_LEVEL_OPTIONS, value)) {
+    return value;
+  }
+
+  return LEGACY_DAMAGE_LEVEL_ALIASES[value] || value || "None";
+};
 
 export const normalizeFunctionalityStatus = (value) =>
   LEGACY_FUNCTIONALITY_ALIASES[value] || value || "FullyFunctional";
 
-export const getFunctionalityForDamageLevel = (damageLevel) =>
-  FUNCTIONALITY_BY_DAMAGE_LEVEL[normalizeDamageLevel(damageLevel)] || "";
-
 export const normalizePostConditionValues = (
   damageLevel,
   functionalityStatus,
-) => {
-  const normalizedDamageLevel = normalizeDamageLevel(damageLevel);
-  const requiredFunctionality = getFunctionalityForDamageLevel(
-    normalizedDamageLevel,
-  );
-
-  return {
-    damageLevel: normalizedDamageLevel,
-    functionalityStatus:
-      requiredFunctionality ||
-      normalizeFunctionalityStatus(functionalityStatus),
-  };
-};
-
-const getOptionLabel = (options, value) =>
-  options.find((option) => option.value === value)?.label || value;
+) => ({
+  damageLevel: normalizeDamageLevel(damageLevel),
+  functionalityStatus: normalizeFunctionalityStatus(
+    functionalityStatus,
+  ),
+});
 
 export const getPostConditionFieldErrors = (
   damageLevel,
   functionalityStatus,
 ) => {
-  const normalizedDamageLevel = normalizeDamageLevel(damageLevel);
-  const normalizedFunctionalityStatus = normalizeFunctionalityStatus(
-    functionalityStatus,
-  );
-  const requiredFunctionality = getFunctionalityForDamageLevel(
-    normalizedDamageLevel,
-  );
+  const errors = {};
 
-  if (!requiredFunctionality) {
-    return {
-      damageLevel: "Mức độ hư hỏng không hợp lệ.",
-    };
+  if (!isValidOptionValue(DAMAGE_LEVEL_OPTIONS, damageLevel)) {
+    errors.damageLevel = "Mức độ hư hỏng không hợp lệ.";
   }
 
-  if (normalizedFunctionalityStatus === requiredFunctionality) {
-    return {};
+  if (
+    !isValidOptionValue(
+      FUNCTIONALITY_OPTIONS,
+      functionalityStatus,
+    )
+  ) {
+    errors.functionalityStatus =
+      "Tình trạng hoạt động không hợp lệ.";
   }
 
-  const damageLabel = getOptionLabel(
-    DAMAGE_LEVEL_OPTIONS,
-    normalizedDamageLevel,
-  );
-  const functionalityLabel = getOptionLabel(
-    FUNCTIONALITY_OPTIONS,
-    requiredFunctionality,
-  );
-
-  return {
-    damageLevel:
-      "Mức độ hư hỏng chưa phù hợp với tình trạng hoạt động.",
-    functionalityStatus: `Với “${damageLabel}”, tình trạng hoạt động phải là “${functionalityLabel}”.`,
-  };
+  return errors;
 };
