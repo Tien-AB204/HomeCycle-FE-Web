@@ -156,7 +156,7 @@ const AgreementPage = () => {
             { signal },
           );
           const nextPost = nextNegotiation.postId
-            ? await postApi.getById(nextNegotiation.postId, { signal })
+            ? await postApi.getTypedDetail(nextNegotiation.postId, { signal })
             : null;
           setTransactionContext({
             negotiation: nextNegotiation,
@@ -213,7 +213,7 @@ const AgreementPage = () => {
       latestAgreement.negotiationId,
     );
     const latestPost = latestNegotiation.postId
-      ? await postApi.getById(latestNegotiation.postId)
+      ? await postApi.getTypedDetail(latestNegotiation.postId)
       : null;
 
     return {
