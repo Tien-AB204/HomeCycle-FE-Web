@@ -9,6 +9,7 @@ import provinceApi from "../../services/apis/provinceApi";
 import { useAuth } from "../../hooks/useAuth";
 import { getUserId } from "../../utils/authUtils";
 import { saveBusinessSurveySnapshot } from "../../utils/businessSurveySession";
+import { notifyBusinessDiscoveryRefresh } from "../../utils/businessDiscoveryEvents";
 import {
   BUSINESS_SURVEY_DAMAGE_LEVELS,
   BUSINESS_SURVEY_FUNCTIONALITY_STATUSES,
@@ -327,6 +328,7 @@ export default function BusinessSurveySection({
         getUserId(user),
         form,
       );
+      notifyBusinessDiscoveryRefresh();
       setSuccess(
         "Khảo sát nhu cầu thu mua đã được cập nhật thành công.",
       );

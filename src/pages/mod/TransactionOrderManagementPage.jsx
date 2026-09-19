@@ -15,9 +15,10 @@ import {
   Select,
   Table,
   Tag,
+  Tabs,
 } from "antd";
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   getOrderStatusMeta,
   getPaymentStatusMeta,
@@ -25,6 +26,7 @@ import {
 import { getDeliveryMethodLabel } from "../../constants/agreements";
 import { getAppointmentStatusMeta } from "../../constants/appointments";
 import moderatorOrderApi from "../../services/apis/moderatorOrderApi";
+import FinancialTransactionsPanel from "../../features/finance/FinancialTransactionsPanel";
 
 const { RangePicker } = DatePicker;
 
@@ -265,7 +267,7 @@ const getOrderTransactionTypeLabel = (value) => {
   return ORDER_TRANSACTION_TYPE_LABELS[key] || "Diễn biến tài chính";
 };
 
-const TransactionOrderManagementPage = () => {
+const OrderManagementContent = () => {
   const [keywordInput, setKeywordInput] = useState("");
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
@@ -625,21 +627,8 @@ const TransactionOrderManagementPage = () => {
   const detail = detailState.data;
 
   return (
-    <section className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-6 lg:px-8">
-      <div className="overflow-hidden rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_50px_rgba(23,40,48,0.14)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/65">
-          Trung tâm kiểm duyệt
-        </p>
-
-        <h1 className="mt-2 text-3xl font-black">Giao dịch &amp; đơn hàng</h1>
-
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
-          Theo dõi toàn bộ đơn hàng trên hệ thống theo trạng thái, thanh toán,
-          tranh chấp và kiểm định.
-        </p>
-      </div>
-
-      <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
+    <div>
+      <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
         <div className="min-w-[220px] flex-1">
           <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
             Tìm kiếm
@@ -1140,6 +1129,35 @@ const TransactionOrderManagementPage = () => {
           </div>
         )}
       </Modal>
+    </div>
+  );
+};
+
+const TransactionOrderManagementPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "finance" ? "finance" : "orders";
+
+  const changeTab = (tab) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === "finance") next.set("tab", "finance");
+    else next.delete("tab");
+    setSearchParams(next);
+  };
+
+  return (
+    <section className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-6 lg:px-8">
+      <header className="overflow-hidden rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_50px_rgba(23,40,48,0.14)]">
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/65">Trung tâm kiểm duyệt</p>
+        <h1 className="mt-2 text-3xl font-black">Giao dịch &amp; đơn hàng</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">Theo dõi đơn hàng và tra cứu giao dịch tài chính liên quan trên toàn hệ thống.</p>
+      </header>
+
+      <div className="mt-6 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-5">
+        <Tabs activeKey={activeTab} onChange={changeTab} items={[
+          { key: "orders", label: "Đơn hàng", children: activeTab === "orders" ? <OrderManagementContent /> : null },
+          { key: "finance", label: "Giao dịch tài chính", children: activeTab === "finance" ? <FinancialTransactionsPanel /> : null },
+        ]} />
+      </div>
     </section>
   );
 };

@@ -773,6 +773,28 @@ export const postApi = {
     return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
   },
 
+  discoverBusiness: async ({
+    pageNumber = 1,
+    pageSize = 12,
+    signal,
+  } = {}) => {
+    const normalizedPageNumber = normalizePageNumber(pageNumber);
+    const normalizedPageSize = normalizePageSize(pageSize);
+    const response = await axiosClient.get("/posts/discover/business", {
+      params: {
+        PageNumber: normalizedPageNumber,
+        PageSize: normalizedPageSize,
+      },
+      signal,
+      skipGlobalErrorPage: true,
+    });
+    const data = unwrapResponse(
+      response,
+      "Không thể tải nguồn hàng phù hợp.",
+    );
+    return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
+  },
+
   search: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,

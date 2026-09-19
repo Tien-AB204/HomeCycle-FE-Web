@@ -24,8 +24,10 @@ const PostSectionPage = ({ postType }) => {
     viewMode === "recommended" &&
     normalizedPostType === MARKETPLACE_POST_TYPES.SELL;
   const isBusinessUser = normalizeRole(user?.role) === ROLES.BUSINESS;
+  const isBusinessBuyType =
+    isBusinessUser && normalizedPostType === MARKETPLACE_POST_TYPES.BUY;
   const isMarketplaceView =
-    viewMode === "marketplace" || isRecommendationView;
+    !isBusinessBuyType && (viewMode === "marketplace" || isRecommendationView);
   const hasManagementAccess =
     isAuthenticated &&
     canManagePostType(user?.role, normalizedPostType);
