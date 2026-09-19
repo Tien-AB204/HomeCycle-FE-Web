@@ -1,14 +1,33 @@
+import { useEffect } from "react";
+
 export default function ConfirmActionModal({
   open,
   title,
   description,
   confirmLabel = "Xác nhận",
+  cancelLabel = "Hủy",
   tone = "danger",
   icon,
   busy = false,
   onCancel,
   onConfirm,
 }) {
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !busy) {
+        onCancel();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, busy, onCancel]);
+
   if (!open) {
     return null;
   }
@@ -59,7 +78,7 @@ export default function ConfirmActionModal({
             disabled={busy}
             className="rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-black text-textLight transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Hủy
+            {cancelLabel}
           </button>
           <button
             type="button"
