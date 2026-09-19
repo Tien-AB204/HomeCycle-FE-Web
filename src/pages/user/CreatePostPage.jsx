@@ -34,7 +34,6 @@ import productTypeAttributeApi from "../../services/apis/productTypeAttributeApi
 import { getUserId } from "../../utils/authUtils";
 import {
   POST_NOT_EDITABLE_MESSAGE,
-  getFunctionalityForDamageLevel,
   getPostConditionFieldErrors,
   getPostFormApiErrors,
   isPostStatusEditable,
@@ -554,24 +553,6 @@ const CreatePostPage = () => {
     setFieldErrors((currentErrors) => ({
       ...currentErrors,
       [name]: "",
-    }));
-    setServerError("");
-    setSuccessMessage("");
-  };
-
-  const handleDamageLevelChange = (event) => {
-    const damageLevel = event.target.value;
-    const functionalityStatus = getFunctionalityForDamageLevel(damageLevel);
-
-    setForm((currentForm) => ({
-      ...currentForm,
-      damageLevel,
-      functionalityStatus,
-    }));
-    setFieldErrors((currentErrors) => ({
-      ...currentErrors,
-      damageLevel: "",
-      functionalityStatus: "",
     }));
     setServerError("");
     setSuccessMessage("");
@@ -1419,7 +1400,13 @@ const CreatePostPage = () => {
               </span>
               <select
                 value={form.functionalityStatus}
-                disabled
+                onChange={(event) =>
+                  updateField(
+                    "functionalityStatus",
+                    event.target.value,
+                  )
+                }
+                disabled={isSubmitting}
                 className={inputClassName}
               >
                 {FUNCTIONALITY_OPTIONS.map((option) => (
@@ -1428,9 +1415,6 @@ const CreatePostPage = () => {
                   </option>
                 ))}
               </select>
-              <p className="mt-1 text-xs text-textLight">
-                Tự động xác định theo mức độ hư hỏng.
-              </p>
               <FieldError message={fieldErrors.functionalityStatus} />
             </label>
 
@@ -1440,7 +1424,12 @@ const CreatePostPage = () => {
               </span>
               <select
                 value={form.damageLevel}
-                onChange={handleDamageLevelChange}
+                onChange={(event) =>
+                  updateField(
+                    "damageLevel",
+                    event.target.value,
+                  )
+                }
                 disabled={isSubmitting}
                 className={inputClassName}
               >
