@@ -320,7 +320,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
   const getCurrentPostDetail = useCallback(
     (id, options = {}) =>
       isAuthenticated
-        ? getCurrentPostDetail(id, options)
+        ? postApi.getTypedDetail(id, options)
         : postApi.getById(id, options),
     [isAuthenticated],
   );
