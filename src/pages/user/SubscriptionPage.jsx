@@ -117,6 +117,12 @@ export default function SubscriptionPage() {
     }
   }, [targetRole]);
 
+  const notifySubscriptionChanged = () => {
+    window.dispatchEvent(
+      new CustomEvent("homecycle:subscription-changed"),
+    );
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     void load(controller.signal);
@@ -158,6 +164,7 @@ export default function SubscriptionPage() {
         if (payment === "completed" && subscription === "active") {
           sessionStorage.removeItem(PENDING_SUBSCRIPTION_KEY);
           setNotice("Thanh toán thành công. Quyền lợi VIP đã được kích hoạt.");
+          notifySubscriptionChanged();
           await load();
           return;
         }
@@ -222,8 +229,10 @@ export default function SubscriptionPage() {
     setNotice("");
 
     try {
-      await subscriptionApi.checkoutWithWallet(pkg.packageId);
+      const latestPackage = await subscriptionApi.getPackageById(pkg.packageId);
+      await subscriptionApi.checkoutWithWallet(latestPackage?.packageId || pkg.packageId);
       setNotice("Thanh toán bằng ví thành công. Gói VIP đã được kích hoạt.");
+      notifySubscriptionChanged();
       await load();
     } catch (error) {
       setActionError(
@@ -242,11 +251,15 @@ export default function SubscriptionPage() {
     setNotice("");
 
     try {
+      const latestPackage = await subscriptionApi.getPackageById(pkg.packageId);
       const origin = window.location.origin;
-      const result = await subscriptionApi.createPayOsCheckout(pkg.packageId, {
+      const result = await subscriptionApi.createPayOsCheckout(
+        latestPackage?.packageId || pkg.packageId,
+        {
         returnUrl: `${origin}/goi-dang-ky/payment-return`,
-        cancelUrl: `${origin}/goi-dang-ky/payment-cancel`,
-      });
+          cancelUrl: `${origin}/goi-dang-ky/payment-cancel`,
+        },
+      );
 
       sessionStorage.setItem(
         PENDING_SUBSCRIPTION_KEY,
@@ -279,6 +292,7 @@ export default function SubscriptionPage() {
     try {
       await subscriptionApi.cancel(subscriptionId);
       setNotice("Đã hủy gói VIP. Quyền lợi đã quay về Free.");
+      notifySubscriptionChanged();
       await load();
     } catch (error) {
       setActionError(getErrorMessage(error, "Không thể hủy gói đăng ký."));
