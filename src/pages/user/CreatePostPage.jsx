@@ -1520,41 +1520,39 @@ const CreatePostPage = () => {
               <FieldError message={fieldErrors.usageDuration} />
             </label>
 
-            {!isBuyPost && (
-              <>
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-text">
-                    Mã model
-                  </span>
-                  <input
-                    type="text"
-                    value={form.modelNumber}
-                    onChange={(event) =>
-                      updateField("modelNumber", event.target.value)
-                    }
-                    disabled={isSubmitting}
-                    className={inputClassName}
-                  />
-                  <FieldError message={fieldErrors.modelNumber} />
-                </label>
+            <label className="block">
+              <span className="mb-1.5 block text-sm font-semibold text-text">
+                Mã model
+              </span>
+              <input
+                type="text"
+                value={form.modelNumber}
+                onChange={(event) =>
+                  updateField("modelNumber", event.target.value)
+                }
+                disabled={isSubmitting}
+                className={inputClassName}
+              />
+              <FieldError message={fieldErrors.modelNumber} />
+            </label>
 
-                <label className="block">
-                  <span className="mb-1.5 block text-sm font-semibold text-text">
-                    Giá mua ban đầu
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.originalPrice}
-                    onChange={(event) =>
-                      updateField("originalPrice", event.target.value)
-                    }
-                    disabled={isSubmitting}
-                    className={inputClassName}
-                  />
-                  <FieldError message={fieldErrors.originalPrice} />
-                </label>
-              </>
+            {!isBuyPost && (
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-semibold text-text">
+                  Giá mua ban đầu
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  value={form.originalPrice}
+                  onChange={(event) =>
+                    updateField("originalPrice", event.target.value)
+                  }
+                  disabled={isSubmitting}
+                  className={inputClassName}
+                />
+                <FieldError message={fieldErrors.originalPrice} />
+              </label>
             )}
           </div>
 
