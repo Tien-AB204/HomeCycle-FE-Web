@@ -10,6 +10,7 @@ import {
   DashboardHorizontalBarChart,
   DashboardLineChart,
 } from "../../components/admin/AdminDashboardCharts";
+import GhnWebhookSimulator from "../../features/admin-orders/GhnWebhookSimulator";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import disputeCategoryApi from "../../services/apis/disputeCategoryApi";
 import productTypeApi from "../../services/apis/productTypeApi";
@@ -2894,6 +2895,8 @@ export default function AdminDashboardModulePage({
       ) : (
         renderBody()
       )}
+
+      {dashboard === "orders" && <GhnWebhookSimulator />}
     </section>
   );
 }
