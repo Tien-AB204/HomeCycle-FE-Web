@@ -26,10 +26,14 @@ import {
 } from "@ant-design/icons";
 import { useLocation } from "react-router-dom";
 import Avatar from "../../components/shared/Avatar";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import useActionToast from "../../hooks/useActionToast";
 import moderatorDisputeApi from "../../services/apis/moderatorDisputeApi";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -612,6 +616,8 @@ const DisputeManagementPage = ({
     useState(null);
   const [sortOption, setSortOption] =
     useState("newest");
+  const [monthFilter, setMonthFilter] =
+    useState("");
 
   const [categoryOptions, setCategoryOptions] =
     useState([]);
@@ -1163,11 +1169,15 @@ const DisputeManagementPage = ({
   const sortedDisputes = useMemo(
     () =>
       sortItemsByDate(
-        disputes,
+        filterItemsByMonth(
+          disputes,
+          monthFilter,
+          (item) => item?.createdAt,
+        ),
         sortOption,
         (item) => item?.createdAt,
       ),
-    [disputes, sortOption],
+    [disputes, monthFilter, sortOption],
   );
 
   const renderUserCard = (
@@ -1508,6 +1518,14 @@ const DisputeManagementPage = ({
                   compact
                   scopeLabel="tranh chấp trong trang hiện tại"
                 />
+                <ListMonthDropdown
+                  items={disputes}
+                  value={monthFilter}
+                  onChange={setMonthFilter}
+                  getValue={(item) => item?.createdAt}
+                  compact
+                  scopeLabel="tranh chấp trong trang hiện tại"
+                />
 
                 <Button
                   icon={
@@ -1542,7 +1560,7 @@ const DisputeManagementPage = ({
               <div className="flex h-full items-center justify-center p-10">
                 <Spin />
               </div>
-            ) : disputes.length ===
+            ) : sortedDisputes.length ===
               0 ? (
               <Empty
                 description="Không có tranh chấp phù hợp"

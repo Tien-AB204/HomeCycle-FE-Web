@@ -9,9 +9,13 @@ import {
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
 import EvidenceImage from "../../components/shared/EvidenceImage";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import useActionToast from "../../hooks/useActionToast";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 import { useLocation } from "react-router-dom";
 
 const VerificationPage = () => {
@@ -31,6 +35,7 @@ const VerificationPage = () => {
   const [loadingList, setLoadingList] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [sortOption, setSortOption] = useState("newest");
+  const [monthFilter, setMonthFilter] = useState("");
   const debouncedKeyword = useDebounce(searchKeyword, 500);
 
   // --- STATE RESIZABLE CỘT TRÁI ---
@@ -224,8 +229,14 @@ const VerificationPage = () => {
       })
     : profiles;
 
-  const sortedProfiles = sortItemsByDate(
+  const monthFilteredProfiles = filterItemsByMonth(
     filteredProfiles,
+    monthFilter,
+    (profile) => profile?.createdAt,
+  );
+
+  const sortedProfiles = sortItemsByDate(
+    monthFilteredProfiles,
     sortOption,
     (profile) => profile?.createdAt,
   );
@@ -411,7 +422,7 @@ const VerificationPage = () => {
               Hồ sơ chờ duyệt
               {!loadingList && (
                 <span className="bg-warning/10 text-warning text-xs px-2 py-0.5 rounded-full font-bold">
-                  {filteredProfiles.length}
+                  {monthFilteredProfiles.length}
                 </span>
               )}
             </h2>
@@ -450,6 +461,14 @@ const VerificationPage = () => {
               compact
               scopeLabel="hồ sơ đang hiển thị"
             />
+            <ListMonthDropdown
+              items={filteredProfiles}
+              value={monthFilter}
+              onChange={setMonthFilter}
+              getValue={(profile) => profile?.createdAt}
+              compact
+              scopeLabel="hồ sơ đang hiển thị"
+            />
           </div>
         </div>
 
@@ -458,7 +477,7 @@ const VerificationPage = () => {
             <div className="flex justify-center p-10">
               <Spin />
             </div>
-          ) : filteredProfiles.length === 0 ? (
+          ) : sortedProfiles.length === 0 ? (
             <Empty description="Không có hồ sơ phù hợp" className="mt-10" />
           ) : (
             <div className="divide-y divide-border">

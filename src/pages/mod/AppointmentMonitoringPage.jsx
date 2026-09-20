@@ -20,9 +20,13 @@ import {
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { getAppointmentStatusMeta } from "../../constants/appointments";
 import { getDeliveryMethodLabel } from "../../constants/agreements";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import moderatorAppointmentApi from "../../services/apis/moderatorAppointmentApi";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 
@@ -173,6 +177,7 @@ const AppointmentMonitoringPage = () => {
   const [hasInspectionForm, setHasInspectionForm] = useState("");
   const [dateRange, setDateRange] = useState(null);
   const [sortOption, setSortOption] = useState("newest");
+  const [monthFilter, setMonthFilter] = useState("");
 
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -530,11 +535,15 @@ const AppointmentMonitoringPage = () => {
   const sortedAppointments = useMemo(
     () =>
       sortItemsByDate(
-        state.items,
+        filterItemsByMonth(
+          state.items,
+          monthFilter,
+          (item) => item?.createdAt,
+        ),
         sortOption,
         (item) => item?.createdAt,
       ),
-    [state.items, sortOption],
+    [monthFilter, state.items, sortOption],
   );
 
   const detail = detailState.data;
@@ -639,6 +648,13 @@ const AppointmentMonitoringPage = () => {
         <ListSortDropdown
           value={sortOption}
           onChange={setSortOption}
+          scopeLabel="lịch hẹn trong trang hiện tại"
+        />
+        <ListMonthDropdown
+          items={state.items}
+          value={monthFilter}
+          onChange={setMonthFilter}
+          getValue={(item) => item?.createdAt}
           scopeLabel="lịch hẹn trong trang hiện tại"
         />
 

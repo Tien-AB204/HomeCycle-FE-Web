@@ -22,10 +22,14 @@ import {
   ReloadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import useActionToast from "../../hooks/useActionToast";
 import moderatorWithdrawalApi from "../../services/apis/moderatorWithdrawalApi";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 
@@ -234,6 +238,7 @@ const WithdrawalManagementPage = () => {
   const [status, setStatus] = useState("");
   const [dateRange, setDateRange] = useState(null);
   const [sortOption, setSortOption] = useState("newest");
+  const [monthFilter, setMonthFilter] = useState("");
 
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -618,7 +623,15 @@ const WithdrawalManagementPage = () => {
   const sortedWithdrawals = useMemo(
     () =>
       sortItemsByDate(
-        state.items,
+        filterItemsByMonth(
+          state.items,
+          monthFilter,
+          (item) =>
+            item?.requestedAt ??
+            item?.RequestedAt ??
+            item?.createdAt ??
+            item?.CreatedAt,
+        ),
         sortOption,
         (item) =>
           item?.requestedAt ??
@@ -626,7 +639,7 @@ const WithdrawalManagementPage = () => {
           item?.createdAt ??
           item?.CreatedAt,
       ),
-    [state.items, sortOption],
+    [monthFilter, state.items, sortOption],
   );
 
   const selectedWithdrawalActions =
@@ -809,6 +822,18 @@ const WithdrawalManagementPage = () => {
         <ListSortDropdown
           value={sortOption}
           onChange={setSortOption}
+          scopeLabel="yêu cầu rút tiền trong trang hiện tại"
+        />
+        <ListMonthDropdown
+          items={state.items}
+          value={monthFilter}
+          onChange={setMonthFilter}
+          getValue={(item) =>
+            item?.requestedAt ??
+            item?.RequestedAt ??
+            item?.createdAt ??
+            item?.CreatedAt
+          }
           scopeLabel="yêu cầu rút tiền trong trang hiện tại"
         />
 

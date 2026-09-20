@@ -3,8 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import financeOperationsApi from "../../services/apis/financeOperationsApi";
 import FinancialPartyDisplay from "./FinancialPartyDisplay";
 import FinancialTransactionDrawer from "./FinancialTransactionDrawer";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 import {
   formatFinanceCurrency,
   formatFinanceDateTime,
@@ -41,6 +45,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sortOption, setSortOption] = useState("newest");
+  const [monthFilter, setMonthFilter] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [state, setState] = useState({
     loading: true,
@@ -86,11 +91,17 @@ export default function FinancialTransactionsPanel({ admin = false }) {
   const sortedItems = useMemo(
     () =>
       sortItemsByDate(
-        state.items,
+        admin
+          ? state.items
+          : filterItemsByMonth(
+              state.items,
+              monthFilter,
+              (item) => item?.createdAt,
+            ),
         sortOption,
         (item) => item?.createdAt,
       ),
-    [state.items, sortOption],
+    [admin, monthFilter, state.items, sortOption],
   );
 
   const columns = useMemo(() => {
@@ -187,7 +198,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
       <div
         className={
           "grid gap-3 md:grid-cols-3 " +
-          (admin ? "lg:grid-cols-5" : "lg:grid-cols-6")
+          (admin ? "lg:grid-cols-5" : "lg:grid-cols-7")
         }
       >
         <Select allowClear placeholder="Loại giao dịch" value={filters.transactionType || undefined} onChange={(value) => updateFilter("transactionType", value)} options={TRANSACTION_TYPE_OPTIONS} />
@@ -196,11 +207,20 @@ export default function FinancialTransactionsPanel({ admin = false }) {
         <input aria-label="Từ ngày" type="date" value={filters.fromDate} onChange={(event) => updateFilter("fromDate", event.target.value)} className="rounded-md border border-border px-3 py-2 text-sm" />
         <input aria-label="Đến ngày" type="date" value={filters.toDate} onChange={(event) => updateFilter("toDate", event.target.value)} className="rounded-md border border-border px-3 py-2 text-sm" />
         {!admin && (
-          <ListSortDropdown
-            value={sortOption}
-            onChange={setSortOption}
-            scopeLabel="giao dịch trong trang hiện tại"
-          />
+          <>
+            <ListSortDropdown
+              value={sortOption}
+              onChange={setSortOption}
+              scopeLabel="giao dịch trong trang hiện tại"
+            />
+            <ListMonthDropdown
+              items={state.items}
+              value={monthFilter}
+              onChange={setMonthFilter}
+              getValue={(item) => item?.createdAt}
+              scopeLabel="giao dịch trong trang hiện tại"
+            />
+          </>
         )}
       </div>
 

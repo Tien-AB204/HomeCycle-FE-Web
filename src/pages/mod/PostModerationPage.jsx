@@ -14,8 +14,10 @@ import { postApi } from "../../services/apis/postApi";
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
 import EvidenceImage from "../../components/shared/EvidenceImage";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import useActionToast from "../../hooks/useActionToast";
+import { filterItemsByMonth } from "../../utils/sortListItems";
 
 const MODERATOR_FUNCTIONALITY_LABELS = {
   "0": "Hoạt động hoàn hảo",
@@ -91,6 +93,7 @@ const PostModerationPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
   const [sortOption, setSortOption] = useState("newest");
+  const [monthFilter, setMonthFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
   const [pagination, setPagination] = useState({
@@ -233,7 +236,13 @@ const PostModerationPage = () => {
       )
     : searchedPosts;
 
-  const sortedPosts = [...filteredPosts].sort((a, b) => {
+  const monthFilteredPosts = filterItemsByMonth(
+    filteredPosts,
+    monthFilter,
+    (post) => post?.createdAt,
+  );
+
+  const sortedPosts = [...monthFilteredPosts].sort((a, b) => {
     if (sortOption === "oldest") {
       const timeA = Date.parse(a.createdAt || "") || 0;
       const timeB = Date.parse(b.createdAt || "") || 0;
@@ -465,10 +474,19 @@ const PostModerationPage = () => {
                 { key: "name-desc", label: "Tên Z → A" },
               ]}
             />
+
+            <ListMonthDropdown
+              items={filteredPosts}
+              value={monthFilter}
+              onChange={setMonthFilter}
+              getValue={(post) => post?.createdAt}
+              compact
+              scopeLabel="bài đăng trong trang hiện tại"
+            />
           </div>
 
           <p className="mt-3 text-xs leading-5 text-textLight">
-            Tìm kiếm, trạng thái và sắp xếp hiện áp dụng cho trang đang tải.
+            Tìm kiếm, trạng thái, tháng và sắp xếp hiện áp dụng cho trang đang tải.
           </p>
         </div>
 
@@ -478,7 +496,7 @@ const PostModerationPage = () => {
               <LoadingOutlined className="text-3xl mb-2 text-primary" />
               <p className="text-sm">Đang tải danh sách...</p>
             </div>
-          ) : filteredPosts.length === 0 ? (
+          ) : sortedPosts.length === 0 ? (
             <div className="p-8 text-center text-textLight text-sm">
               Không tìm thấy bài đăng nào.
             </div>
