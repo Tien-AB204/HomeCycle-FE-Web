@@ -1191,8 +1191,161 @@ export default function AdminFinanceDashboardPage() {
         </div>
       </div>
 
-      <form
-        onSubmit={applyFilters}
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            SỐ DƯ HIỆN TẠI
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-text">
+            Tổng quan số dư
+          </h3>
+
+          <p className="mt-1 text-sm text-textLight">
+            Đây là số dư hiện tại của các ví HomeCycle. Các số này không thay đổi khi chỉnh “Kỳ phân tích” bên dưới.
+          </p>
+        </div>
+
+        {mainState.errors
+          .overview ? (
+          <SectionError
+            message="Không thể tải số dư hiện tại."
+            onRetry={
+              refreshAll
+            }
+          />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Tổng số dư trong các ví HomeCycle"
+              value={formatMoney(
+                position
+                  ?.totalRecordedWalletBalance,
+              )}
+              hint="Tổng số dư khả dụng và tạm giữ của các ví nội bộ HomeCycle; không phải số dư ngân hàng, PayOS hay doanh thu của nền tảng."
+              loading={
+                mainLoading
+              }
+              valueClassName="text-primary"
+            />
+
+            <MetricCard
+              label="Tiền của người dùng đang tạm giữ"
+              value={formatMoney(
+                position
+                  ?.userFundsHeld,
+              )}
+              hint="Tổng số dư tạm giữ trong ví Cá nhân và Doanh nghiệp, gồm mọi lý do tạm giữ (đơn hàng, chờ rút...)."
+              loading={
+                mainLoading
+              }
+              valueClassName="text-warning"
+            />
+
+            <MetricCard
+              label="Tiền tạm giữ gắn với đơn hàng"
+              value={formatMoney(
+                position
+                  ?.orderEscrowHeld,
+              )}
+              hint="Phần tiền tạm giữ được xác định từ các giao dịch ví có tham chiếu đến đơn hàng; là một phần trong tổng tiền đang tạm giữ, không phải khoản riêng."
+              loading={
+                mainLoading
+              }
+            />
+
+            <MetricCard
+              label="Tổng số dư ví hệ thống"
+              value={formatMoney(
+                position
+                  ?.systemWalletBalance,
+              )}
+              hint={
+                mainLoading
+                  ? ""
+                  : `Bao gồm số dư khả dụng ${formatMoney(
+                      position
+                        ?.systemWalletAvailableBalance,
+                    )} và tạm giữ ${formatMoney(
+                      position
+                        ?.systemWalletHoldBalance,
+                    )} của các ví do HomeCycle quản lý.`
+              }
+              loading={
+                mainLoading
+              }
+            />
+
+            <MetricCard
+              label="Số dư khả dụng của người dùng"
+              value={formatMoney(
+                position
+                  ?.userAvailableFunds,
+              )}
+              hint="Phần tiền trong ví Cá nhân và Doanh nghiệp hiện có thể sử dụng."
+              loading={
+                mainLoading
+              }
+            />
+
+            <MetricCard
+              label="Tiền tạm giữ chờ rút"
+              value={formatMoney(
+                position
+                  ?.withdrawalLocked,
+              )}
+              hint="Khoản tiền đã tạm chuyển khỏi số dư khả dụng để xử lý yêu cầu rút; chưa phải tiền đã rời khỏi HomeCycle."
+              loading={
+                mainLoading
+              }
+              valueClassName="text-warning"
+            />
+
+            <MetricCard
+              label="Số dư quỹ phí vận chuyển GHN"
+              value={formatMoney(
+                position
+                  ?.shippingEscrowBalance,
+              )}
+              hint="Tổng số dư ví hệ thống dành cho các khoản phí vận chuyển GHN; không phải doanh thu HomeCycle."
+              loading={
+                mainLoading
+              }
+            />
+
+            <MetricCard
+              label="Giá trị thanh toán đang chờ xử lý"
+              value={formatMoney(
+                position
+                  ?.currentPendingPaymentAmount,
+              )}
+              hint="Tổng giá trị các yêu cầu thanh toán hiện vẫn ở trạng thái chờ."
+              loading={
+                mainLoading
+              }
+              valueClassName="text-warning"
+            />
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            KỲ PHÂN TÍCH
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-text">
+            Khoảng thời gian cho hoạt động tài chính
+          </h3>
+
+          <p className="mt-1 max-w-4xl text-sm leading-6 text-textLight">
+            Bộ lọc này áp dụng cho hoạt động, dòng tiền, doanh thu, trạng thái thanh toán và sổ giao dịch. Nó không thay đổi các số dư hiện tại ở phía trên; trong mục “Các khoản cần theo dõi”, chỉ “Giao dịch chưa phân loại trong kỳ” thay đổi theo kỳ.
+          </p>
+        </div>
+
+        <form
+          onSubmit={applyFilters}
         className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]"
       >
         <div className="flex flex-wrap gap-2">
@@ -1349,7 +1502,7 @@ export default function AdminFinanceDashboardPage() {
       {!mainLoading &&
         period && (
           <div className="rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
-            Kỳ hoạt động:{" "}
+            Kỳ phân tích:{" "}
             <strong className="text-text">
               {formatDate(
                 period.from,
@@ -1370,143 +1523,6 @@ export default function AdminFinanceDashboardPage() {
         period?.isPartialPeriod && (
           <div className="rounded-xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-text">
             Dữ liệu kỳ hiện tại chưa hoàn tất.
-          </div>
-        )}
-
-      <section className="space-y-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            SỐ DƯ HIỆN TẠI
-          </p>
-
-          <h3 className="mt-1 text-xl font-black text-text">
-            Tổng quan số dư
-          </h3>
-
-          <p className="mt-1 text-sm text-textLight">
-            Đây là số dư hiện tại của các ví HomeCycle, không phải tổng phát sinh trong khoảng thời gian đang lọc.
-          </p>
-        </div>
-
-        {mainState.errors
-          .overview ? (
-          <SectionError
-            message="Không thể tải số dư hiện tại."
-            onRetry={
-              refreshAll
-            }
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              label="Tổng số dư trong các ví HomeCycle"
-              value={formatMoney(
-                position
-                  ?.totalRecordedWalletBalance,
-              )}
-              hint="Tổng số dư khả dụng và tạm giữ của các ví nội bộ HomeCycle; không phải số dư ngân hàng, PayOS hay doanh thu của nền tảng."
-              loading={
-                mainLoading
-              }
-              valueClassName="text-primary"
-            />
-
-            <MetricCard
-              label="Tiền của người dùng đang tạm giữ"
-              value={formatMoney(
-                position
-                  ?.userFundsHeld,
-              )}
-              hint="Tổng số dư tạm giữ trong ví Cá nhân và Doanh nghiệp, gồm mọi lý do tạm giữ (đơn hàng, chờ rút...)."
-              loading={
-                mainLoading
-              }
-              valueClassName="text-warning"
-            />
-
-            <MetricCard
-              label="Tiền tạm giữ gắn với đơn hàng"
-              value={formatMoney(
-                position
-                  ?.orderEscrowHeld,
-              )}
-              hint="Phần tiền tạm giữ được xác định từ các giao dịch ví có tham chiếu đến đơn hàng; là một phần trong tổng tiền đang tạm giữ, không phải khoản riêng."
-              loading={
-                mainLoading
-              }
-            />
-
-            <MetricCard
-              label="Tổng số dư ví hệ thống"
-              value={formatMoney(
-                position
-                  ?.systemWalletBalance,
-              )}
-              hint={
-                mainLoading
-                  ? ""
-                  : `Bao gồm số dư khả dụng ${formatMoney(
-                      position
-                        ?.systemWalletAvailableBalance,
-                    )} và tạm giữ ${formatMoney(
-                      position
-                        ?.systemWalletHoldBalance,
-                    )} của các ví do HomeCycle quản lý.`
-              }
-              loading={
-                mainLoading
-              }
-            />
-
-            <MetricCard
-              label="Số dư khả dụng của người dùng"
-              value={formatMoney(
-                position
-                  ?.userAvailableFunds,
-              )}
-              hint="Phần tiền trong ví Cá nhân và Doanh nghiệp hiện có thể sử dụng."
-              loading={
-                mainLoading
-              }
-            />
-
-            <MetricCard
-              label="Tiền tạm giữ chờ rút"
-              value={formatMoney(
-                position
-                  ?.withdrawalLocked,
-              )}
-              hint="Khoản tiền đã tạm chuyển khỏi số dư khả dụng để xử lý yêu cầu rút; chưa phải tiền đã rời khỏi HomeCycle."
-              loading={
-                mainLoading
-              }
-              valueClassName="text-warning"
-            />
-
-            <MetricCard
-              label="Số dư quỹ phí vận chuyển GHN"
-              value={formatMoney(
-                position
-                  ?.shippingEscrowBalance,
-              )}
-              hint="Tổng số dư ví hệ thống dành cho các khoản phí vận chuyển GHN; không phải doanh thu HomeCycle."
-              loading={
-                mainLoading
-              }
-            />
-
-            <MetricCard
-              label="Giá trị thanh toán đang chờ xử lý"
-              value={formatMoney(
-                position
-                  ?.currentPendingPaymentAmount,
-              )}
-              hint="Tổng giá trị các yêu cầu thanh toán hiện vẫn ở trạng thái chờ."
-              loading={
-                mainLoading
-              }
-              valueClassName="text-warning"
-            />
           </div>
         )}
       </section>
@@ -1916,7 +1932,7 @@ export default function AdminFinanceDashboardPage() {
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Các trường hợp thanh toán, rút tiền, đơn hàng hoặc số dư cần Quản trị viên theo dõi; không phải mọi khoản đang tạm giữ đều là lỗi.
+            Hầu hết chỉ số ở đây là trạng thái hiện tại. Riêng “Giao dịch chưa phân loại trong kỳ” sử dụng Kỳ phân tích; không phải mọi khoản đang tạm giữ đều là lỗi.
           </p>
         </div>
 
@@ -2033,7 +2049,7 @@ export default function AdminFinanceDashboardPage() {
           <div className="mt-1 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h3 className="text-xl font-black text-text">
-                Lịch sử giao dịch gần đây
+                Lịch sử giao dịch trong kỳ
               </h3>
 
               <p className="mt-1 text-xs leading-5 text-textLight">

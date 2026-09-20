@@ -182,6 +182,19 @@ const MODULES = {
   },
 };
 
+const PERIOD_SCOPE_NOTES = {
+  payments:
+    "Trạng thái, phương thức và loại thanh toán áp dụng cho dữ liệu của trang. Từ ngày, Đến ngày và Nhóm dữ liệu chỉ tác động các chỉ số hoặc biểu đồ ghi “trong kỳ” / “theo kỳ”.",
+  orders:
+    "Trạng thái áp dụng cho dữ liệu của trang. Từ ngày, Đến ngày và Nhóm dữ liệu chỉ tác động số hoàn tất, hủy, hoàn trả trong kỳ và biểu đồ kết quả theo kỳ.",
+  appointments:
+    "Trạng thái và loại lịch áp dụng cho dữ liệu của trang. Từ ngày, Đến ngày và Nhóm dữ liệu chỉ tác động các thống kê theo thời điểm hẹn/kết thúc/điểm danh trong kỳ.",
+  disputes:
+    "Trạng thái, đối tượng và nguyên nhân áp dụng cho dữ liệu của trang. Từ ngày, Đến ngày và Nhóm dữ liệu chỉ tác động số đã giải quyết, thời gian xử lý và chuỗi mở mới/giải quyết trong kỳ.",
+  "business-performance":
+    "Toàn bộ số liệu Hoạt động mua bán của doanh nghiệp được giới hạn theo khoảng thời gian đã chọn.",
+};
+
 const normalize = (value) =>
   String(value || "")
     .trim()
@@ -1476,17 +1489,6 @@ export default function AdminDashboardModulePage({
     () => {
       const fields = [];
 
-      if (usesPeriod) {
-        fields.push(
-          <div
-            key="period-from"
-            className="contents"
-          >
-            {renderPeriodFilters()}
-          </div>,
-        );
-      }
-
       if (
         dashboard ===
         "payments"
@@ -1649,6 +1651,17 @@ export default function AdminDashboardModulePage({
               className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
             />
           </label>,
+        );
+      }
+
+      if (usesPeriod) {
+        fields.push(
+          <div
+            key="period-range"
+            className="contents"
+          >
+            {renderPeriodFilters()}
+          </div>,
         );
       }
 
@@ -2837,6 +2850,20 @@ export default function AdminDashboardModulePage({
         onSubmit={applyFilters}
         className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]"
       >
+        {usesPeriod && (
+          <div className="mb-4 rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">
+              {dashboard === "business-performance"
+                ? "Kỳ dữ liệu toàn trang"
+                : "Phạm vi bộ lọc thời gian"}
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-textLight">
+              {PERIOD_SCOPE_NOTES[dashboard]}
+            </p>
+          </div>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {renderFilters()}
         </div>
@@ -2884,7 +2911,9 @@ export default function AdminDashboardModulePage({
       {!loading &&
         data?.period && (
           <div className="rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
-            Kỳ sự kiện:{" "}
+            {dashboard === "business-performance"
+              ? "Kỳ dữ liệu toàn trang"
+              : "Kỳ phân tích"}:{" "}
             <strong className="text-text">
               {formatDate(
                 data.period.from,
@@ -2898,6 +2927,13 @@ export default function AdminDashboardModulePage({
               )}
             </strong>
             {" · UTC+7"}
+            {dashboard !==
+              "business-performance" && (
+              <>
+                {" · "}
+                Chỉ áp dụng cho các chỉ số/biểu đồ được ghi rõ là trong kỳ hoặc theo kỳ.
+              </>
+            )}
           </div>
         )}
 
