@@ -47,6 +47,7 @@ import ProductTypePage from "../pages/admin/ProductTypePage";
 import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
 import UserManagementPage from "../pages/admin/UserManagementPage";
 import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
+import GhnWebhookTestConsolePage from "../pages/demo/GhnWebhookTestConsolePage";
 
 // Business Pages
 import BusinessDashboardPage from "../pages/business/BusinessDashboardPage";
@@ -74,6 +75,11 @@ import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
 import SubscriptionPage from "../pages/user/SubscriptionPage";
+
+const isGhnWebhookDemoEnabled =
+  String(import.meta.env.VITE_ENABLE_GHN_WEBHOOK_DEMO || "")
+    .trim()
+    .toLowerCase() === "true";
 
 const AppRouter = () => {
   return (
@@ -273,6 +279,13 @@ const AppRouter = () => {
 
       {/* Admin */}
       <Route element={<RoleRoute allowedRole={ROLES.ADMIN} />}>
+        {isGhnWebhookDemoEnabled && (
+          <Route
+            path="/demo/ghn-webhook"
+            element={<GhnWebhookTestConsolePage />}
+          />
+        )}
+
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboardPage />} />
 
