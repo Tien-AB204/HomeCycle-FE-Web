@@ -128,7 +128,7 @@ function HoldsPanel() {
       .then((data) => setState({ loading: false, items: Array.isArray(data) ? data : [], error: "" }))
       .catch((error) => {
         if (isCanceled(error)) return;
-        setState({ loading: false, items: [], error: "Không thể tải các khoản tiền đang giữ." });
+        setState({ loading: false, items: [], error: "Không thể tải các khoản tiền đang tạm giữ." });
       });
     return () => controller.abort();
   }, [version]);

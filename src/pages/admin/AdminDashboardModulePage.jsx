@@ -125,8 +125,8 @@ const USER_STATUS_OPTIONS = [
 const MODULES = {
   payments: {
     type: "operation",
-    title: "Giao dịch",
-    eyebrow: "DASHBOARD VẬN HÀNH",
+    title: "Thanh toán",
+    eyebrow: "TỔNG QUAN VẬN HÀNH",
     description:
       "Theo dõi trạng thái thanh toán hiện tại, thời gian chờ và các lượt thanh toán thành công trong kỳ.",
     apiMethod: "getPayments",
@@ -134,15 +134,15 @@ const MODULES = {
   orders: {
     type: "operation",
     title: "Đơn hàng",
-    eyebrow: "DASHBOARD VẬN HÀNH",
+    eyebrow: "TỔNG QUAN VẬN HÀNH",
     description:
-      "Theo dõi backlog đơn hàng hiện tại và các sự kiện hoàn tất, hủy, hoàn trả trong kỳ.",
+      "Theo dõi các đơn hàng đang xử lý và các sự kiện hoàn tất, hủy, hoàn trả trong kỳ.",
     apiMethod: "getOrders",
   },
   appointments: {
     type: "operation",
     title: "Lịch hẹn",
-    eyebrow: "DASHBOARD VẬN HÀNH",
+    eyebrow: "TỔNG QUAN VẬN HÀNH",
     description:
       "Theo dõi lịch kiểm định, thu gom, đề xuất đổi lịch và ngày hẹn trong kỳ.",
     apiMethod: "getAppointments",
@@ -150,15 +150,15 @@ const MODULES = {
   disputes: {
     type: "dispute",
     title: "Tranh chấp",
-    eyebrow: "DASHBOARD VẬN HÀNH",
+    eyebrow: "TỔNG QUAN VẬN HÀNH",
     description:
-      "Theo dõi backlog tranh chấp, thời gian xử lý và luồng mở mới, giải quyết trong kỳ.",
+      "Theo dõi các tranh chấp chưa giải quyết, thời gian xử lý và số tranh chấp mở mới, được giải quyết trong kỳ.",
     apiMethod: "getDisputes",
   },
   "business-overview": {
     type: "business-overview",
     title: "Tổng quan doanh nghiệp",
-    eyebrow: "DASHBOARD DOANH NGHIỆP",
+    eyebrow: "TỔNG QUAN DOANH NGHIỆP",
     description:
       "Theo dõi tài khoản doanh nghiệp, hồ sơ, khảo sát và mức độ hoàn thiện dữ liệu.",
     apiMethod: "getBusinessOverview",
@@ -166,15 +166,15 @@ const MODULES = {
   "business-demand": {
     type: "business-demand",
     title: "Nhu cầu doanh nghiệp",
-    eyebrow: "DASHBOARD DOANH NGHIỆP",
+    eyebrow: "TỔNG QUAN DOANH NGHIỆP",
     description:
       "Tổng hợp nhu cầu khảo sát hiện tại theo từng nhóm câu hỏi và phạm vi phục vụ.",
     apiMethod: "getBusinessDemand",
   },
   "business-performance": {
     type: "business-performance",
-    title: "Hiệu quả kinh doanh",
-    eyebrow: "DASHBOARD DOANH NGHIỆP",
+    title: "Hoạt động mua bán của doanh nghiệp",
+    eyebrow: "TỔNG QUAN DOANH NGHIỆP",
     description:
       "Theo dõi tỷ trọng thanh toán và giá trị mua bán của tài khoản doanh nghiệp.",
     apiMethod: "getBusinessPerformance",
@@ -590,7 +590,7 @@ const PaymentMethodTable = ({
 }) => (
   <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
     <h3 className="text-lg font-black text-text">
-      Hiệu quả phương thức thanh toán
+      Kết quả theo phương thức thanh toán
     </h3>
 
     <p className="mt-1 text-xs leading-5 text-textLight">
@@ -1882,7 +1882,7 @@ export default function AdminDashboardModulePage({
       return (
         <>
           <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-text">
-            Dashboard này chỉ đọc dữ liệu lịch hẹn hiệu lực hiện tại.
+            Trang này chỉ hiển thị dữ liệu của các lịch hẹn đang có hiệu lực.
             Đề xuất đổi lịch chưa được chấp nhận và lịch cũ đã bị thay thế không được tính như một lịch hiệu lực.
           </div>
 
@@ -1918,7 +1918,7 @@ export default function AdminDashboardModulePage({
               value={formatNumber(
                 data?.overdueCount,
               )}
-              hint="Lịch đã qua giờ hẹn (kể cả thời gian chờ cho phép) nhưng chưa hoàn tất hoặc chưa đủ hai bên check-in."
+              hint="Lịch đã qua giờ hẹn (kể cả thời gian chờ cho phép) nhưng chưa hoàn tất hoặc chưa đủ hai bên điểm danh."
               loading={loading}
               valueClassName="text-error"
             />
@@ -2103,11 +2103,11 @@ export default function AdminDashboardModulePage({
 
             <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-                Điểm danh (check-in) lịch kiểm định
+                Điểm danh lịch kiểm định
               </p>
 
               <p className="mt-1 text-xs leading-5 text-textLight">
-                Chỉ tính các lịch kiểm định đã đến giờ hẹn hoặc đã diễn ra, để cả hai bên thực sự có cơ hội check-in.
+                Chỉ tính các lịch kiểm định đã đến giờ hẹn hoặc đã diễn ra, để cả hai bên thực sự có cơ hội điểm danh.
               </p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -2121,7 +2121,7 @@ export default function AdminDashboardModulePage({
                 />
 
                 <KpiCard
-                  label="Tỷ lệ đủ hai bên check-in"
+                  label="Tỷ lệ đủ hai bên điểm danh"
                   value={formatPercent(
                     data?.inspectionCheckIn
                       ?.fullCheckInRate,
@@ -2135,7 +2135,7 @@ export default function AdminDashboardModulePage({
                 />
 
                 <KpiCard
-                  label="Tỷ lệ check-in theo lượt"
+                  label="Tỷ lệ điểm danh theo lượt"
                   value={formatPercent(
                     data?.inspectionCheckIn
                       ?.participantCheckInRate,
@@ -2152,7 +2152,7 @@ export default function AdminDashboardModulePage({
                 />
 
                 <KpiCard
-                  label="Thiếu check-in"
+                  label="Thiếu điểm danh"
                   value={formatNumber(
                     (
                       Number(
@@ -2175,7 +2175,7 @@ export default function AdminDashboardModulePage({
                   )} một phần · ${formatNumber(
                     data?.inspectionCheckIn
                       ?.noCheckInAppointmentCount,
-                  )} chưa check-in`}
+                  )} chưa điểm danh`}
                   loading={loading}
                   valueClassName="text-warning"
                 />
@@ -2210,7 +2210,7 @@ export default function AdminDashboardModulePage({
                             )}/
                             {formatNumber(
                               item.eligibleCount,
-                            )} đã check-in
+                            )} đã điểm danh
                           </p>
                         </div>
 
@@ -2242,7 +2242,7 @@ export default function AdminDashboardModulePage({
                         Thiếu{" "}
                         {formatNumber(
                           item.missingCount,
-                        )} lượt check-in.
+                        )} lượt điểm danh.
                       </p>
                     </div>
                   ),
@@ -2250,8 +2250,8 @@ export default function AdminDashboardModulePage({
               </div>
 
               <p className="mt-4 text-xs leading-5 text-textLight">
-                Chỉ thống kê check-in của lịch kiểm định đã đến giờ hẹn.
-                Dashboard không đánh giá đúng giờ, trễ hay check-out.
+                Chỉ thống kê việc điểm danh của lịch kiểm định đã đến giờ hẹn.
+                Trang tổng quan không đánh giá việc điểm danh đúng giờ, trễ hay thời điểm rời lịch hẹn.
               </p>
             </section>
           </div>
@@ -2510,8 +2510,8 @@ export default function AdminDashboardModulePage({
         </div>
 
         <div className="rounded-xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm leading-6 text-text">
-          Mỗi nhóm câu hỏi có mẫu số người trả lời riêng.
-          Với câu hỏi chọn nhiều đáp án, tổng tỷ lệ có thể vượt 100%.
+          Tỷ lệ của mỗi nhóm được tính trên số doanh nghiệp đã trả lời nhóm đó.
+          Với câu hỏi cho phép chọn nhiều đáp án, tổng tỷ lệ có thể vượt 100%.
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">

@@ -131,20 +131,20 @@ const REFERENCE_LABELS = {
 
 const FLOW_OPTIONS = [
   ["", "Tất cả dòng tiền"],
-  ["1", "Tiền vào thực"],
-  ["2", "Tiền ra thực"],
+  ["1", "Tiền vào từ bên ngoài"],
+  ["2", "Tiền rời khỏi HomeCycle"],
   ["3", "Nội bộ"],
   ["0", "Chưa phân loại"],
 ];
 
 const FLOW_LABELS = {
   "0": "Chưa phân loại",
-  "1": "Tiền vào thực",
-  "2": "Tiền ra thực",
+  "1": "Tiền vào từ bên ngoài",
+  "2": "Tiền rời khỏi HomeCycle",
   "3": "Nội bộ",
   unclassified: "Chưa phân loại",
-  externalin: "Tiền vào thực",
-  externalout: "Tiền ra thực",
+  externalin: "Tiền vào từ bên ngoài",
+  externalout: "Tiền rời khỏi HomeCycle",
   internal: "Nội bộ",
 };
 
@@ -1532,7 +1532,7 @@ export default function AdminFinanceDashboardPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <MetricCard
-              label="Tiền vào thực"
+              label="Tiền vào từ bên ngoài"
               value={formatMoney(
                 activity
                   ?.externalInflow,
@@ -1545,7 +1545,7 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền ra thực"
+              label="Tiền rời khỏi HomeCycle"
               value={formatMoney(
                 activity
                   ?.externalOutflow,
@@ -1558,12 +1558,12 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Dòng tiền thuần"
+              label="Chênh lệch tiền vào/ra"
               value={formatMoney(
                 activity
                   ?.netExternalCashFlow,
               )}
-              hint="Tiền vào thực trừ tiền ra thực trong kỳ; số âm không mặc nhiên là bất thường."
+              hint="Tiền vào từ bên ngoài trừ tiền rời khỏi HomeCycle trong kỳ; số âm không mặc nhiên là bất thường."
               loading={
                 mainLoading
               }
@@ -1659,7 +1659,7 @@ export default function AdminFinanceDashboardPage() {
               />
 
               <MetricCard
-                label="Dòng tiền thuần"
+                label="Chênh lệch tiền vào/ra"
                 value={formatMoney(
                   cashFlow
                     ?.totals
@@ -1681,7 +1681,7 @@ export default function AdminFinanceDashboardPage() {
             <div className="grid gap-6 xl:grid-cols-2">
               <FinanceAmountBarChart
                 title="Nguồn tiền vào"
-                description="Các nguồn cấu thành tiền vào thực. Phí GHN đã thu đã nằm trong tổng tiền vào, không cộng thêm lần nữa."
+                description="Các nguồn tạo nên tiền từ bên ngoài đi vào HomeCycle. Phí GHN đã thu đã nằm trong tổng này, không cộng thêm lần nữa."
                 rows={
                   cashFlow
                     ?.inflowSources
