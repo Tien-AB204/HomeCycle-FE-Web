@@ -660,9 +660,9 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="rounded-xl border border-border bg-white px-4 py-3 text-xs leading-5 text-textLight">
-        Các chỉ số như đơn đang hoạt động, thanh toán chờ xử lý
-        và tranh chấp chưa xử lý là trạng thái hiện tại.
-        Bộ lọc thời gian chỉ áp dụng cho các chỉ số theo sự kiện.
+        Các số tổng, số đang hoạt động, chờ thanh toán, chưa xử lý xong,
+        lịch sắp tới và hôm nay là trạng thái hiện tại trên toàn bộ dữ liệu.
+        Bộ lọc thời gian chỉ áp dụng cho chỉ số theo kỳ, ví dụ số tranh chấp đã giải quyết trong kỳ.
       </div>
     </section>
   );

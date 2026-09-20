@@ -218,7 +218,7 @@ export function FinanceCashFlowChart({
           </h3>
 
           <p className="mt-1 text-xs leading-5 text-textLight">
-            Tiền thực đi vào, đi ra và dòng tiền thuần. Hoàn tiền và giải ngân nội bộ không được coi là tiền ra khỏi nền tảng.
+            Tiền thực đi vào, đi ra và dòng tiền thuần. Hoàn tiền và chuyển tiền cho người bán là dịch chuyển nội bộ, không được coi là tiền ra khỏi nền tảng.
           </p>
         </div>
 

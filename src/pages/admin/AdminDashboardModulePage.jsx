@@ -593,6 +593,10 @@ const PaymentMethodTable = ({
       Hiệu quả phương thức thanh toán
     </h3>
 
+    <p className="mt-1 text-xs leading-5 text-textLight">
+      Tính trên toàn bộ thanh toán theo bộ lọc, không giới hạn theo kỳ. Thành công là thanh toán đã có thời điểm thanh toán.
+    </p>
+
     <div className="mt-4 overflow-x-auto">
       <table className="min-w-full text-left text-sm">
         <thead>
@@ -1664,6 +1668,7 @@ export default function AdminDashboardModulePage({
                 value={formatNumber(
                   data?.totalPayments,
                 )}
+                hint="Toàn bộ yêu cầu thanh toán theo bộ lọc, không giới hạn theo kỳ."
                 loading={loading}
               />
 
@@ -1672,6 +1677,7 @@ export default function AdminDashboardModulePage({
                 value={formatNumber(
                   data?.pendingCount,
                 )}
+                hint="Số yêu cầu thanh toán hiện đang ở trạng thái chờ."
                 loading={loading}
                 valueClassName="text-warning"
               />
@@ -1686,13 +1692,13 @@ export default function AdminDashboardModulePage({
               />
 
               <KpiCard
-                label="Chờ lâu nhất"
+                label="Thanh toán chờ lâu nhất"
                 value={formatHours(
                   data?.oldestPendingAgeHours,
                 )}
-                hint={`Trung bình ${formatHours(
+                hint={`Thời gian chờ trung bình ${formatHours(
                   data?.averagePendingAgeHours,
-                )}`}
+                )}; tính từ khi yêu cầu thanh toán được tạo và vẫn còn ở trạng thái chờ.`}
                 loading={loading}
                 valueClassName="text-error"
               />
@@ -1701,7 +1707,7 @@ export default function AdminDashboardModulePage({
             <div className="grid gap-6 xl:grid-cols-2">
               <DashboardDonutChart
                 title="Cơ cấu trạng thái thanh toán"
-                description="Ảnh chụp trạng thái hiện tại sau khi áp dụng bộ lọc."
+                description="Trạng thái hiện tại của các thanh toán sau khi áp dụng bộ lọc; không giới hạn theo kỳ."
                 rows={
                   data?.currentStatusDistribution
                 }
@@ -1716,7 +1722,7 @@ export default function AdminDashboardModulePage({
 
               <DashboardColumnChart
                 title="Thời gian chờ thanh toán"
-                description="Phân bố các thanh toán đang chờ theo thời gian kể từ lúc tạo."
+                description="Phân bố các thanh toán đang chờ theo thời gian đã trôi qua kể từ khi yêu cầu thanh toán được tạo."
                 rows={
                   data?.pendingAgingDistribution
                 }
@@ -1762,6 +1768,7 @@ export default function AdminDashboardModulePage({
                 value={formatNumber(
                   data?.totalOrders,
                 )}
+                hint="Toàn bộ đơn hàng theo bộ lọc, không giới hạn theo kỳ."
                 loading={loading}
               />
 
@@ -1770,6 +1777,7 @@ export default function AdminDashboardModulePage({
                 value={formatNumber(
                   data?.activeOrderCount,
                 )}
+                hint="Đơn hiện ở trạng thái chờ xử lý, đang xử lý hoặc đang tranh chấp."
                 loading={loading}
                 valueClassName="text-primary"
               />
@@ -1805,9 +1813,9 @@ export default function AdminDashboardModulePage({
                 value={formatHours(
                   data?.oldestActiveOrderAgeHours,
                 )}
-                hint={`Tuổi trung bình ${formatHours(
+                hint={`Thời gian trung bình kể từ khi tạo: ${formatHours(
                   data?.averageActiveOrderAgeHours,
-                )}; tính từ lúc tạo đơn.`}
+                )}. Tính cho các đơn đang hoạt động, từ lúc tạo đơn đến hiện tại.`}
                 loading={loading}
                 valueClassName="text-error"
               />
@@ -1816,7 +1824,7 @@ export default function AdminDashboardModulePage({
             <div className="grid gap-6 xl:grid-cols-2">
               <DashboardDonutChart
                 title="Cơ cấu trạng thái đơn hàng"
-                description="Ảnh chụp trạng thái hiện tại của toàn bộ đơn sau khi áp dụng bộ lọc."
+                description="Trạng thái hiện tại của toàn bộ đơn sau khi áp dụng bộ lọc; không giới hạn theo kỳ."
                 rows={
                   data?.currentStatusDistribution
                 }
@@ -1830,8 +1838,8 @@ export default function AdminDashboardModulePage({
               />
 
               <DashboardColumnChart
-                title="Tuổi đơn đang hoạt động"
-                description="Thời gian được tính từ lúc tạo đơn, không phải thời gian ở trạng thái hiện tại."
+                title="Thời gian kể từ khi tạo đơn"
+                description="Phân bố các đơn đang hoạt động theo thời gian đã trôi qua kể từ lúc tạo đơn (không phải thời gian ở trạng thái hiện tại)."
                 rows={
                   data?.activeOrderAgingDistribution
                 }
@@ -1884,6 +1892,7 @@ export default function AdminDashboardModulePage({
               value={formatNumber(
                 data?.totalAppointments,
               )}
+              hint="Lịch hẹn đang có hiệu lực theo bộ lọc, không giới hạn theo kỳ."
               loading={loading}
             />
 
@@ -1909,6 +1918,7 @@ export default function AdminDashboardModulePage({
               value={formatNumber(
                 data?.overdueCount,
               )}
+              hint="Lịch đã qua giờ hẹn (kể cả thời gian chờ cho phép) nhưng chưa hoàn tất hoặc chưa đủ hai bên check-in."
               loading={loading}
               valueClassName="text-error"
             />
@@ -1918,6 +1928,7 @@ export default function AdminDashboardModulePage({
               value={formatNumber(
                 data?.rescheduleProposalCount,
               )}
+              hint="Đề xuất dời lịch đang chờ bên còn lại chấp nhận."
               loading={loading}
               valueClassName="text-warning"
             />
@@ -1926,7 +1937,7 @@ export default function AdminDashboardModulePage({
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardDonutChart
               title="Trạng thái lịch hiệu lực"
-              description="Ảnh chụp trạng thái hiện tại sau khi loại các đề xuất chưa được chấp nhận và lịch đã bị thay thế."
+              description="Trạng thái hiện tại của các lịch hẹn, sau khi loại các đề xuất chưa được chấp nhận và lịch đã bị thay thế."
               rows={
                 data?.currentStatusDistribution
               }
@@ -1981,6 +1992,10 @@ export default function AdminDashboardModulePage({
             <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
                 Kết quả lịch đã kết thúc
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-textLight">
+                Thành công là lịch đã hoàn tất trong kỳ; không thành công là lịch bị hủy hoặc hết hạn trong kỳ.
               </p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -2088,12 +2103,16 @@ export default function AdminDashboardModulePage({
 
             <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-                Check-in lịch kiểm định
+                Điểm danh (check-in) lịch kiểm định
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-textLight">
+                Chỉ tính các lịch kiểm định đã đến giờ hẹn hoặc đã diễn ra, để cả hai bên thực sự có cơ hội check-in.
               </p>
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <KpiCard
-                  label="Lịch đủ điều kiện"
+                  label="Lịch đã đến giờ hẹn"
                   value={formatNumber(
                     data?.inspectionCheckIn
                       ?.eligibleInspectionCount,
@@ -2102,7 +2121,7 @@ export default function AdminDashboardModulePage({
                 />
 
                 <KpiCard
-                  label="Tỷ lệ check-in đủ hai bên"
+                  label="Tỷ lệ đủ hai bên check-in"
                   value={formatPercent(
                     data?.inspectionCheckIn
                       ?.fullCheckInRate,
@@ -2116,7 +2135,7 @@ export default function AdminDashboardModulePage({
                 />
 
                 <KpiCard
-                  label="Check-in người tham gia"
+                  label="Tỷ lệ check-in theo lượt"
                   value={formatPercent(
                     data?.inspectionCheckIn
                       ?.participantCheckInRate,
@@ -2231,8 +2250,8 @@ export default function AdminDashboardModulePage({
               </div>
 
               <p className="mt-4 text-xs leading-5 text-textLight">
-                Chỉ thống kê check-in của lịch kiểm định đủ điều kiện.
-                Dashboard không suy diễn đúng giờ, trễ, grace period hay check-out.
+                Chỉ thống kê check-in của lịch kiểm định đã đến giờ hẹn.
+                Dashboard không đánh giá đúng giờ, trễ hay check-out.
               </p>
             </section>
           </div>
@@ -2274,14 +2293,16 @@ export default function AdminDashboardModulePage({
             value={formatHours(
               data?.averageResolutionTimeHours,
             )}
+            hint="Tính từ lúc tạo tranh chấp đến lúc giải quyết, cho các tranh chấp được giải quyết trong kỳ."
             loading={loading}
           />
 
           <KpiCard
-            label="Chưa xử lý lâu nhất"
+            label="Tranh chấp chờ xử lý lâu nhất"
             value={formatHours(
               data?.oldestUnresolvedAgeHours,
             )}
+            hint="Thời gian kể từ khi tranh chấp chưa giải quyết được tạo đến hiện tại."
             loading={loading}
             valueClassName="text-error"
           />
@@ -2298,7 +2319,7 @@ export default function AdminDashboardModulePage({
         <div className="grid gap-6 xl:grid-cols-2">
           <DashboardDonutChart
             title="Cơ cấu trạng thái tranh chấp"
-            description="Ảnh chụp trạng thái hiện tại của toàn bộ tranh chấp."
+            description="Trạng thái hiện tại của toàn bộ tranh chấp sau khi áp dụng bộ lọc."
             rows={
               data?.currentStatusDistribution
             }
@@ -2337,7 +2358,8 @@ export default function AdminDashboardModulePage({
           />
 
           <DashboardColumnChart
-            title="Tuổi tranh chấp chưa xử lý"
+            title="Thời gian chờ xử lý tranh chấp"
+            description="Phân bố các tranh chấp chưa giải quyết theo thời gian kể từ khi tranh chấp được tạo."
             rows={
               data?.unresolvedAgingDistribution
             }
@@ -2402,7 +2424,7 @@ export default function AdminDashboardModulePage({
           />
 
           <KpiCard
-            label="Độ phủ khảo sát"
+            label="Tỷ lệ đã làm khảo sát"
             value={formatPercent(
               data
                 ?.surveyCoveragePercent,
@@ -2478,10 +2500,11 @@ export default function AdminDashboardModulePage({
       <>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
-            label="Doanh nghiệp trong mẫu"
+            label="Hồ sơ doanh nghiệp được thống kê"
             value={formatNumber(
               data?.businessCount,
             )}
+            hint="Số hồ sơ doanh nghiệp thỏa bộ lọc; các nhóm bên dưới thống kê theo khảo sát hiện tại của những hồ sơ này."
             loading={loading}
           />
         </div>
@@ -2539,29 +2562,30 @@ export default function AdminDashboardModulePage({
       <>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard
-            label="Thanh toán đủ điều kiện"
+            label="Thanh toán đơn hàng thành công"
             value={formatNumber(
               data
                 ?.eligiblePaidPaymentCount,
             )}
+            hint="Thanh toán đặt cọc hoặc thanh toán toàn bộ đã thanh toán thành công trong kỳ."
             loading={loading}
           />
 
           <KpiCard
-            label="Thanh toán có doanh nghiệp"
+            label="Thanh toán có doanh nghiệp tham gia"
             value={formatNumber(
               data
                 ?.businessPaymentCount,
             )}
-            hint={`Tỷ trọng ${formatPercent(
+            hint={`Chiếm ${formatPercent(
               data
                 ?.businessPaymentSharePercent,
-            )}`}
+            )} số thanh toán đơn hàng thành công trong kỳ.`}
             loading={loading}
           />
 
           <KpiCard
-            label="Đơn hoàn tất"
+            label="Đơn hoàn tất trong kỳ"
             value={formatNumber(
               data
                 ?.completedOrderCount,
@@ -2575,6 +2599,7 @@ export default function AdminDashboardModulePage({
               data
                 ?.totalCompletedOrderValue,
             )}
+            hint="Tổng tiền cuối cùng của các đơn hoàn tất trong kỳ; là giá trị mua bán giữa người dùng, không phải doanh thu HomeCycle."
             loading={loading}
             valueClassName="text-primary"
           />
@@ -2585,6 +2610,7 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessPurchaseValue,
             )}
+            hint="Giá trị đơn hoàn tất trong kỳ mà bên mua là doanh nghiệp."
             loading={loading}
           />
 
@@ -2594,15 +2620,15 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessSalesValue,
             )}
-            hint={`Tỷ trọng ${formatPercent(
+            hint={`Giá trị đơn hoàn tất mà bên bán là doanh nghiệp; chiếm ${formatPercent(
               data
                 ?.businessSalesSharePercent,
-            )}`}
+            )} tổng giá trị đơn hoàn tất.`}
             loading={loading}
           />
 
           <KpiCard
-            label="Doanh nghiệp mua"
+            label="Số doanh nghiệp có mua"
             value={formatNumber(
               data
                 ?.purchasingBusinessCount,
@@ -2611,7 +2637,7 @@ export default function AdminDashboardModulePage({
           />
 
           <KpiCard
-            label="Doanh nghiệp bán"
+            label="Số doanh nghiệp có bán"
             value={formatNumber(
               data
                 ?.sellingBusinessCount,
@@ -2625,11 +2651,12 @@ export default function AdminDashboardModulePage({
               data
                 ?.unclassifiedPaymentCount,
             )}
+            hint="Không xác định được vai trò bên mua hoặc bên bán."
             loading={loading}
           />
 
           <KpiCard
-            label="Đơn thiếu giá trị"
+            label="Đơn chưa có tổng tiền"
             value={formatNumber(
               data
                 ?.ordersWithMissingAmountCount,
@@ -2643,6 +2670,7 @@ export default function AdminDashboardModulePage({
               data
                 ?.unclassifiedOrderCount,
             )}
+            hint="Không xác định được vai trò bên mua hoặc bên bán."
             loading={loading}
           />
 
@@ -2666,19 +2694,19 @@ export default function AdminDashboardModulePage({
         </div>
 
         <div className="rounded-xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm leading-6 text-text">
-          Giá trị đơn hoàn tất sử dụng tổng tiền cuối cùng
+          Giá trị đơn hoàn tất là tổng tiền cuối cùng của đơn (giá trị mua bán giữa người dùng)
           và có thể bao gồm phí giao hàng đã cấu hình.
-          Đây không phải doanh thu thuần của nền tảng.
+          Đây không phải doanh thu của HomeCycle.
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
           <TradeTable
-            title="Cơ cấu thanh toán"
+            title="Thanh toán theo vai trò bên mua / bên bán"
             rows={data?.paymentGroups}
           />
 
           <TradeTable
-            title="Cơ cấu đơn hoàn tất"
+            title="Đơn hoàn tất theo vai trò bên mua / bên bán"
             rows={
               data
                 ?.completedOrderGroups
@@ -2688,7 +2716,7 @@ export default function AdminDashboardModulePage({
 
         <div className="grid gap-6 xl:grid-cols-2">
           <SeriesTable
-            title="Thanh toán có doanh nghiệp theo kỳ"
+            title="Thanh toán có doanh nghiệp tham gia theo kỳ"
             rows={
               data
                 ?.businessPaymentSeries

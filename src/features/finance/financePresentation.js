@@ -1,24 +1,24 @@
 export const TRANSACTION_TYPE_LABELS = Object.freeze({
-  1: "Nạp tiền ký quỹ",
-  2: "Thanh toán qua ví",
-  3: "Giải ngân cho người bán",
+  1: "Tạm giữ tiền cho đơn hàng",
+  2: "Thanh toán bằng ví",
+  3: "Chuyển tiền cho người bán",
   4: "Hoàn tiền đơn hàng",
-  5: "Khóa tiền cho yêu cầu rút",
+  5: "Tạm giữ tiền chờ rút",
   6: "Rút tiền thành công",
-  7: "Hoàn tiền yêu cầu rút",
+  7: "Hoàn tiền rút về số dư khả dụng",
   8: "Phí hoa hồng",
   9: "Phí gói đăng ký",
-  10: "Thu phí vận chuyển",
-  Escrow_Deposit: "Nạp tiền ký quỹ",
-  Wallet_Payment: "Thanh toán qua ví",
-  Payout_Release: "Giải ngân cho người bán",
+  10: "Thu phí vận chuyển GHN",
+  Escrow_Deposit: "Tạm giữ tiền cho đơn hàng",
+  Wallet_Payment: "Thanh toán bằng ví",
+  Payout_Release: "Chuyển tiền cho người bán",
   Order_Refund: "Hoàn tiền đơn hàng",
-  Withdrawal_Lock: "Khóa tiền cho yêu cầu rút",
+  Withdrawal_Lock: "Tạm giữ tiền chờ rút",
   Withdrawal_Success: "Rút tiền thành công",
-  Withdrawal_Revert: "Hoàn tiền yêu cầu rút",
+  Withdrawal_Revert: "Hoàn tiền rút về số dư khả dụng",
   Commission_Fee: "Phí hoa hồng",
   Subscription_Fee: "Phí gói đăng ký",
-  Shipping_Fee_Collected: "Thu phí vận chuyển",
+  Shipping_Fee_Collected: "Thu phí vận chuyển GHN",
 });
 
 export const REFERENCE_TYPE_LABELS = Object.freeze({
@@ -64,9 +64,9 @@ export const WALLET_TYPE_LABELS = Object.freeze({
 });
 
 export const SYSTEM_PURPOSE_LABELS = Object.freeze({
-  1: "Ký quỹ vận chuyển",
+  1: "Quỹ phí vận chuyển GHN",
   2: "Doanh thu nền tảng",
-  Shipping_Escrow: "Ký quỹ vận chuyển",
+  Shipping_Escrow: "Quỹ phí vận chuyển GHN",
   Platform_Revenue: "Doanh thu nền tảng",
 });
 
@@ -88,9 +88,9 @@ export const LEDGER_DIRECTION_LABELS = Object.freeze({
 
 export const LEDGER_BALANCE_TYPE_LABELS = Object.freeze({
   0: "Khả dụng",
-  1: "Đang giữ",
+  1: "Tạm giữ",
   Available: "Khả dụng",
-  Hold: "Đang giữ",
+  Hold: "Tạm giữ",
 });
 
 export const getFinanceLabel = (labels, value) => {

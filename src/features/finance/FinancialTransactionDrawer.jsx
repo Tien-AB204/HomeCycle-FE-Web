@@ -44,7 +44,7 @@ export default function FinancialTransactionDrawer({ transactionId, onClose }) {
         setState({
           loading: false,
           data: null,
-          error: "Không thể tải chi tiết giao dịch tài chính.",
+          error: "Không thể tải chi tiết giao dịch.",
         });
       });
 
@@ -55,7 +55,7 @@ export default function FinancialTransactionDrawer({ transactionId, onClose }) {
 
   return (
     <Drawer
-      title="Chi tiết giao dịch tài chính"
+      title="Chi tiết giao dịch"
       open={Boolean(transactionId)}
       onClose={onClose}
       width={760}
@@ -101,7 +101,7 @@ export default function FinancialTransactionDrawer({ transactionId, onClose }) {
           </section>
 
           <section className="rounded-xl border border-border bg-background/60 p-4">
-            <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-primary">Sao kê liên quan</h3>
+            <h3 className="mb-3 text-xs font-black uppercase tracking-wide text-primary">Thay đổi số dư liên quan</h3>
             <FinancialLedgerTable ledgers={detail.ledgers} />
           </section>
         </div>
