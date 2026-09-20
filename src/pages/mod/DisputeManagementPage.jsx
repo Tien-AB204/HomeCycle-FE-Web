@@ -26,7 +26,10 @@ import {
 } from "@ant-design/icons";
 import { useLocation } from "react-router-dom";
 import Avatar from "../../components/shared/Avatar";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import useActionToast from "../../hooks/useActionToast";
 import moderatorDisputeApi from "../../services/apis/moderatorDisputeApi";
+import { sortItemsByDate } from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -565,6 +568,7 @@ const DisputeManagementPage = ({
   initialTargetType,
 } = {}) => {
   const location = useLocation();
+  const actionToast = useActionToast();
 
   const normalizedInitialTargetType =
     normalizeEnumValue(
@@ -606,6 +610,8 @@ const DisputeManagementPage = ({
     useState(normalizedInitialTargetType);
   const [dateRange, setDateRange] =
     useState(null);
+  const [sortOption, setSortOption] =
+    useState("newest");
 
   const [categoryOptions, setCategoryOptions] =
     useState([]);
@@ -1134,6 +1140,7 @@ const DisputeManagementPage = ({
         type: "success",
         message: successMessage,
       });
+      actionToast.success(successMessage);
 
       await refreshSelected();
     } catch (error) {
@@ -1152,6 +1159,16 @@ const DisputeManagementPage = ({
       setSubmittingAction(false);
     }
   };
+
+  const sortedDisputes = useMemo(
+    () =>
+      sortItemsByDate(
+        disputes,
+        sortOption,
+        (item) => item?.createdAt,
+      ),
+    [disputes, sortOption],
+  );
 
   const renderUserCard = (
     title,
@@ -1484,20 +1501,29 @@ const DisputeManagementPage = ({
                 Xóa bộ lọc
               </Button>
 
-              <Button
-                icon={
-                  <ReloadOutlined />
-                }
-                onClick={() => {
-                  void refreshSelected();
-                }}
-                loading={
-                  loadingList ||
-                  loadingDetail
-                }
-              >
-                Làm mới
-              </Button>
+              <div className="flex items-center gap-2">
+                <ListSortDropdown
+                  value={sortOption}
+                  onChange={setSortOption}
+                  compact
+                  scopeLabel="tranh chấp trong trang hiện tại"
+                />
+
+                <Button
+                  icon={
+                    <ReloadOutlined />
+                  }
+                  onClick={() => {
+                    void refreshSelected();
+                  }}
+                  loading={
+                    loadingList ||
+                    loadingDetail
+                  }
+                >
+                  Làm mới
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -1524,7 +1550,7 @@ const DisputeManagementPage = ({
               />
             ) : (
               <div className="divide-y divide-border">
-                {disputes.map(
+                {sortedDisputes.map(
                   (item) => {
                     const statusMeta =
                       getStatusMeta(

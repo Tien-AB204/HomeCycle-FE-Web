@@ -1,4 +1,4 @@
-import { ConfigProvider } from 'antd';
+import { App as AntdApp, ConfigProvider } from 'antd';
 
 import viVN from "antd/locale/vi_VN";
 import { BrowserRouter } from 'react-router-dom';
@@ -21,16 +21,18 @@ const App = () => {
           },
         }}
       >
-        <ApiErrorRedirect />
-        {/* Bọc AuthProvider ở đây để toàn bộ các Route và Component đều lấy được thông tin User */}
-        <AuthProvider>
-          <ChatRealtimeProvider>
-            <NotificationProvider>
-              <NotificationToast />
-              <AppRouter />
-            </NotificationProvider>
-          </ChatRealtimeProvider>
-        </AuthProvider>
+        <AntdApp component={false}>
+          <ApiErrorRedirect />
+          {/* Bọc AuthProvider ở đây để toàn bộ các Route và Component đều lấy được thông tin User */}
+          <AuthProvider>
+            <ChatRealtimeProvider>
+              <NotificationProvider>
+                <NotificationToast />
+                <AppRouter />
+              </NotificationProvider>
+            </ChatRealtimeProvider>
+          </AuthProvider>
+        </AntdApp>
       </ConfigProvider>
     </BrowserRouter>
   );

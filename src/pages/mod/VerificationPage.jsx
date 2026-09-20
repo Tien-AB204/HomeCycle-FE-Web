@@ -9,10 +9,14 @@ import {
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
 import EvidenceImage from "../../components/shared/EvidenceImage";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import useActionToast from "../../hooks/useActionToast";
+import { sortItemsByDate } from "../../utils/sortListItems";
 import { useLocation } from "react-router-dom";
 
 const VerificationPage = () => {
   const location = useLocation();
+  const actionToast = useActionToast();
   const notificationProfileId = String(
     location.state?.notificationProfileId || "",
   ).trim();
@@ -26,6 +30,7 @@ const VerificationPage = () => {
   const [profiles, setProfiles] = useState([]);
   const [loadingList, setLoadingList] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [sortOption, setSortOption] = useState("newest");
   const debouncedKeyword = useDebounce(searchKeyword, 500);
 
   // --- STATE RESIZABLE CỘT TRÁI ---
@@ -219,6 +224,12 @@ const VerificationPage = () => {
       })
     : profiles;
 
+  const sortedProfiles = sortItemsByDate(
+    filteredProfiles,
+    sortOption,
+    (profile) => profile?.createdAt,
+  );
+
   useEffect(() => {
     if (!selectedProfileId) {
       return;
@@ -270,6 +281,7 @@ const VerificationPage = () => {
         ),
       );
       handleResetSelection("Đã duyệt hồ sơ thành công!");
+      actionToast.success("Đã duyệt hồ sơ");
     } catch (error) {
       const msg =
         error.response?.status >= 500
@@ -302,6 +314,7 @@ const VerificationPage = () => {
         ),
       );
       handleResetSelection("Đã từ chối hồ sơ thành công!");
+      actionToast.success("Đã từ chối hồ sơ");
     } catch (error) {
       const msg =
         error.response?.status >= 500
@@ -423,13 +436,21 @@ const VerificationPage = () => {
               Doanh nghiệp
             </button>
           </div>
-          <Input
-            prefix={<SearchOutlined className="text-textLight" />}
-            placeholder="Tìm theo tên, mã hoặc ngày..."
-            className="rounded-lg border-border"
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              prefix={<SearchOutlined className="text-textLight" />}
+              placeholder="Tìm theo tên, mã hoặc ngày..."
+              className="rounded-lg border-border"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+            />
+            <ListSortDropdown
+              value={sortOption}
+              onChange={setSortOption}
+              compact
+              scopeLabel="hồ sơ đang hiển thị"
+            />
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -441,7 +462,7 @@ const VerificationPage = () => {
             <Empty description="Không có hồ sơ phù hợp" className="mt-10" />
           ) : (
             <div className="divide-y divide-border">
-              {filteredProfiles.map((p) => {
+              {sortedProfiles.map((p) => {
                 const currentId =
                   p.businessProfileId || p.personalProfileId || p.id;
                 const currentName =

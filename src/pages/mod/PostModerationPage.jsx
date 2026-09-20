@@ -14,6 +14,8 @@ import { postApi } from "../../services/apis/postApi";
 import axiosClient from "../../services/apis/axiosClient";
 import useDebounce from "../../hooks/useDebounce";
 import EvidenceImage from "../../components/shared/EvidenceImage";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import useActionToast from "../../hooks/useActionToast";
 
 const MODERATOR_FUNCTIONALITY_LABELS = {
   "0": "Hoạt động hoàn hảo",
@@ -78,6 +80,7 @@ const getModeratorDamageLabel = (value) => {
 const PAGE_SIZE = 50;
 
 const PostModerationPage = () => {
+  const actionToast = useActionToast();
   const [posts, setPosts] = useState([]);
   const [selectedPost, setSelectedPost] = useState(null);
 
@@ -316,6 +319,7 @@ const PostModerationPage = () => {
         type: "success",
         text: "Đã đình chỉ bài đăng thành công!",
       });
+      actionToast.success("Đã đình chỉ bài đăng");
       setRequestVersion((version) => version + 1);
     } catch (error) {
       const msg = error.response?.status >= 500
@@ -449,27 +453,18 @@ const PostModerationPage = () => {
               Sắp xếp
             </span>
 
-            <select
+            <ListSortDropdown
               value={sortOption}
-              onChange={(e) =>
-                setSortOption(e.target.value)
-              }
-              aria-label="Sắp xếp danh sách bài đăng"
-              className="min-w-0 flex-1 rounded-lg border border-border bg-white px-2.5 py-2 text-xs font-semibold text-text outline-none transition focus:border-primary"
-            >
-              <option value="newest">
-                Mới nhất
-              </option>
-              <option value="oldest">
-                Cũ nhất
-              </option>
-              <option value="name-asc">
-                Tên A → Z
-              </option>
-              <option value="name-desc">
-                Tên Z → A
-              </option>
-            </select>
+              onChange={setSortOption}
+              className="min-w-0 flex-1"
+              scopeLabel="bài đăng trong trang hiện tại"
+              options={[
+                { key: "newest", label: "Mới nhất" },
+                { key: "oldest", label: "Cũ nhất" },
+                { key: "name-asc", label: "Tên A → Z" },
+                { key: "name-desc", label: "Tên Z → A" },
+              ]}
+            />
           </div>
 
           <p className="mt-3 text-xs leading-5 text-textLight">

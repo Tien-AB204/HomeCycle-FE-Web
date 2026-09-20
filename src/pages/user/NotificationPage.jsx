@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -10,6 +11,8 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import { useNotifications } from "../../hooks/useNotifications";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import { sortItemsByDate } from "../../utils/sortListItems";
 import notificationApi, {
   normalizeNotification,
   normalizeNotificationTargetType,
@@ -58,6 +61,10 @@ const NotificationPage = () => {
     useNavigate();
 
   const { user } = useAuth();
+  const isModerator =
+    String(user?.role ?? "")
+      .trim()
+      .toLowerCase() === "moderator";
 
   const {
     connection,
@@ -75,6 +82,11 @@ const NotificationPage = () => {
     items,
     setItems,
   ] = useState([]);
+
+  const [
+    sortOption,
+    setSortOption,
+  ] = useState("newest");
 
   const [
     pagination,
@@ -398,6 +410,16 @@ const NotificationPage = () => {
     };
   }, [connection]);
 
+  const sortedItems = useMemo(
+    () =>
+      sortItemsByDate(
+        items,
+        sortOption,
+        (item) => item?.createdAt,
+      ),
+    [items, sortOption],
+  );
+
   const loadMore =
     async () => {
       if (
@@ -649,16 +671,26 @@ const NotificationPage = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            void loadFirstPage();
-            void refreshUnreadCount()
-              .catch(() => {});
-          }}
-          disabled={loading}
-          className="flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-2 text-xs font-black text-primary transition hover:bg-background disabled:opacity-50"
-        >
+        <div className="flex items-center gap-2">
+          {isModerator && (
+            <ListSortDropdown
+              value={sortOption}
+              onChange={setSortOption}
+              compact
+              scopeLabel="thông báo đã tải"
+            />
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              void loadFirstPage();
+              void refreshUnreadCount()
+                .catch(() => {});
+            }}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-full border border-border bg-white px-3 py-2 text-xs font-black text-primary transition hover:bg-background disabled:opacity-50"
+          >
           <span
             className={
               "material-symbols-outlined text-[18px] " +
@@ -673,8 +705,9 @@ const NotificationPage = () => {
             refresh
           </span>
 
-          Làm mới
-        </button>
+            Làm mới
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -721,7 +754,7 @@ const NotificationPage = () => {
         </div>
       ) : (
         <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-white shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
-          {items.map(
+          {sortedItems.map(
             (item) => {
               const targetType =
                 normalizeNotificationTargetType(

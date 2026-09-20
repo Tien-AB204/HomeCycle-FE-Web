@@ -27,6 +27,8 @@ import { getDeliveryMethodLabel } from "../../constants/agreements";
 import { getAppointmentStatusMeta } from "../../constants/appointments";
 import moderatorOrderApi from "../../services/apis/moderatorOrderApi";
 import FinancialTransactionsPanel from "../../features/finance/FinancialTransactionsPanel";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import { sortItemsByDate } from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 
@@ -275,6 +277,7 @@ const OrderManagementContent = () => {
   const [hasActiveDispute, setHasActiveDispute] = useState("");
   const [hasInspection, setHasInspection] = useState("");
   const [dateRange, setDateRange] = useState(null);
+  const [sortOption, setSortOption] = useState("newest");
 
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -624,6 +627,16 @@ const OrderManagementContent = () => {
     },
   ];
 
+  const sortedOrders = useMemo(
+    () =>
+      sortItemsByDate(
+        state.items,
+        sortOption,
+        (item) => item?.createdAt,
+      ),
+    [state.items, sortOption],
+  );
+
   const detail = detailState.data;
 
   return (
@@ -707,6 +720,12 @@ const OrderManagementContent = () => {
           Tìm kiếm
         </Button>
 
+        <ListSortDropdown
+          value={sortOption}
+          onChange={setSortOption}
+          scopeLabel="đơn hàng trong trang hiện tại"
+        />
+
         <Button
           icon={<ReloadOutlined />}
           onClick={() => void loadOrders()}
@@ -729,7 +748,7 @@ const OrderManagementContent = () => {
         <Table
           rowKey={(record) => record.orderId}
           columns={columns}
-          dataSource={state.items}
+          dataSource={sortedOrders}
           loading={state.loading}
           locale={{
             emptyText: <Empty description="Chưa có đơn hàng phù hợp." />,
