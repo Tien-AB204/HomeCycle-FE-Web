@@ -136,6 +136,50 @@ const authApi = {
   },
 
   /**
+   * Gửi OTP đặt lại mật khẩu tới email đã đăng ký.
+   */
+  forgotPassword: ({ email }) => {
+    if (!email) {
+      throw new Error(
+        "Vui lòng nhập địa chỉ email.",
+      );
+    }
+
+    return axiosClient.post(
+      "/auth/forgot-password",
+      {
+        email,
+      },
+    );
+  },
+
+  /**
+   * Đặt lại mật khẩu bằng OTP đã nhận qua email.
+   */
+  resetPassword: ({
+    email,
+    otp,
+    newPassword,
+    confirmPassword,
+  }) => {
+    if (!email || !otp) {
+      throw new Error(
+        "Email và mã OTP là bắt buộc.",
+      );
+    }
+
+    return axiosClient.post(
+      "/auth/reset-password",
+      {
+        email,
+        otp,
+        newPassword,
+        confirmPassword,
+      },
+    );
+  },
+
+  /**
    * Làm mới access token.
    */
   refreshToken: (refreshToken) => {

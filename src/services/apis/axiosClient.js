@@ -21,6 +21,8 @@ const PUBLIC_AUTH_ENDPOINTS = [
   "/auth/personal/register",
   "/auth/business/register",
   "/auth/refresh-token",
+  "/auth/forgot-password",
+  "/auth/reset-password",
 ];
 
 const isPublicAuthRequest = (url = "") => {
