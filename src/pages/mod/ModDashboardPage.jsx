@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import ListingDashboardPanel from "../../features/dashboard/ListingDashboardPanel";
+import moderatorListingApi from "../../services/apis/moderatorListingApi";
 
 const MODERATOR_AREAS = [
   {
@@ -83,10 +85,29 @@ export default function ModDashboardPage() {
         </div>
       </header>
 
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            TỔNG QUAN BÀI ĐĂNG
+          </p>
+
+          <h2 className="mt-1 text-xl font-black text-text">
+            Bài đăng mới, trạng thái và bài bị báo cáo
+          </h2>
+
+          <p className="mt-1 text-sm text-textLight">
+            Số liệu lấy từ tổng quan bài đăng dành cho kiểm duyệt. Việc xử lý từng bài
+            bị báo cáo thực hiện tại màn Quản lý bài đăng.
+          </p>
+        </div>
+
+        <ListingDashboardPanel loadDashboard={moderatorListingApi.getListingDashboard} />
+      </section>
+
       <div className="rounded-2xl border border-primary/10 bg-primary/[0.035] px-5 py-4 text-sm leading-6 text-textLight">
         Trang này không tự ghép số liệu từ các API nghiệp vụ riêng lẻ để tạo
-        KPI tổng hợp. Số lượng, trạng thái và bộ lọc được hiển thị tại từng
-        màn chức năng theo contract Backend tương ứng.
+        KPI tổng hợp. Số lượng, trạng thái và bộ lọc của từng nghiệp vụ được
+        hiển thị tại màn chức năng tương ứng.
       </div>
 
       <section>
