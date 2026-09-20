@@ -17,14 +17,6 @@ const formatCompactMoney = (value) =>
     },
   ).format(Number(value) || 0)} ₫`;
 
-const formatPercent = (value) =>
-  `${new Intl.NumberFormat(
-    "vi-VN",
-    {
-      maximumFractionDigits: 1,
-    },
-  ).format(Number(value) || 0)}%`;
-
 const formatDateShort = (value) => {
   const parts =
     String(value || "").split("-");
@@ -58,7 +50,7 @@ export function FinanceCashFlowChart({
         </h3>
 
         <p className="mt-1 text-xs leading-5 text-textLight">
-          Tiền từ bên ngoài đi vào HomeCycle, tiền rời khỏi HomeCycle và chênh lệch giữa hai khoản theo từng kỳ.
+          Tiền vào (thanh toán PayOS đã hoàn tất), tiền ra (rút tiền đã hoàn tất) và chênh lệch giữa hai khoản theo từng kỳ.
         </p>
 
         <div className="mt-5">
@@ -218,7 +210,7 @@ export function FinanceCashFlowChart({
           </h3>
 
           <p className="mt-1 text-xs leading-5 text-textLight">
-            Tiền từ bên ngoài đi vào HomeCycle, tiền rời khỏi HomeCycle và chênh lệch giữa hai khoản. Hoàn tiền và chuyển tiền cho người bán là dịch chuyển nội bộ, không được coi là tiền rời khỏi nền tảng.
+            Tiền vào (thanh toán PayOS đã hoàn tất), tiền ra (rút tiền đã hoàn tất) và chênh lệch giữa hai khoản. Hoàn tiền và chuyển tiền cho người bán là dịch chuyển nội bộ, không được coi là tiền ra.
           </p>
         </div>
 
@@ -501,18 +493,10 @@ export function FinanceAmountBarChart({
                       {getLabel(item)}
                     </span>
 
-                    <span className="shrink-0 text-right">
-                      <span className="block text-sm font-black text-text">
-                        {formatMoney(
-                          amount,
-                        )}
-                      </span>
-
-                      <span className="block text-[11px] font-bold text-textLight">
-                        {formatPercent(
-                          item?.percentage,
-                        )}
-                      </span>
+                    <span className="shrink-0 text-right text-sm font-black text-text">
+                      {formatMoney(
+                        amount,
+                      )}
                     </span>
                   </div>
 

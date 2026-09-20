@@ -50,10 +50,9 @@ const TRANSACTION_TYPE_OPTIONS = [
   ["2", "Thanh toán bằng ví"],
   ["3", "Chuyển tiền cho người bán"],
   ["4", "Hoàn tiền đơn hàng"],
-  ["5", "Tạm giữ tiền chờ rút"],
+  ["5", "Tiền của người dùng đang yêu cầu rút"],
   ["6", "Rút tiền thành công"],
-  ["7", "Hoàn tiền rút về số dư khả dụng"],
-  ["8", "Phí hoa hồng"],
+  ["7", "Tiền được trả lại sau yêu cầu rút"],
   ["9", "Phí gói đăng ký"],
   ["10", "Thu phí vận chuyển GHN"],
 ];
@@ -63,10 +62,9 @@ const TRANSACTION_TYPE_LABELS = {
   "2": "Thanh toán bằng ví",
   "3": "Chuyển tiền cho người bán",
   "4": "Hoàn tiền đơn hàng",
-  "5": "Tạm giữ tiền chờ rút",
+  "5": "Tiền của người dùng đang yêu cầu rút",
   "6": "Rút tiền thành công",
-  "7": "Hoàn tiền rút về số dư khả dụng",
-  "8": "Phí hoa hồng",
+  "7": "Tiền được trả lại sau yêu cầu rút",
   "9": "Phí gói đăng ký",
   "10": "Thu phí vận chuyển GHN",
   escrowdeposit:
@@ -78,13 +76,11 @@ const TRANSACTION_TYPE_LABELS = {
   orderrefund:
     "Hoàn tiền đơn hàng",
   withdrawallock:
-    "Tạm giữ tiền chờ rút",
+    "Tiền của người dùng đang yêu cầu rút",
   withdrawalsuccess:
     "Rút tiền thành công",
   withdrawalrevert:
-    "Hoàn tiền rút về số dư khả dụng",
-  commissionfee:
-    "Phí hoa hồng",
+    "Tiền được trả lại sau yêu cầu rút",
   subscriptionfee:
     "Phí gói đăng ký",
   shippingfeecollected:
@@ -131,20 +127,20 @@ const REFERENCE_LABELS = {
 
 const FLOW_OPTIONS = [
   ["", "Tất cả dòng tiền"],
-  ["1", "Tiền vào từ bên ngoài"],
-  ["2", "Tiền rời khỏi HomeCycle"],
+  ["1", "Tiền vào"],
+  ["2", "Tiền ra"],
   ["3", "Nội bộ"],
   ["0", "Chưa phân loại"],
 ];
 
 const FLOW_LABELS = {
   "0": "Chưa phân loại",
-  "1": "Tiền vào từ bên ngoài",
-  "2": "Tiền rời khỏi HomeCycle",
+  "1": "Tiền vào",
+  "2": "Tiền ra",
   "3": "Nội bộ",
   unclassified: "Chưa phân loại",
-  externalin: "Tiền vào từ bên ngoài",
-  externalout: "Tiền rời khỏi HomeCycle",
+  externalin: "Tiền vào",
+  externalout: "Tiền ra",
   internal: "Nội bộ",
 };
 
@@ -172,8 +168,6 @@ const BREAKDOWN_LABELS = {
     "Thanh toán gói đăng ký",
   subscriptionfee:
     "Thanh toán gói đăng ký",
-  otherpayos:
-    "PayOS khác",
   walletpayment:
     "Thanh toán bằng ví",
   orderrefund:
@@ -181,9 +175,9 @@ const BREAKDOWN_LABELS = {
   payoutrelease:
     "Chuyển tiền cho người bán",
   withdrawallock:
-    "Tạm giữ tiền chờ rút",
+    "Tiền của người dùng đang yêu cầu rút",
   withdrawalrevert:
-    "Hoàn tiền rút về số dư khả dụng",
+    "Tiền được trả lại sau yêu cầu rút",
 };
 
 const normalize = (value) =>
@@ -193,14 +187,11 @@ const normalize = (value) =>
     .replace(/[^a-z0-9]/g, "");
 
 /*
- * Doanh thu nền tảng chỉ gồm Phí hoa hồng và Phí gói dịch vụ - không bao
- * gồm phí vận chuyển GHN (tiền hộ, không phải doanh thu HomeCycle). Dùng
- * mapping riêng cho khu vực Doanh thu để không phụ thuộc vào cách đặt câu
- * chữ của khu vực Sổ giao dịch (TRANSACTION_TYPE_LABELS).
+ * HomeCycle không có nghiệp vụ thu phí hoa hồng; doanh thu trên UI chỉ là
+ * phí gói đăng ký. Phí vận chuyển GHN là tiền thu hộ, không phải doanh thu.
  */
 const REVENUE_SOURCE_LABELS = {
-  commissionfee: "Phí hoa hồng",
-  subscriptionfee: "Phí gói đăng ký",
+  subscriptionfee: "Doanh thu gói đăng ký",
 };
 
 const findRevenueSourceAmount = (
@@ -1144,6 +1135,16 @@ export default function AdminFinanceDashboardPage() {
     item?.key ||
     "Chưa xác định";
 
+  const inflowSourceRows = (
+    Array.isArray(cashFlow?.inflowSources)
+      ? cashFlow.inflowSources
+      : []
+  ).filter(
+    (item) =>
+      normalize(item?.key || item?.label) !==
+      "otherpayos",
+  );
+
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
@@ -1517,8 +1518,12 @@ export default function AdminFinanceDashboardPage() {
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Dòng tiền và thanh toán
+            Tiền vào, tiền ra và thanh toán
           </h3>
+
+          <p className="mt-1 text-sm text-textLight">
+            Tiền vào là thanh toán PayOS đã hoàn tất; tiền ra là rút tiền đã hoàn tất. Hoàn tiền và chuyển tiền cho người bán chỉ dịch chuyển bên trong ví HomeCycle.
+          </p>
         </div>
 
         {mainState.errors
@@ -1532,7 +1537,7 @@ export default function AdminFinanceDashboardPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <MetricCard
-              label="Tiền vào từ bên ngoài"
+              label="Tiền vào"
               value={formatMoney(
                 activity
                   ?.externalInflow,
@@ -1545,7 +1550,7 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền rời khỏi HomeCycle"
+              label="Tiền ra"
               value={formatMoney(
                 activity
                   ?.externalOutflow,
@@ -1563,7 +1568,7 @@ export default function AdminFinanceDashboardPage() {
                 activity
                   ?.netExternalCashFlow,
               )}
-              hint="Tiền vào từ bên ngoài trừ tiền rời khỏi HomeCycle trong kỳ; số âm không mặc nhiên là bất thường."
+              hint="Tiền vào trừ tiền ra trong kỳ; số âm không mặc nhiên là bất thường."
               loading={
                 mainLoading
               }
@@ -1613,11 +1618,11 @@ export default function AdminFinanceDashboardPage() {
       <section className="space-y-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            DÒNG TIỀN
+            DÒNG TIỀN THEO KỲ
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Tiền vào, tiền ra và luồng nội bộ
+            Diễn biến tiền vào, tiền ra và dịch chuyển nội bộ
           </h3>
         </div>
 
@@ -1631,47 +1636,6 @@ export default function AdminFinanceDashboardPage() {
           />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-3">
-              <MetricCard
-                label="Tiền vào"
-                value={formatMoney(
-                  cashFlow
-                    ?.totals
-                    ?.externalInflow,
-                )}
-                loading={
-                  mainLoading
-                }
-                valueClassName="text-success"
-              />
-
-              <MetricCard
-                label="Tiền ra"
-                value={formatMoney(
-                  cashFlow
-                    ?.totals
-                    ?.externalOutflow,
-                )}
-                loading={
-                  mainLoading
-                }
-                valueClassName="text-warning"
-              />
-
-              <MetricCard
-                label="Chênh lệch tiền vào/ra"
-                value={formatMoney(
-                  cashFlow
-                    ?.totals
-                    ?.netExternalCashFlow,
-                )}
-                loading={
-                  mainLoading
-                }
-                valueClassName="text-primary"
-              />
-            </div>
-
             <FinanceCashFlowChart
               rows={
                 cashFlow?.series
@@ -1681,10 +1645,9 @@ export default function AdminFinanceDashboardPage() {
             <div className="grid gap-6 xl:grid-cols-2">
               <FinanceAmountBarChart
                 title="Nguồn tiền vào"
-                description="Các nguồn tạo nên tiền từ bên ngoài đi vào HomeCycle. Phí GHN đã thu đã nằm trong tổng này, không cộng thêm lần nữa."
+                description="Các nguồn tạo nên tiền vào trong kỳ. Phí vận chuyển GHN đã thu nằm trong tổng tiền vào nhưng không phải doanh thu HomeCycle."
                 rows={
-                  cashFlow
-                    ?.inflowSources
+                  inflowSourceRows
                 }
                 getLabel={
                   breakdownLabel
@@ -1693,7 +1656,7 @@ export default function AdminFinanceDashboardPage() {
 
               <FinanceAmountBarChart
                 title="Dịch chuyển tiền nội bộ"
-                description="Các khoản đổi chủ sở hữu hoặc trạng thái số dư bên trong HomeCycle; không mặc nhiên là tiền ra khỏi nền tảng."
+                description="Tiền đổi chủ hoặc đổi trạng thái bên trong ví HomeCycle trong kỳ: hoàn tiền đơn hàng, chuyển tiền cho người bán, tiền đang yêu cầu rút và tiền được trả lại sau yêu cầu rút. Đây không phải tiền ra khỏi nền tảng."
                 rows={
                   cashFlow
                     ?.internalMovements
@@ -1710,41 +1673,28 @@ export default function AdminFinanceDashboardPage() {
       <section className="space-y-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            DOANH THU NỀN TẢNG
+            DOANH THU GÓI ĐĂNG KÝ
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Tổng doanh thu theo kỳ
+            Doanh thu gói đăng ký theo kỳ
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Doanh thu là phần tiền thuộc về HomeCycle, gồm phí hoa hồng và phí gói đăng ký. Phí vận chuyển GHN không phải doanh thu và không được tính vào đây.
+            Doanh thu của HomeCycle là phí gói đăng ký người dùng đã thanh toán. Phí vận chuyển GHN là tiền thu hộ, không phải doanh thu và không được tính vào đây.
           </p>
         </div>
 
         {mainState.errors
           .revenue ? (
           <SectionError
-            message="Không thể tải dữ liệu doanh thu nền tảng."
+            message="Không thể tải dữ liệu doanh thu gói đăng ký."
             onRetry={
               refreshAll
             }
           />
         ) : (
           <div className="grid gap-4 sm:grid-cols-3">
-            <MetricCard
-              label="Tổng doanh thu"
-              value={formatMoney(
-                revenue
-                  ?.totalRevenue,
-              )}
-              hint="Chỉ gồm phí hoa hồng và phí gói đăng ký đã được chuyển vào ví doanh thu nền tảng trong kỳ."
-              loading={
-                mainLoading
-              }
-              valueClassName="text-primary"
-            />
-
             <MetricCard
               label={
                 REVENUE_SOURCE_LABELS.subscriptionfee
@@ -1755,24 +1705,11 @@ export default function AdminFinanceDashboardPage() {
                   "SubscriptionFee",
                 ),
               )}
+              hint="Phí gói đăng ký đã được ghi nhận vào ví doanh thu HomeCycle trong kỳ."
               loading={
                 mainLoading
               }
-            />
-
-            <MetricCard
-              label={
-                REVENUE_SOURCE_LABELS.commissionfee
-              }
-              value={formatMoney(
-                findRevenueSourceAmount(
-                  revenue?.sources,
-                  "CommissionFee",
-                ),
-              )}
-              loading={
-                mainLoading
-              }
+              valueClassName="text-primary"
             />
           </div>
         )}
