@@ -3,7 +3,43 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
+import {
+  DashboardDonutChart,
+  DashboardLineChart,
+} from "../../components/admin/AdminDashboardCharts";
+import { getOrderStatusMeta } from "../../constants/orders";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
+
+const CHART_SOURCES = [
+  { key: "orders", method: "getOrders" },
+  { key: "payments", method: "getPayments" },
+  { key: "disputes", method: "getDisputes" },
+];
+
+const CHART_ERROR_MESSAGE =
+  "Không thể tải biểu đồ này lúc này.";
+
+const isCanceledRequest = (error) =>
+  error?.name === "CanceledError" ||
+  error?.code === "ERR_CANCELED";
+
+const ChartUnavailable = ({ title, message, onRetry }) => (
+  <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+    <h3 className="text-lg font-black text-text">{title}</h3>
+    <div className="mt-5 flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl bg-background text-sm font-semibold text-textLight">
+      <span>{message}</span>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-black text-primary transition hover:bg-primary/10"
+        >
+          Thử lại
+        </button>
+      )}
+    </div>
+  </section>
+);
 
 const formatNumber = (value) =>
   new Intl.NumberFormat(
@@ -56,7 +92,7 @@ function OverviewCard({
   loading,
 }) {
   return (
-    <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
+    <article className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
@@ -69,7 +105,7 @@ function OverviewCard({
         </span>
       </div>
 
-      <div className="mt-5 space-y-4">
+      <div className="mt-4 space-y-3">
         {items.map(
           (item, index) => (
             <div
@@ -77,7 +113,7 @@ function OverviewCard({
               className={
                 index === 0
                   ? ""
-                  : "border-t border-border pt-4"
+                  : "border-t border-border pt-3"
               }
             >
               <p className="text-xs font-bold text-textLight">
@@ -86,7 +122,7 @@ function OverviewCard({
 
               <p
                 className={[
-                  "mt-1 text-2xl font-black",
+                  "mt-0.5 text-xl font-black",
                   item.className ||
                     "text-text",
                 ].join(" ")}
@@ -106,7 +142,7 @@ function OverviewCard({
 
       <Link
         to={to}
-        className="mt-5 inline-flex items-center gap-1 text-xs font-black text-primary"
+        className="mt-4 inline-flex items-center gap-1 text-xs font-black text-primary"
       >
         Xem chi tiết
         <span className="material-symbols-outlined text-[17px]">
@@ -180,12 +216,97 @@ export default function AdminDashboardPage() {
     };
   }, [requestKey]);
 
+  const [chartState, setChartState] =
+    useState({
+      requestKey: "",
+      data: {},
+      errors: {},
+    });
+
+  useEffect(() => {
+    const controller =
+      new AbortController();
+
+    let active = true;
+
+    Promise.all(
+      CHART_SOURCES.map((source) =>
+        adminDashboardApi[source.method]({
+          signal: controller.signal,
+        })
+          .then((result) => [source.key, result, ""])
+          .catch((error) => [
+            source.key,
+            null,
+            isCanceledRequest(error)
+              ? "canceled"
+              : CHART_ERROR_MESSAGE,
+          ]),
+      ),
+    ).then((results) => {
+      if (
+        !active ||
+        results.some(([, , error]) => error === "canceled")
+      ) {
+        return;
+      }
+
+      setChartState({
+        requestKey,
+        data: Object.fromEntries(
+          results.map(([key, result]) => [key, result]),
+        ),
+        errors: Object.fromEntries(
+          results
+            .filter(([, , error]) => error)
+            .map(([key, , error]) => [key, error]),
+        ),
+      });
+    });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [requestKey]);
+
   const loading =
     state.requestKey !==
     requestKey;
 
   const data =
     state.data;
+
+  const chartsLoading =
+    chartState.requestKey !== requestKey;
+
+  const charts = chartState.data;
+  const chartErrors = chartState.errors;
+
+  const refresh = () =>
+    setRequestVersion(
+      (current) => current + 1,
+    );
+
+  const renderLineChart = (key, props) => {
+    if (chartsLoading) {
+      return (
+        <LoadingBlock className="h-80 w-full rounded-2xl" />
+      );
+    }
+
+    if (chartErrors[key]) {
+      return (
+        <ChartUnavailable
+          title={props.title}
+          message={chartErrors[key]}
+          onRetry={refresh}
+        />
+      );
+    }
+
+    return <DashboardLineChart {...props} />;
+  };
 
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
@@ -203,8 +324,8 @@ export default function AdminDashboardPage() {
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-              Theo dõi trạng thái hiện tại và các sự kiện
-              vận hành thực tế của hệ thống.
+              Số liệu hiện tại của hệ thống và xu hướng vận hành
+              trong 30 ngày gần nhất.
             </p>
 
             {!loading &&
@@ -231,12 +352,7 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() =>
-                setRequestVersion(
-                  (current) =>
-                    current + 1,
-                )
-              }
+              onClick={refresh}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
             >
               <span className="material-symbols-outlined text-[20px]">
@@ -370,6 +486,76 @@ export default function AdminDashboardPage() {
         lịch sắp tới và hôm nay là trạng thái hiện tại trên toàn bộ dữ liệu.
         Riêng số tranh chấp đã giải quyết sử dụng kỳ mặc định 30 ngày gần nhất của máy chủ.
       </div>
+
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            XU HƯỚNG VẬN HÀNH
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-text">
+            30 ngày gần nhất
+          </h3>
+
+          <p className="mt-1 text-sm text-textLight">
+            Các biểu đồ theo ngày dùng kỳ mặc định 30 ngày gần nhất của máy chủ (tính theo giờ Việt Nam). Xem chi tiết và lọc theo kỳ khác tại từng dashboard.
+          </p>
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          {renderLineChart("orders", {
+            title: "Kết quả đơn hàng theo ngày",
+            description:
+              "Số đơn hoàn tất, hủy và hoàn trả theo thời điểm nghiệp vụ thực tế trong 30 ngày gần nhất.",
+            rows: charts.orders?.outcomeSeries,
+            series: [
+              { key: "completedCount", label: "Hoàn tất", className: "text-success" },
+              { key: "cancelledCount", label: "Hủy", className: "text-error" },
+              { key: "returnedCount", label: "Hoàn trả", className: "text-warning" },
+            ],
+          })}
+
+          {renderLineChart("disputes", {
+            title: "Tranh chấp mở mới và đã giải quyết",
+            description:
+              "So sánh số tranh chấp phát sinh và số tranh chấp được giải quyết theo ngày trong 30 ngày gần nhất.",
+            rows: charts.disputes?.openedVsResolvedSeries,
+            series: [
+              { key: "openedCount", label: "Mở mới", className: "text-error" },
+              { key: "resolvedCount", label: "Đã giải quyết", className: "text-success" },
+            ],
+          })}
+
+          {renderLineChart("payments", {
+            title: "Thanh toán thành công theo ngày",
+            description:
+              "Số thanh toán đã thanh toán thành công theo thời điểm thanh toán thực tế trong 30 ngày gần nhất.",
+            rows: charts.payments?.paidSeries,
+            series: [
+              { key: "count", label: "Đã thanh toán", className: "text-success" },
+            ],
+          })}
+
+          {chartsLoading ? (
+            <LoadingBlock className="h-80 w-full rounded-2xl" />
+          ) : chartErrors.orders ? (
+            <ChartUnavailable
+              title="Cơ cấu trạng thái đơn hàng hiện tại"
+              message={chartErrors.orders}
+              onRetry={refresh}
+            />
+          ) : (
+            <DashboardDonutChart
+              title="Cơ cấu trạng thái đơn hàng hiện tại"
+              description="Trạng thái hiện tại của toàn bộ đơn hàng; không giới hạn theo kỳ."
+              rows={charts.orders?.currentStatusDistribution}
+              getLabel={(item) =>
+                getOrderStatusMeta(item.label || item.key).label
+              }
+            />
+          )}
+        </div>
+      </section>
     </section>
   );
 }
