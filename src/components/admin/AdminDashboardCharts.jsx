@@ -566,6 +566,8 @@ export function DashboardLineChart({
   description,
   rows,
   series,
+  valueFormatter = formatNumber,
+  axisValueFormatter = valueFormatter,
 }) {
   const safeRows =
     Array.isArray(rows)
@@ -794,7 +796,7 @@ export function DashboardLineChart({
                     fill="currentColor"
                     className="text-[11px] text-textLight"
                   >
-                    {formatNumber(
+                    {axisValueFormatter(
                       value,
                     )}
                   </text>
@@ -890,7 +892,7 @@ export function DashboardLineChart({
                               ?.from,
                           )} · ${
                             line.label
-                          }: ${formatNumber(
+                          }: ${valueFormatter(
                             point.value,
                           )}`}
                         </title>

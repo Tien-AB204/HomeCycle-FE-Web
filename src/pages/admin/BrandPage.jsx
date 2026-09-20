@@ -61,17 +61,6 @@ const getErrorMessage = (error) => {
   );
 };
 
-const getBrandInitial = (
-  brandName,
-) => {
-  return (
-    brandName
-      ?.trim()
-      .charAt(0)
-      .toUpperCase() || "B"
-  );
-};
-
 export default function BrandPage() {
   const [brands, setBrands] =
     useState([]);
@@ -751,9 +740,6 @@ export default function BrandPage() {
         <table className="w-full border-collapse text-left">
           <thead>
             <tr className="border-b border-border bg-background text-xs uppercase tracking-wider text-textLight">
-              <th className="w-20 p-4 font-semibold">
-                Logo
-              </th>
 
               <th className="p-4 font-semibold">
                 Tên thương hiệu
@@ -781,7 +767,7 @@ export default function BrandPage() {
             {loading ? (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="p-10 text-center text-textLight"
                 >
                   <div
@@ -809,13 +795,6 @@ export default function BrandPage() {
                     key={brand.brandId}
                     className="transition-colors hover:bg-background"
                   >
-                    <td className="p-4">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-lg font-bold text-white">
-                        {getBrandInitial(
-                          brand.brandName,
-                        )}
-                      </div>
-                    </td>
 
                     <td className="p-4 font-bold text-text">
                       {brand.brandName}
@@ -907,7 +886,7 @@ export default function BrandPage() {
             ) : (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={5}
                   className="p-10 text-center text-textLight"
                 >
                   {hasAppliedFilters
