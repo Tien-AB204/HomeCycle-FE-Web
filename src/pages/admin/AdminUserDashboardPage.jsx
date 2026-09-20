@@ -1035,8 +1035,8 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)] sm:flex-row sm:items-end">
-        <label className="flex-1">
+      <div className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]">
+        <label className="block max-w-xl">
           <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
             Vai trò
           </span>
@@ -1067,65 +1067,9 @@ export default function AdminDashboardPage() {
           </select>
         </label>
 
-        <label className="flex-1">
-          <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Kỳ thống kê
-          </span>
-
-          <select
-            value={days}
-            onChange={(event) =>
-              setDays(
-                Number(
-                  event.target.value,
-                ),
-              )
-            }
-            className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {PERIOD_OPTIONS.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value} ngày
-                </option>
-              ),
-            )}
-          </select>
-        </label>
-
-        <label className="flex-1">
-          <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Ước tính tiếp theo
-          </span>
-
-          <select
-            value={
-              forecastDays
-            }
-            onChange={(event) =>
-              setForecastDays(
-                Number(
-                  event.target.value,
-                ),
-              )
-            }
-            className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {FORECAST_OPTIONS.map(
-              (value) => (
-                <option
-                  key={value}
-                  value={value}
-                >
-                  {value} ngày
-                </option>
-              ),
-            )}
-          </select>
-        </label>
+        <p className="mt-3 text-xs leading-5 text-textLight">
+          Bộ lọc vai trò áp dụng cho toàn bộ trang. Kỳ thống kê và khoảng ước tính chỉ áp dụng cho phần Xu hướng đăng ký bên dưới.
+        </p>
       </div>
 
       {state.error &&
@@ -1153,7 +1097,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
         <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
             Tổng tài khoản
@@ -1186,46 +1130,6 @@ export default function AdminDashboardPage() {
           </p>
         </article>
 
-        <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            Đăng ký kỳ hiện tại
-          </p>
-
-          <p className="mt-3 text-3xl font-black text-primary">
-            {loading ? (
-              <LoadingBlock className="h-9 w-20" />
-            ) : (
-              formatNumber(
-                trend?.currentPeriodRegistrations,
-              )
-            )}
-          </p>
-        </article>
-
-        <article className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-5 shadow-[0_10px_28px_rgba(24,63,65,0.04)]">
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">
-            Ước tính đăng ký
-          </p>
-
-          <p className="mt-3 text-3xl font-black text-text">
-            {loading ? (
-              <LoadingBlock className="h-9 w-20" />
-            ) : (
-              formatDecimal(
-                trend?.forecast
-                  ?.estimatedRegistrations,
-              )
-            )}
-          </p>
-
-          <p className="mt-2 text-xs leading-5 text-textLight">
-            Trong{" "}
-            {trend?.forecast
-              ?.days ||
-              forecastDays}{" "}
-            ngày tiếp theo.
-          </p>
-        </article>
       </div>
 
       <div className="rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
@@ -1320,6 +1224,109 @@ export default function AdminDashboardPage() {
                 {directionMeta.label}
               </div>
             )}
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label>
+            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+              Kỳ thống kê
+            </span>
+
+            <select
+              value={days}
+              onChange={(event) =>
+                setDays(
+                  Number(
+                    event.target.value,
+                  ),
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
+            >
+              {PERIOD_OPTIONS.map(
+                (value) => (
+                  <option
+                    key={value}
+                    value={value}
+                  >
+                    {value} ngày
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+
+          <label>
+            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+              Ước tính tiếp theo
+            </span>
+
+            <select
+              value={forecastDays}
+              onChange={(event) =>
+                setForecastDays(
+                  Number(
+                    event.target.value,
+                  ),
+                )
+              }
+              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
+            >
+              {FORECAST_OPTIONS.map(
+                (value) => (
+                  <option
+                    key={value}
+                    value={value}
+                  >
+                    {value} ngày
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <article className="rounded-2xl border border-border bg-background/60 p-4">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+              Đăng ký kỳ hiện tại
+            </p>
+
+            <p className="mt-2 text-2xl font-black text-primary">
+              {loading ? (
+                <LoadingBlock className="h-8 w-20" />
+              ) : (
+                formatNumber(
+                  trend?.currentPeriodRegistrations,
+                )
+              )}
+            </p>
+          </article>
+
+          <article className="rounded-2xl border border-primary/15 bg-primary/[0.04] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">
+              Ước tính đăng ký
+            </p>
+
+            <p className="mt-2 text-2xl font-black text-text">
+              {loading ? (
+                <LoadingBlock className="h-8 w-20" />
+              ) : (
+                formatDecimal(
+                  trend?.forecast
+                    ?.estimatedRegistrations,
+                )
+              )}
+            </p>
+
+            <p className="mt-1 text-xs leading-5 text-textLight">
+              Trong{" "}
+              {trend?.forecast
+                ?.days ||
+                forecastDays}{" "}
+              ngày tiếp theo.
+            </p>
+          </article>
         </div>
 
         <div className="mt-5">

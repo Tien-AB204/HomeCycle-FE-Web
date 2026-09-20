@@ -69,19 +69,11 @@ const adminDashboardApi = {
     ),
 
   getOperationOverview: async ({
-    from,
-    to,
-    groupBy = "Day",
     signal,
   } = {}) =>
     axiosClient.get(
       "/admin/dashboard/operations/overview",
       {
-        params: cleanParams({
-          from,
-          to,
-          groupBy,
-        }),
         signal,
         skipGlobalErrorPage: true,
       },

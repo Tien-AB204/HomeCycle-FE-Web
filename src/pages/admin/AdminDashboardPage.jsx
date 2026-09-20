@@ -5,31 +5,10 @@ import {
 import { Link } from "react-router-dom";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 
-const GROUP_OPTIONS = [
-  { value: "Day", label: "Theo ngày" },
-  { value: "Week", label: "Theo tuần" },
-  { value: "Month", label: "Theo tháng" },
-];
-
 const formatNumber = (value) =>
   new Intl.NumberFormat(
     "vi-VN",
   ).format(Number(value) || 0);
-
-const formatDate = (value) => {
-  if (!value) {
-    return "—";
-  }
-
-  const parts =
-    String(value).split("-");
-
-  if (parts.length !== 3) {
-    return "—";
-  }
-
-  return `${parts[2]}/${parts[1]}/${parts[0]}`;
-};
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -56,51 +35,6 @@ const formatDateTime = (value) => {
         "Asia/Ho_Chi_Minh",
     },
   ).format(date);
-};
-
-const validateRange = (
-  from,
-  to,
-) => {
-  if (
-    Boolean(from) !==
-    Boolean(to)
-  ) {
-    return "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.";
-  }
-
-  if (!from && !to) {
-    return "";
-  }
-
-  const start =
-    new Date(
-      `${from}T00:00:00Z`,
-    );
-
-  const end =
-    new Date(
-      `${to}T00:00:00Z`,
-    );
-
-  const days =
-    Math.round(
-      (
-        end.getTime() -
-        start.getTime()
-      ) /
-        86400000,
-    );
-
-  if (
-    !Number.isFinite(days) ||
-    days < 1 ||
-    days > 366
-  ) {
-    return "Khoảng thời gian phải từ 1 đến 366 ngày.";
-  }
-
-  return "";
 };
 
 const LoadingBlock = ({
@@ -184,25 +118,6 @@ function OverviewCard({
 }
 
 export default function AdminDashboardPage() {
-  const [draft, setDraft] =
-    useState({
-      from: "",
-      to: "",
-      groupBy: "Day",
-    });
-
-  const [filters, setFilters] =
-    useState({
-      from: "",
-      to: "",
-      groupBy: "Day",
-    });
-
-  const [
-    filterError,
-    setFilterError,
-  ] = useState("");
-
   const [
     requestVersion,
     setRequestVersion,
@@ -215,12 +130,8 @@ export default function AdminDashboardPage() {
       error: "",
     });
 
-  const requestKey = [
-    filters.from,
-    filters.to,
-    filters.groupBy,
-    requestVersion,
-  ].join(":");
+  const requestKey =
+    String(requestVersion);
 
   useEffect(() => {
     const controller =
@@ -230,14 +141,6 @@ export default function AdminDashboardPage() {
 
     adminDashboardApi
       .getOperationOverview({
-        from:
-          filters.from ||
-          undefined,
-        to:
-          filters.to ||
-          undefined,
-        groupBy:
-          filters.groupBy,
         signal:
           controller.signal,
       })
@@ -275,12 +178,7 @@ export default function AdminDashboardPage() {
       active = false;
       controller.abort();
     };
-  }, [
-    filters.from,
-    filters.groupBy,
-    filters.to,
-    requestKey,
-  ]);
+  }, [requestKey]);
 
   const loading =
     state.requestKey !==
@@ -288,54 +186,6 @@ export default function AdminDashboardPage() {
 
   const data =
     state.data;
-
-  const submitFilters = (
-    event,
-  ) => {
-    event.preventDefault();
-
-    const message =
-      validateRange(
-        draft.from,
-        draft.to,
-      );
-
-    if (message) {
-      setFilterError(message);
-      return;
-    }
-
-    setFilterError("");
-
-    setFilters({
-      ...draft,
-    });
-
-    setRequestVersion(
-      (current) =>
-        current + 1,
-    );
-  };
-
-  const resetFilters = () => {
-    const next = {
-      from: "",
-      to: "",
-      groupBy: "Day",
-    };
-
-    setDraft(next);
-    setFilters(next);
-    setFilterError("");
-
-    setRequestVersion(
-      (current) =>
-        current + 1,
-    );
-  };
-
-  const period =
-    data?.period;
 
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
@@ -397,150 +247,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </div>
-
-      <form
-        onSubmit={submitFilters}
-        className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]"
-      >
-        <div className="grid gap-4 lg:grid-cols-[repeat(3,minmax(0,1fr))_auto] lg:items-end">
-          <label>
-            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-              Từ ngày
-            </span>
-
-            <input
-              type="date"
-              value={draft.from}
-              onChange={(event) =>
-                setDraft(
-                  (current) => ({
-                    ...current,
-                    from:
-                      event.target
-                        .value,
-                  }),
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-            />
-          </label>
-
-          <label>
-            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-              Đến ngày
-            </span>
-
-            <input
-              type="date"
-              value={draft.to}
-              onChange={(event) =>
-                setDraft(
-                  (current) => ({
-                    ...current,
-                    to:
-                      event.target
-                        .value,
-                  }),
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-            />
-
-
-          </label>
-
-          <label>
-            <span className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-              Nhóm dữ liệu
-            </span>
-
-            <select
-              value={draft.groupBy}
-              onChange={(event) =>
-                setDraft(
-                  (current) => ({
-                    ...current,
-                    groupBy:
-                      event.target
-                        .value,
-                  }),
-                )
-              }
-              className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-            >
-              {GROUP_OPTIONS.map(
-                (option) => (
-                  <option
-                    key={option.value}
-                    value={option.value}
-                  >
-                    {option.label}
-                  </option>
-                ),
-              )}
-            </select>
-          </label>
-
-          <div className="flex gap-2">
-            <button
-              type="submit"
-              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:opacity-90"
-            >
-              Áp dụng
-            </button>
-
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-black text-text transition hover:bg-background"
-            >
-              Mặc định
-            </button>
-          </div>
-        </div>
-
-        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-textLight">
-          <span
-            className="material-symbols-outlined text-[16px]"
-            aria-hidden="true"
-          >
-            info
-          </span>
-          Ngày kết thúc không được tính vào kỳ.
-        </p>
-
-        {filterError && (
-          <p className="mt-3 text-sm font-semibold text-error">
-            {filterError}
-          </p>
-        )}
-      </form>
-
-      {!loading &&
-        period && (
-          <div className="rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
-            Kỳ sự kiện:{" "}
-            <strong className="text-text">
-              {formatDate(
-                period.from,
-              )}
-            </strong>
-            {" → trước "}
-            <strong className="text-text">
-              {formatDate(
-                period.toExclusive,
-              )}
-            </strong>
-            {" · UTC+7"}
-          </div>
-        )}
-
-      {!loading &&
-        period?.isPartialPeriod && (
-          <div className="rounded-xl border border-warning/25 bg-warning/10 px-4 py-3 text-sm text-text">
-            Dữ liệu kỳ hiện tại chưa hoàn tất.
-          </div>
-        )}
 
       {state.error &&
         !loading && (
@@ -641,7 +347,7 @@ export default function AdminDashboardPage() {
             },
             {
               label:
-                "Đã giải quyết trong kỳ",
+                "Đã giải quyết trong 30 ngày gần nhất",
               value:
                 data?.disputes
                   ?.resolvedInPeriodCount,
@@ -662,7 +368,7 @@ export default function AdminDashboardPage() {
       <div className="rounded-xl border border-border bg-white px-4 py-3 text-xs leading-5 text-textLight">
         Các số tổng, số đang hoạt động, chờ thanh toán, chưa xử lý xong,
         lịch sắp tới và hôm nay là trạng thái hiện tại trên toàn bộ dữ liệu.
-        Bộ lọc thời gian chỉ áp dụng cho chỉ số theo kỳ, ví dụ số tranh chấp đã giải quyết trong kỳ.
+        Riêng số tranh chấp đã giải quyết sử dụng kỳ mặc định 30 ngày gần nhất của máy chủ.
       </div>
     </section>
   );
