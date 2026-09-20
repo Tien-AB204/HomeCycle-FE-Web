@@ -42,6 +42,7 @@ const PAYMENT_STATUS_LABELS = {
     "Hoàn tiền một phần",
   expired: "Đã hết hạn",
   cancelled: "Đã hủy",
+  unspecified: "Chưa xác định",
 };
 
 const TRANSACTION_TYPE_OPTIONS = [
@@ -160,6 +161,8 @@ const BREAKDOWN_LABELS = {
     "Thanh toán đặt cọc",
   fullpayment:
     "Thanh toán toàn bộ",
+  fullpaymentexcludingghn:
+    "Thanh toán toàn bộ (không gồm phí vận chuyển GHN)",
   ghnshippingcollected:
     "Phí vận chuyển GHN đã thu",
   shippingfeecollected:
@@ -987,8 +990,6 @@ export default function AdminFinanceDashboardPage() {
                 item?.status ??
                   item?.label,
                 PAYMENT_STATUS_LABELS,
-                item?.label ||
-                  "Chưa xác định",
               ),
             count:
               item?.count,
@@ -1130,10 +1131,7 @@ export default function AdminFinanceDashboardPage() {
         item?.key ||
           item?.label,
       )
-    ] ||
-    item?.label ||
-    item?.key ||
-    "Chưa xác định";
+    ] || "Khác";
 
   const inflowSourceRows = (
     Array.isArray(cashFlow?.inflowSources)
@@ -1877,8 +1875,6 @@ export default function AdminFinanceDashboardPage() {
                                   item?.status ??
                                     item?.label,
                                   PAYMENT_STATUS_LABELS,
-                                  item?.label ||
-                                    "Chưa xác định",
                                 )}
                               </td>
 
@@ -2297,9 +2293,7 @@ export default function AdminFinanceDashboardPage() {
                             item
                               ?.transactionType,
                             TRANSACTION_TYPE_LABELS,
-                            item
-                              ?.transactionLabel ||
-                              "Giao dịch",
+                            "Giao dịch khác",
                           )}
                         </td>
 
