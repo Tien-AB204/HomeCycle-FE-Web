@@ -74,7 +74,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
           loading: false,
           items: [],
           totalCount: 0,
-          error: "Không thể tải danh sách giao dịch tài chính.",
+          error: "Không thể tải lịch sử giao dịch.",
         });
       });
     return () => controller.abort();
@@ -165,9 +165,9 @@ export default function FinancialTransactionsPanel({ admin = false }) {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-black text-text">Giao dịch tài chính</h2>
+        <h2 className="text-lg font-black text-text">Lịch sử giao dịch</h2>
         <p className="mt-1 text-sm text-textLight">
-          Bấm vào tham chiếu để xem chi tiết giao dịch và sao kê liên quan.
+          Mỗi dòng là một giao dịch ví hoặc thanh toán được HomeCycle ghi nhận. Bấm vào tham chiếu để xem chi tiết và các thay đổi số dư liên quan.
         </p>
       </div>
 

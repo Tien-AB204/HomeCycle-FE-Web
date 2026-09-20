@@ -54,11 +54,11 @@ export function FinanceCashFlowChart({
     return (
       <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
         <h3 className="text-lg font-black text-text">
-          Dòng tiền thực theo thời gian
+          Tiền vào và tiền ra theo thời gian
         </h3>
 
         <p className="mt-1 text-xs leading-5 text-textLight">
-          Tiền thực đi vào, đi ra và dòng tiền thuần theo kỳ.
+          Tiền từ bên ngoài đi vào HomeCycle, tiền rời khỏi HomeCycle và chênh lệch giữa hai khoản theo từng kỳ.
         </p>
 
         <div className="mt-5">
@@ -81,7 +81,7 @@ export function FinanceCashFlowChart({
     },
     {
       key: "net",
-      label: "Dòng tiền thuần",
+      label: "Chênh lệch tiền vào/ra",
       className: "text-primary",
     },
   ];
@@ -214,11 +214,11 @@ export function FinanceCashFlowChart({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-lg font-black text-text">
-            Dòng tiền thực theo thời gian
+            Tiền vào và tiền ra theo thời gian
           </h3>
 
           <p className="mt-1 text-xs leading-5 text-textLight">
-            Tiền thực đi vào, đi ra và dòng tiền thuần. Hoàn tiền và giải ngân nội bộ không được coi là tiền ra khỏi nền tảng.
+            Tiền từ bên ngoài đi vào HomeCycle, tiền rời khỏi HomeCycle và chênh lệch giữa hai khoản. Hoàn tiền và chuyển tiền cho người bán là dịch chuyển nội bộ, không được coi là tiền rời khỏi nền tảng.
           </p>
         </div>
 
@@ -254,7 +254,7 @@ export function FinanceCashFlowChart({
             width: "100%",
           }}
           role="img"
-          aria-label="Biểu đồ dòng tiền tài chính"
+          aria-label="Biểu đồ tiền vào và tiền ra của HomeCycle"
         >
           {gridValues.map(
             (

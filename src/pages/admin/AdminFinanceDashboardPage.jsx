@@ -46,49 +46,49 @@ const PAYMENT_STATUS_LABELS = {
 
 const TRANSACTION_TYPE_OPTIONS = [
   ["", "Tất cả loại giao dịch"],
-  ["1", "Nạp ký quỹ đơn hàng"],
+  ["1", "Tạm giữ tiền cho đơn hàng"],
   ["2", "Thanh toán bằng ví"],
-  ["3", "Giải ngân đơn hàng"],
+  ["3", "Chuyển tiền cho người bán"],
   ["4", "Hoàn tiền đơn hàng"],
-  ["5", "Khóa tiền rút"],
+  ["5", "Tạm giữ tiền chờ rút"],
   ["6", "Rút tiền thành công"],
-  ["7", "Hoàn tác rút tiền"],
+  ["7", "Hoàn tiền rút về số dư khả dụng"],
   ["8", "Phí hoa hồng"],
-  ["9", "Phí gói dịch vụ"],
-  ["10", "Thu phí vận chuyển"],
+  ["9", "Phí gói đăng ký"],
+  ["10", "Thu phí vận chuyển GHN"],
 ];
 
 const TRANSACTION_TYPE_LABELS = {
-  "1": "Nạp ký quỹ đơn hàng",
+  "1": "Tạm giữ tiền cho đơn hàng",
   "2": "Thanh toán bằng ví",
-  "3": "Giải ngân đơn hàng",
+  "3": "Chuyển tiền cho người bán",
   "4": "Hoàn tiền đơn hàng",
-  "5": "Khóa tiền rút",
+  "5": "Tạm giữ tiền chờ rút",
   "6": "Rút tiền thành công",
-  "7": "Hoàn tác rút tiền",
+  "7": "Hoàn tiền rút về số dư khả dụng",
   "8": "Phí hoa hồng",
-  "9": "Phí gói dịch vụ",
-  "10": "Thu phí vận chuyển",
+  "9": "Phí gói đăng ký",
+  "10": "Thu phí vận chuyển GHN",
   escrowdeposit:
-    "Nạp ký quỹ đơn hàng",
+    "Tạm giữ tiền cho đơn hàng",
   walletpayment:
     "Thanh toán bằng ví",
   payoutrelease:
-    "Giải ngân đơn hàng",
+    "Chuyển tiền cho người bán",
   orderrefund:
     "Hoàn tiền đơn hàng",
   withdrawallock:
-    "Khóa tiền rút",
+    "Tạm giữ tiền chờ rút",
   withdrawalsuccess:
     "Rút tiền thành công",
   withdrawalrevert:
-    "Hoàn tác rút tiền",
+    "Hoàn tiền rút về số dư khả dụng",
   commissionfee:
     "Phí hoa hồng",
   subscriptionfee:
-    "Phí gói dịch vụ",
+    "Phí gói đăng ký",
   shippingfeecollected:
-    "Thu phí vận chuyển",
+    "Thu phí vận chuyển GHN",
 };
 
 const TRANSACTION_STATUS_OPTIONS = [
@@ -131,20 +131,20 @@ const REFERENCE_LABELS = {
 
 const FLOW_OPTIONS = [
   ["", "Tất cả dòng tiền"],
-  ["1", "Tiền vào thực"],
-  ["2", "Tiền ra thực"],
+  ["1", "Tiền vào từ bên ngoài"],
+  ["2", "Tiền rời khỏi HomeCycle"],
   ["3", "Nội bộ"],
   ["0", "Chưa phân loại"],
 ];
 
 const FLOW_LABELS = {
   "0": "Chưa phân loại",
-  "1": "Tiền vào thực",
-  "2": "Tiền ra thực",
+  "1": "Tiền vào từ bên ngoài",
+  "2": "Tiền rời khỏi HomeCycle",
   "3": "Nội bộ",
   unclassified: "Chưa phân loại",
-  externalin: "Tiền vào thực",
-  externalout: "Tiền ra thực",
+  externalin: "Tiền vào từ bên ngoài",
+  externalout: "Tiền rời khỏi HomeCycle",
   internal: "Nội bộ",
 };
 
@@ -169,9 +169,9 @@ const BREAKDOWN_LABELS = {
   shippingfeecollected:
     "Phí vận chuyển GHN đã thu",
   subscriptionpayment:
-    "Thanh toán gói dịch vụ",
+    "Thanh toán gói đăng ký",
   subscriptionfee:
-    "Thanh toán gói dịch vụ",
+    "Thanh toán gói đăng ký",
   otherpayos:
     "PayOS khác",
   walletpayment:
@@ -179,11 +179,11 @@ const BREAKDOWN_LABELS = {
   orderrefund:
     "Hoàn tiền đơn hàng",
   payoutrelease:
-    "Giải ngân đơn hàng",
+    "Chuyển tiền cho người bán",
   withdrawallock:
-    "Khóa tiền rút",
+    "Tạm giữ tiền chờ rút",
   withdrawalrevert:
-    "Hoàn tác rút tiền",
+    "Hoàn tiền rút về số dư khả dụng",
 };
 
 const normalize = (value) =>
@@ -200,7 +200,7 @@ const normalize = (value) =>
  */
 const REVENUE_SOURCE_LABELS = {
   commissionfee: "Phí hoa hồng",
-  subscriptionfee: "Phí gói dịch vụ",
+  subscriptionfee: "Phí gói đăng ký",
 };
 
 const findRevenueSourceAmount = (
@@ -925,7 +925,7 @@ export default function AdminFinanceDashboardPage() {
             transactionRequestKey,
           data: null,
           error:
-            "Không thể tải sổ giao dịch tài chính.",
+            "Không thể tải lịch sử giao dịch.",
         });
       });
 
@@ -1160,8 +1160,8 @@ export default function AdminFinanceDashboardPage() {
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-              Theo dõi vị thế tài chính hiện tại, dòng tiền thực,
-              tiền đang bị giữ và các dấu hiệu bất thường.
+              Theo dõi số dư ví HomeCycle, dòng tiền, các khoản đang
+              tạm giữ và những trường hợp cần kiểm tra.
             </p>
 
             {!mainLoading &&
@@ -1375,22 +1375,22 @@ export default function AdminFinanceDashboardPage() {
       <section className="space-y-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            VỊ THẾ TÀI CHÍNH
+            SỐ DƯ HIỆN TẠI
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Số dư hiện tại
+            Tổng quan số dư
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Đây là ảnh chụp số dư hiện tại, không phải tổng phát sinh trong khoảng lọc.
+            Đây là số dư hiện tại của các ví HomeCycle, không phải tổng phát sinh trong khoảng thời gian đang lọc.
           </p>
         </div>
 
         {mainState.errors
           .overview ? (
           <SectionError
-            message="Không thể tải vị thế tài chính."
+            message="Không thể tải số dư hiện tại."
             onRetry={
               refreshAll
             }
@@ -1398,12 +1398,12 @@ export default function AdminFinanceDashboardPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <MetricCard
-              label="Số dư ví ghi nhận"
+              label="Tổng số dư trong các ví HomeCycle"
               value={formatMoney(
                 position
                   ?.totalRecordedWalletBalance,
               )}
-              hint="Tổng số dư nội bộ đã ghi nhận. Không phải số dư ngân hàng hoặc tài khoản PayOS."
+              hint="Tổng số dư khả dụng và tạm giữ của các ví nội bộ HomeCycle; không phải số dư ngân hàng, PayOS hay doanh thu của nền tảng."
               loading={
                 mainLoading
               }
@@ -1411,12 +1411,12 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền người dùng đang giữ"
+              label="Tiền của người dùng đang tạm giữ"
               value={formatMoney(
                 position
                   ?.userFundsHeld,
               )}
-              hint="Tổng Hold của ví Cá nhân và Doanh nghiệp; có thể gồm nhiều mục đích giữ tiền."
+              hint="Tổng số dư tạm giữ trong ví Cá nhân và Doanh nghiệp, gồm mọi lý do tạm giữ (đơn hàng, chờ rút...)."
               loading={
                 mainLoading
               }
@@ -1424,19 +1424,19 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Ký quỹ đơn hàng"
+              label="Tiền tạm giữ gắn với đơn hàng"
               value={formatMoney(
                 position
                   ?.orderEscrowHeld,
               )}
-              hint="Phần tiền còn được giữ theo đơn hàng."
+              hint="Phần tiền tạm giữ được xác định từ các giao dịch ví có tham chiếu đến đơn hàng; là một phần trong tổng tiền đang tạm giữ, không phải khoản riêng."
               loading={
                 mainLoading
               }
             />
 
             <MetricCard
-              label="Số dư ví hệ thống"
+              label="Tổng số dư ví hệ thống"
               value={formatMoney(
                 position
                   ?.systemWalletBalance,
@@ -1444,13 +1444,13 @@ export default function AdminFinanceDashboardPage() {
               hint={
                 mainLoading
                   ? ""
-                  : `Khả dụng ${formatMoney(
+                  : `Bao gồm số dư khả dụng ${formatMoney(
                       position
                         ?.systemWalletAvailableBalance,
-                    )} · Tạm giữ ${formatMoney(
+                    )} và tạm giữ ${formatMoney(
                       position
                         ?.systemWalletHoldBalance,
-                    )}`
+                    )} của các ví do HomeCycle quản lý.`
               }
               loading={
                 mainLoading
@@ -1458,23 +1458,24 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền người dùng khả dụng"
+              label="Số dư khả dụng của người dùng"
               value={formatMoney(
                 position
                   ?.userAvailableFunds,
               )}
+              hint="Phần tiền trong ví Cá nhân và Doanh nghiệp hiện có thể sử dụng."
               loading={
                 mainLoading
               }
             />
 
             <MetricCard
-              label="Tiền khóa chờ rút"
+              label="Tiền tạm giữ chờ rút"
               value={formatMoney(
                 position
                   ?.withdrawalLocked,
               )}
-              hint="Đã chuyển từ khả dụng sang giữ; chưa phải tiền thực rời nền tảng."
+              hint="Khoản tiền đã tạm chuyển khỏi số dư khả dụng để xử lý yêu cầu rút; chưa phải tiền đã rời khỏi HomeCycle."
               loading={
                 mainLoading
               }
@@ -1482,24 +1483,24 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Ký quỹ vận chuyển GHN"
+              label="Số dư quỹ phí vận chuyển GHN"
               value={formatMoney(
                 position
                   ?.shippingEscrowBalance,
               )}
-              hint="Phí GHN HomeCycle đã thu và hiện còn nằm trong ví ký quỹ vận chuyển."
+              hint="Tổng số dư ví hệ thống dành cho các khoản phí vận chuyển GHN; không phải doanh thu HomeCycle."
               loading={
                 mainLoading
               }
             />
 
             <MetricCard
-              label="Thanh toán đang chờ"
+              label="Giá trị thanh toán đang chờ xử lý"
               value={formatMoney(
                 position
                   ?.currentPendingPaymentAmount,
               )}
-              hint="Tổng giá trị Payment đang Pending ở thời điểm hiện tại."
+              hint="Tổng giá trị các yêu cầu thanh toán hiện vẫn ở trạng thái chờ."
               loading={
                 mainLoading
               }
@@ -1531,12 +1532,12 @@ export default function AdminFinanceDashboardPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <MetricCard
-              label="Tiền vào thực"
+              label="Tiền vào từ bên ngoài"
               value={formatMoney(
                 activity
                   ?.externalInflow,
               )}
-              hint="Tiền PayOS thực sự đi vào HomeCycle trong kỳ."
+              hint="Tiền thanh toán qua PayOS đã hoàn tất trong kỳ, tức tiền từ bên ngoài đi vào HomeCycle."
               loading={
                 mainLoading
               }
@@ -1544,12 +1545,12 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền ra thực"
+              label="Tiền rời khỏi HomeCycle"
               value={formatMoney(
                 activity
                   ?.externalOutflow,
               )}
-              hint="Hiện tại là tiền thực rời HomeCycle qua rút tiền thành công."
+              hint="Tiền đã rời khỏi HomeCycle qua các yêu cầu rút tiền hoàn tất trong kỳ."
               loading={
                 mainLoading
               }
@@ -1557,12 +1558,12 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Dòng tiền thuần"
+              label="Chênh lệch tiền vào/ra"
               value={formatMoney(
                 activity
                   ?.netExternalCashFlow,
               )}
-              hint="Máy chủ tính từ tiền vào thực trừ tiền ra thực; số âm không mặc nhiên là lỗi."
+              hint="Tiền vào từ bên ngoài trừ tiền rời khỏi HomeCycle trong kỳ; số âm không mặc nhiên là bất thường."
               loading={
                 mainLoading
               }
@@ -1570,11 +1571,12 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Thanh toán đã xử lý"
+              label="Thanh toán thành công trong kỳ"
               value={formatMoney(
                 activity
                   ?.processedPaymentAmount,
               )}
+              hint="Tổng giá trị các thanh toán đã thanh toán thành công trong kỳ (mọi phương thức), kể cả khoản sau đó được hoàn tiền."
               loading={
                 mainLoading
               }
@@ -1586,18 +1588,19 @@ export default function AdminFinanceDashboardPage() {
                 activity
                   ?.refundedAmount,
               )}
-              hint="Hoàn tiền là dịch chuyển nội bộ, không được tính là tiền ra thực."
+              hint="Tiền hoàn lại cho người mua trong kỳ; đây là dịch chuyển bên trong ví HomeCycle, không phải tiền ra khỏi nền tảng."
               loading={
                 mainLoading
               }
             />
 
             <MetricCard
-              label="Thanh toán lỗi được tạo trong kỳ"
+              label="Thanh toán thất bại tạo trong kỳ"
               value={formatMoney(
                 activity
                   ?.createdFailedPaymentAmount,
               )}
+              hint="Tổng giá trị các yêu cầu thanh toán được tạo trong kỳ và hiện ở trạng thái thất bại."
               loading={
                 mainLoading
               }
@@ -1656,7 +1659,7 @@ export default function AdminFinanceDashboardPage() {
               />
 
               <MetricCard
-                label="Dòng tiền thuần"
+                label="Chênh lệch tiền vào/ra"
                 value={formatMoney(
                   cashFlow
                     ?.totals
@@ -1678,7 +1681,7 @@ export default function AdminFinanceDashboardPage() {
             <div className="grid gap-6 xl:grid-cols-2">
               <FinanceAmountBarChart
                 title="Nguồn tiền vào"
-                description="Các nguồn cấu thành tiền vào thực. Phí GHN đã thu đã nằm trong tổng tiền vào, không cộng thêm lần nữa."
+                description="Các nguồn tạo nên tiền từ bên ngoài đi vào HomeCycle. Phí GHN đã thu đã nằm trong tổng này, không cộng thêm lần nữa."
                 rows={
                   cashFlow
                     ?.inflowSources
@@ -1715,7 +1718,7 @@ export default function AdminFinanceDashboardPage() {
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Doanh thu là phần tiền thuộc về HomeCycle, gồm phí hoa hồng và phí gói dịch vụ. Phí vận chuyển GHN không phải doanh thu và không được tính vào đây.
+            Doanh thu là phần tiền thuộc về HomeCycle, gồm phí hoa hồng và phí gói đăng ký. Phí vận chuyển GHN không phải doanh thu và không được tính vào đây.
           </p>
         </div>
 
@@ -1735,7 +1738,7 @@ export default function AdminFinanceDashboardPage() {
                 revenue
                   ?.totalRevenue,
               )}
-              hint="Chỉ gồm phí hoa hồng và phí gói dịch vụ đã ghi nhận hoàn tất trong kỳ."
+              hint="Chỉ gồm phí hoa hồng và phí gói đăng ký đã được chuyển vào ví doanh thu nền tảng trong kỳ."
               loading={
                 mainLoading
               }
@@ -1782,11 +1785,11 @@ export default function AdminFinanceDashboardPage() {
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Payment được tạo trong kỳ
+            Thanh toán được tạo trong kỳ
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Phân loại các Payment được tạo trong kỳ theo trạng thái hiện tại của chúng.
+            Phân loại các yêu cầu thanh toán được tạo trong kỳ theo trạng thái hiện tại của chúng.
           </p>
         </div>
 
@@ -1802,7 +1805,7 @@ export default function AdminFinanceDashboardPage() {
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               <MetricCard
-                label="Payment được tạo"
+                label="Số thanh toán được tạo"
                 value={formatNumber(
                   paymentStatus
                     ?.totalCreatedCount,
@@ -1861,8 +1864,8 @@ export default function AdminFinanceDashboardPage() {
 
             <div className="grid gap-6 xl:grid-cols-2">
               <DashboardDonutChart
-                title="Cơ cấu trạng thái Payment"
-                description="Số lượng Payment được tạo trong kỳ theo trạng thái hiện tại."
+                title="Cơ cấu trạng thái thanh toán"
+                description="Số lượng thanh toán được tạo trong kỳ theo trạng thái hiện tại."
                 rows={
                   paymentDonutRows
                 }
@@ -1968,22 +1971,22 @@ export default function AdminFinanceDashboardPage() {
       <section className="space-y-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            SỨC KHỎE TÀI CHÍNH
+            CÁC KHOẢN CẦN THEO DÕI
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Khoản tiền cần theo dõi
+            Các trường hợp cần kiểm tra
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Cảnh báo được phân cấp theo mức độ; không phải mọi khoản đang giữ đều là lỗi.
+            Các trường hợp thanh toán, rút tiền, đơn hàng hoặc số dư cần Quản trị viên theo dõi; không phải mọi khoản đang tạm giữ đều là lỗi.
           </p>
         </div>
 
         {mainState.errors
           .health ? (
           <SectionError
-            message="Không thể tải trạng thái sức khỏe tài chính."
+            message="Không thể tải các khoản cần theo dõi."
             onRetry={
               refreshAll
             }
@@ -1991,23 +1994,23 @@ export default function AdminFinanceDashboardPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <HealthCard
-              label="Payment chờ đã quá hạn"
+              label="Thanh toán chờ đã quá hạn"
               metric={
                 health
                   ?.stalePendingPayments
               }
               severity="warning"
-              description="Payment vẫn Pending nhưng đã qua thời điểm hết hạn."
+              description="Yêu cầu thanh toán vẫn đang chờ dù đã qua thời điểm hết hạn."
             />
 
             <HealthCard
-              label="Payment chờ thiếu thời hạn"
+              label="Thanh toán chờ chưa có thời hạn"
               metric={
                 health
                   ?.pendingPaymentsWithoutExpiry
               }
               severity="warning"
-              description="Payment Pending nhưng không có thời điểm hết hạn."
+              description="Yêu cầu thanh toán đang chờ nhưng chưa được đặt thời điểm hết hạn."
             />
 
             <HealthCard
@@ -2027,37 +2030,37 @@ export default function AdminFinanceDashboardPage() {
                   ?.processingWithdrawals
               }
               severity="info"
-              description="Đã vào quá trình xử lý nhưng chưa có kết quả cuối."
+              description="Yêu cầu rút tiền đã được duyệt và đang chuyển tiền, chưa có kết quả cuối."
             />
 
             <HealthCard
-              label="Đơn quá hạn giải ngân"
+              label="Đơn đã hoàn tất nhưng tiền chưa được chuyển"
               metric={
                 health
                   ?.overdueReleaseOrders
               }
               severity="warning"
-              description="Đã hoàn tất, hết cửa sổ tranh chấp, không có tranh chấp hoạt động nhưng tiền vẫn còn bị giữ."
+              description="Đơn đã hoàn tất, đã hết thời gian khiếu nại và không còn tranh chấp nhưng tiền vẫn đang tạm giữ."
             />
 
             <HealthCard
-              label="Đơn thiếu hạn giải ngân"
+              label="Đơn hoàn tất chưa có mốc chuyển tiền"
               metric={
                 health
                   ?.completedOrdersMissingReleaseDeadline
               }
               severity="warning"
-              description="Đơn hoàn tất còn Hold nhưng thiếu thời điểm kết thúc cửa sổ tranh chấp."
+              description="Đơn đã hoàn tất và tiền vẫn đang tạm giữ nhưng chưa có thời điểm kết thúc thời gian khiếu nại."
             />
 
             <HealthCard
-              label="Tiền giữ do tranh chấp"
+              label="Tiền đang tạm giữ do tranh chấp"
               metric={
                 health
                   ?.activeDisputeHeldFunds
               }
               severity="info"
-              description="Tiền đang được giữ vì đơn có tranh chấp hoạt động; đây là trạng thái theo dõi, không mặc nhiên là lỗi."
+              description="Tiền của đơn hàng đang tạm giữ vì đơn có tranh chấp chưa giải quyết; đây là trạng thái theo dõi, không mặc nhiên là lỗi."
             />
 
             <HealthCard
@@ -2067,7 +2070,7 @@ export default function AdminFinanceDashboardPage() {
                   ?.negativeWalletCount
               }
               severity="critical"
-              description="Ví có Available hoặc Hold nhỏ hơn 0."
+              description="Ví có số dư khả dụng hoặc số dư tạm giữ nhỏ hơn 0; cần kiểm tra ngay."
               countOnly
             />
 
@@ -2078,7 +2081,7 @@ export default function AdminFinanceDashboardPage() {
                   ?.unclassifiedTransactionsInPeriod
               }
               severity="warning"
-              description="Financial transaction trong kỳ chưa được xếp vào tiền vào, tiền ra hoặc nội bộ."
+              description="Giao dịch trong kỳ chưa xếp được vào nhóm tiền vào, tiền ra hay dịch chuyển nội bộ."
             />
           </div>
         )}
@@ -2093,11 +2096,11 @@ export default function AdminFinanceDashboardPage() {
           <div className="mt-1 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <h3 className="text-xl font-black text-text">
-                Giao dịch tài chính gần đây
+                Lịch sử giao dịch gần đây
               </h3>
 
               <p className="mt-1 text-xs leading-5 text-textLight">
-                Mỗi dòng là một financial event, không phải từng dòng biến động ledger.
+                Mỗi dòng thể hiện một giao dịch nghiệp vụ được HomeCycle ghi nhận; không phải từng thay đổi số dư riêng lẻ.
               </p>
             </div>
 

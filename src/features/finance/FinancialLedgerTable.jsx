@@ -10,7 +10,7 @@ import {
 export default function FinancialLedgerTable({ ledgers = [] }) {
   const columns = [
     {
-      title: "Hướng",
+      title: "Chiều",
       dataIndex: "direction",
       render: (value) => getFinanceLabel(LEDGER_DIRECTION_LABELS, value),
     },
@@ -51,7 +51,7 @@ export default function FinancialLedgerTable({ ledgers = [] }) {
       columns={columns}
       dataSource={Array.isArray(ledgers) ? ledgers : []}
       pagination={false}
-      locale={{ emptyText: <Empty description="Chưa có sao kê liên quan." /> }}
+      locale={{ emptyText: <Empty description="Chưa có thay đổi số dư liên quan." /> }}
       scroll={{ x: 900 }}
       size="small"
     />
