@@ -786,72 +786,113 @@ const TradeTable = ({
 const DemandGroup = ({
   title,
   group,
-}) => (
-  <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
-    <h3 className="text-base font-black text-text">
-      {title}
-    </h3>
+}) => {
+  const items = Array.isArray(group?.items)
+    ? group.items
+    : [];
 
-    <p className="mt-2 text-xs leading-5 text-textLight">
-      Có trả lời:{" "}
-      <strong className="text-text">
-        {formatNumber(
-          group?.respondentCount,
-        )}
-      </strong>
-      {" · thiếu: "}
-      <strong className="text-text">
-        {formatNumber(
-          group?.missingResponseCount,
-        )}
-      </strong>
-      {" · dữ liệu không hợp lệ: "}
-      <strong className="text-text">
-        {formatNumber(
-          group?.invalidResponseBusinessCount,
-        )}
-      </strong>
-    </p>
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
+      <h3 className="text-base font-black text-text">
+        {title}
+      </h3>
 
-    <div className="mt-4 space-y-3">
-      {!Array.isArray(
-        group?.items,
-      ) ||
-      group.items.length === 0 ? (
-        <p className="rounded-xl bg-background px-4 py-5 text-center text-sm text-textLight">
+      <p className="mt-2 text-xs leading-5 text-textLight">
+        Có trả lời:{" "}
+        <strong className="text-text">
+          {formatNumber(
+            group?.respondentCount,
+          )}
+        </strong>
+        {" · thiếu: "}
+        <strong className="text-text">
+          {formatNumber(
+            group?.missingResponseCount,
+          )}
+        </strong>
+        {" · dữ liệu không hợp lệ: "}
+        <strong className="text-text">
+          {formatNumber(
+            group?.invalidResponseBusinessCount,
+          )}
+        </strong>
+      </p>
+
+      {items.length === 0 ? (
+        <p className="mt-4 rounded-xl bg-background px-4 py-5 text-center text-sm text-textLight">
           Chưa có dữ liệu.
         </p>
       ) : (
-        group.items.map(
-          (item, index) => (
-            <div
-              key={`${item.key}-${index}`}
-              className="flex items-start justify-between gap-4 rounded-xl bg-background px-3 py-3"
-            >
-              <span className="text-sm font-bold text-text">
-                {demandLabelFor(
-                  item.label ||
-                    item.key,
-                )}
-              </span>
+        <div className="mt-5 space-y-4">
+          {items.map(
+            (item, index) => {
+              const percentage =
+                Math.max(
+                  0,
+                  Math.min(
+                    100,
+                    Number(
+                      item.percentage,
+                    ) || 0,
+                  ),
+                );
 
-              <span className="shrink-0 text-right text-sm font-black text-text">
-                {formatNumber(
-                  item.businessCount,
-                )}
-                {" · "}
-                {formatDecimal(
-                  item.percentage,
-                )}
-                %
-              </span>
-            </div>
-          ),
-        )
+              return (
+                <div
+                  key={`${item.key}-${index}`}
+                >
+                  <div className="mb-2 flex items-start justify-between gap-4">
+                    <span className="min-w-0 text-sm font-bold text-text">
+                      {demandLabelFor(
+                        item.label ||
+                          item.key,
+                      )}
+                    </span>
+
+                    <span className="shrink-0 text-right text-sm font-black text-text">
+                      {formatNumber(
+                        item.businessCount,
+                      )}
+                      {" · "}
+                      {formatDecimal(
+                        item.percentage,
+                      )}
+                      %
+                    </span>
+                  </div>
+
+                  <div
+                    className="h-3 overflow-hidden rounded-full bg-background"
+                    role="img"
+                    aria-label={`${demandLabelFor(
+                      item.label ||
+                        item.key,
+                    )}: ${formatDecimal(
+                      item.percentage,
+                    )}%`}
+                  >
+                    <div
+                      className="h-full rounded-full bg-primary transition-[width]"
+                      style={{
+                        width:
+                          percentage > 0
+                            ? `${Math.max(
+                                3,
+                                percentage,
+                              )}%`
+                            : "0%",
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            },
+          )}
+        </div>
       )}
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 const initialFilters = {
   from: "",
