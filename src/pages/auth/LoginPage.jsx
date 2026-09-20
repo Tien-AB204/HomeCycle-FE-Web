@@ -100,6 +100,7 @@ const LoginPage = () => {
   const location = useLocation();
   const { login, loginWithGoogleTokens } = useAuth();
   const returnPath = getSafeReturnPath(location.state?.from);
+  const passwordResetSuccess = location.state?.passwordReset === true;
 
   const [email, setEmail] =
     useState("");
@@ -445,6 +446,20 @@ const LoginPage = () => {
           <p className="mt-4 rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium text-primary">
             Vui lòng đăng nhập để tiếp tục thao tác bạn vừa chọn.
           </p>
+        )}
+
+        {passwordResetSuccess && (
+          <div
+            role="status"
+            className="mt-4 flex items-start gap-3 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-success"
+          >
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              check_circle
+            </span>
+            <p className="leading-5">
+              Đặt lại mật khẩu thành công. Vui lòng đăng nhập bằng mật khẩu mới.
+            </p>
+          </div>
         )}
       </div>
 
