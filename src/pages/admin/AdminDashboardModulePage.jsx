@@ -332,6 +332,11 @@ const formatMoney = (value) =>
     },
   ).format(Number(value) || 0);
 
+const formatCompactMoney = (value) =>
+  `${new Intl.NumberFormat("vi-VN", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(Number(value) || 0)} ₫`;
 const formatPercent = (value) =>
   value === null ||
   value === undefined
@@ -514,83 +519,6 @@ const DistributionPanel = ({
   </section>
 );
 
-const SeriesTable = ({
-  title,
-  rows,
-  amount = false,
-}) => (
-  <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
-    <h3 className="text-lg font-black text-text">
-      {title}
-    </h3>
-
-    <div className="mt-4 overflow-x-auto">
-      <table className="min-w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs uppercase tracking-[0.1em] text-textLight">
-            <th className="px-3 py-3">
-              Từ ngày
-            </th>
-            <th className="px-3 py-3">
-              Đến trước
-            </th>
-            <th className="px-3 py-3 text-right">
-              {amount
-                ? "Giá trị"
-                : "Số lượng"}
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {!Array.isArray(rows) ||
-          rows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={3}
-                className="px-3 py-8 text-center text-textLight"
-              >
-                Chưa có dữ liệu.
-              </td>
-            </tr>
-          ) : (
-            rows.map(
-              (item, index) => (
-                <tr
-                  key={`${item.from}-${index}`}
-                  className="border-b border-border/70 last:border-0"
-                >
-                  <td className="px-3 py-3 font-semibold text-text">
-                    {formatDate(
-                      item.from,
-                    )}
-                  </td>
-
-                  <td className="px-3 py-3 text-textLight">
-                    {formatDate(
-                      item.toExclusive,
-                    )}
-                  </td>
-
-                  <td className="px-3 py-3 text-right font-black text-text">
-                    {amount
-                      ? formatMoney(
-                          item.amount,
-                        )
-                      : formatNumber(
-                          item.count,
-                        )}
-                  </td>
-                </tr>
-              ),
-            )
-          )}
-        </tbody>
-      </table>
-    </div>
-  </section>
-);
-
 const PaymentMethodTable = ({
   rows,
 }) => (
@@ -699,90 +627,123 @@ const isSupportedTradePair = (item) => {
   );
 };
 
-const TradeTable = ({
+const TradeChart = ({
   title,
   rows,
 }) => {
-  const supportedRows = Array.isArray(rows)
-    ? rows.filter(isSupportedTradePair)
-    : [];
+  const visibleRows = (
+    Array.isArray(rows)
+      ? rows.filter(isSupportedTradePair)
+      : []
+  ).filter(
+    (item) =>
+      (Number(item?.count) || 0) > 0 ||
+      (Number(item?.amount) || 0) > 0,
+  );
+
+  const maxCount = Math.max(
+    1,
+    ...visibleRows.map(
+      (item) => Number(item?.count) || 0,
+    ),
+  );
 
   return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+      <h3 className="text-lg font-black text-text">
+        {title}
+      </h3>
+
+      <p className="mt-1 text-xs leading-5 text-textLight">
+        Phân bố số giao dịch theo vai trò bên mua / bên bán trong kỳ.
+        Giá trị tiền được giữ làm thông tin bổ sung.
+      </p>
+
+      {visibleRows.length === 0 ? (
+        <div className="mt-5 flex min-h-40 items-center justify-center rounded-xl bg-background px-4 text-center text-sm font-semibold text-textLight">
+          Chưa có giao dịch phù hợp trong kỳ.
+        </div>
+      ) : (
+        <div className="mt-6 space-y-5">
+          {visibleRows.map(
+            (item, index) => {
+              const count =
+                Number(item?.count) || 0;
+              const width =
+                count > 0
+                  ? Math.max(
+                      4,
+                      (count / maxCount) * 100,
+                    )
+                  : 0;
+
+              return (
+                <div
+                  key={`${item.buyerRole}-${item.sellerRole}-${index}`}
+                >
+                  <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-sm font-bold text-text">
+                      {labelFor(
+                        item.buyerRole,
+                      )}
+                      {" mua → "}
+                      {labelFor(
+                        item.sellerRole,
+                      )}
+                      {" bán"}
+                    </span>
+
+                    <span className="text-sm font-black text-text">
+                      {formatNumber(count)}
+                      {" giao dịch · "}
+                      {formatMoney(
+                        item.amount,
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="h-3 overflow-hidden rounded-full bg-background">
+                    <div
+                      className="h-full rounded-full bg-primary transition-[width]"
+                      style={{
+                        width: `${width}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            },
+          )}
+        </div>
+      )}
+    </section>
+  );
+};
+
+const hasPositiveSeriesValue = (
+  rows,
+  key,
+) =>
+  Array.isArray(rows) &&
+  rows.some(
+    (item) =>
+      (Number(item?.[key]) || 0) > 0,
+  );
+
+const EmptyPerformanceChart = ({
+  title,
+  message,
+}) => (
   <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
     <h3 className="text-lg font-black text-text">
       {title}
     </h3>
 
-    <div className="mt-4 overflow-x-auto">
-      <table className="min-w-full text-left text-sm">
-        <thead>
-          <tr className="border-b border-border text-xs uppercase tracking-[0.1em] text-textLight">
-            <th className="px-3 py-3">
-              Bên mua
-            </th>
-            <th className="px-3 py-3">
-              Bên bán
-            </th>
-            <th className="px-3 py-3 text-right">
-              Số lượng
-            </th>
-            <th className="px-3 py-3 text-right">
-              Giá trị
-            </th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {supportedRows.length === 0 ? (
-            <tr>
-              <td
-                colSpan={4}
-                className="px-3 py-8 text-center text-textLight"
-              >
-                Chưa có dữ liệu.
-              </td>
-            </tr>
-          ) : (
-            supportedRows.map(
-              (item, index) => (
-                <tr
-                  key={`${item.buyerRole}-${item.sellerRole}-${index}`}
-                  className="border-b border-border/70 last:border-0"
-                >
-                  <td className="px-3 py-3 font-bold text-text">
-                    {labelFor(
-                      item.buyerRole,
-                    )}
-                  </td>
-
-                  <td className="px-3 py-3 font-bold text-text">
-                    {labelFor(
-                      item.sellerRole,
-                    )}
-                  </td>
-
-                  <td className="px-3 py-3 text-right">
-                    {formatNumber(
-                      item.count,
-                    )}
-                  </td>
-
-                  <td className="px-3 py-3 text-right font-black text-text">
-                    {formatMoney(
-                      item.amount,
-                    )}
-                  </td>
-                </tr>
-              ),
-            )
-          )}
-        </tbody>
-      </table>
+    <div className="mt-5 flex min-h-64 items-center justify-center rounded-xl bg-background px-6 text-center text-sm font-semibold leading-6 text-textLight">
+      {message}
     </div>
   </section>
-  );
-};
-
+);
 const DemandGroup = ({
   title,
   group,
@@ -2424,12 +2385,12 @@ export default function AdminDashboardModulePage({
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <TradeTable
+          <TradeChart
             title="Thanh toán theo vai trò bên mua / bên bán"
             rows={data?.paymentGroups}
           />
 
-          <TradeTable
+          <TradeChart
             title="Đơn hoàn tất theo vai trò bên mua / bên bán"
             rows={
               data
@@ -2439,22 +2400,65 @@ export default function AdminDashboardModulePage({
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <SeriesTable
-            title="Thanh toán có doanh nghiệp tham gia theo kỳ"
-            rows={
-              data
-                ?.businessPaymentSeries
-            }
-          />
+          {hasPositiveSeriesValue(
+            data?.businessPaymentSeries,
+            "count",
+          ) ? (
+            <DashboardLineChart
+              title="Thanh toán có doanh nghiệp tham gia theo kỳ"
+              description="Số thanh toán có ít nhất một bên là doanh nghiệp, được nhóm theo kỳ đang chọn."
+              rows={
+                data
+                  ?.businessPaymentSeries
+              }
+              series={[
+                {
+                  key: "count",
+                  label: "Thanh toán",
+                  className:
+                    "text-primary",
+                },
+              ]}
+            />
+          ) : (
+            <EmptyPerformanceChart
+              title="Thanh toán có doanh nghiệp tham gia theo kỳ"
+              message="Chưa có thanh toán có doanh nghiệp tham gia trong kỳ đã chọn."
+            />
+          )}
 
-          <SeriesTable
-            title="Giá trị bán của doanh nghiệp theo kỳ"
-            rows={
-              data
-                ?.businessSalesSeries
-            }
-            amount
-          />
+          {hasPositiveSeriesValue(
+            data?.businessSalesSeries,
+            "amount",
+          ) ? (
+            <DashboardLineChart
+              title="Giá trị bán của doanh nghiệp theo kỳ"
+              description="Giá trị đơn hoàn tất có bên bán là doanh nghiệp, được nhóm theo kỳ đang chọn."
+              rows={
+                data
+                  ?.businessSalesSeries
+              }
+              series={[
+                {
+                  key: "amount",
+                  label: "Giá trị bán",
+                  className:
+                    "text-success",
+                },
+              ]}
+              valueFormatter={
+                formatMoney
+              }
+              axisValueFormatter={
+                formatCompactMoney
+              }
+            />
+          ) : (
+            <EmptyPerformanceChart
+              title="Giá trị bán của doanh nghiệp theo kỳ"
+              message="Chưa có đơn hoàn tất có bên bán là doanh nghiệp trong kỳ đã chọn, nên không hiển thị chuỗi 0 ₫ kéo dài."
+            />
+          )}
         </div>
       </>
     );
