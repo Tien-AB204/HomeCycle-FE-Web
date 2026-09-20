@@ -4,13 +4,14 @@ import homeCycleMark from "../../assets/brand/homecycle-mark.png";
 import { useAuth } from "../../hooks/useAuth";
 import Avatar from "../shared/Avatar";
 import NotificationBell from "../shared/NotificationBell";
+import { isNavItemActive } from "../../utils/pathMatch";
 
 const getDisplayName = (user, fallbackName) =>
   user?.fullName || user?.username || fallbackName;
 
-const getCurrentPage = (pathname, navGroups, fallbackLabel) =>
+const getCurrentPage = (pathname, navGroups, dashboardPath, fallbackLabel) =>
   navGroups.flatMap((group) => group.items).find((item) =>
-    pathname.startsWith(item.path),
+    isNavItemActive(pathname, item, dashboardPath),
   )?.label || fallbackLabel;
 
 export default function ManagementPortalLayout({
@@ -44,6 +45,7 @@ export default function ManagementPortalLayout({
   const currentPage = getCurrentPage(
     location.pathname,
     navGroups,
+    dashboardPath,
     defaultPageLabel,
   );
 
@@ -184,14 +186,18 @@ export default function ManagementPortalLayout({
               </p>
 
               <div className="space-y-1">
-                {group.items.map((item) => (
+                {group.items.map((item) => {
+                  const active = isNavItemActive(
+                    location.pathname,
+                    item,
+                    dashboardPath,
+                  );
+
+                  return (
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    end={
-                      item.path ===
-                      dashboardPath
-                    }
+                    aria-current={active ? "page" : undefined}
                     title={
                       desktopSidebarCollapsed
                         ? item.label
@@ -200,13 +206,13 @@ export default function ManagementPortalLayout({
                     onClick={() =>
                       setMobileMenuOpen(false)
                     }
-                    className={({ isActive }) =>
+                    className={
                       [
                         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition",
                         desktopSidebarCollapsed
                           ? "lg:justify-center lg:px-2"
                           : "",
-                        isActive
+                        active
                           ? "bg-white text-primary shadow-[0_8px_22px_rgba(23,40,48,0.12)]"
                           : "text-white/70 hover:bg-white/10 hover:text-white",
                       ].join(" ")
@@ -229,7 +235,8 @@ export default function ManagementPortalLayout({
                       {item.label}
                     </span>
                   </NavLink>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}

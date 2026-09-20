@@ -4,6 +4,8 @@ import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import adminUserApi from "../../services/apis/adminUserApi";
 import { getUserId } from "../../utils/authUtils";
 import Avatar from "../../components/shared/Avatar";
+import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
+import { USER_SECTION_TABS } from "../../constants/adminSections";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_TIME = 400;
@@ -570,6 +572,11 @@ export default function UserManagementPage() {
 
   return (
     <section className="space-y-6 p-4 sm:p-6">
+      <AdminSectionTabs
+        ariaLabel="Khu vực Người dùng"
+        items={USER_SECTION_TABS}
+      />
+
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">

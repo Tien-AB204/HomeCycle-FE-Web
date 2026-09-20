@@ -36,6 +36,7 @@ import RoleRoute from "./RoleRoute";
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
+import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
@@ -304,6 +305,11 @@ const AppRouter = () => {
           <Route
             path="dashboard/users"
             element={<AdminUserDashboardPage />}
+          />
+
+          <Route
+            path="dashboard/posts"
+            element={<AdminPostOverviewPage />}
           />
 
           <Route

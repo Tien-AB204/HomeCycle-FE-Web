@@ -5,6 +5,8 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
+import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
+import { USER_SECTION_TABS } from "../../constants/adminSections";
 
 const ROLE_OPTIONS = [
   {
@@ -96,13 +98,6 @@ const QUICK_ACTIONS = [
       "Kiểm soát trạng thái và quyền truy cập tài khoản.",
     path: "/admin/users",
     icon: "manage_accounts",
-  },
-  {
-    title: "Quản lý bài đăng",
-    description:
-      "Theo dõi nội dung đang có trên thị trường.",
-    path: "/admin/posts",
-    icon: "inventory_2",
   },
   {
     title: "Chính sách hệ thống",
@@ -986,6 +981,11 @@ export default function AdminDashboardPage() {
 
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
+      <AdminSectionTabs
+        ariaLabel="Khu vực Người dùng"
+        items={USER_SECTION_TABS}
+      />
+
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
         <div className="pointer-events-none absolute -right-12 -top-24 h-56 w-56 rounded-full border-[38px] border-white/5" />
 
