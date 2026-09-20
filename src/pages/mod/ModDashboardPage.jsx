@@ -27,7 +27,7 @@ const MODERATOR_AREAS = [
     description:
       "Kiểm tra các đánh giá đã bị người dùng báo cáo.",
     icon: "rate_review",
-    path: "/mod/reported-reviews",
+    path: "/mod/reviews",
   },
   {
     title: "Rút tiền",
@@ -41,7 +41,7 @@ const MODERATOR_AREAS = [
     description:
       "Theo dõi giao dịch, thanh toán và trạng thái đơn hàng liên quan.",
     icon: "receipt_long",
-    path: "/mod/transactions-orders",
+    path: "/mod/transactions",
   },
   {
     title: "Lịch hẹn",
