@@ -39,7 +39,7 @@ function FundsPanel() {
       .then((data) => setState({ loading: false, data, error: "" }))
       .catch((error) => {
         if (isCanceled(error)) return;
-        setState({ loading: false, data: null, error: "Không thể tải tổng quan quỹ." });
+        setState({ loading: false, data: null, error: "Không thể tải số dư ví." });
       });
     return () => controller.abort();
   }, [version]);
@@ -173,13 +173,13 @@ export default function FinanceOperationsPage() {
   return (
     <section className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <header className="rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">Vận hành hệ thống</p>
-        <h1 className="mt-2 text-2xl font-black sm:text-3xl">Quản lý tài chính</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">Theo dõi số dư các ví, các khoản tiền đang tạm giữ và lịch sử giao dịch của hệ thống.</p>
+        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">TÀI CHÍNH</p>
+        <h1 className="mt-2 text-2xl font-black sm:text-3xl">Ví & giao dịch</h1>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">Theo dõi số dư ví, tiền đang tạm giữ và lịch sử giao dịch của HomeCycle.</p>
       </header>
       <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
         <Tabs activeKey={activeTab} onChange={changeTab} items={[
-          { key: "funds", label: "Tổng quan quỹ", children: activeTab === "funds" ? <FundsPanel /> : null },
+          { key: "funds", label: "Số dư & ví hệ thống", children: activeTab === "funds" ? <FundsPanel /> : null },
           { key: "holds", label: "Tiền đang tạm giữ", children: activeTab === "holds" ? <HoldsPanel /> : null },
           { key: "transactions", label: "Lịch sử giao dịch", children: activeTab === "transactions" ? <FinancialTransactionsPanel admin /> : null },
         ]} />

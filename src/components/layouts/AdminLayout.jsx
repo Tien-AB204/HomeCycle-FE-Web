@@ -2,23 +2,18 @@ import ManagementPortalLayout from "./ManagementPortalLayout";
 
 const ADMIN_NAV_GROUPS = [
   {
-    group: "DASHBOARD",
+    group: "TỔNG QUAN",
     items: [
       {
         label: "Tổng quan vận hành",
         path: "/admin/dashboard",
         icon: "space_dashboard",
       },
-      {
-        label: "Giao dịch",
-        path: "/admin/dashboard/payments",
-        icon: "payments",
-      },
-      {
-        label: "Tài chính",
-        path: "/admin/dashboard/finance",
-        icon: "account_balance",
-      },
+    ],
+  },
+  {
+    group: "VẬN HÀNH",
+    items: [
       {
         label: "Đơn hàng",
         path: "/admin/dashboard/orders",
@@ -32,12 +27,39 @@ const ADMIN_NAV_GROUPS = [
       {
         label: "Tranh chấp",
         path: "/admin/dashboard/disputes",
+        matchPaths: ["/admin/dispute-categories"],
         icon: "gavel",
       },
       {
-        label: "Tổng quan người dùng",
+        label: "Người dùng",
         path: "/admin/dashboard/users",
+        matchPaths: ["/admin/users"],
         icon: "group",
+      },
+      {
+        label: "Bài đăng",
+        path: "/admin/dashboard/posts",
+        icon: "article",
+      },
+    ],
+  },
+  {
+    group: "TÀI CHÍNH",
+    items: [
+      {
+        label: "Tổng quan",
+        path: "/admin/dashboard/finance",
+        icon: "account_balance",
+      },
+      {
+        label: "Thanh toán",
+        path: "/admin/dashboard/payments",
+        icon: "payments",
+      },
+      {
+        label: "Ví & giao dịch",
+        path: "/admin/finance-management",
+        icon: "receipt_long",
       },
     ],
   },
@@ -45,17 +67,17 @@ const ADMIN_NAV_GROUPS = [
     group: "DOANH NGHIỆP",
     items: [
       {
-        label: "Tổng quan doanh nghiệp",
+        label: "Tổng quan",
         path: "/admin/dashboard/businesses/overview",
         icon: "domain",
       },
       {
-        label: "Nhu cầu doanh nghiệp",
+        label: "Nhu cầu",
         path: "/admin/dashboard/businesses/demand",
         icon: "query_stats",
       },
       {
-        label: "Hiệu quả kinh doanh",
+        label: "Hoạt động mua bán",
         path: "/admin/dashboard/businesses/performance",
         icon: "monitoring",
       },
@@ -75,29 +97,19 @@ const ADMIN_NAV_GROUPS = [
         icon: "sell",
       },
       {
-        label: "Loại và thuộc tính",
+        label: "Loại & thuộc tính",
         path: "/admin/product-types",
         icon: "tune",
       },
     ],
   },
   {
-    group: "VẬN HÀNH HỆ THỐNG",
+    group: "CẤU HÌNH HỆ THỐNG",
     items: [
       {
-        label: "Người dùng",
-        path: "/admin/users",
-        icon: "group",
-      },
-      {
-        label: "Bài đăng",
-        path: "/admin/posts",
-        icon: "inventory_2",
-      },
-      {
-        label: "Quản lý tài chính",
-        path: "/admin/finance-management",
-        icon: "receipt_long",
+        label: "Gói đăng ký",
+        path: "/admin/subscription-packages",
+        icon: "workspace_premium",
       },
       {
         label: "Chính sách hệ thống",
@@ -105,19 +117,9 @@ const ADMIN_NAV_GROUPS = [
         icon: "policy",
       },
       {
-        label: "Danh mục tranh chấp",
-        path: "/admin/dispute-categories",
-        icon: "gavel",
-      },
-      {
         label: "Nhật ký hệ thống",
         path: "/admin/audit-logs",
         icon: "history",
-      },
-      {
-        label: "Gói đăng ký",
-        path: "/admin/subscription-packages",
-        icon: "workspace_premium",
       },
     ],
   },

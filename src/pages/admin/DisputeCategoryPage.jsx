@@ -3,6 +3,8 @@ import DisputeCategoryModal from "../../features/admin/disputeCategories/Dispute
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import disputeCategoryApi from "../../services/apis/disputeCategoryApi";
 import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
+import { DISPUTE_SECTION_TABS } from "../../constants/adminSections";
 
 const TARGET_TYPE_LABELS = {
   Order: "Đơn hàng",
@@ -246,7 +248,13 @@ export default function DisputeCategoryPage() {
   };
 
   return (
-    <div className="m-6 rounded-xl border border-border bg-white p-6 shadow-sm">
+    <div className="m-6 space-y-6">
+      <AdminSectionTabs
+        ariaLabel="Khu vực Tranh chấp"
+        items={DISPUTE_SECTION_TABS}
+      />
+
+    <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-xl font-bold text-text">
@@ -523,6 +531,7 @@ export default function DisputeCategoryPage() {
         onCancel={handleCloseStatusConfirmation}
         onConfirm={handleChangeCategoryStatus}
       />
+    </div>
     </div>
   );
 }
