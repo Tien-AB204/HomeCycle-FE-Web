@@ -1691,15 +1691,13 @@ export default function AdminDashboardModulePage({
               />
 
               <KpiCard
-                label="Thanh toán chờ lâu nhất"
+                label="Thời gian chờ trung bình"
                 value={formatHours(
-                  data?.oldestPendingAgeHours,
-                )}
-                hint={`Thời gian chờ trung bình ${formatHours(
                   data?.averagePendingAgeHours,
-                )}; tính từ khi yêu cầu thanh toán được tạo và vẫn còn ở trạng thái chờ.`}
+                )}
+                hint="Tính từ khi yêu cầu thanh toán được tạo đến hiện tại, cho các thanh toán vẫn đang chờ."
                 loading={loading}
-                valueClassName="text-error"
+                valueClassName="text-warning"
               />
             </div>
 
