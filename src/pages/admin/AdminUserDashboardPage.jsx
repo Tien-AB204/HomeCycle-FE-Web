@@ -30,6 +30,11 @@ const ROLE_OPTIONS = [
   },
 ];
 
+const roleLabelOf = (role) =>
+  ROLE_OPTIONS.find(
+    (option) => option.value && option.value.toLowerCase() === String(role || "").toLowerCase(),
+  )?.label || "Chưa xác định";
+
 const ROLE_META = [
   {
     value: "Personal",
@@ -767,6 +772,52 @@ export default function AdminDashboardPage() {
   const requestKey =
     `${role}:${days}:${forecastDays}:${requestVersion}`;
 
+  const [activityState, setActivityState] =
+    useState({
+      requestKey: "",
+      data: null,
+      error: "",
+    });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    adminDashboardApi
+      .getUserActivity({ signal: controller.signal })
+      .then((data) => {
+        if (!active) return;
+        setActivityState({
+          requestKey: String(requestVersion),
+          data,
+          error: "",
+        });
+      })
+      .catch((error) => {
+        if (
+          !active ||
+          error?.name === "CanceledError" ||
+          error?.code === "ERR_CANCELED"
+        ) {
+          return;
+        }
+        setActivityState({
+          requestKey: String(requestVersion),
+          data: null,
+          error: "Không thể tải hoạt động ghi nhận của người dùng lúc này.",
+        });
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [requestVersion]);
+
+  const activityLoading =
+    activityState.requestKey !== String(requestVersion);
+  const activity = activityState.data;
+
   useEffect(() => {
     const controller =
       new AbortController();
@@ -1112,7 +1163,97 @@ export default function AdminDashboardPage() {
           </p>
         </article>
 
+        <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+            Đang tạm khóa
+          </p>
+
+          <p className="mt-3 text-3xl font-black text-error">
+            {loading ? (
+              <LoadingBlock className="h-9 w-20" />
+            ) : (
+              formatNumber(overview?.suspendedAccounts)
+            )}
+          </p>
+
+          {!loading && (
+            <p className="mt-2 text-xs leading-5 text-textLight">
+              {overview?.suspendedPercent === null || overview?.suspendedPercent === undefined
+                ? "Chưa có tài khoản để tính tỷ lệ."
+                : `Chiếm ${formatDecimal(overview.suspendedPercent)}% tổng tài khoản theo bộ lọc.`}
+            </p>
+          )}
+        </article>
+
       </div>
+
+      <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+        <div className="border-b border-border pb-4">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            Hoạt động được ghi nhận
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-text">
+            Người dùng có hoạt động được ghi nhận
+          </h3>
+
+          <p className="mt-1 text-xs leading-5 text-textLight">
+            Đếm tài khoản Cá nhân/Doanh nghiệp có ít nhất một thao tác được hệ thống ghi nhận thành công trong hôm nay và trong 30 ngày gần nhất (giờ Việt Nam).
+            Đây không phải số người đang trực tuyến và không đo toàn bộ lượt đăng nhập hay truy cập. Số liệu này không phụ thuộc bộ lọc vai trò phía trên.
+          </p>
+        </div>
+
+        {activityState.error ? (
+          <p className="mt-4 text-sm font-semibold text-error">{activityState.error}</p>
+        ) : (
+          <>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                { label: "Hôm nay", value: activity?.dailyRecordedActiveUsers, className: "text-primary" },
+                { label: "30 ngày gần nhất", value: activity?.monthlyRecordedActiveUsers, className: "text-primary" },
+                { label: "Hồ sơ doanh nghiệp chờ duyệt", value: activity?.pendingBusinessVerificationCount, className: "text-warning" },
+                { label: "Xác minh cá nhân chờ duyệt", value: activity?.pendingPersonalVerificationCount, className: "text-warning" },
+              ].map((item) => (
+                <article key={item.label} className="rounded-xl border border-border bg-background/60 p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">{item.label}</p>
+                  <p className={`mt-2 text-2xl font-black ${item.className}`}>
+                    {activityLoading ? <LoadingBlock className="h-8 w-16" /> : formatNumber(item.value)}
+                  </p>
+                </article>
+              ))}
+            </div>
+
+            <div className="mt-5 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border text-xs uppercase tracking-[0.1em] text-textLight">
+                    <th className="px-3 py-3">Vai trò</th>
+                    <th className="px-3 py-3 text-right">Hôm nay</th>
+                    <th className="px-3 py-3 text-right">30 ngày gần nhất</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activityLoading || !Array.isArray(activity?.byRole) || activity.byRole.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-3 py-6 text-center text-textLight">
+                        {activityLoading ? "Đang tải..." : "Chưa có dữ liệu."}
+                      </td>
+                    </tr>
+                  ) : (
+                    activity.byRole.map((item) => (
+                      <tr key={item.role} className="border-b border-border/70 last:border-0">
+                        <td className="px-3 py-3 font-bold text-text">{roleLabelOf(item.role)}</td>
+                        <td className="px-3 py-3 text-right font-black text-text">{formatNumber(item.dailyUsers)}</td>
+                        <td className="px-3 py-3 text-right font-black text-text">{formatNumber(item.monthlyUsers)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </section>
 
       <div className="rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3 text-xs leading-5 text-textLight">
         <strong className="text-text">

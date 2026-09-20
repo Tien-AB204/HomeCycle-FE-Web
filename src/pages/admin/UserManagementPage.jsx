@@ -5,6 +5,7 @@ import adminUserApi from "../../services/apis/adminUserApi";
 import { getUserId } from "../../utils/authUtils";
 import Avatar from "../../components/shared/Avatar";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
+import AdminUserDetailModal from "../../features/admin/users/AdminUserDetailModal";
 import { USER_SECTION_TABS } from "../../constants/adminSections";
 
 const PAGE_SIZE = 10;
@@ -198,6 +199,7 @@ export default function UserManagementPage() {
     error: "",
     result: null,
   });
+  const [detailUserId, setDetailUserId] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -837,6 +839,13 @@ export default function UserManagementPage() {
                       <td className="px-4 py-4 text-right">
                         <button
                           type="button"
+                          onClick={() => setDetailUserId(account.userId)}
+                          className="mr-2 whitespace-nowrap rounded-lg border border-primary px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary hover:text-white"
+                        >
+                          Chi tiết
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => openConfirmation(account, action)}
                           disabled={action.disabled}
                           title={action.label}
@@ -902,9 +911,16 @@ export default function UserManagementPage() {
                   </dl>
                   <button
                     type="button"
+                    onClick={() => setDetailUserId(account.userId)}
+                    className="mt-4 w-full rounded-lg border border-primary px-3 py-2.5 text-sm font-bold text-primary transition hover:bg-primary hover:text-white"
+                  >
+                    Chi tiết
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => openConfirmation(account, action)}
                     disabled={action.disabled}
-                    className={`mt-4 w-full rounded-lg border px-3 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-textLight ${
+                    className={`mt-2 w-full rounded-lg border px-3 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-textLight ${
                       action.type === "unlock"
                         ? "border-success text-success"
                         : "border-error text-error"
@@ -1216,6 +1232,11 @@ export default function UserManagementPage() {
           </div>
         </div>
       )}
+
+      <AdminUserDetailModal
+        userId={detailUserId}
+        onClose={() => setDetailUserId("")}
+      />
     </section>
   );
 }
