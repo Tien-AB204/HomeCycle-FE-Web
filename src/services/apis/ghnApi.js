@@ -96,6 +96,10 @@ const ghnApi = {
   simulateWebhook: async (payload, { signal } = {}) =>
     axiosClient.post("/GHN/webhook", payload, {
       signal,
+      headers: {
+        "Content-Type": "application/json",
+        "X-HomeCycle-Demo": "true",
+      },
       skipGlobalErrorPage: true,
     }),
 };
