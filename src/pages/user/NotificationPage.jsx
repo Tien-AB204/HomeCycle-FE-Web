@@ -61,6 +61,10 @@ const NotificationPage = () => {
     useNavigate();
 
   const { user } = useAuth();
+  const isModerator =
+    String(user?.role ?? "")
+      .trim()
+      .toLowerCase() === "moderator";
 
   const {
     connection,
@@ -668,12 +672,14 @@ const NotificationPage = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <ListSortDropdown
-            value={sortOption}
-            onChange={setSortOption}
-            compact
-            scopeLabel="thông báo đã tải"
-          />
+          {isModerator && (
+            <ListSortDropdown
+              value={sortOption}
+              onChange={setSortOption}
+              compact
+              scopeLabel="thông báo đã tải"
+            />
+          )}
 
           <button
             type="button"

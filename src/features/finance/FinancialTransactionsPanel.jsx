@@ -184,17 +184,24 @@ export default function FinancialTransactionsPanel({ admin = false }) {
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div
+        className={
+          "grid gap-3 md:grid-cols-3 " +
+          (admin ? "lg:grid-cols-5" : "lg:grid-cols-6")
+        }
+      >
         <Select allowClear placeholder="Loại giao dịch" value={filters.transactionType || undefined} onChange={(value) => updateFilter("transactionType", value)} options={TRANSACTION_TYPE_OPTIONS} />
         <Select allowClear placeholder="Loại tham chiếu" value={filters.referenceType || undefined} onChange={(value) => updateFilter("referenceType", value)} options={REFERENCE_TYPE_OPTIONS} />
         <Select allowClear placeholder="Trạng thái" value={filters.status || undefined} onChange={(value) => updateFilter("status", value)} options={TRANSACTION_STATUS_OPTIONS} />
         <input aria-label="Từ ngày" type="date" value={filters.fromDate} onChange={(event) => updateFilter("fromDate", event.target.value)} className="rounded-md border border-border px-3 py-2 text-sm" />
         <input aria-label="Đến ngày" type="date" value={filters.toDate} onChange={(event) => updateFilter("toDate", event.target.value)} className="rounded-md border border-border px-3 py-2 text-sm" />
-        <ListSortDropdown
-          value={sortOption}
-          onChange={setSortOption}
-          scopeLabel="giao dịch trong trang hiện tại"
-        />
+        {!admin && (
+          <ListSortDropdown
+            value={sortOption}
+            onChange={setSortOption}
+            scopeLabel="giao dịch trong trang hiện tại"
+          />
+        )}
       </div>
 
       {state.error && <Alert type="error" showIcon message={state.error} />}

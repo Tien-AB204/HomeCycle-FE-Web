@@ -21,7 +21,7 @@ const App = () => {
           },
         }}
       >
-        <AntdApp>
+        <AntdApp component={false}>
           <ApiErrorRedirect />
           {/* Bọc AuthProvider ở đây để toàn bộ các Route và Component đều lấy được thông tin User */}
           <AuthProvider>

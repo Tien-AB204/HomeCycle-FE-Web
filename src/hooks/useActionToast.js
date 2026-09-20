@@ -8,7 +8,6 @@ export default function useActionToast() {
     (message, description) => {
       notification.success({
         placement: "topRight",
-        top: 176,
         message,
         description,
         duration: 3.5,
@@ -21,7 +20,6 @@ export default function useActionToast() {
     (message, description) => {
       notification.error({
         placement: "topRight",
-        top: 176,
         message,
         description,
         duration: 4.5,
