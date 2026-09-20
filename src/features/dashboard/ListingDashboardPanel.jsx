@@ -5,12 +5,12 @@ import {
   DashboardLineChart,
 } from "../../components/admin/AdminDashboardCharts";
 import { FinanceAmountBarChart } from "../../components/admin/AdminFinanceCharts";
-
-const GROUP_OPTIONS = [
-  { value: "Day", label: "Mỗi ngày" },
-  { value: "Week", label: "Mỗi tuần" },
-  { value: "Month", label: "Mỗi tháng" },
-];
+import DashboardPeriodControls from "../../components/admin/DashboardPeriodControls";
+import {
+  DEFAULT_DASHBOARD_PERIOD,
+  formatDashboardDate,
+  validateDashboardPeriod,
+} from "../../utils/dashboardPeriod";
 
 const POST_STATUS_LABELS = {
   draft: "Bản nháp",
@@ -36,32 +36,8 @@ const categoryLabel = (item) =>
 const formatNumber = (value) =>
   new Intl.NumberFormat("vi-VN").format(Number(value) || 0);
 
-const formatDate = (value) => {
-  const parts = String(value || "").split("-");
-  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : "—";
-};
-
-const validateRange = (from, to) => {
-  if (Boolean(from) !== Boolean(to)) {
-    return "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.";
-  }
-  if (!from && !to) return "";
-  const start = new Date(`${from}T00:00:00Z`);
-  const end = new Date(`${to}T00:00:00Z`);
-  const days = Math.round((end.getTime() - start.getTime()) / 86400000);
-  if (!Number.isFinite(days) || days < 1 || days > 366) {
-    return "Khoảng thời gian phải từ 1 đến 366 ngày.";
-  }
-  return "";
-};
-
 const isCanceled = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
-
-const DEFAULT_PERIOD = { from: "", to: "", groupBy: "Day" };
-
-const inputClassName =
-  "mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary";
 
 const KpiCard = ({ label, value, hint, loading, valueClassName = "text-text" }) => (
   <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
@@ -78,8 +54,8 @@ const KpiCard = ({ label, value, hint, loading, valueClassName = "text-text" }) 
 );
 
 export default function ListingDashboardPanel({ loadDashboard }) {
-  const [draft, setDraft] = useState(DEFAULT_PERIOD);
-  const [period, setPeriod] = useState(DEFAULT_PERIOD);
+  const [draft, setDraft] = useState(DEFAULT_DASHBOARD_PERIOD);
+  const [period, setPeriod] = useState(DEFAULT_DASHBOARD_PERIOD);
   const [periodError, setPeriodError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
   const [state, setState] = useState({ requestKey: "", data: null, error: "" });
@@ -119,7 +95,7 @@ export default function ListingDashboardPanel({ loadDashboard }) {
 
   const applyPeriod = (event) => {
     event.preventDefault();
-    const message = validateRange(draft.from, draft.to);
+    const message = validateDashboardPeriod(draft.from, draft.to);
     if (message) {
       setPeriodError(message);
       return;
@@ -130,8 +106,8 @@ export default function ListingDashboardPanel({ loadDashboard }) {
   };
 
   const resetPeriod = () => {
-    setDraft(DEFAULT_PERIOD);
-    setPeriod(DEFAULT_PERIOD);
+    setDraft(DEFAULT_DASHBOARD_PERIOD);
+    setPeriod(DEFAULT_DASHBOARD_PERIOD);
     setPeriodError("");
     setRequestVersion((current) => current + 1);
   };
@@ -172,71 +148,19 @@ export default function ListingDashboardPanel({ loadDashboard }) {
           </p>
         </div>
 
-        <form
-          onSubmit={applyPeriod}
-          className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]"
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <label>
-              <span className="text-xs font-black uppercase tracking-[0.11em] text-textLight">Từ ngày</span>
-              <input
-                type="date"
-                value={draft.from}
-                onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))}
-                className={inputClassName}
-              />
-            </label>
-
-            <label>
-              <span className="text-xs font-black uppercase tracking-[0.11em] text-textLight">Đến ngày</span>
-              <input
-                type="date"
-                value={draft.to}
-                onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))}
-                className={inputClassName}
-              />
-            </label>
-
-            <label>
-              <span className="text-xs font-black uppercase tracking-[0.11em] text-textLight">Nhóm biểu đồ theo</span>
-              <select
-                value={draft.groupBy}
-                onChange={(event) => setDraft((current) => ({ ...current, groupBy: event.target.value }))}
-                className={inputClassName}
-              >
-                {GROUP_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button
-              type="submit"
-              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:opacity-90"
-            >
-              Áp dụng kỳ
-            </button>
-            <button
-              type="button"
-              onClick={resetPeriod}
-              className="rounded-xl border border-border bg-white px-4 py-2.5 text-sm font-black text-text transition hover:bg-background"
-            >
-              Mặc định kỳ
-            </button>
-          </div>
-
-          {periodError && <p className="mt-3 text-sm font-semibold text-error">{periodError}</p>}
-        </form>
+        <DashboardPeriodControls
+          draft={draft}
+          onChange={setDraft}
+          onApply={applyPeriod}
+          onReset={resetPeriod}
+          error={periodError}
+        />
 
         {!loading && data?.period && (
           <div className="rounded-xl border border-primary/10 bg-white px-4 py-3 text-xs leading-5 text-textLight">
-            Kỳ đang áp dụng: <strong className="text-text">{formatDate(data.period.from)}</strong>
+            Kỳ đang áp dụng: <strong className="text-text">{formatDashboardDate(data.period.from)}</strong>
             {" → trước "}
-            <strong className="text-text">{formatDate(data.period.toExclusive)}</strong>
+            <strong className="text-text">{formatDashboardDate(data.period.toExclusive)}</strong>
             {" · UTC+7"}
             {!period.from && " · Mặc định 30 ngày gần nhất"}
           </div>

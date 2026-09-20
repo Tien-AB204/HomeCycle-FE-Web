@@ -168,6 +168,17 @@ const adminSubscriptionPackageApi = {
       "Không thể cập nhật trạng thái gói đăng ký.",
     );
   },
+
+  deletePackage: async (packageId) => {
+    const id = normalizePackageId(packageId);
+
+    await axiosClient.delete(
+      `/admin/subscription-packages/${encodeURIComponent(id)}`,
+      {
+        skipGlobalErrorPage: true,
+      },
+    );
+  },
 };
 
 export default adminSubscriptionPackageApi;
