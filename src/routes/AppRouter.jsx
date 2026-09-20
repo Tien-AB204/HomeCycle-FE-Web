@@ -77,7 +77,7 @@ import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
 import SubscriptionPage from "../pages/user/SubscriptionPage";
 
 const isGhnWebhookDemoEnabled =
-  String(import.meta.env.VITE_ENABLE_GHN_WEBHOOK_DEMO || "")
+  String(import.meta.env.VITE_ENABLE_GHN_WEBHOOK_SIMULATOR || "")
     .trim()
     .toLowerCase() === "true";
 
