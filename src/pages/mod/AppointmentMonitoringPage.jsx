@@ -20,7 +20,9 @@ import {
 import { ReloadOutlined, SearchOutlined } from "@ant-design/icons";
 import { getAppointmentStatusMeta } from "../../constants/appointments";
 import { getDeliveryMethodLabel } from "../../constants/agreements";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import moderatorAppointmentApi from "../../services/apis/moderatorAppointmentApi";
+import { sortItemsByDate } from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 
@@ -170,6 +172,7 @@ const AppointmentMonitoringPage = () => {
   const [isOverdue, setIsOverdue] = useState("");
   const [hasInspectionForm, setHasInspectionForm] = useState("");
   const [dateRange, setDateRange] = useState(null);
+  const [sortOption, setSortOption] = useState("newest");
 
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -524,6 +527,16 @@ const AppointmentMonitoringPage = () => {
     },
   ];
 
+  const sortedAppointments = useMemo(
+    () =>
+      sortItemsByDate(
+        state.items,
+        sortOption,
+        (item) => item?.createdAt,
+      ),
+    [state.items, sortOption],
+  );
+
   const detail = detailState.data;
   const isInspectionType = detail?.appointmentType === "Inspection";
   const inspectionFormReference = detail?.inspection?.inspectionForm;
@@ -623,6 +636,12 @@ const AppointmentMonitoringPage = () => {
           Tìm kiếm
         </Button>
 
+        <ListSortDropdown
+          value={sortOption}
+          onChange={setSortOption}
+          scopeLabel="lịch hẹn trong trang hiện tại"
+        />
+
         <Button
           icon={<ReloadOutlined />}
           onClick={() => void loadAppointments()}
@@ -645,7 +664,7 @@ const AppointmentMonitoringPage = () => {
         <Table
           rowKey={(record) => record.appointmentId}
           columns={columns}
-          dataSource={state.items}
+          dataSource={sortedAppointments}
           loading={state.loading}
           locale={{
             emptyText: <Empty description="Chưa có lịch hẹn phù hợp." />,

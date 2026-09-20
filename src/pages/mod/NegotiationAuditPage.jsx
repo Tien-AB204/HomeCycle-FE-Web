@@ -6,7 +6,9 @@ import {
   getNegotiationStatusMeta,
   getProposalStatusMeta,
 } from "../../constants/negotiations";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import moderatorNegotiationApi from "../../services/apis/moderatorNegotiationApi";
+import { sortItemsByDate } from "../../utils/sortListItems";
 
 const LIST_PAGE_SIZE = 10;
 const MESSAGE_PAGE_SIZE = 50;
@@ -223,6 +225,7 @@ export default function NegotiationAuditPage() {
   const [keywordInput, setKeywordInput] = useState("");
   const [keyword, setKeyword] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
+  const [sortOption, setSortOption] = useState("newest");
   const [selectedId, setSelectedId] = useState("");
   const [state, setState] = useState({ loading: true, items: [], totalCount: 0, error: "" });
 
@@ -240,6 +243,19 @@ export default function NegotiationAuditPage() {
       });
     return () => controller.abort();
   }, [keyword, pageNumber]);
+
+  const sortedItems = useMemo(
+    () =>
+      sortItemsByDate(
+        state.items,
+        sortOption,
+        (item) =>
+          item?.disputeCreatedAt ??
+          item?.lastMessageAt ??
+          item?.createdAt,
+      ),
+    [state.items, sortOption],
+  );
 
   const columns = useMemo(() => [
     {
@@ -274,13 +290,18 @@ export default function NegotiationAuditPage() {
       <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <Input value={keywordInput} onChange={(event) => setKeywordInput(event.target.value)} onPressEnter={applySearch} allowClear prefix={<SearchOutlined />} placeholder="Mã đơn hàng, sản phẩm, người mua hoặc người bán..." />
+          <ListSortDropdown
+            value={sortOption}
+            onChange={setSortOption}
+            scopeLabel="thương lượng trong trang hiện tại"
+          />
           <Button type="primary" icon={<SearchOutlined />} onClick={applySearch}>Tìm kiếm</Button>
         </div>
         {state.error && <Alert type="error" showIcon message={state.error} className="mb-4" />}
         <Table
           rowKey={(item) => item.negotiationId}
           columns={columns}
-          dataSource={state.items}
+          dataSource={sortedItems}
           loading={state.loading}
           locale={{ emptyText: <Empty description="Không có thương lượng liên quan tranh chấp phù hợp." /> }}
           pagination={{ current: pageNumber, pageSize: LIST_PAGE_SIZE, total: state.totalCount, showSizeChanger: false, onChange: setPageNumber }}

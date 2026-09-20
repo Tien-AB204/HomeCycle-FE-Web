@@ -22,7 +22,10 @@ import {
   ReloadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import useActionToast from "../../hooks/useActionToast";
 import moderatorWithdrawalApi from "../../services/apis/moderatorWithdrawalApi";
+import { sortItemsByDate } from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 
@@ -225,10 +228,12 @@ const getWithdrawalActionErrorMessage = (error) => {
 };
 
 const WithdrawalManagementPage = () => {
+  const actionToast = useActionToast();
   const [keywordInput, setKeywordInput] = useState("");
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [dateRange, setDateRange] = useState(null);
+  const [sortOption, setSortOption] = useState("newest");
 
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -571,13 +576,16 @@ const WithdrawalManagementPage = () => {
         );
       }
 
+      const successMessage =
+        actionMode === "approve"
+          ? "Đã duyệt và hoàn tất yêu cầu rút tiền."
+          : "Đã từ chối yêu cầu rút tiền.";
+
       setFeedback({
         type: "success",
-        message:
-          actionMode === "approve"
-            ? "Đã duyệt và hoàn tất yêu cầu rút tiền."
-            : "Đã từ chối yêu cầu rút tiền.",
+        message: successMessage,
       });
+      actionToast.success(successMessage);
 
       closeWithdrawalDetail();
 
@@ -606,6 +614,20 @@ const WithdrawalManagementPage = () => {
       setActionBusy(false);
     }
   };
+
+  const sortedWithdrawals = useMemo(
+    () =>
+      sortItemsByDate(
+        state.items,
+        sortOption,
+        (item) =>
+          item?.requestedAt ??
+          item?.RequestedAt ??
+          item?.createdAt ??
+          item?.CreatedAt,
+      ),
+    [state.items, sortOption],
+  );
 
   const selectedWithdrawalActions =
     getWithdrawalActions(detailState.data);
@@ -784,6 +806,12 @@ const WithdrawalManagementPage = () => {
           Tìm kiếm
         </Button>
 
+        <ListSortDropdown
+          value={sortOption}
+          onChange={setSortOption}
+          scopeLabel="yêu cầu rút tiền trong trang hiện tại"
+        />
+
         <Button
           icon={<ReloadOutlined />}
           onClick={() => void loadWithdrawals()}
@@ -806,7 +834,7 @@ const WithdrawalManagementPage = () => {
         <Table
           rowKey={(record) => record.withdrawalId}
           columns={columns}
-          dataSource={state.items}
+          dataSource={sortedWithdrawals}
           loading={state.loading}
           locale={{
             emptyText: (

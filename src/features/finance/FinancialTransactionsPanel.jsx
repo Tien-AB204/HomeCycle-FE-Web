@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import financeOperationsApi from "../../services/apis/financeOperationsApi";
 import FinancialPartyDisplay from "./FinancialPartyDisplay";
 import FinancialTransactionDrawer from "./FinancialTransactionDrawer";
+import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import { sortItemsByDate } from "../../utils/sortListItems";
 import {
   formatFinanceCurrency,
   formatFinanceDateTime,
@@ -38,6 +40,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
   });
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [sortOption, setSortOption] = useState("newest");
   const [selectedId, setSelectedId] = useState("");
   const [state, setState] = useState({
     loading: true,
@@ -79,6 +82,16 @@ export default function FinancialTransactionsPanel({ admin = false }) {
       });
     return () => controller.abort();
   }, [filters, pageNumber, pageSize]);
+
+  const sortedItems = useMemo(
+    () =>
+      sortItemsByDate(
+        state.items,
+        sortOption,
+        (item) => item?.createdAt,
+      ),
+    [state.items, sortOption],
+  );
 
   const columns = useMemo(() => {
     const result = [
@@ -171,19 +184,24 @@ export default function FinancialTransactionsPanel({ admin = false }) {
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
         <Select allowClear placeholder="Loại giao dịch" value={filters.transactionType || undefined} onChange={(value) => updateFilter("transactionType", value)} options={TRANSACTION_TYPE_OPTIONS} />
         <Select allowClear placeholder="Loại tham chiếu" value={filters.referenceType || undefined} onChange={(value) => updateFilter("referenceType", value)} options={REFERENCE_TYPE_OPTIONS} />
         <Select allowClear placeholder="Trạng thái" value={filters.status || undefined} onChange={(value) => updateFilter("status", value)} options={TRANSACTION_STATUS_OPTIONS} />
         <input aria-label="Từ ngày" type="date" value={filters.fromDate} onChange={(event) => updateFilter("fromDate", event.target.value)} className="rounded-md border border-border px-3 py-2 text-sm" />
         <input aria-label="Đến ngày" type="date" value={filters.toDate} onChange={(event) => updateFilter("toDate", event.target.value)} className="rounded-md border border-border px-3 py-2 text-sm" />
+        <ListSortDropdown
+          value={sortOption}
+          onChange={setSortOption}
+          scopeLabel="giao dịch trong trang hiện tại"
+        />
       </div>
 
       {state.error && <Alert type="error" showIcon message={state.error} />}
       <Table
         rowKey={(item) => item.walletTransactionId}
         columns={columns}
-        dataSource={state.items}
+        dataSource={sortedItems}
         loading={state.loading}
         locale={{ emptyText: <Empty description="Chưa có giao dịch phù hợp." /> }}
         pagination={{
