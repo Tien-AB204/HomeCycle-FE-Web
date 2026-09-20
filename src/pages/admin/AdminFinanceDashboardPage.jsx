@@ -54,6 +54,7 @@ const TRANSACTION_TYPE_OPTIONS = [
   ["5", "Tiền của người dùng đang yêu cầu rút"],
   ["6", "Rút tiền thành công"],
   ["7", "Tiền được trả lại sau yêu cầu rút"],
+  ["8", "Phí hoa hồng"],
   ["9", "Phí gói đăng ký"],
   ["10", "Thu phí vận chuyển GHN"],
 ];
@@ -66,6 +67,7 @@ const TRANSACTION_TYPE_LABELS = {
   "5": "Tiền của người dùng đang yêu cầu rút",
   "6": "Rút tiền thành công",
   "7": "Tiền được trả lại sau yêu cầu rút",
+  "8": "Phí hoa hồng",
   "9": "Phí gói đăng ký",
   "10": "Thu phí vận chuyển GHN",
   escrowdeposit:
@@ -82,6 +84,8 @@ const TRANSACTION_TYPE_LABELS = {
     "Rút tiền thành công",
   withdrawalrevert:
     "Tiền được trả lại sau yêu cầu rút",
+  commissionfee:
+    "Phí hoa hồng",
   subscriptionfee:
     "Phí gói đăng ký",
   shippingfeecollected:
@@ -190,11 +194,13 @@ const normalize = (value) =>
     .replace(/[^a-z0-9]/g, "");
 
 /*
- * HomeCycle không có nghiệp vụ thu phí hoa hồng; doanh thu trên UI chỉ là
- * phí gói đăng ký. Phí vận chuyển GHN là tiền thu hộ, không phải doanh thu.
+ * Doanh thu nền tảng theo Backend = các khoản Commission_Fee và Subscription_Fee
+ * đã ghi nhận vào ví Platform_Revenue trong kỳ. Phí vận chuyển GHN là tiền thu
+ * hộ, không thuộc doanh thu. Dùng totalRevenue do Backend tính, không tự cộng.
  */
 const REVENUE_SOURCE_LABELS = {
-  subscriptionfee: "Doanh thu gói đăng ký",
+  subscriptionfee: "Phí gói đăng ký",
+  commissionfee: "Phí hoa hồng",
 };
 
 const findRevenueSourceAmount = (
@@ -238,6 +244,11 @@ const formatMoney = (value) =>
       maximumFractionDigits: 0,
     },
   ).format(Number(value) || 0);
+
+const formatMoneyOrDash = (value) =>
+  value === null || value === undefined
+    ? "—"
+    : formatMoney(value);
 
 const formatNumber = (value) =>
   new Intl.NumberFormat(
@@ -1687,22 +1698,22 @@ export default function AdminFinanceDashboardPage() {
       <section className="space-y-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            DOANH THU GÓI ĐĂNG KÝ
+            DOANH THU NỀN TẢNG
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Doanh thu gói đăng ký theo kỳ
+            Doanh thu nền tảng theo kỳ
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Doanh thu của HomeCycle là phí gói đăng ký người dùng đã thanh toán. Phí vận chuyển GHN là tiền thu hộ, không phải doanh thu và không được tính vào đây.
+            Doanh thu nền tảng gồm các khoản phí được hệ thống ghi nhận là doanh thu HomeCycle trong kỳ: phí gói đăng ký và phí hoa hồng. Phí vận chuyển GHN là khoản thu hộ và không được tính vào doanh thu nền tảng.
           </p>
         </div>
 
         {mainState.errors
           .revenue ? (
           <SectionError
-            message="Không thể tải dữ liệu doanh thu gói đăng ký."
+            message="Không thể tải dữ liệu doanh thu nền tảng."
             onRetry={
               refreshAll
             }
@@ -1710,20 +1721,45 @@ export default function AdminFinanceDashboardPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-3">
             <MetricCard
+              label="Tổng doanh thu nền tảng"
+              value={formatMoney(
+                revenue?.totalRevenue,
+              )}
+              hint="Tổng phí gói đăng ký và phí hoa hồng đã ghi nhận vào ví doanh thu trong kỳ; do hệ thống tính."
+              loading={
+                mainLoading
+              }
+              valueClassName="text-primary"
+            />
+
+            <MetricCard
               label={
                 REVENUE_SOURCE_LABELS.subscriptionfee
               }
-              value={formatMoney(
+              value={formatMoneyOrDash(
                 findRevenueSourceAmount(
                   revenue?.sources,
                   "SubscriptionFee",
                 ),
               )}
-              hint="Phí gói đăng ký đã được ghi nhận vào ví doanh thu HomeCycle trong kỳ."
               loading={
                 mainLoading
               }
-              valueClassName="text-primary"
+            />
+
+            <MetricCard
+              label={
+                REVENUE_SOURCE_LABELS.commissionfee
+              }
+              value={formatMoneyOrDash(
+                findRevenueSourceAmount(
+                  revenue?.sources,
+                  "CommissionFee",
+                ),
+              )}
+              loading={
+                mainLoading
+              }
             />
           </div>
         )}

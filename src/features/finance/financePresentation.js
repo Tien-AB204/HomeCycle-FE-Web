@@ -6,6 +6,7 @@ export const TRANSACTION_TYPE_LABELS = Object.freeze({
   5: "Tiền của người dùng đang yêu cầu rút",
   6: "Rút tiền thành công",
   7: "Tiền được trả lại sau yêu cầu rút",
+  8: "Phí hoa hồng",
   9: "Phí gói đăng ký",
   10: "Thu phí vận chuyển GHN",
   Escrow_Deposit: "Tạm giữ tiền cho đơn hàng",
@@ -15,6 +16,7 @@ export const TRANSACTION_TYPE_LABELS = Object.freeze({
   Withdrawal_Lock: "Tiền của người dùng đang yêu cầu rút",
   Withdrawal_Success: "Rút tiền thành công",
   Withdrawal_Revert: "Tiền được trả lại sau yêu cầu rút",
+  Commission_Fee: "Phí hoa hồng",
   Subscription_Fee: "Phí gói đăng ký",
   Shipping_Fee_Collected: "Thu phí vận chuyển GHN",
 });
