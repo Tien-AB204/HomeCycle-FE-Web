@@ -6,10 +6,7 @@ import {
   useState,
 } from "react";
 import { useLocation } from "react-router-dom";
-import { ROLES } from "../../constants/roles";
-import { useAuth } from "../../hooks/useAuth";
 import walletApi from "../../services/apis/walletApi";
-import { normalizeRole } from "../../utils/authUtils";
 import {
   getSafeProblemDetail,
   getSafeValidationMessage,
@@ -256,17 +253,6 @@ const maskBankAccountNumber = (
 
 const WalletPage = () => {
   const location = useLocation();
-  const { user } =
-    useAuth();
-
-  const normalizedRole =
-    normalizeRole(
-      user?.role,
-    );
-
-  const isBusiness =
-    normalizedRole ===
-    ROLES.BUSINESS;
 
   const [
     wallet,
@@ -752,13 +738,6 @@ const WalletPage = () => {
       setAmountError("");
       setError("");
       setNotice("");
-      if (isBusiness) {
-        setError(
-          "Tài khoản doanh nghiệp hiện chưa hỗ trợ gửi yêu cầu rút tiền. Bạn vẫn có thể xem số dư và lịch sử ví.",
-        );
-
-        return false;
-      }
 
       if (
         !Number.isInteger(
@@ -1132,11 +1111,6 @@ const WalletPage = () => {
                 )}
               </div>
             )}
-            {isBusiness && (
-              <div className="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm leading-6 text-warning">
-                Tài khoản doanh nghiệp hiện chưa hỗ trợ gửi yêu cầu rút tiền. Bạn vẫn có thể xem số dư và lịch sử ví.
-              </div>
-            )}
 
             <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
               <label className="text-sm font-bold text-text">
@@ -1168,7 +1142,6 @@ const WalletPage = () => {
                   }}
                   placeholder="VD: 100000"
                   disabled={
-                    isBusiness ||
                     withdrawing
                   }
                   className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-3 text-sm text-text outline-none transition focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
@@ -1196,7 +1169,6 @@ const WalletPage = () => {
                   void createWithdrawal();
                 }}
                 disabled={
-                  isBusiness ||
                   withdrawing
                 }
                 className="rounded-xl bg-primary px-5 py-3 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"

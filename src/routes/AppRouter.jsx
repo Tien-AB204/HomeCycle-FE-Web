@@ -48,6 +48,9 @@ import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
 import UserManagementPage from "../pages/admin/UserManagementPage";
 import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 
+// Business Pages
+import BusinessDashboardPage from "../pages/business/BusinessDashboardPage";
+
 // User Pages
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
 import AgreementPage from "../pages/user/AgreementPage";
@@ -183,6 +186,13 @@ const AppRouter = () => {
           }
         >
           <Route path="/ho-so" element={<ProfilePage />} />
+        </Route>
+
+        <Route element={<RoleRoute allowedRole={ROLES.BUSINESS} />}>
+          <Route
+            path="/business/dashboard"
+            element={<BusinessDashboardPage />}
+          />
         </Route>
       </Route>
 
