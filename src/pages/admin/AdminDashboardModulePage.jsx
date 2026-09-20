@@ -10,6 +10,7 @@ import {
   DashboardHorizontalBarChart,
   DashboardLineChart,
 } from "../../components/admin/AdminDashboardCharts";
+import { FinanceAmountBarChart } from "../../components/admin/AdminFinanceCharts";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import disputeCategoryApi from "../../services/apis/disputeCategoryApi";
 import productTypeApi from "../../services/apis/productTypeApi";
@@ -1015,7 +1016,8 @@ export default function AdminDashboardModulePage({
 
   const splitsPeriod =
     config?.type === "operation" ||
-    config?.type === "dispute";
+    config?.type === "dispute" ||
+    dashboard === "business-overview";
 
   const [periodError, setPeriodError] =
     useState("");
@@ -2502,6 +2504,154 @@ export default function AdminDashboardModulePage({
             />
           )}
         </div>
+
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+            ĐƠN CÓ DOANH NGHIỆP THAM GIA
+          </p>
+
+          <h3 className="mt-1 text-xl font-black text-text">
+            Chất lượng đơn và xếp hạng doanh nghiệp
+          </h3>
+
+          <p className="mt-1 text-sm text-textLight">
+            Tính trên các đơn tạo trong kỳ mà bên mua hoặc bên bán hiện là doanh nghiệp; tỷ lệ dùng trạng thái hiện tại của các đơn đó.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <KpiCard
+            label="Đơn tạo trong kỳ có doanh nghiệp"
+            value={formatNumber(data?.createdBusinessOrderCount)}
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Tỷ lệ hủy"
+            value={formatPercent(data?.cancellationRate)}
+            hint="Đơn hiện ở trạng thái đã hủy trên tổng đơn tạo trong kỳ có doanh nghiệp tham gia."
+            loading={loading}
+            valueClassName="text-warning"
+          />
+
+          <KpiCard
+            label="Tỷ lệ phát sinh tranh chấp"
+            value={formatPercent(data?.disputeRate)}
+            hint="Đơn có tranh chấp về đơn hàng trên tổng đơn tạo trong kỳ có doanh nghiệp tham gia."
+            loading={loading}
+            valueClassName="text-error"
+          />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <DashboardHorizontalBarChart
+            title="Lý do hủy đơn"
+            description="Số đơn đã hủy (tạo trong kỳ, có doanh nghiệp tham gia) theo lý do hủy được ghi nhận."
+            rows={(data?.cancellationReasons || []).map((item) => ({
+              key: item.key,
+              label: normalize(item.key) === "unspecified" ? "Không ghi lý do" : item.label,
+              count: item.count,
+            }))}
+            getLabel={(item) => item.label}
+            hideZero
+          />
+
+          <DashboardHorizontalBarChart
+            title="Nguyên nhân tranh chấp"
+            description="Số tranh chấp về đơn hàng của các đơn tạo trong kỳ có doanh nghiệp tham gia, theo danh mục nguyên nhân."
+            rows={(data?.disputeReasons || []).map((item) => ({
+              key: item.key,
+              label: normalize(item.key) === "unspecified" ? "Chưa xác định" : item.label,
+              count: item.count,
+            }))}
+            getLabel={(item) => item.label}
+            hideZero
+          />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <FinanceAmountBarChart
+            title="Doanh nghiệp bán nhiều nhất"
+            description="Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên bán."
+            rows={(data?.topSellers || []).map((item) => ({
+              key: item.userId,
+              label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
+              amount: item.gmv,
+            }))}
+            getLabel={(item) => item.label}
+          />
+
+          <FinanceAmountBarChart
+            title="Doanh nghiệp mua nhiều nhất"
+            description="Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên mua."
+            rows={(data?.topBuyers || []).map((item) => ({
+              key: item.userId,
+              label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
+              amount: item.gmv,
+            }))}
+            getLabel={(item) => item.label}
+          />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          {(data?.contributionSeries || []).some(
+            (point) =>
+              (Number(point?.businessOrderCount) || 0) +
+                (Number(point?.personalOrderCount) || 0) >
+              0,
+          ) ? (
+            <DashboardLineChart
+              title="Đơn hoàn tất: doanh nghiệp so với cá nhân"
+              description="Số đơn hoàn tất theo kỳ, tách theo đơn có doanh nghiệp tham gia và đơn chỉ giữa cá nhân."
+              rows={data?.contributionSeries}
+              series={[
+                { key: "businessOrderCount", label: "Có doanh nghiệp", className: "text-primary" },
+                { key: "personalOrderCount", label: "Chỉ cá nhân", className: "text-textLight" },
+              ]}
+            />
+          ) : (
+            <EmptyPerformanceChart
+              title="Đơn hoàn tất: doanh nghiệp so với cá nhân"
+              message="Chưa có đơn hoàn tất trong kỳ đã chọn."
+            />
+          )}
+
+          {(data?.contributionSeries || []).some(
+            (point) =>
+              (Number(point?.businessGmv) || 0) +
+                (Number(point?.personalGmv) || 0) >
+              0,
+          ) ? (
+            <DashboardLineChart
+              title="Giá trị đơn hoàn tất: doanh nghiệp so với cá nhân"
+              description="Tổng tiền cuối cùng của đơn hoàn tất theo kỳ; là giá trị mua bán giữa người dùng, không phải doanh thu HomeCycle."
+              rows={data?.contributionSeries}
+              series={[
+                { key: "businessGmv", label: "Có doanh nghiệp", className: "text-primary" },
+                { key: "personalGmv", label: "Chỉ cá nhân", className: "text-textLight" },
+              ]}
+              valueFormatter={formatMoney}
+              axisValueFormatter={formatCompactMoney}
+            />
+          ) : (
+            <EmptyPerformanceChart
+              title="Giá trị đơn hoàn tất: doanh nghiệp so với cá nhân"
+              message="Chưa có giá trị đơn hoàn tất trong kỳ đã chọn."
+            />
+          )}
+        </div>
+
+        <DashboardHorizontalBarChart
+          title="Khu vực giao dịch của doanh nghiệp"
+          description="Số đơn tạo trong kỳ có doanh nghiệp tham gia, theo thành phố của bài đăng."
+          rows={(data?.transactionRegions || []).map((item) => ({
+            key: item.city || "unspecified",
+            label: item.city || "Chưa rõ",
+            count: item.orderCount,
+          }))}
+          getLabel={(item) => item.label}
+          hideZero
+        />
       </>
     );
 
@@ -3192,6 +3342,43 @@ export default function AdminDashboardModulePage({
           ]}
         />
         </div>
+        </>
+      );
+    }
+
+    if (dashboard === "business-overview") {
+      const growthRows = Array.isArray(data?.growthSeries) ? data.growthSeries : [];
+      const growthAllZero =
+        growthRows.length > 0 &&
+        growthRows.every((point) => !(Number(point?.registeredCount) || 0));
+
+      return (
+        <>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-text">
+            Số đăng ký là số tài khoản doanh nghiệp được tạo trong từng khoảng của kỳ (theo bộ lọc phía trên).
+            Số đang hoạt động / đang tạm khóa là <strong>trạng thái hiện tại</strong> của chính các tài khoản đó,
+            không phải trạng thái tại thời điểm trong quá khứ.
+          </div>
+
+          {growthAllZero ? (
+            <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+              <h3 className="text-lg font-black text-text">Tài khoản doanh nghiệp đăng ký theo kỳ</h3>
+              <div className="mt-5 flex min-h-64 items-center justify-center rounded-xl bg-background text-sm font-semibold text-textLight">
+                Không có tài khoản doanh nghiệp nào đăng ký trong kỳ này.
+              </div>
+            </section>
+          ) : (
+            <DashboardLineChart
+              title="Tài khoản doanh nghiệp đăng ký theo kỳ"
+              description="Số tài khoản đăng ký theo ngày tạo, kèm số trong đó hiện đang hoạt động hoặc đang tạm khóa."
+              rows={growthRows}
+              series={[
+                { key: "registeredCount", label: "Đăng ký", className: "text-primary" },
+                { key: "currentlyActiveCount", label: "Hiện đang hoạt động", className: "text-success" },
+                { key: "currentlySuspendedCount", label: "Hiện đang tạm khóa", className: "text-error" },
+              ]}
+            />
+          )}
         </>
       );
     }
