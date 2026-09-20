@@ -158,8 +158,15 @@ const MainLayout = () => {
     };
   }, [canUseClientAccount, user?.userId, user?.id]);
 
+  const accountNavigation =
+    normalizedRole === ROLES.BUSINESS
+      ? [
+          { name: "Tổng quan", path: "/business/dashboard" },
+          ...ACCOUNT_NAVIGATION,
+        ]
+      : ACCOUNT_NAVIGATION;
   const navigationItems = canUseClientAccount
-    ? [...roleBasedPublicNavigation, ...ACCOUNT_NAVIGATION]
+    ? [...roleBasedPublicNavigation, ...accountNavigation]
     : PUBLIC_NAVIGATION;
   const createPostLabel =
     normalizedRole === ROLES.PERSONAL
