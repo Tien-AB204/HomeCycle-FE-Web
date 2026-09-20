@@ -3,7 +3,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Link } from "react-router-dom";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import { USER_SECTION_TABS } from "../../constants/adminSections";
@@ -89,23 +88,6 @@ const FORECAST_OPTIONS = [
   7,
   14,
   30,
-];
-
-const QUICK_ACTIONS = [
-  {
-    title: "Quản lý người dùng",
-    description:
-      "Kiểm soát trạng thái và quyền truy cập tài khoản.",
-    path: "/admin/users",
-    icon: "manage_accounts",
-  },
-  {
-    title: "Chính sách hệ thống",
-    description:
-      "Quản lý các quy tắc vận hành nền tảng.",
-    path: "/admin/policies",
-    icon: "policy",
-  },
 ];
 
 const normalize = (value) =>
@@ -1406,35 +1388,6 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border bg-white p-6 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-          Truy cập nhanh
-        </p>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          {QUICK_ACTIONS.map(
-            (item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="group rounded-xl border border-border p-4 transition hover:border-primary/30 hover:bg-background"
-              >
-                <span className="material-symbols-outlined flex h-10 w-10 items-center justify-center rounded-xl bg-background text-primary">
-                  {item.icon}
-                </span>
-
-                <p className="mt-3 font-black text-text">
-                  {item.title}
-                </p>
-
-                <p className="mt-1 text-xs leading-5 text-textLight">
-                  {item.description}
-                </p>
-              </Link>
-            ),
-          )}
-        </div>
-      </section>
     </section>
   );
 }

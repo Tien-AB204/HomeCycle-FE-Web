@@ -3,43 +3,7 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
-import {
-  DashboardDonutChart,
-  DashboardLineChart,
-} from "../../components/admin/AdminDashboardCharts";
-import { getOrderStatusMeta } from "../../constants/orders";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
-
-const CHART_SOURCES = [
-  { key: "orders", method: "getOrders" },
-  { key: "payments", method: "getPayments" },
-  { key: "disputes", method: "getDisputes" },
-];
-
-const CHART_ERROR_MESSAGE =
-  "Không thể tải biểu đồ này lúc này.";
-
-const isCanceledRequest = (error) =>
-  error?.name === "CanceledError" ||
-  error?.code === "ERR_CANCELED";
-
-const ChartUnavailable = ({ title, message, onRetry }) => (
-  <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
-    <h3 className="text-lg font-black text-text">{title}</h3>
-    <div className="mt-5 flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl bg-background text-sm font-semibold text-textLight">
-      <span>{message}</span>
-      {onRetry && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-black text-primary transition hover:bg-primary/10"
-        >
-          Thử lại
-        </button>
-      )}
-    </div>
-  </section>
-);
 
 const formatNumber = (value) =>
   new Intl.NumberFormat(
@@ -216,60 +180,6 @@ export default function AdminDashboardPage() {
     };
   }, [requestKey]);
 
-  const [chartState, setChartState] =
-    useState({
-      requestKey: "",
-      data: {},
-      errors: {},
-    });
-
-  useEffect(() => {
-    const controller =
-      new AbortController();
-
-    let active = true;
-
-    Promise.all(
-      CHART_SOURCES.map((source) =>
-        adminDashboardApi[source.method]({
-          signal: controller.signal,
-        })
-          .then((result) => [source.key, result, ""])
-          .catch((error) => [
-            source.key,
-            null,
-            isCanceledRequest(error)
-              ? "canceled"
-              : CHART_ERROR_MESSAGE,
-          ]),
-      ),
-    ).then((results) => {
-      if (
-        !active ||
-        results.some(([, , error]) => error === "canceled")
-      ) {
-        return;
-      }
-
-      setChartState({
-        requestKey,
-        data: Object.fromEntries(
-          results.map(([key, result]) => [key, result]),
-        ),
-        errors: Object.fromEntries(
-          results
-            .filter(([, , error]) => error)
-            .map(([key, , error]) => [key, error]),
-        ),
-      });
-    });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [requestKey]);
-
   const loading =
     state.requestKey !==
     requestKey;
@@ -277,20 +187,40 @@ export default function AdminDashboardPage() {
   const data =
     state.data;
 
-  const chartsLoading =
-    chartState.requestKey !== requestKey;
-
-  const charts = chartState.data;
-  const chartErrors = chartState.errors;
-
   const refresh = () =>
     setRequestVersion(
       (current) => current + 1,
     );
 
-  const renderLineChart = (key, props) => {
-    if (chartsLoading) {
-      return (
+  const attentionRows = [
+    {
+      label: "Đơn đang hoạt động",
+      value: Number(data?.orders?.activeCount) || 0,
+      icon: "inventory_2",
+    },
+    {
+      label: "Lịch hẹn hôm nay",
+      value: Number(data?.appointments?.todayCount) || 0,
+      icon: "event",
+    },
+    {
+      label: "Thanh toán đang chờ",
+      value: Number(data?.payments?.pendingCount) || 0,
+      icon: "payments",
+    },
+    {
+      label: "Tranh chấp chưa xử lý",
+      value: Number(data?.disputes?.unresolvedCount) || 0,
+      icon: "gavel",
+    },
+  ];
+
+  const maxAttentionValue = Math.max(
+    1,
+    ...attentionRows.map((item) => item.value),
+  );
+
+  return (
         <LoadingBlock className="h-80 w-full rounded-2xl" />
       );
     }
@@ -324,8 +254,8 @@ export default function AdminDashboardPage() {
             </h2>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-              Số liệu hiện tại của hệ thống và xu hướng vận hành
-              trong 30 ngày gần nhất.
+              Theo dõi trạng thái vận hành hiện tại của hệ thống
+              bằng số liệu tổng hợp từ API Tổng quan vận hành.
             </p>
 
             {!loading &&
@@ -340,16 +270,6 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Link
-              to="/admin/dashboard/users"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                group
-              </span>
-              Tổng quan người dùng
-            </Link>
-
             <button
               type="button"
               onClick={refresh}
@@ -487,74 +407,70 @@ export default function AdminDashboardPage() {
         Riêng số tranh chấp đã giải quyết sử dụng kỳ mặc định 30 ngày gần nhất của máy chủ.
       </div>
 
-      <section className="space-y-4">
-        <div>
+      <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+        <div className="border-b border-border pb-4">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            XU HƯỚNG VẬN HÀNH
+            KHỐI LƯỢNG HIỆN TẠI
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            30 ngày gần nhất
+            Các hạng mục cần theo dõi
           </h3>
 
-          <p className="mt-1 text-sm text-textLight">
-            Các biểu đồ theo ngày dùng kỳ mặc định 30 ngày gần nhất của máy chủ (tính theo giờ Việt Nam). Xem chi tiết và lọc theo kỳ khác tại từng dashboard.
+          <p className="mt-1 text-sm leading-6 text-textLight">
+            Biểu đồ này chỉ dùng dữ liệu snapshot từ API Tổng quan vận hành.
+            Mỗi hàng là số lượng hiện tại của một hạng mục, không phải chuỗi
+            thời gian và không gọi thêm dashboard chi tiết.
           </p>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          {renderLineChart("orders", {
-            title: "Kết quả đơn hàng theo ngày",
-            description:
-              "Số đơn hoàn tất, hủy và hoàn trả theo thời điểm nghiệp vụ thực tế trong 30 ngày gần nhất.",
-            rows: charts.orders?.outcomeSeries,
-            series: [
-              { key: "completedCount", label: "Hoàn tất", className: "text-success" },
-              { key: "cancelledCount", label: "Hủy", className: "text-error" },
-              { key: "returnedCount", label: "Hoàn trả", className: "text-warning" },
-            ],
-          })}
+        {loading ? (
+          <div className="mt-5 space-y-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <LoadingBlock
+                key={index}
+                className="h-12 w-full rounded-xl"
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="mt-5 space-y-5">
+            {attentionRows.map((item) => (
+              <div key={item.label}>
+                <div className="mb-2 flex items-center justify-between gap-4">
+                  <span className="flex min-w-0 items-center gap-2 text-sm font-black text-text">
+                    <span
+                      className="material-symbols-outlined text-[20px] text-primary"
+                      aria-hidden="true"
+                    >
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </span>
 
-          {renderLineChart("disputes", {
-            title: "Tranh chấp mở mới và đã giải quyết",
-            description:
-              "So sánh số tranh chấp phát sinh và số tranh chấp được giải quyết theo ngày trong 30 ngày gần nhất.",
-            rows: charts.disputes?.openedVsResolvedSeries,
-            series: [
-              { key: "openedCount", label: "Mở mới", className: "text-error" },
-              { key: "resolvedCount", label: "Đã giải quyết", className: "text-success" },
-            ],
-          })}
+                  <strong className="shrink-0 text-sm font-black text-text">
+                    {formatNumber(item.value)}
+                  </strong>
+                </div>
 
-          {renderLineChart("payments", {
-            title: "Thanh toán thành công theo ngày",
-            description:
-              "Số thanh toán đã thanh toán thành công theo thời điểm thanh toán thực tế trong 30 ngày gần nhất.",
-            rows: charts.payments?.paidSeries,
-            series: [
-              { key: "count", label: "Đã thanh toán", className: "text-success" },
-            ],
-          })}
-
-          {chartsLoading ? (
-            <LoadingBlock className="h-80 w-full rounded-2xl" />
-          ) : chartErrors.orders ? (
-            <ChartUnavailable
-              title="Cơ cấu trạng thái đơn hàng hiện tại"
-              message={chartErrors.orders}
-              onRetry={refresh}
-            />
-          ) : (
-            <DashboardDonutChart
-              title="Cơ cấu trạng thái đơn hàng hiện tại"
-              description="Trạng thái hiện tại của toàn bộ đơn hàng; không giới hạn theo kỳ."
-              rows={charts.orders?.currentStatusDistribution}
-              getLabel={(item) =>
-                getOrderStatusMeta(item.label || item.key).label
-              }
-            />
-          )}
-        </div>
+                <div className="h-3 overflow-hidden rounded-full bg-background">
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width]"
+                    style={{
+                      width:
+                        item.value > 0
+                          ? `${Math.max(
+                              4,
+                              (item.value / maxAttentionValue) * 100,
+                            )}%`
+                          : "0%",
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </section>
   );
