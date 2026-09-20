@@ -14,7 +14,11 @@ import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import disputeCategoryApi from "../../services/apis/disputeCategoryApi";
 import productTypeApi from "../../services/apis/productTypeApi";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
-import { DISPUTE_SECTION_TABS } from "../../constants/adminSections";
+import {
+  APPOINTMENT_SECTION_TABS,
+  DISPUTE_SECTION_TABS,
+  ORDER_SECTION_TABS,
+} from "../../constants/adminSections";
 
 const GROUP_OPTIONS = [
   { value: "Day", label: "Theo ngày" },
@@ -45,6 +49,14 @@ const PAYMENT_TYPE_OPTIONS = [
   { value: "Deposit", label: "Đặt cọc" },
   { value: "Full_Payment", label: "Thanh toán toàn bộ" },
   { value: "Subscription", label: "Gói dịch vụ" },
+];
+
+const DELIVERY_METHOD_OPTIONS = [
+  { value: "", label: "Tất cả cách giao nhận" },
+  { value: "GhnDelivery", label: "Giao hàng nhanh (GHN)" },
+  { value: "SellerDelivers", label: "Người bán giao hàng" },
+  { value: "BuyerPickUp", label: "Người mua tự đến lấy" },
+  { value: "Unknown", label: "Chưa xác định" },
 ];
 
 const ORDER_STATUS_OPTIONS = [
@@ -231,6 +243,14 @@ const LABELS = {
   commitmentviolation: "Vi phạm cam kết",
   other: "Khác",
   payos: "PayOS",
+  ghndelivery: "Giao hàng nhanh (GHN)",
+  sellerdelivers: "Người bán giao hàng",
+  buyerpickup: "Người mua tự đến lấy",
+  unspecified: "Chưa xác định",
+  buyerfavored: "Nghiêng về người mua",
+  sellerfavored: "Nghiêng về người bán",
+  violationconfirmed: "Xác nhận có vi phạm",
+  noviolation: "Không vi phạm",
   internalwallet: "Ví nội bộ",
   unknown: "Chưa xác định",
   deposit: "Đặt cọc",
@@ -863,6 +883,7 @@ const initialFilters = {
   paymentMethod: "",
   paymentType: "",
   orderStatus: "",
+  deliveryMethod: "",
   appointmentStatus: "",
   appointmentType: "",
   status: "",
@@ -1610,6 +1631,11 @@ export default function AdminDashboardModulePage({
             "orderStatus",
             ORDER_STATUS_OPTIONS,
           ),
+          renderSelect(
+            "Cách giao nhận",
+            "deliveryMethod",
+            DELIVERY_METHOD_OPTIONS,
+          ),
         );
       }
 
@@ -1959,6 +1985,14 @@ export default function AdminDashboardModulePage({
               loading={loading}
               valueClassName="text-warning"
             />
+
+            <KpiCard
+              label="Lịch có tranh chấp mở"
+              value={formatNumber(data?.openDisputeAppointmentCount)}
+              hint="Lịch hẹn hiệu lực đang gắn với tranh chấp chưa giải quyết."
+              loading={loading}
+              valueClassName="text-error"
+            />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
@@ -2019,6 +2053,14 @@ export default function AdminDashboardModulePage({
               data?.unknownCategoryCount,
             )}
             loading={loading}
+          />
+
+          <KpiCard
+            label="Tiền đang tạm giữ do tranh chấp"
+            value={formatMoney(data?.currentDisputedHeldAmount)}
+            hint="Số tiền hiện đang tạm giữ của các đơn có tranh chấp chưa giải quyết; là tiền của người dùng đang bị giữ, không phải doanh thu hay thiệt hại."
+            loading={loading}
+            valueClassName="text-warning"
           />
         </div>
 
@@ -2528,6 +2570,84 @@ export default function AdminDashboardModulePage({
 
           </div>
 
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <KpiCard
+              label="Đơn tạo trong kỳ"
+              value={formatNumber(data?.createdInPeriodCount)}
+              hint="Số đơn được tạo trong kỳ phân tích."
+              loading={loading}
+            />
+
+            <KpiCard
+              label="Giá trị giao dịch đơn hoàn tất"
+              value={formatMoney(data?.gmv)}
+              hint={`Tổng tiền cuối cùng (kể cả phí giao hàng đã cấu hình) của ${formatNumber(data?.successfulInPeriodCount)} đơn hoàn tất trong kỳ. Đây là giá trị mua bán giữa người dùng, không phải doanh thu HomeCycle.${Number(data?.successfulOrdersMissingAmountCount) > 0 ? ` ${formatNumber(data?.successfulOrdersMissingAmountCount)} đơn chưa có tổng tiền nên chưa được cộng.` : ""}`}
+              loading={loading}
+              valueClassName="text-primary"
+            />
+
+            <KpiCard
+              label="Giá trị đơn trung bình"
+              value={data?.averageOrderValue === null || data?.averageOrderValue === undefined ? "—" : formatMoney(data?.averageOrderValue)}
+              hint={Number(data?.successfulOrdersMissingAmountCount) > 0 ? "Chưa tính được vì có đơn hoàn tất chưa có tổng tiền." : "Giá trị giao dịch chia cho số đơn hoàn tất trong kỳ."}
+              loading={loading}
+            />
+
+            <KpiCard
+              label="Tỷ lệ hoàn tất"
+              value={formatPercent(data?.completionRate)}
+              hint={`Tỷ lệ hủy/hoàn trả ${formatPercent(data?.cancellationReturnRate)}. Tính theo trạng thái hiện tại của các đơn tạo trong kỳ.`}
+              loading={loading}
+              valueClassName="text-success"
+            />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-3">
+            <DashboardDonutChart
+              title="Trạng thái hiện tại của đơn tạo trong kỳ"
+              description="Đơn được tạo trong kỳ, phân theo trạng thái hiện tại của chúng."
+              rows={data?.createdStatusDistribution}
+              getLabel={(item) => labelFor(item.label || item.key, "orders")}
+            />
+
+            <DashboardDonutChart
+              title="Cách giao nhận của đơn tạo trong kỳ"
+              description="Theo phương thức giao nhận mới nhất của từng đơn."
+              rows={data?.deliveryMethodDistribution}
+              getLabel={(item) => labelFor(item.label || item.key)}
+            />
+
+            <DashboardDonutChart
+              title="Phương thức thanh toán trong kỳ"
+              description="Theo các lượt thanh toán đặt cọc/thanh toán toàn bộ đã thanh toán thành công trong kỳ (kể cả khoản sau đó được hoàn tiền)."
+              rows={data?.paymentMethodDistribution}
+              getLabel={(item) => labelFor(item.label || item.key, "payments")}
+            />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <DashboardLineChart
+              title="Đơn tạo mới và hoàn tất theo kỳ"
+              description="Số đơn được tạo và số đơn hoàn tất theo thời điểm nghiệp vụ thực tế."
+              rows={data?.tradeSeries}
+              series={[
+                { key: "createdCount", label: "Tạo mới", className: "text-primary" },
+                { key: "completedCount", label: "Hoàn tất", className: "text-success" },
+              ]}
+            />
+
+            <DashboardLineChart
+              title="Giá trị giao dịch đơn hoàn tất theo kỳ"
+              description="Tổng tiền cuối cùng của các đơn hoàn tất theo thời điểm hoàn tất; không phải doanh thu HomeCycle."
+              rows={data?.tradeSeries}
+              series={[
+                { key: "gmv", label: "Giá trị giao dịch", className: "text-primary" },
+              ]}
+              valueFormatter={formatMoney}
+              axisValueFormatter={formatCompactMoney}
+            />
+          </div>
+
             <DashboardLineChart
               title="Kết quả đơn hàng theo kỳ"
               description="Các sự kiện hoàn tất, hủy và hoàn trả theo thời điểm nghiệp vụ thực tế."
@@ -2866,6 +2986,140 @@ export default function AdminDashboardModulePage({
               </p>
             </section>
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <KpiCard
+              label="Lịch bị hủy trong kỳ"
+              value={formatNumber(data?.cancelledInPeriodCount)}
+              hint="Lịch hẹn hiệu lực bị hủy trong kỳ, theo thời điểm hủy."
+              loading={loading}
+              valueClassName="text-warning"
+            />
+
+            <KpiCard
+              label="Kiểm định điểm danh trễ"
+              value={formatNumber(data?.lateInspectionCount)}
+              hint="Lịch kiểm định đã đến giờ hẹn trong kỳ mà có bên điểm danh sau mốc trễ, hoặc đã quá mốc trễ mà vẫn thiếu điểm danh."
+              loading={loading}
+              valueClassName="text-error"
+            />
+
+            <KpiCard
+              label="Kiểm định chưa có mốc trễ"
+              value={formatNumber(data?.missingLateThresholdCount)}
+              hint="Lịch kiểm định đã đến giờ hẹn trong kỳ nhưng chưa được cấu hình mốc tính trễ."
+              loading={loading}
+            />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+                Điểm danh theo loại tài khoản
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-textLight">
+                Lượt điểm danh của lịch kiểm định đã đến giờ hẹn trong kỳ, gộp theo vai trò tài khoản của người tham gia.
+              </p>
+
+              <div className="mt-4 space-y-3">
+                {(data?.checkInByAccountRole || []).length === 0 ? (
+                  <p className="rounded-xl bg-background px-4 py-5 text-center text-sm text-textLight">
+                    Chưa có dữ liệu.
+                  </p>
+                ) : (
+                  (data?.checkInByAccountRole || []).map((item) => (
+                    <div
+                      key={item.participantType}
+                      className="rounded-xl border border-border bg-background/60 p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-black text-text">
+                            {labelFor(item.participantType)}
+                          </p>
+
+                          <p className="mt-1 text-xs text-textLight">
+                            {formatNumber(item.checkedInCount)}/
+                            {formatNumber(item.eligibleCount)} đã điểm danh
+                          </p>
+                        </div>
+
+                        <span className="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
+                          {formatPercent(item.checkInRate)}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/40">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{
+                            width: `${Math.min(100, Math.max(0, Number(item.checkInRate) || 0))}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <DashboardHorizontalBarChart
+              title="Khu vực có lịch hẹn trong kỳ"
+              description="Số lịch hẹn hiệu lực theo thời điểm hẹn trong kỳ, gộp theo thành phố/phường của bài đăng liên quan và cách giao nhận."
+              rows={(data?.regions || []).map((item) => ({
+                key: `${item.city}|${item.ward}|${item.deliveryMethod ?? ""}`,
+                label: `${item.city || "Chưa rõ"}${item.ward ? ` / ${item.ward}` : ""} · ${labelFor(item.deliveryMethod ?? "Unspecified")}`,
+                count: item.appointmentCount,
+              }))}
+              getLabel={(item) => item.label}
+              hideZero
+            />
+          </div>
+
+          <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
+            <h3 className="text-lg font-black text-text">
+              Kết quả theo cách giao nhận
+            </h3>
+
+            <p className="mt-1 text-xs leading-5 text-textLight">
+              Trạng thái hiện tại của các lịch hẹn hiệu lực có thời điểm hẹn trong kỳ, gộp theo cách giao nhận mới nhất của đơn.
+            </p>
+
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border text-xs uppercase tracking-[0.1em] text-textLight">
+                    <th className="px-3 py-3">Cách giao nhận</th>
+                    <th className="px-3 py-3 text-right">Tổng lịch</th>
+                    <th className="px-3 py-3 text-right">Hoàn tất</th>
+                    <th className="px-3 py-3 text-right">Đã hủy</th>
+                    <th className="px-3 py-3 text-right">Tỷ lệ hoàn tất</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {(data?.deliveryPerformance || []).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8 text-center text-textLight">
+                        Chưa có dữ liệu.
+                      </td>
+                    </tr>
+                  ) : (
+                    (data?.deliveryPerformance || []).map((item) => (
+                      <tr key={item.method} className="border-b border-border/70 last:border-0">
+                        <td className="px-3 py-3 font-bold text-text">{labelFor(item.method)}</td>
+                        <td className="px-3 py-3 text-right">{formatNumber(item.totalCount)}</td>
+                        <td className="px-3 py-3 text-right font-black text-success">{formatNumber(item.completedCount)}</td>
+                        <td className="px-3 py-3 text-right font-black text-error">{formatNumber(item.cancelledCount)}</td>
+                        <td className="px-3 py-3 text-right font-black text-text">{formatPercent(item.completionRate)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
         </>
       );
     }
@@ -2892,7 +3146,29 @@ export default function AdminDashboardModulePage({
             loading={loading}
           />
 
+          <KpiCard
+            label="Mở mới trong kỳ"
+            value={formatNumber(data?.openedInPeriodCount)}
+            hint="Số tranh chấp được tạo trong kỳ."
+            loading={loading}
+            valueClassName="text-error"
+          />
+
+          <KpiCard
+            label="Tỷ lệ đơn phát sinh tranh chấp"
+            value={formatPercent(data?.orderDisputeRate)}
+            hint={`${formatNumber(data?.disputedOrdersCreatedInPeriodCount)}/${formatNumber(data?.ordersCreatedInPeriodCount)} đơn tạo trong kỳ có tranh chấp về đơn hàng. Chỉ tính khi bộ lọc đối tượng là "Tất cả" hoặc "Đơn hàng".`}
+            loading={loading}
+          />
           </div>
+
+        <div className="grid gap-6 xl:grid-cols-2">
+          <DashboardDonutChart
+            title="Kết quả giải quyết trong kỳ"
+            description="Phân bố kết quả của các tranh chấp được giải quyết trong kỳ."
+            rows={data?.resolutionDistribution}
+            getLabel={(item) => labelFor(item.label || item.key)}
+          />
 
         <DashboardLineChart
           title="Mở mới và giải quyết theo kỳ"
@@ -2915,6 +3191,7 @@ export default function AdminDashboardModulePage({
             },
           ]}
         />
+        </div>
         </>
       );
     }
@@ -3040,6 +3317,20 @@ export default function AdminDashboardModulePage({
         <AdminSectionTabs
           ariaLabel="Khu vực Tranh chấp"
           items={DISPUTE_SECTION_TABS}
+        />
+      )}
+
+      {dashboard === "orders" && (
+        <AdminSectionTabs
+          ariaLabel="Khu vực Đơn hàng"
+          items={ORDER_SECTION_TABS}
+        />
+      )}
+
+      {dashboard === "appointments" && (
+        <AdminSectionTabs
+          ariaLabel="Khu vực Lịch hẹn"
+          items={APPOINTMENT_SECTION_TABS}
         />
       )}
 
