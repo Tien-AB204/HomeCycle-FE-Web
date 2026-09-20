@@ -4,7 +4,7 @@ import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import categoryApi from "../../services/apis/categoryApi";
 import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 10;
 const SEARCH_DELAY = 400;
 
 const INITIAL_PAGINATION = {
