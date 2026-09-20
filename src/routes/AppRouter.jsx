@@ -36,6 +36,9 @@ import RoleRoute from "./RoleRoute";
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
+import AdminAppointmentHistoryPage from "../pages/admin/AdminAppointmentHistoryPage";
+import AdminDisputeHistoryPage from "../pages/admin/AdminDisputeHistoryPage";
+import AdminOrderHistoryPage from "../pages/admin/AdminOrderHistoryPage";
 import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
@@ -310,6 +313,21 @@ const AppRouter = () => {
           <Route
             path="dashboard/posts"
             element={<AdminPostOverviewPage />}
+          />
+
+          <Route
+            path="dashboard/orders/history"
+            element={<AdminOrderHistoryPage />}
+          />
+
+          <Route
+            path="dashboard/appointments/history"
+            element={<AdminAppointmentHistoryPage />}
+          />
+
+          <Route
+            path="dashboard/disputes/history"
+            element={<AdminDisputeHistoryPage />}
           />
 
           <Route

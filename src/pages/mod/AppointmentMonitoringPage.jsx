@@ -48,6 +48,14 @@ const STATUS_FILTER_OPTIONS = [
   { value: "InProgress", label: "Đang diễn ra" },
 ];
 
+const DELIVERY_METHOD_FILTER_OPTIONS = [
+  { value: "", label: "Tất cả cách giao nhận" },
+  { value: "GhnDelivery", label: "Giao hàng nhanh (GHN)" },
+  { value: "SellerDelivers", label: "Người bán giao hàng" },
+  { value: "BuyerPickUp", label: "Người mua tự đến lấy" },
+  { value: "Unknown", label: "Chưa xác định" },
+];
+
 const TRI_STATE_OPTIONS = [
   { value: "", label: "Tất cả" },
   { value: "true", label: "Có" },
@@ -168,9 +176,16 @@ const getLabelFromMap = (map, value, fallback = "Chưa xác định") => {
   return key ? map[key] || fallback : fallback;
 };
 
-const AppointmentMonitoringPage = () => {
+const AppointmentMonitoringPage = ({
+  api = moderatorAppointmentApi,
+  eyebrow = "Trung tâm kiểm duyệt",
+  title = "Theo dõi lịch hẹn",
+  description = "Theo dõi thống nhất lịch hẹn kiểm định và thu gom trên toàn hệ thống.",
+} = {}) => {
   const [keywordInput, setKeywordInput] = useState("");
   const [keyword, setKeyword] = useState("");
+  const [hasOpenDispute, setHasOpenDispute] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState("");
   const [type, setType] = useState("");
   const [status, setStatus] = useState("");
   const [isOverdue, setIsOverdue] = useState("");
@@ -222,6 +237,8 @@ const AppointmentMonitoringPage = () => {
     return {
       pageNumber,
       pageSize,
+      hasOpenDispute: toTriStateBool(hasOpenDispute),
+      deliveryMethod,
       keyword,
       type,
       status,
@@ -233,6 +250,8 @@ const AppointmentMonitoringPage = () => {
   }, [
     pageNumber,
     pageSize,
+    hasOpenDispute,
+    deliveryMethod,
     keyword,
     type,
     status,
@@ -258,7 +277,7 @@ const AppointmentMonitoringPage = () => {
     setState((current) => ({ ...current, loading: true, error: "" }));
 
     try {
-      const result = await moderatorAppointmentApi.getAppointments({
+      const result = await api.getAppointments({
         ...listParams,
         signal: controller.signal,
       });
@@ -289,7 +308,7 @@ const AppointmentMonitoringPage = () => {
         error: "Không thể tải danh sách lịch hẹn. Vui lòng thử lại.",
       });
     }
-  }, [listParams]);
+  }, [api, listParams]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -323,6 +342,16 @@ const AppointmentMonitoringPage = () => {
     setIsOverdue(next || "");
   };
 
+  const changeHasOpenDispute = (next) => {
+    setPageNumber(1);
+    setHasOpenDispute(next || "");
+  };
+
+  const changeDeliveryMethod = (next) => {
+    setPageNumber(1);
+    setDeliveryMethod(next || "");
+  };
+
   const changeHasInspectionForm = (next) => {
     setPageNumber(1);
     setHasInspectionForm(next || "");
@@ -349,7 +378,7 @@ const AppointmentMonitoringPage = () => {
       error: "",
     });
 
-    moderatorAppointmentApi
+    api
       .getAppointmentById(appointmentId, { signal: controller.signal })
       .then((data) => {
         if (detailRequestRef.current !== requestId) {
@@ -434,7 +463,7 @@ const AppointmentMonitoringPage = () => {
 
     setInspectionFormState({ loading: true, data: null, error: "" });
 
-    moderatorAppointmentApi
+    api
       .getInspectionForm(selectedAppointmentId, { signal: controller.signal })
       .then((data) => {
         setInspectionFormState({ loading: false, data, error: "" });
@@ -555,14 +584,13 @@ const AppointmentMonitoringPage = () => {
     <section className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-6 lg:px-8">
       <div className="overflow-hidden rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_50px_rgba(23,40,48,0.14)]">
         <p className="text-xs font-black uppercase tracking-[0.2em] text-white/65">
-          Trung tâm kiểm duyệt
+          {eyebrow}
         </p>
 
-        <h1 className="mt-2 text-3xl font-black">Theo dõi lịch hẹn</h1>
+        <h1 className="mt-2 text-3xl font-black">{title}</h1>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
-          Theo dõi thống nhất lịch hẹn kiểm định và thu gom trên toàn hệ
-          thống.
+          {description}
         </p>
       </div>
 
@@ -625,6 +653,30 @@ const AppointmentMonitoringPage = () => {
             value={hasInspectionForm || ""}
             onChange={changeHasInspectionForm}
             options={TRI_STATE_OPTIONS}
+            className="w-full"
+          />
+        </div>
+
+        <div className="min-w-[150px]">
+          <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
+            Có tranh chấp mở
+          </label>
+          <Select
+            value={hasOpenDispute || ""}
+            onChange={changeHasOpenDispute}
+            options={TRI_STATE_OPTIONS}
+            className="w-full"
+          />
+        </div>
+
+        <div className="min-w-[190px]">
+          <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
+            Cách giao nhận
+          </label>
+          <Select
+            value={deliveryMethod || ""}
+            onChange={changeDeliveryMethod}
+            options={DELIVERY_METHOD_FILTER_OPTIONS}
             className="w-full"
           />
         </div>
@@ -814,12 +866,14 @@ const AppointmentMonitoringPage = () => {
                           )}`}
                       </p>
 
-                      <Button
-                        size="small"
-                        onClick={openInspectionFormEvidence}
-                      >
-                        Xem biên bản kiểm định
-                      </Button>
+                      {typeof api.getInspectionForm === "function" && (
+                        <Button
+                          size="small"
+                          onClick={openInspectionFormEvidence}
+                        >
+                          Xem biên bản kiểm định
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}

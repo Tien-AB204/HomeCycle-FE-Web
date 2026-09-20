@@ -53,8 +53,10 @@ const normalizePagedResponse = (
   };
 };
 
-const moderatorAppointmentApi = {
+export const createAppointmentReadApi = ({ listPath, detailPath }) => ({
   getAppointments: async ({
+    hasOpenDispute,
+    deliveryMethod,
     keyword,
     type,
     status,
@@ -80,6 +82,18 @@ const moderatorAppointmentApi = {
       PageNumber: normalizedPage,
       PageSize: normalizedPageSize,
     };
+
+    if (typeof hasOpenDispute === "boolean") {
+      params.HasOpenDispute = hasOpenDispute;
+    }
+
+    if (
+      deliveryMethod !== undefined &&
+      deliveryMethod !== null &&
+      deliveryMethod !== ""
+    ) {
+      params.DeliveryMethod = deliveryMethod;
+    }
 
     if (String(keyword || "").trim()) {
       params.Keyword = String(keyword).trim();
@@ -121,7 +135,7 @@ const moderatorAppointmentApi = {
       params.ScheduledTo = scheduledTo;
     }
 
-    const response = await axiosClient.get("/moderator/appointments", {
+    const response = await axiosClient.get(listPath, {
       params,
       signal,
     });
@@ -141,7 +155,7 @@ const moderatorAppointmentApi = {
     }
 
     const response = await axiosClient.get(
-      `/moderator/appointments/${encodeURIComponent(id)}`,
+      `${detailPath}/${encodeURIComponent(id)}`,
       { signal },
     );
 
@@ -166,7 +180,7 @@ const moderatorAppointmentApi = {
     }
 
     const response = await axiosClient.get(
-      `/moderator/appointments/${encodeURIComponent(id)}/inspection-form`,
+      `${detailPath}/${encodeURIComponent(id)}/inspection-form`,
       { signal },
     );
 
@@ -182,6 +196,11 @@ const moderatorAppointmentApi = {
 
     return source;
   },
-};
+});
+
+const moderatorAppointmentApi = createAppointmentReadApi({
+  listPath: "/moderator/appointments",
+  detailPath: "/moderator/appointments",
+});
 
 export default moderatorAppointmentApi;

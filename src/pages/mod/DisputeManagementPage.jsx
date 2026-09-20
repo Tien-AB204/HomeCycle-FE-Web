@@ -570,6 +570,10 @@ const getActionFlag = (
 
 const DisputeManagementPage = ({
   initialTargetType,
+  api = moderatorDisputeApi,
+  readOnly = false,
+  eyebrow = "Kiểm duyệt",
+  title = "Quản lý tranh chấp",
 } = {}) => {
   const location = useLocation();
   const actionToast = useActionToast();
@@ -733,7 +737,7 @@ const DisputeManagementPage = ({
 
       try {
         const response =
-          await moderatorDisputeApi.getAll(
+          await api.getAll(
             listParams,
           );
 
@@ -772,6 +776,7 @@ const DisputeManagementPage = ({
       }
     },
     [
+      api,
       listParams,
       pageNumber,
       pageSize,
@@ -789,7 +794,7 @@ const DisputeManagementPage = ({
 
       try {
         const response =
-          await moderatorDisputeApi.getById(
+          await api.getById(
             disputeId,
           );
 
@@ -811,7 +816,7 @@ const DisputeManagementPage = ({
         setLoadingDetail(false);
       }
     },
-    [],
+    [api],
   );
 
   useEffect(() => {
@@ -824,7 +829,7 @@ const DisputeManagementPage = ({
 
       try {
         const categories =
-          await moderatorDisputeApi.getCategories({
+          await api.getCategories({
             targetType,
             signal: controller.signal,
           });
@@ -877,7 +882,7 @@ const DisputeManagementPage = ({
       active = false;
       controller.abort();
     };
-  }, [targetType]);
+  }, [api, targetType]);
 
   useEffect(() => {
     const timeoutId =
@@ -1338,24 +1343,28 @@ const DisputeManagementPage = ({
     isReviewTarget || isPostTarget;
 
   const canClaim =
+    !readOnly &&
     getActionFlag(
       actions,
       "canClaimDispute",
     );
 
   const canResolve =
+    !readOnly &&
     getActionFlag(
       actions,
       "canResolveDispute",
     );
 
   const canReject =
+    !readOnly &&
     getActionFlag(
       actions,
       "canRejectDispute",
     );
 
   const canVerifyReturn =
+    !readOnly &&
     getActionFlag(
       actions,
       "canVerifyReturn",
@@ -1405,11 +1414,11 @@ const DisputeManagementPage = ({
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.16em] text-primary">
-                  Kiểm duyệt
+                  {eyebrow}
                 </p>
 
                 <h1 className="text-xl font-black text-text">
-                  Quản lý tranh chấp
+                  {title}
                 </h1>
               </div>
 
