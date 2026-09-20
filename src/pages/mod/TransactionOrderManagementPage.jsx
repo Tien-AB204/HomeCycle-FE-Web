@@ -27,8 +27,12 @@ import { getDeliveryMethodLabel } from "../../constants/agreements";
 import { getAppointmentStatusMeta } from "../../constants/appointments";
 import moderatorOrderApi from "../../services/apis/moderatorOrderApi";
 import FinancialTransactionsPanel from "../../features/finance/FinancialTransactionsPanel";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 
 const { RangePicker } = DatePicker;
 
@@ -278,6 +282,7 @@ const OrderManagementContent = () => {
   const [hasInspection, setHasInspection] = useState("");
   const [dateRange, setDateRange] = useState(null);
   const [sortOption, setSortOption] = useState("newest");
+  const [monthFilter, setMonthFilter] = useState("");
 
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -630,11 +635,15 @@ const OrderManagementContent = () => {
   const sortedOrders = useMemo(
     () =>
       sortItemsByDate(
-        state.items,
+        filterItemsByMonth(
+          state.items,
+          monthFilter,
+          (item) => item?.createdAt,
+        ),
         sortOption,
         (item) => item?.createdAt,
       ),
-    [state.items, sortOption],
+    [monthFilter, state.items, sortOption],
   );
 
   const detail = detailState.data;
@@ -723,6 +732,13 @@ const OrderManagementContent = () => {
         <ListSortDropdown
           value={sortOption}
           onChange={setSortOption}
+          scopeLabel="đơn hàng trong trang hiện tại"
+        />
+        <ListMonthDropdown
+          items={state.items}
+          value={monthFilter}
+          onChange={setMonthFilter}
+          getValue={(item) => item?.createdAt}
           scopeLabel="đơn hàng trong trang hiện tại"
         />
 

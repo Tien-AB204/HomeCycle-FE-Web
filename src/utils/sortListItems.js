@@ -12,6 +12,57 @@ const toTimestamp = (value) => {
   return Number.isFinite(timestamp) ? timestamp : null;
 };
 
+export const getMonthKey = (value) => {
+  const timestamp = toTimestamp(value);
+
+  if (timestamp === null) return "";
+
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+};
+
+export const getAvailableMonthOptions = (
+  items,
+  getValue = (item) => item?.createdAt,
+) => {
+  const source = Array.isArray(items) ? items : [];
+  const months = new Map();
+
+  source.forEach((item) => {
+    const value = getValue(item);
+    const key = getMonthKey(value);
+
+    if (!key || months.has(key)) return;
+
+    const date = new Date(value);
+    months.set(key, {
+      key,
+      label: `Tháng ${date.getMonth() + 1}/${date.getFullYear()}`,
+    });
+  });
+
+  return [...months.values()].sort((left, right) =>
+    right.key.localeCompare(left.key),
+  );
+};
+
+export const filterItemsByMonth = (
+  items,
+  monthKey,
+  getValue = (item) => item?.createdAt,
+) => {
+  const source = Array.isArray(items) ? items : [];
+
+  if (!monthKey) return source;
+
+  return source.filter(
+    (item) => getMonthKey(getValue(item)) === monthKey,
+  );
+};
+
 export const sortItemsByDate = (
   items,
   direction = "newest",

@@ -11,8 +11,12 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import { useNotifications } from "../../hooks/useNotifications";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 import notificationApi, {
   normalizeNotification,
   normalizeNotificationTargetType,
@@ -87,6 +91,11 @@ const NotificationPage = () => {
     sortOption,
     setSortOption,
   ] = useState("newest");
+
+  const [
+    monthFilter,
+    setMonthFilter,
+  ] = useState("");
 
   const [
     pagination,
@@ -413,11 +422,17 @@ const NotificationPage = () => {
   const sortedItems = useMemo(
     () =>
       sortItemsByDate(
-        items,
+        isModerator
+          ? filterItemsByMonth(
+              items,
+              monthFilter,
+              (item) => item?.createdAt,
+            )
+          : items,
         sortOption,
         (item) => item?.createdAt,
       ),
-    [items, sortOption],
+    [isModerator, items, monthFilter, sortOption],
   );
 
   const loadMore =
@@ -673,12 +688,22 @@ const NotificationPage = () => {
 
         <div className="flex items-center gap-2">
           {isModerator && (
-            <ListSortDropdown
-              value={sortOption}
-              onChange={setSortOption}
-              compact
-              scopeLabel="thông báo đã tải"
-            />
+            <>
+              <ListSortDropdown
+                value={sortOption}
+                onChange={setSortOption}
+                compact
+                scopeLabel="thông báo đã tải"
+              />
+              <ListMonthDropdown
+                items={items}
+                value={monthFilter}
+                onChange={setMonthFilter}
+                getValue={(item) => item?.createdAt}
+                compact
+                scopeLabel="thông báo đã tải"
+              />
+            </>
           )}
 
           <button

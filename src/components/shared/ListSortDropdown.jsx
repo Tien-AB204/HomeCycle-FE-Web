@@ -32,6 +32,28 @@ export default function ListSortDropdown({
     normalizedOptions.find((option) => option.key === value) ||
     normalizedOptions[0];
 
+  const isSimpleDateToggle =
+    normalizedOptions.length === 2 &&
+    normalizedOptions.some((option) => option.key === "newest") &&
+    normalizedOptions.some((option) => option.key === "oldest");
+
+  if (isSimpleDateToggle) {
+    const nextKey = selected.key === "newest" ? "oldest" : "newest";
+    const nextOption =
+      normalizedOptions.find((option) => option.key === nextKey) ||
+      normalizedOptions[0];
+
+    return (
+      <Button
+        icon={getOptionIcon(selected.key) || <SortDescendingOutlined />}
+        onClick={() => onChange?.(nextKey)}
+        aria-label={`Đang sắp xếp ${scopeLabel}: ${selected.label}. Bấm để chuyển sang ${nextOption.label}.`}
+        title={`${selected.label} — bấm để chuyển sang ${nextOption.label}`}
+        className={className}
+      />
+    );
+  }
+
   return (
     <Dropdown
       trigger={["click"]}

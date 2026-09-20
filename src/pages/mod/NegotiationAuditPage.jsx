@@ -6,9 +6,13 @@ import {
   getNegotiationStatusMeta,
   getProposalStatusMeta,
 } from "../../constants/negotiations";
+import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import moderatorNegotiationApi from "../../services/apis/moderatorNegotiationApi";
-import { sortItemsByDate } from "../../utils/sortListItems";
+import {
+  filterItemsByMonth,
+  sortItemsByDate,
+} from "../../utils/sortListItems";
 
 const LIST_PAGE_SIZE = 10;
 const MESSAGE_PAGE_SIZE = 50;
@@ -226,6 +230,7 @@ export default function NegotiationAuditPage() {
   const [keyword, setKeyword] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
   const [sortOption, setSortOption] = useState("newest");
+  const [monthFilter, setMonthFilter] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [state, setState] = useState({ loading: true, items: [], totalCount: 0, error: "" });
 
@@ -247,14 +252,21 @@ export default function NegotiationAuditPage() {
   const sortedItems = useMemo(
     () =>
       sortItemsByDate(
-        state.items,
+        filterItemsByMonth(
+          state.items,
+          monthFilter,
+          (item) =>
+            item?.disputeCreatedAt ??
+            item?.lastMessageAt ??
+            item?.createdAt,
+        ),
         sortOption,
         (item) =>
           item?.disputeCreatedAt ??
           item?.lastMessageAt ??
           item?.createdAt,
       ),
-    [state.items, sortOption],
+    [monthFilter, state.items, sortOption],
   );
 
   const columns = useMemo(() => [
@@ -293,6 +305,17 @@ export default function NegotiationAuditPage() {
           <ListSortDropdown
             value={sortOption}
             onChange={setSortOption}
+            scopeLabel="thương lượng trong trang hiện tại"
+          />
+          <ListMonthDropdown
+            items={state.items}
+            value={monthFilter}
+            onChange={setMonthFilter}
+            getValue={(item) =>
+              item?.disputeCreatedAt ??
+              item?.lastMessageAt ??
+              item?.createdAt
+            }
             scopeLabel="thương lượng trong trang hiện tại"
           />
           <Button type="primary" icon={<SearchOutlined />} onClick={applySearch}>Tìm kiếm</Button>
