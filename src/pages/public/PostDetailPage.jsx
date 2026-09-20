@@ -65,9 +65,13 @@ const FUNCTIONALITY_STATUSES = {
 
 const SPACE_USAGES = {
   Living_room: "Phòng khách",
-  Bedroom: "Phòng ngủ",
   Kitchen: "Nhà bếp",
-  Office: "Văn phòng",
+  Bedroom: "Phòng ngủ",
+  Bathroom: "Phòng tắm",
+  Laundry_room: "Phòng giặt",
+  Balcony: "Ban công",
+  Garage: "Nhà xe",
+  Restroom: "Nhà vệ sinh",
 };
 
 const DAMAGE_LEVELS = {

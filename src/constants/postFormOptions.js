@@ -1,8 +1,12 @@
 export const SPACE_USAGE_OPTIONS = Object.freeze([
   { value: "Living_room", label: "Phòng khách" },
-  { value: "Bedroom", label: "Phòng ngủ" },
   { value: "Kitchen", label: "Nhà bếp" },
-  { value: "Office", label: "Văn phòng" },
+  { value: "Bedroom", label: "Phòng ngủ" },
+  { value: "Bathroom", label: "Phòng tắm" },
+  { value: "Laundry_room", label: "Phòng giặt" },
+  { value: "Balcony", label: "Ban công" },
+  { value: "Garage", label: "Nhà xe" },
+  { value: "Restroom", label: "Nhà vệ sinh" },
 ]);
 
 export const FUNCTIONALITY_OPTIONS = Object.freeze([

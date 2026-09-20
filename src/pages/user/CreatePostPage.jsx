@@ -99,7 +99,7 @@ const createInitialForm = () => ({
   city: "",
   ward: "",
   streetAddress: "",
-  spaceUsage: "Living_room",
+  spaceUsage: "",
   functionalityStatus: "FullyFunctional",
   usageDuration: "0",
   damageLevel: "None",
@@ -151,7 +151,7 @@ const createFormFromPost = (post) => {
     city: post?.city || "",
     ward: post?.ward || "",
     streetAddress: post?.streetAddress || "",
-    spaceUsage: product.spaceUsage || "Living_room",
+    spaceUsage: product.spaceUsage || "",
     functionalityStatus: condition.functionalityStatus,
     usageDuration: toFormString(product.usageDuration, "0"),
     damageLevel: condition.damageLevel,
@@ -1436,6 +1436,7 @@ const CreatePostPage = () => {
                   disabled={isSubmitting}
                   className={inputClassName}
                 >
+                  <option value="">Chưa chọn</option>
                   {SPACE_USAGE_OPTIONS.map(
                     (option) => (
                       <option
