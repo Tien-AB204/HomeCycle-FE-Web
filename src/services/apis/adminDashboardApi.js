@@ -109,6 +109,7 @@ const adminDashboardApi = {
     to,
     groupBy = "Day",
     orderStatus,
+    deliveryMethod,
     signal,
   } = {}) =>
     axiosClient.get(
@@ -119,6 +120,7 @@ const adminDashboardApi = {
           to,
           groupBy,
           orderStatus,
+          deliveryMethod,
         }),
         signal,
         skipGlobalErrorPage: true,
@@ -174,6 +176,9 @@ const adminDashboardApi = {
     ),
 
   getBusinessOverview: async ({
+    from,
+    to,
+    groupBy = "Day",
     businessModel,
     profileStatus,
     userStatus,
@@ -183,6 +188,9 @@ const adminDashboardApi = {
       "/admin/dashboard/businesses/overview",
       {
         params: cleanParams({
+          from,
+          to,
+          groupBy,
           businessModel,
           profileStatus,
           userStatus,
@@ -361,6 +369,48 @@ const adminDashboardApi = {
         skipGlobalErrorPage: true,
       },
     ),
+  getListings: async ({
+    from,
+    to,
+    groupBy = "Day",
+    signal,
+  } = {}) =>
+    axiosClient.get("/admin/dashboard/listings", {
+      params: cleanParams({ from, to, groupBy }),
+      signal,
+      skipGlobalErrorPage: true,
+    }),
+
+  getSubscriptionDashboard: async ({
+    from,
+    to,
+    groupBy = "Day",
+    signal,
+  } = {}) =>
+    axiosClient.get("/admin/dashboard/subscription-packages", {
+      params: cleanParams({ from, to, groupBy }),
+      signal,
+      skipGlobalErrorPage: true,
+    }),
+
+  getUserActivity: async ({ signal } = {}) =>
+    axiosClient.get("/admin/dashboard/users/activity", {
+      signal,
+      skipGlobalErrorPage: true,
+    }),
+
+  getUserDetail: async (userId, { signal } = {}) => {
+    const id = String(userId || "").trim();
+
+    if (!id) {
+      throw new Error("Không tìm thấy mã người dùng.");
+    }
+
+    return axiosClient.get(
+      `/admin/dashboard/users/${encodeURIComponent(id)}`,
+      { signal, skipGlobalErrorPage: true },
+    );
+  },
 };
 
 export default adminDashboardApi;

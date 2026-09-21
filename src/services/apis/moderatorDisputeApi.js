@@ -15,16 +15,13 @@ const normalizeDisputeId = (disputeId) => {
   return encodeURIComponent(id);
 };
 
-const moderatorDisputeApi = {
+export const createDisputeReadApi = ({ listPath, detailPath }) => ({
   getAll: (params, { signal } = {}) =>
-    axiosClient.get(
-      "/moderator/disputes",
-      localRequestConfig({ params, signal }),
-    ),
+    axiosClient.get(listPath, localRequestConfig({ params, signal })),
 
   getById: (disputeId, { signal } = {}) =>
     axiosClient.get(
-      `/moderator/disputes/${normalizeDisputeId(disputeId)}`,
+      `${detailPath}/${normalizeDisputeId(disputeId)}`,
       localRequestConfig({ signal }),
     ),
 
@@ -44,6 +41,13 @@ const moderatorDisputeApi = {
 
     return Array.isArray(data) ? data : [];
   },
+});
+
+const moderatorDisputeApi = {
+  ...createDisputeReadApi({
+    listPath: "/moderator/disputes",
+    detailPath: "/moderator/disputes",
+  }),
 
   claim: (disputeId) =>
     axiosClient.post(

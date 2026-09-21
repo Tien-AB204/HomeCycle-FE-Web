@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
+import SubscriptionAnalyticsPanel from "../../features/admin/subscriptions/SubscriptionAnalyticsPanel";
 import adminSubscriptionPackageApi from "../../services/apis/adminSubscriptionPackageApi";
 
 const TARGET_ROLE_BUSINESS = 2;
+const MAX_DURATION_DAYS = 3650;
+
+const PAGE_VIEWS = [
+  { key: "packages", label: "Danh sách gói" },
+  { key: "analytics", label: "Thống kê" },
+];
+
+const DELETE_REJECTED_MESSAGE =
+  "Chỉ có thể xóa gói doanh nghiệp chưa từng có lượt đăng ký. Gói đã có lịch sử đăng ký cần dùng chức năng tắt gói.";
 
 const CODE_PATTERN = /^[A-Za-z0-9_-]+$/;
 
@@ -232,11 +242,12 @@ const validatePackageFields = (
   if (
     form.duration === "" ||
     !Number.isInteger(duration) ||
-    duration <= 0
+    duration < 1 ||
+    duration > MAX_DURATION_DAYS
   ) {
     return {
       error:
-        "Vui lòng nhập thời hạn hợp lệ (số nguyên lớn hơn 0).",
+        "Vui lòng nhập thời hạn hợp lệ (số nguyên từ 1 đến 3650 ngày).",
     };
   }
 
@@ -833,6 +844,7 @@ function CreatePackageModal({
                 value={form.duration}
                 disabled={busy}
                 min="1"
+                max={MAX_DURATION_DAYS}
                 step="1"
                 onChange={(event) =>
                   onChangeForm({
@@ -1079,6 +1091,7 @@ function PackageDetailDrawer({
                       value={editForm.duration}
                       disabled={busy}
                       min="1"
+                      max={MAX_DURATION_DAYS}
                       step="1"
                       onChange={(event) =>
                         onChangeEditForm({
@@ -1228,6 +1241,14 @@ export default function SubscriptionPackagePage() {
     setPendingStatusPackage,
   ] = useState(null);
   const [updatingStatusId, setUpdatingStatusId] =
+    useState(null);
+
+  const [view, setView] = useState("packages");
+  const [
+    pendingDeletePackage,
+    setPendingDeletePackage,
+  ] = useState(null);
+  const [deletingId, setDeletingId] =
     useState(null);
 
   const businessDefinitions = useMemo(
@@ -1662,7 +1683,7 @@ export default function SubscriptionPackagePage() {
   };
 
   const openStatusConfirm = (pkg) => {
-    if (updatingStatusId) {
+    if (updatingStatusId || deletingId) {
       return;
     }
 
@@ -1710,6 +1731,66 @@ export default function SubscriptionPackagePage() {
     }
   };
 
+  const rowActionsBusy = Boolean(
+    updatingStatusId || deletingId,
+  );
+
+  const canDeletePackage = (pkg) =>
+    normalizeTargetRole(pkg?.targetRole) === "Business";
+
+  const openDeleteConfirm = (pkg) => {
+    if (rowActionsBusy || !canDeletePackage(pkg)) {
+      return;
+    }
+
+    setActionError("");
+    setSuccessMessage("");
+    setPendingDeletePackage(pkg);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (!deletingId) {
+      setPendingDeletePackage(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    const pkg = pendingDeletePackage;
+
+    if (!pkg || deletingId) {
+      return;
+    }
+
+    setDeletingId(pkg.packageId);
+    setActionError("");
+
+    try {
+      await adminSubscriptionPackageApi.deletePackage(
+        pkg.packageId,
+      );
+
+      setSuccessMessage(
+        `Đã xóa gói đăng ký "${pkg.name}".`,
+      );
+
+      setPendingDeletePackage(null);
+
+      if (selectedPackageId === pkg.packageId) {
+        closeDetail();
+      }
+
+      refresh();
+    } catch (error) {
+      setActionError(
+        getErrorCode(error) === "VALIDATION_ERROR"
+          ? DELETE_REJECTED_MESSAGE
+          : getPackageErrorMessage(error),
+      );
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <section className="space-y-6 p-4 sm:p-6">
       <header>
@@ -1726,6 +1807,37 @@ export default function SubscriptionPackagePage() {
         </p>
       </header>
 
+      <div
+        role="tablist"
+        aria-label="Chế độ xem gói đăng ký"
+        className="flex flex-wrap gap-2 rounded-xl border border-border bg-white p-1.5 shadow-sm"
+      >
+        {PAGE_VIEWS.map((item) => {
+          const active = view === item.key;
+
+          return (
+            <button
+              key={item.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setView(item.key)}
+              className={`rounded-lg px-4 py-2 text-sm font-black transition ${
+                active
+                  ? "bg-primary text-white"
+                  : "text-textLight hover:bg-background hover:text-text"
+              }`}
+            >
+              {item.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {view === "analytics" ? (
+        <SubscriptionAnalyticsPanel packages={packages} />
+      ) : (
+        <>
       <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-white p-4 shadow-sm sm:flex-row sm:items-end">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="block text-xs font-bold text-textLight">
@@ -1984,9 +2096,7 @@ export default function SubscriptionPackagePage() {
                               pkg.packageId,
                             )
                           }
-                          disabled={Boolean(
-                            updatingStatusId,
-                          )}
+                          disabled={rowActionsBusy}
                           title="Xem / Chỉnh sửa"
                           className="rounded-lg border border-primary px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-40"
                         >
@@ -1998,9 +2108,7 @@ export default function SubscriptionPackagePage() {
                           onClick={() =>
                             openStatusConfirm(pkg)
                           }
-                          disabled={Boolean(
-                            updatingStatusId,
-                          )}
+                          disabled={rowActionsBusy}
                           title={
                             pkg.isActive
                               ? "Tắt gói"
@@ -2018,6 +2126,22 @@ export default function SubscriptionPackagePage() {
                               ? "Tắt"
                               : "Bật"}
                         </button>
+
+                        {canDeletePackage(pkg) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openDeleteConfirm(pkg)
+                            }
+                            disabled={rowActionsBusy}
+                            title="Xóa gói chưa có lượt đăng ký"
+                            className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-textLight transition hover:border-error hover:text-error disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            {deletingId === pkg.packageId
+                              ? "Đang xóa..."
+                              : "Xóa"}
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -2026,6 +2150,8 @@ export default function SubscriptionPackagePage() {
             </table>
           </div>
         )}
+        </>
+      )}
 
       {createModalOpen && (
         <CreatePackageModal
@@ -2086,6 +2212,19 @@ export default function SubscriptionPackagePage() {
         busy={Boolean(updatingStatusId)}
         onCancel={closeStatusConfirm}
         onConfirm={handleConfirmStatusChange}
+      />
+
+      <ConfirmActionModal
+        open={Boolean(pendingDeletePackage)}
+        title="Xóa gói đăng ký"
+        description={`Xóa vĩnh viễn gói "${
+          pendingDeletePackage?.name || ""
+        }"? Chỉ gói doanh nghiệp chưa từng có lượt đăng ký mới xóa được; nếu gói đã có lịch sử, hệ thống sẽ từ chối và bạn nên dùng chức năng tắt gói. Thao tác này không thể hoàn tác.`}
+        confirmLabel="Xóa gói"
+        tone="danger"
+        busy={Boolean(deletingId)}
+        onCancel={closeDeleteConfirm}
+        onConfirm={handleConfirmDelete}
       />
     </section>
   );

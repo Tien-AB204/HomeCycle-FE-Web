@@ -53,8 +53,10 @@ const normalizePagedResponse = (
   };
 };
 
-const moderatorOrderApi = {
+export const createOrderReadApi = ({ listPath, detailPath }) => ({
   getOrders: async ({
+    group,
+    deliveryMethod,
     keyword,
     status,
     paymentStatus,
@@ -79,6 +81,18 @@ const moderatorOrderApi = {
       PageNumber: normalizedPage,
       PageSize: normalizedPageSize,
     };
+
+    if (group !== undefined && group !== null && group !== "") {
+      params.Group = group;
+    }
+
+    if (
+      deliveryMethod !== undefined &&
+      deliveryMethod !== null &&
+      deliveryMethod !== ""
+    ) {
+      params.DeliveryMethod = deliveryMethod;
+    }
 
     if (String(keyword || "").trim()) {
       params.Keyword = String(keyword).trim();
@@ -120,7 +134,7 @@ const moderatorOrderApi = {
       params.CreatedTo = createdTo;
     }
 
-    const response = await axiosClient.get("/moderator/orders", {
+    const response = await axiosClient.get(listPath, {
       params,
       signal,
     });
@@ -140,7 +154,7 @@ const moderatorOrderApi = {
     }
 
     const response = await axiosClient.get(
-      `/moderator/orders/${encodeURIComponent(id)}`,
+      `${detailPath}/${encodeURIComponent(id)}`,
       { signal },
     );
 
@@ -165,7 +179,7 @@ const moderatorOrderApi = {
     }
 
     const response = await axiosClient.get(
-      `/moderator/orders/${encodeURIComponent(id)}/financial-history`,
+      `${detailPath}/${encodeURIComponent(id)}/financial-history`,
       { signal },
     );
 
@@ -173,6 +187,11 @@ const moderatorOrderApi = {
 
     return Array.isArray(source) ? source : [];
   },
-};
+});
+
+const moderatorOrderApi = createOrderReadApi({
+  listPath: "/moderator/orders",
+  detailPath: "/moderator/orders",
+});
 
 export default moderatorOrderApi;

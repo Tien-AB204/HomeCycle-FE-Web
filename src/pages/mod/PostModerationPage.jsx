@@ -11,7 +11,7 @@ import {
 } from "@ant-design/icons";
 import { Alert, Button } from "antd";
 import { postApi } from "../../services/apis/postApi";
-import axiosClient from "../../services/apis/axiosClient";
+import moderatorListingApi from "../../services/apis/moderatorListingApi";
 import useDebounce from "../../hooks/useDebounce";
 import EvidenceImage from "../../components/shared/EvidenceImage";
 import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
@@ -80,6 +80,33 @@ const getModeratorDamageLabel = (value) => {
   );
 };
 const PAGE_SIZE = 50;
+const REPORTED_PAGE_SIZE = 20;
+const WARNING_MESSAGE_MAX_LENGTH = 1000;
+
+const LIST_SOURCES = [
+  { key: "all", label: "Tất cả bài đăng" },
+  { key: "reported", label: "Bị báo cáo" },
+];
+
+const formatReportedAt = (value) => {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+const reasonLabel = (reason) =>
+  String(reason?.name || "")
+    .trim()
+    .toLowerCase() === "unspecified" || !reason?.name
+    ? "Chưa phân loại"
+    : reason.name;
 
 const PostModerationPage = () => {
   const actionToast = useActionToast();
@@ -105,6 +132,15 @@ const PostModerationPage = () => {
     hasNextPage: false,
   });
   const [requestVersion, setRequestVersion] = useState(0);
+
+  const [listSource, setListSource] = useState("all");
+  const [reportedOpenOnly, setReportedOpenOnly] = useState(true);
+  const [reportedItems, setReportedItems] = useState([]);
+  const [reportedError, setReportedError] = useState("");
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [warningMessage, setWarningMessage] = useState("");
+
+  const isReportedSource = listSource === "reported";
 
   // --- STATE RESIZABLE CỘT TRÁI ---
   const [sidebarWidth, setSidebarWidth] = useState(380);
@@ -165,6 +201,8 @@ const PostModerationPage = () => {
   // API EFFECTS
   // =========================================================================
   useEffect(() => {
+    if (isReportedSource) return undefined;
+
     const controller = new AbortController();
     let isCurrent = true;
 
@@ -203,7 +241,85 @@ const PostModerationPage = () => {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [pageNumber, requestVersion]);
+  }, [isReportedSource, pageNumber, requestVersion]);
+
+  useEffect(() => {
+    if (!isReportedSource) return undefined;
+
+    const controller = new AbortController();
+    let isCurrent = true;
+
+    const timeoutId = window.setTimeout(() => {
+      setIsLoadingList(true);
+      setReportedError("");
+      moderatorListingApi
+        .getReportedPosts({
+          openOnly: reportedOpenOnly,
+          keyword: debouncedSearchQuery,
+          pageNumber,
+          pageSize: REPORTED_PAGE_SIZE,
+          signal: controller.signal,
+        })
+        .then((response) => {
+          if (!isCurrent) return;
+
+          setReportedItems(response.items);
+          setPagination({
+            pageNumber: response.pageNumber,
+            pageSize: response.pageSize,
+            totalCount: response.totalCount,
+            totalPages: response.totalPages,
+            hasPreviousPage: response.pageNumber > 1,
+            hasNextPage: response.pageNumber < response.totalPages,
+          });
+        })
+        .catch((error) => {
+          if (!isCurrent || error?.code === "ERR_CANCELED") return;
+          setReportedItems([]);
+          setReportedError("Không thể tải danh sách bài đăng bị báo cáo. Vui lòng thử lại.");
+        })
+        .finally(() => {
+          if (isCurrent) setIsLoadingList(false);
+        });
+    }, 0);
+
+    return () => {
+      isCurrent = false;
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [
+    isReportedSource,
+    reportedOpenOnly,
+    debouncedSearchQuery,
+    pageNumber,
+    requestVersion,
+  ]);
+
+  // BE only allows warn/suspend on posts that still have an open report; the
+  // open-only reported list is the only source that guarantees that.
+  const canModerateReported = isReportedSource && reportedOpenOnly;
+
+  const resetActionForm = () => {
+    setActionState("idle");
+    setWarningMessage("");
+    setActionFeedback(null);
+  };
+
+  const switchListSource = (nextSource) => {
+    if (nextSource === listSource) return;
+    setListSource(nextSource);
+    setPageNumber(1);
+    setStatusFilter("");
+    setMonthFilter("");
+    resetActionForm();
+  };
+
+  const toggleReportedOpenOnly = () => {
+    setReportedOpenOnly((current) => !current);
+    setPageNumber(1);
+    resetActionForm();
+  };
 
   // --- LỌC CLIENT-SIDE (Hỗ trợ tìm theo tên, mô tả VÀ ID bài đăng) ---
   const searchedPosts = debouncedSearchQuery
@@ -290,12 +406,14 @@ const PostModerationPage = () => {
     return timeB - timeA;
   });
 
-  const handleSelectPost = async (id) => {
+  const handleSelectPost = async (id, report = null) => {
     if (!id) return;
+    setSelectedReport(report);
     setIsLoadingDetail(true);
     setDetailError(null);
     setActionState("idle");
     setActionFeedback(null);
+    setWarningMessage("");
     setGlobalFeedback(null);
 
     try {
@@ -317,13 +435,15 @@ const PostModerationPage = () => {
   // ACTIONS HANDLERS
   // =========================================================================
   const handleSuspendPost = async () => {
+    if (!canModerateReported || isProcessing) return;
     setIsProcessing(true);
     setActionFeedback(null);
     try {
       const currentId = selectedPost.postId || selectedPost.id;
-      await axiosClient.patch(`/moderator/posts/${currentId}/suspend`);
+      await moderatorListingApi.suspendPost(currentId);
 
       setSelectedPost(null);
+      setSelectedReport(null);
       setGlobalFeedback({
         type: "success",
         text: "Đã đình chỉ bài đăng thành công!",
@@ -334,6 +454,40 @@ const PostModerationPage = () => {
       const msg = error.response?.status >= 500
           ? "Lỗi máy chủ. Vui lòng thử lại sau."
           : "Không thể đình chỉ bài đăng. Vui lòng thử lại.";
+      setActionFeedback({ type: "error", text: msg });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const trimmedWarningMessage = warningMessage.trim();
+  const warningMessageValid =
+    trimmedWarningMessage.length > 0 &&
+    trimmedWarningMessage.length <= WARNING_MESSAGE_MAX_LENGTH;
+
+  const handleWarnOwner = async () => {
+    if (!canModerateReported || !warningMessageValid || isProcessing) return;
+    setIsProcessing(true);
+    setActionFeedback(null);
+    try {
+      const currentId = selectedPost.postId || selectedPost.id;
+      await moderatorListingApi.warnPostOwner(currentId, trimmedWarningMessage);
+
+      setActionState("idle");
+      setWarningMessage("");
+      setActionFeedback({
+        type: "success",
+        text: "Đã gửi cảnh báo tới chủ bài đăng.",
+      });
+      actionToast.success("Đã gửi cảnh báo");
+    } catch (error) {
+      const status = error.response?.status;
+      const msg =
+        status >= 500
+          ? "Lỗi máy chủ. Vui lòng thử lại sau."
+          : status === 404
+            ? "Không tìm thấy bài đăng để cảnh báo."
+            : "Không thể gửi cảnh báo. Vui lòng kiểm tra nội dung và thử lại.";
       setActionFeedback({ type: "error", text: msg });
     } finally {
       setIsProcessing(false);
@@ -403,17 +557,63 @@ const PostModerationPage = () => {
         </div>
 
         <div className="p-4 pb-3 border-b border-border bg-background/60">
-          <div className="relative">
+          <div
+            role="tablist"
+            aria-label="Nguồn danh sách bài đăng"
+            className="grid grid-cols-2 gap-1.5 rounded-lg border border-border bg-white p-1"
+          >
+            {LIST_SOURCES.map((source) => {
+              const active = listSource === source.key;
+              return (
+                <button
+                  key={source.key}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => switchListSource(source.key)}
+                  className={`rounded-md px-2 py-1.5 text-[11px] font-black transition ${
+                    active
+                      ? "bg-primary text-white"
+                      : "text-textLight hover:bg-background hover:text-text"
+                  }`}
+                >
+                  {source.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {isReportedSource && (
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs font-semibold text-text">
+              <input
+                type="checkbox"
+                checked={reportedOpenOnly}
+                onChange={toggleReportedOpenOnly}
+                className="h-4 w-4 accent-primary"
+              />
+              Chỉ hiện bài còn báo cáo chưa giải quyết
+            </label>
+          )}
+
+          <div className="relative mt-3">
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm trong trang hiện tại..."
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (isReportedSource) setPageNumber(1);
+              }}
+              placeholder={
+                isReportedSource
+                  ? "Tìm theo tên sản phẩm hoặc chủ bài đăng..."
+                  : "Tìm trong trang hiện tại..."
+              }
               className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-lg focus:ring-1 focus:ring-primary outline-none transition-shadow"
             />
             <SearchOutlined className="absolute left-3 top-2.5 text-textLight" />
           </div>
 
+          {!isReportedSource && (
           <div className="mt-3">
             <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-textLight">
               Trạng thái
@@ -456,7 +656,9 @@ const PostModerationPage = () => {
               ))}
             </div>
           </div>
+          )}
 
+          {!isReportedSource && (
           <div className="mt-2 flex items-center gap-2">
             <span className="shrink-0 text-xs font-semibold text-textLight">
               Sắp xếp
@@ -484,9 +686,12 @@ const PostModerationPage = () => {
               scopeLabel="bài đăng trong trang hiện tại"
             />
           </div>
+          )}
 
           <p className="mt-3 text-xs leading-5 text-textLight">
-            Tìm kiếm, trạng thái, tháng và sắp xếp hiện áp dụng cho trang đang tải.
+            {isReportedSource
+              ? "Từ khóa được tìm trên toàn bộ bài đăng bị báo cáo; tùy chọn “chỉ báo cáo chưa giải quyết” do máy chủ lọc."
+              : "Tìm kiếm, trạng thái, tháng và sắp xếp hiện áp dụng cho trang đang tải."}
           </p>
         </div>
 
@@ -496,6 +701,65 @@ const PostModerationPage = () => {
               <LoadingOutlined className="text-3xl mb-2 text-primary" />
               <p className="text-sm">Đang tải danh sách...</p>
             </div>
+          ) : isReportedSource ? (
+            reportedError ? (
+              <div className="p-6 text-center text-sm text-error">
+                <p>{reportedError}</p>
+                <Button
+                  size="small"
+                  className="mt-3"
+                  onClick={() => setRequestVersion((version) => version + 1)}
+                >
+                  Thử lại
+                </Button>
+              </div>
+            ) : reportedItems.length === 0 ? (
+              <div className="p-8 text-center text-textLight text-sm">
+                {reportedOpenOnly
+                  ? "Không có bài đăng nào còn báo cáo chưa giải quyết."
+                  : "Không tìm thấy bài đăng bị báo cáo nào."}
+              </div>
+            ) : (
+              reportedItems.map((item) => {
+                const isSelected =
+                  selectedPost &&
+                  (selectedPost.postId === item.postId ||
+                    selectedPost.id === item.postId);
+                return (
+                  <div
+                    key={item.postId}
+                    onClick={() => handleSelectPost(item.postId, item)}
+                    className={`p-4 border-b border-border cursor-pointer transition-all ${isSelected ? "bg-primary/10 border-l-4 border-l-primary" : "hover:bg-primary/5 border-l-4 border-l-transparent"}`}
+                  >
+                    <h3
+                      className={`font-semibold text-sm line-clamp-2 ${isSelected ? "text-primary" : "text-text"}`}
+                    >
+                      {item.productName || "Bài đăng chưa cập nhật tên"}
+                    </h3>
+                    <p className="mt-1 text-xs text-textLight">
+                      Chủ bài đăng:{" "}
+                      <span className="font-semibold text-text">{item.ownerName || "—"}</span>
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-textLight">
+                      {renderStatus(item.status)}
+                      <span className="rounded bg-error/10 px-2 py-0.5 font-bold text-error">
+                        {item.reportCount} báo cáo · {item.reporterCount} người
+                      </span>
+                    </div>
+                    {Array.isArray(item.reasons) && item.reasons.length > 0 && (
+                      <p className="mt-1.5 line-clamp-2 text-[11px] leading-4 text-textLight">
+                        {item.reasons
+                          .map((reason) => `${reasonLabel(reason)} (${reason.count})`)
+                          .join(" · ")}
+                      </p>
+                    )}
+                    <p className="mt-1 text-[11px] text-textLight">
+                      Báo cáo gần nhất: {formatReportedAt(item.latestReportedAt)}
+                    </p>
+                  </div>
+                );
+              })
+            )
           ) : sortedPosts.length === 0 ? (
             <div className="p-8 text-center text-textLight text-sm">
               Không tìm thấy bài đăng nào.
@@ -634,6 +898,48 @@ const PostModerationPage = () => {
             {/* Body */}
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background/60 p-4 xl:p-5">
               <div className="mx-auto w-full max-w-[1500px] space-y-4">
+                {selectedReport &&
+                  (selectedReport.postId === selectedPost.postId ||
+                    selectedReport.postId === selectedPost.id) && (
+                    <section className="rounded-2xl border border-error/20 bg-error/5 p-5">
+                      <h3 className="mb-3 flex items-center gap-2 border-b border-error/10 pb-3 text-sm font-black text-error">
+                        <WarningOutlined /> Báo cáo từ người dùng
+                      </h3>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+                        <div>
+                          <span className="block text-textLight mb-1">Số báo cáo</span>
+                          <span className="font-bold text-text">{selectedReport.reportCount}</span>
+                        </div>
+                        <div>
+                          <span className="block text-textLight mb-1">Số người báo cáo</span>
+                          <span className="font-bold text-text">{selectedReport.reporterCount}</span>
+                        </div>
+                        <div>
+                          <span className="block text-textLight mb-1">Báo cáo gần nhất</span>
+                          <span className="font-medium text-text">
+                            {formatReportedAt(selectedReport.latestReportedAt)}
+                          </span>
+                        </div>
+                      </div>
+                      {Array.isArray(selectedReport.reasons) && selectedReport.reasons.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {selectedReport.reasons.map((reason, index) => (
+                            <span
+                              key={`${reason.categoryId ?? "unspecified"}-${index}`}
+                              className="rounded-full border border-error/20 bg-white px-2.5 py-1 text-xs font-semibold text-text"
+                            >
+                              {reasonLabel(reason)} · {reason.count}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="mt-3 text-xs leading-5 text-textLight">
+                        Số liệu tính trên các báo cáo{" "}
+                        {reportedOpenOnly ? "chưa giải quyết" : "đã ghi nhận"} tại thời điểm tải danh sách.
+                      </p>
+                    </section>
+                  )}
+
                 {/* Thông tin cơ bản */}
                 <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
                   <h3 className="mb-4 flex items-center gap-2 border-b border-border pb-3 text-sm font-black text-text">
@@ -822,19 +1128,81 @@ const PostModerationPage = () => {
                     </span>
                   </div>
 
-                  {!["SUSPENDED", "DELETED"].includes(selectedPost.status?.toUpperCase()) && (
-                    <Button
-                      onClick={() => setActionState("suspending")}
-                      danger
-                      className="flex items-center gap-2 font-semibold"
-                    >
-                      <StopOutlined /> Đình chỉ bài đăng
-                    </Button>
+                  {canModerateReported ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        onClick={() => {
+                          setWarningMessage("");
+                          setActionState("warning");
+                        }}
+                        className="flex items-center gap-2 font-semibold"
+                      >
+                        <WarningOutlined /> Cảnh báo chủ bài đăng
+                      </Button>
+
+                      {!["SUSPENDED", "DELETED"].includes(selectedPost.status?.toUpperCase()) && (
+                        <Button
+                          onClick={() => setActionState("suspending")}
+                          danger
+                          className="flex items-center gap-2 font-semibold"
+                        >
+                          <StopOutlined /> Đình chỉ bài đăng
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs leading-5 text-textLight">
+                      Cảnh báo và đình chỉ chỉ áp dụng cho bài đăng còn báo cáo chưa giải quyết. Hãy chọn bài từ danh sách “Bị báo cáo” với tùy chọn chỉ hiện báo cáo chưa giải quyết.
+                    </p>
                   )}
                 </div>
               )}
 
-              {actionState === "suspending" && (
+              {canModerateReported && actionState === "warning" && (
+                <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
+                  <p className="font-semibold text-warning mb-2 flex items-center gap-2">
+                    <WarningOutlined /> Gửi cảnh báo tới chủ bài đăng
+                  </p>
+                  <p className="mb-3 text-sm text-textLight">
+                    Nội dung cảnh báo sẽ được gửi tới chủ bài đăng. Bài đăng vẫn giữ nguyên trạng thái hiện tại.
+                  </p>
+                  <textarea
+                    value={warningMessage}
+                    onChange={(event) => setWarningMessage(event.target.value)}
+                    maxLength={WARNING_MESSAGE_MAX_LENGTH}
+                    rows={4}
+                    disabled={isProcessing}
+                    placeholder="Nhập nội dung cảnh báo (bắt buộc, tối đa 1000 ký tự)..."
+                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-background"
+                  />
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <span className="text-xs text-textLight">
+                      {trimmedWarningMessage.length}/{WARNING_MESSAGE_MAX_LENGTH} ký tự
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => {
+                          setActionState("idle");
+                          setWarningMessage("");
+                        }}
+                        disabled={isProcessing}
+                      >
+                        Hủy
+                      </Button>
+                      <Button
+                        type="primary"
+                        onClick={handleWarnOwner}
+                        loading={isProcessing}
+                        disabled={!warningMessageValid}
+                      >
+                        Gửi cảnh báo
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {canModerateReported && actionState === "suspending" && (
                 <div className="bg-error/10 p-4 rounded-lg border border-error/20">
                   <p className="font-semibold text-error mb-2 flex items-center gap-2">
                     <WarningOutlined /> Xác nhận đình chỉ bài đăng?

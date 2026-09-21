@@ -59,6 +59,21 @@ const PAYMENT_STATUS_FILTER_OPTIONS = [
   { value: "Cancelled", label: "Đã hủy thanh toán" },
 ];
 
+const ORDER_GROUP_OPTIONS = [
+  { value: "", label: "Tất cả nhóm đơn" },
+  { value: "Trading", label: "Đang giao dịch" },
+  { value: "Issue", label: "Có vấn đề" },
+  { value: "Successful", label: "Thành công" },
+];
+
+const DELIVERY_METHOD_FILTER_OPTIONS = [
+  { value: "", label: "Tất cả cách giao nhận" },
+  { value: "GhnDelivery", label: "Giao hàng nhanh (GHN)" },
+  { value: "SellerDelivers", label: "Người bán giao hàng" },
+  { value: "BuyerPickUp", label: "Người mua tự đến lấy" },
+  { value: "Unknown", label: "Chưa xác định" },
+];
+
 const TRI_STATE_OPTIONS = [
   { value: "", label: "Tất cả" },
   { value: "true", label: "Có" },
@@ -273,9 +288,14 @@ const getOrderTransactionTypeLabel = (value) => {
   return ORDER_TRANSACTION_TYPE_LABELS[key] || "Diễn biến tài chính";
 };
 
-const OrderManagementContent = () => {
+export const OrderManagementContent = ({
+  api = moderatorOrderApi,
+  disputeLinkPath = "/mod/disputes",
+} = {}) => {
   const [keywordInput, setKeywordInput] = useState("");
   const [keyword, setKeyword] = useState("");
+  const [group, setGroup] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState("");
   const [status, setStatus] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("");
   const [hasActiveDispute, setHasActiveDispute] = useState("");
@@ -326,6 +346,8 @@ const OrderManagementContent = () => {
     return {
       pageNumber,
       pageSize,
+      group,
+      deliveryMethod,
       keyword,
       status,
       paymentStatus,
@@ -337,6 +359,8 @@ const OrderManagementContent = () => {
   }, [
     pageNumber,
     pageSize,
+    group,
+    deliveryMethod,
     keyword,
     status,
     paymentStatus,
@@ -362,7 +386,7 @@ const OrderManagementContent = () => {
     setState((current) => ({ ...current, loading: true, error: "" }));
 
     try {
-      const result = await moderatorOrderApi.getOrders({
+      const result = await api.getOrders({
         ...listParams,
         signal: controller.signal,
       });
@@ -393,7 +417,7 @@ const OrderManagementContent = () => {
         error: "Không thể tải danh sách đơn hàng. Vui lòng thử lại.",
       });
     }
-  }, [listParams]);
+  }, [api, listParams]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -427,6 +451,16 @@ const OrderManagementContent = () => {
     setHasActiveDispute(next || "");
   };
 
+  const changeGroup = (next) => {
+    setPageNumber(1);
+    setGroup(next || "");
+  };
+
+  const changeDeliveryMethod = (next) => {
+    setPageNumber(1);
+    setDeliveryMethod(next || "");
+  };
+
   const changeHasInspection = (next) => {
     setPageNumber(1);
     setHasInspection(next || "");
@@ -450,7 +484,7 @@ const OrderManagementContent = () => {
       error: "",
     });
 
-    moderatorOrderApi
+    api
       .getOrderFinancialHistory(orderId, { signal: controller.signal })
       .then((items) => {
         setFinancialState({ orderId, loading: false, items, error: "" });
@@ -481,7 +515,7 @@ const OrderManagementContent = () => {
 
     setDetailState({ orderId, loading: true, data: null, error: "" });
 
-    moderatorOrderApi
+    api
       .getOrderById(orderId, { signal: controller.signal })
       .then((data) => {
         if (detailRequestRef.current !== requestId) {
@@ -709,6 +743,30 @@ const OrderManagementContent = () => {
             value={hasInspection || ""}
             onChange={changeHasInspection}
             options={TRI_STATE_OPTIONS}
+            className="w-full"
+          />
+        </div>
+
+        <div className="min-w-[160px]">
+          <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
+            Nhóm đơn
+          </label>
+          <Select
+            value={group || ""}
+            onChange={changeGroup}
+            options={ORDER_GROUP_OPTIONS}
+            className="w-full"
+          />
+        </div>
+
+        <div className="min-w-[190px]">
+          <label className="mb-1.5 block text-xs font-black uppercase tracking-wide text-textLight">
+            Cách giao nhận
+          </label>
+          <Select
+            value={deliveryMethod || ""}
+            onChange={changeDeliveryMethod}
+            options={DELIVERY_METHOD_FILTER_OPTIONS}
             className="w-full"
           />
         </div>
@@ -1007,7 +1065,7 @@ const OrderManagementContent = () => {
                     )}
                   </div>
                   <Link
-                    to="/mod/disputes"
+                    to={disputeLinkPath}
                     className="mt-2 inline-block text-xs font-bold text-primary underline underline-offset-2"
                   >
                     Xem trong quản lý tranh chấp
