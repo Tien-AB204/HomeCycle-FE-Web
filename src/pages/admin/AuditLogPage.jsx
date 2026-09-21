@@ -752,7 +752,7 @@ export default function AuditLogPage() {
                 )
               }
               maxLength={100}
-              placeholder="VD: User.Login"
+              placeholder="Nhập mã hành động cần tìm"
               className="mt-1.5 w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
             />
           </label>
