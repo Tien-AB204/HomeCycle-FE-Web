@@ -758,7 +758,6 @@ const AppointmentPage = () => {
     error: "",
   });
   const handledNotificationLocationRef = useRef("");
-  const listLoadStartedAtRef = useRef(0);
   const { subscribe } = useChatRealtime();
 
   useEffect(() => {
@@ -794,7 +793,6 @@ const AppointmentPage = () => {
 
   useEffect(() => {
     const controller = new AbortController();
-    listLoadStartedAtRef.current = Date.now();
 
     Promise.all(
       APPOINTMENT_SOURCES.map((source) =>
@@ -846,8 +844,9 @@ const AppointmentPage = () => {
   /*
    * AppointmentUpdated (sự kiện theo user, không cần join group): tải lại
    * cả bốn nguồn danh sách đang hiển thị (kiểm định/thu gom × mua/bán) từ
-   * REST. Gom sự kiện dồn dập và bỏ qua nếu danh sách vừa được tải lại do
-   * thao tác cục bộ (onChanged) để tránh gọi trùng.
+   * REST. Chỉ gom các sự kiện dồn dập thành một lần tải; không bỏ qua sự
+   * kiện vì một request vừa bắt đầu, bởi request đó có thể đã chạy trước
+   * khi Backend ghi thay đổi và trả về dữ liệu cũ.
    */
   useEffect(() => {
     let timeoutId = null;
@@ -859,11 +858,6 @@ const AppointmentPage = () => {
 
       timeoutId = window.setTimeout(() => {
         timeoutId = null;
-
-        if (Date.now() - listLoadStartedAtRef.current < 1500) {
-          return;
-        }
-
         setVersion((value) => value + 1);
       }, 400);
     });

@@ -75,7 +75,6 @@ const CartPage = () => {
 
   const listRequestRef = useRef(0);
   const listControllerRef = useRef(null);
-  const loadStartedAtRef = useRef(0);
   const { subscribe } = useChatRealtime();
 
   /*
@@ -91,7 +90,6 @@ const CartPage = () => {
 
     const requestId = listRequestRef.current + 1;
     listRequestRef.current = requestId;
-    loadStartedAtRef.current = Date.now();
 
     if (!silent) {
       setState((current) => ({ ...current, loading: true, error: "" }));
@@ -149,8 +147,10 @@ const CartPage = () => {
   /*
    * CartUpdated (sự kiện theo user, payload chỉ có updatedAt): tải lại giỏ
    * hàng từ REST để đồng bộ giữa các tab/thiết bị và luồng nghiệp vụ.
-   * Thao tác xóa cục bộ vẫn tự gọi loadCart(); nếu giỏ vừa được tải lại
-   * ngay trước đó thì bỏ qua để tránh GET /cart trùng.
+   * Thao tác xóa cục bộ vẫn tự gọi loadCart(). Chỉ gom các sự kiện dồn
+   * dập; không bỏ qua sự kiện vì một request vừa bắt đầu, bởi request đó
+   * có thể đã chạy trước khi Backend ghi thay đổi. loadCart() tự hủy
+   * request cũ nên tối đa chỉ một GET /cart còn hiệu lực.
    */
   useEffect(() => {
     let timeoutId = null;
@@ -162,11 +162,6 @@ const CartPage = () => {
 
       timeoutId = window.setTimeout(() => {
         timeoutId = null;
-
-        if (Date.now() - loadStartedAtRef.current < 1000) {
-          return;
-        }
-
         void loadCart({ silent: true });
       }, 300);
     });

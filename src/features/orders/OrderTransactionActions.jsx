@@ -516,6 +516,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
           orderId={order?.orderId}
           productName={productName}
           allowedCategories={allowedDisputeCategories}
+          onRefreshAllowedCategories={() => onRefresh?.()}
           onClose={() => {
             if (!busy) {
               setDisputeOpen(false);

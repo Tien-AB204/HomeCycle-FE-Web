@@ -120,11 +120,23 @@ const formatFileSize = (bytes) => {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+const AUTHORITATIVE_REFRESH_TIMEOUT_MS = 15000;
+
+const AUTHORITATIVE_INVALID_CATEGORY_MESSAGE =
+  "Lý do tranh chấp không còn phù hợp. Đang cập nhật lại danh sách từ đơn hàng, vui lòng chọn lại sau khi tải xong.";
+
+const AUTHORITATIVE_REFRESH_FAILED_MESSAGE =
+  "Không thể cập nhật danh sách lý do từ đơn hàng. Vui lòng thử lại hoặc đóng và mở lại sau khi làm mới đơn hàng.";
+
 /*
  * allowedCategories (tùy chọn): bộ lý do do Backend cung cấp cho đối tượng
  * này (ví dụ OrderDetailDto.actions.allowedDisputeCategories). Khi được
  * truyền, modal chỉ hiển thị đúng bộ này và không gọi /dispute-categories;
  * nếu rỗng thì không tự bịa lý do và chặn gửi.
+ *
+ * onRefreshAllowedCategories (tùy chọn): yêu cầu cha tải lại nguồn
+ * authoritative (OrderDetail). Danh sách chỉ được xem là "đã làm mới" khi
+ * prop allowedCategories thực sự đổi sau lời gọi này.
  */
 export default function ContentReportModal({
   open,
@@ -132,6 +144,7 @@ export default function ContentReportModal({
   targetId,
   targetLabel,
   allowedCategories,
+  onRefreshAllowedCategories,
   onSuccess,
   onClose,
 }) {
@@ -146,6 +159,8 @@ export default function ContentReportModal({
   const previousOpenRef = useRef(false);
   const previousTargetKeyRef = useRef("");
   const [metadataVersion, setMetadataVersion] = useState(0);
+  const awaitingAuthoritativeRefreshRef = useRef(false);
+  const authoritativeRefreshTimeoutRef = useRef(null);
   const [metadata, setMetadata] = useState({
     loading: true,
     error: "",
@@ -223,6 +238,121 @@ export default function ContentReportModal({
         .map((item) => String(item?.disputeCategoryId ?? ""))
         .join(",")
     : "";
+
+  const clearAuthoritativeRefreshTimeout = useCallback(() => {
+    if (authoritativeRefreshTimeoutRef.current) {
+      window.clearTimeout(authoritativeRefreshTimeoutRef.current);
+      authoritativeRefreshTimeoutRef.current = null;
+    }
+  }, []);
+
+  /*
+   * Yêu cầu cha tải lại OrderDetail. Danh sách trong modal chỉ được thay
+   * khi prop allowedCategories thực sự đổi (effect bên dưới); nếu quá hạn
+   * mà chưa nhận được dữ liệu mới thì báo lỗi thay vì giả vờ đã làm mới.
+   */
+  const requestAuthoritativeRefresh = useCallback(() => {
+    if (typeof onRefreshAllowedCategories !== "function") {
+      setMetadata((current) => ({
+        ...current,
+        loading: false,
+        error: AUTHORITATIVE_REFRESH_FAILED_MESSAGE,
+        categories: [],
+      }));
+      return;
+    }
+
+    awaitingAuthoritativeRefreshRef.current = true;
+    clearAuthoritativeRefreshTimeout();
+
+    setMetadata((current) => ({
+      ...current,
+      loading: true,
+      error: "",
+      categories: [],
+    }));
+
+    authoritativeRefreshTimeoutRef.current = window.setTimeout(() => {
+      authoritativeRefreshTimeoutRef.current = null;
+
+      if (!awaitingAuthoritativeRefreshRef.current) {
+        return;
+      }
+
+      awaitingAuthoritativeRefreshRef.current = false;
+      setMetadata((current) => ({
+        ...current,
+        loading: false,
+        error: AUTHORITATIVE_REFRESH_FAILED_MESSAGE,
+        categories: [],
+      }));
+    }, AUTHORITATIVE_REFRESH_TIMEOUT_MS);
+
+    try {
+      const result = onRefreshAllowedCategories();
+
+      if (result && typeof result.catch === "function") {
+        result.catch(() => {
+          if (!awaitingAuthoritativeRefreshRef.current) {
+            return;
+          }
+
+          awaitingAuthoritativeRefreshRef.current = false;
+          clearAuthoritativeRefreshTimeout();
+          setMetadata((current) => ({
+            ...current,
+            loading: false,
+            error: AUTHORITATIVE_REFRESH_FAILED_MESSAGE,
+            categories: [],
+          }));
+        });
+      }
+    } catch {
+      awaitingAuthoritativeRefreshRef.current = false;
+      clearAuthoritativeRefreshTimeout();
+      setMetadata((current) => ({
+        ...current,
+        loading: false,
+        error: AUTHORITATIVE_REFRESH_FAILED_MESSAGE,
+        categories: [],
+      }));
+    }
+  }, [clearAuthoritativeRefreshTimeout, onRefreshAllowedCategories]);
+
+  // Prop allowedCategories đổi tham chiếu sau khi cha tải lại OrderDetail.
+  const previousAllowedCategoriesRef = useRef(allowedCategories);
+
+  useEffect(() => {
+    if (previousAllowedCategoriesRef.current === allowedCategories) {
+      return;
+    }
+
+    previousAllowedCategoriesRef.current = allowedCategories;
+
+    if (!awaitingAuthoritativeRefreshRef.current || !hasAuthoritativeCategories) {
+      return;
+    }
+
+    awaitingAuthoritativeRefreshRef.current = false;
+    clearAuthoritativeRefreshTimeout();
+    setSubmitError("");
+
+    const categories = normalizeDisputeCategories(allowedCategories).sort(
+      (left, right) => left.name.localeCompare(right.name, "vi"),
+    );
+
+    setMetadata((current) => ({
+      ...current,
+      loading: false,
+      error:
+        categories.length === 0
+          ? "Hiện chưa có lý do tranh chấp phù hợp cho giao dịch này. Vui lòng làm mới đơn hàng hoặc thử lại sau."
+          : "",
+      categories,
+    }));
+  }, [allowedCategories, clearAuthoritativeRefreshTimeout, hasAuthoritativeCategories]);
+
+  useEffect(() => clearAuthoritativeRefreshTimeout, [clearAuthoritativeRefreshTimeout]);
 
   useEffect(() => {
     if (!open) {
@@ -480,6 +610,14 @@ export default function ContentReportModal({
 
       if (code === "DISPUTE_INVALID_CONTENT_CATEGORY") {
         setDisputeCategoryId("");
+
+        if (hasAuthoritativeCategories) {
+          // Không dùng lại mảng cục bộ đã cũ; phải tải lại từ OrderDetail.
+          requestAuthoritativeRefresh();
+          setSubmitError(AUTHORITATIVE_INVALID_CATEGORY_MESSAGE);
+          return;
+        }
+
         loadMetadata();
       }
 
@@ -573,7 +711,11 @@ export default function ContentReportModal({
               <p>{metadata.error}</p>
               <button
                 type="button"
-                onClick={loadMetadata}
+                onClick={
+                  hasAuthoritativeCategories
+                    ? requestAuthoritativeRefresh
+                    : loadMetadata
+                }
                 disabled={submitting}
                 className="mt-3 rounded-lg border border-error/30 bg-white px-3 py-2 text-xs font-black"
               >

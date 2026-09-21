@@ -6,6 +6,7 @@ export default function OrderDisputeModal({
   orderId,
   productName,
   allowedCategories,
+  onRefreshAllowedCategories,
   onClose,
   onCreated,
 }) {
@@ -16,6 +17,7 @@ export default function OrderDisputeModal({
       targetId={orderId}
       targetLabel={productName || "Sản phẩm trong đơn hàng"}
       allowedCategories={allowedCategories}
+      onRefreshAllowedCategories={onRefreshAllowedCategories}
       onClose={onClose}
       onSuccess={onCreated}
     />
