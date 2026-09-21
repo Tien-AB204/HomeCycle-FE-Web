@@ -2048,7 +2048,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   item.label ||
-                  item.key
+                  "Chưa xác định"
                 }
               />
             </div>
@@ -2125,7 +2125,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   item.label ||
-                  item.key
+                  "Chưa xác định"
                 }
               />
             </div>
@@ -2308,7 +2308,7 @@ export default function AdminDashboardModulePage({
             }
             getLabel={(item) =>
               item.label ||
-              item.key
+              "Chưa xác định"
             }
           />
         </div>
@@ -3268,7 +3268,7 @@ export default function AdminDashboardModulePage({
                                     item.participantType,
                                   ) === "seller"
                                 ? "Người bán"
-                                : item.participantType}
+                                : "Chưa xác định"}
                           </p>
 
                           <p className="mt-1 text-xs text-textLight">
