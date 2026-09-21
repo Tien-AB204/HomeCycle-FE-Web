@@ -9,7 +9,9 @@ import {
   DISPUTE_TARGET_TYPE,
   getDisputeTargetTypeLabel,
 } from "../../constants/disputes";
-import disputeApi from "../../services/apis/disputeApi";
+import disputeApi, {
+  normalizeDisputeCategories,
+} from "../../services/apis/disputeApi";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import {
   getSafeProblemDetail,
@@ -118,11 +120,18 @@ const formatFileSize = (bytes) => {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+/*
+ * allowedCategories (tùy chọn): bộ lý do do Backend cung cấp cho đối tượng
+ * này (ví dụ OrderDetailDto.actions.allowedDisputeCategories). Khi được
+ * truyền, modal chỉ hiển thị đúng bộ này và không gọi /dispute-categories;
+ * nếu rỗng thì không tự bịa lý do và chặn gửi.
+ */
 export default function ContentReportModal({
   open,
   targetType,
   targetId,
   targetLabel,
+  allowedCategories,
   onSuccess,
   onClose,
 }) {
@@ -208,6 +217,13 @@ export default function ContentReportModal({
     setMetadataVersion((current) => current + 1);
   }, []);
 
+  const hasAuthoritativeCategories = Array.isArray(allowedCategories);
+  const authoritativeCategoryKey = hasAuthoritativeCategories
+    ? allowedCategories
+        .map((item) => String(item?.disputeCategoryId ?? ""))
+        .join(",")
+    : "";
+
   useEffect(() => {
     if (!open) {
       return undefined;
@@ -216,11 +232,15 @@ export default function ContentReportModal({
     const controller = new AbortController();
     let active = true;
 
+    const loadCategories = hasAuthoritativeCategories
+      ? Promise.resolve(normalizeDisputeCategories(allowedCategories))
+      : disputeApi.getCategories({
+          targetType: normalizedTargetType,
+          signal: controller.signal,
+        });
+
     Promise.all([
-      disputeApi.getCategories({
-        targetType: normalizedTargetType,
-        signal: controller.signal,
-      }),
+      loadCategories,
       disputeApi.getOptions({
         targetType: normalizedTargetType,
         signal: controller.signal,
@@ -235,7 +255,11 @@ export default function ContentReportModal({
         }
 
         if (categories.length === 0) {
-          throw new Error("Không có lý do báo cáo phù hợp.");
+          throw new Error(
+            hasAuthoritativeCategories
+              ? "Hiện chưa có lý do tranh chấp phù hợp cho giao dịch này. Vui lòng làm mới đơn hàng hoặc thử lại sau."
+              : "Không có lý do báo cáo phù hợp.",
+          );
         }
 
         setMetadata({
@@ -272,7 +296,15 @@ export default function ContentReportModal({
       active = false;
       controller.abort();
     };
-  }, [open, normalizedTargetType, metadataVersion]);
+    // allowedCategories được theo dõi qua khóa id để tránh tải lại khi mảng đổi tham chiếu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    open,
+    normalizedTargetType,
+    metadataVersion,
+    hasAuthoritativeCategories,
+    authoritativeCategoryKey,
+  ]);
 
   useEffect(() => {
     if (!open) {

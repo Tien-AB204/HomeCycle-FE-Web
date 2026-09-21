@@ -108,6 +108,33 @@ const createDispute = async ({
   return result;
 };
 
+/*
+ * Chuẩn hóa một lý do tranh chấp từ Backend (DisputeCategoryOptionDto).
+ * Dùng chung cho /dispute-categories và actions.allowedDisputeCategories.
+ */
+export const normalizeDisputeCategory = (item) => {
+  const disputeCategoryId = Number(item?.disputeCategoryId);
+
+  if (!Number.isInteger(disputeCategoryId) || disputeCategoryId <= 0) {
+    return null;
+  }
+
+  return {
+    disputeCategoryId,
+    code: String(item.code || "").trim(),
+    name:
+      String(item.name || "").trim() ||
+      String(item.code || "").trim() ||
+      "Lý do chưa đặt tên",
+    description: String(item.description || "").trim() || null,
+  };
+};
+
+export const normalizeDisputeCategories = (items) =>
+  (Array.isArray(items) ? items : [])
+    .map(normalizeDisputeCategory)
+    .filter(Boolean);
+
 export const disputeApi = {
   getOptions: async ({ targetType, signal } = {}) => {
     const response = await axiosClient.get(
@@ -174,31 +201,7 @@ export const disputeApi = {
         ? source.items
         : [];
 
-    return items
-      .map((item) => {
-        const disputeCategoryId = Number(
-          item?.disputeCategoryId,
-        );
-
-        if (
-          !Number.isInteger(disputeCategoryId) ||
-          disputeCategoryId <= 0
-        ) {
-          return null;
-        }
-
-        return {
-          disputeCategoryId,
-          code: String(item.code || "").trim(),
-          name:
-            String(item.name || "").trim() ||
-            String(item.code || "").trim() ||
-            "Lý do chưa đặt tên",
-          description:
-            String(item.description || "").trim() || null,
-        };
-      })
-      .filter(Boolean);
+    return normalizeDisputeCategories(items);
   },
 
   createContentReport: async (payload) => {

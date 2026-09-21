@@ -107,6 +107,12 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
   const latestDisputeId =
     detail?.dispute?.latestDisputeId;
 
+  // Bộ lý do tranh chấp do Backend cho phép với đơn này (authoritative).
+  const allowedDisputeCategories =
+    Array.isArray(orderActions.allowedDisputeCategories)
+      ? orderActions.allowedDisputeCategories
+      : [];
+
   const shipment =
     detail?.shipment ||
     order?.shipment ||
@@ -128,11 +134,6 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
     normalizedDeliveryMethod === "1" ||
     normalizedDeliveryMethod ===
       "ghndelivery";
-
-  const sellerAlreadyConfirmed =
-    Boolean(
-      order?.sellerHandoverConfirmedAt,
-    );
 
   const productName =
     order?.productName || detail?.postDescription || "Sản phẩm trong đơn hàng";
@@ -206,17 +207,17 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
     });
   };
 
-  const cancelAfterRejectedInspection = () =>
+  const cancelOrder = () =>
     runAction({
       key: "cancel-order",
       confirmation:
-        "Hủy giao dịch này? Chỉ thực hiện khi kết quả kiểm định đã bị từ chối và giao dịch đang cho phép hủy.",
+        "Hủy giao dịch này? Sau khi hủy, đơn hàng sẽ không thể tiếp tục và trạng thái thanh toán sẽ được cập nhật theo quy định của hệ thống.",
       action: () =>
-        orderApi.cancelAfterRejectedInspection(
+        orderApi.cancelOrder(
           order.orderId,
         ),
       successMessage:
-        "Đã hủy giao dịch theo kết quả kiểm định.",
+        "Đã hủy giao dịch. Trạng thái đơn hàng và thanh toán đã được cập nhật.",
     });
 
   const confirmReturn = () =>
@@ -351,15 +352,13 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
 
                 <button
                   type="button"
-                  disabled={Boolean(busy) || sellerAlreadyConfirmed}
+                  disabled={Boolean(busy)}
                   onClick={confirmHandover}
                   className="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {busy === "handover"
                     ? "Đang xác nhận..."
-                    : sellerAlreadyConfirmed
-                      ? "Đã xác nhận bàn giao"
-                      : "Xác nhận đã bàn giao"}
+                    : "Xác nhận đã bàn giao"}
                 </button>
               </div>
             )}
@@ -420,9 +419,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
               {canCancelOrder && (
                 <button
                   type="button"
-                  onClick={
-                    cancelAfterRejectedInspection
-                  }
+                  onClick={cancelOrder}
                   disabled={Boolean(busy)}
                   className="rounded-lg border border-error/30 bg-white px-4 py-2.5 text-sm font-black text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -518,6 +515,7 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
           open
           orderId={order?.orderId}
           productName={productName}
+          allowedCategories={allowedDisputeCategories}
           onClose={() => {
             if (!busy) {
               setDisputeOpen(false);

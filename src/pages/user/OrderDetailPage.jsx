@@ -942,7 +942,7 @@ const OrderDetailPage = () => {
   const { user } = useAuth();
 
   const {
-    connection,
+    subscribe,
     reconnectVersion,
     joinOrder,
     leaveOrder,
@@ -1005,7 +1005,7 @@ const OrderDetailPage = () => {
   ]);
 
   useEffect(() => {
-    if (!connection || !orderId) {
+    if (!orderId) {
       return undefined;
     }
 
@@ -1043,7 +1043,7 @@ const OrderDetailPage = () => {
       );
     };
 
-    connection.on(
+    const unsubscribe = subscribe(
       "OrderTrackingUpdated",
       handleOrderTrackingUpdated,
     );
@@ -1058,20 +1058,17 @@ const OrderDetailPage = () => {
     });
 
     return () => {
-      connection.off(
-        "OrderTrackingUpdated",
-        handleOrderTrackingUpdated,
-      );
+      unsubscribe();
 
       void leaveOrder(
         String(orderId),
       );
     };
   }, [
-    connection,
     joinOrder,
     leaveOrder,
     orderId,
+    subscribe,
   ]);
 
   if (state.loading) {

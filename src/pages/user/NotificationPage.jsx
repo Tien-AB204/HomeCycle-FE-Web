@@ -71,7 +71,7 @@ const NotificationPage = () => {
       .toLowerCase() === "moderator";
 
   const {
-    connection,
+    subscribe,
     reconnectVersion,
   } = useChatRealtime();
 
@@ -295,10 +295,6 @@ const NotificationPage = () => {
   ]);
 
   useEffect(() => {
-    if (!connection) {
-      return undefined;
-    }
-
     const handleCreated = (
       payload,
     ) => {
@@ -386,38 +382,28 @@ const NotificationPage = () => {
         );
       };
 
-    connection.on(
-      "NotificationCreated",
-      handleCreated,
-    );
-
-    connection.on(
-      "NotificationRead",
-      handleRead,
-    );
-
-    connection.on(
-      "NotificationsReadAll",
-      handleAllRead,
-    );
-
-    return () => {
-      connection.off(
+    const unsubscribers = [
+      subscribe(
         "NotificationCreated",
         handleCreated,
-      );
-
-      connection.off(
+      ),
+      subscribe(
         "NotificationRead",
         handleRead,
-      );
-
-      connection.off(
+      ),
+      subscribe(
         "NotificationsReadAll",
         handleAllRead,
+      ),
+    ];
+
+    return () => {
+      unsubscribers.forEach(
+        (unsubscribe) =>
+          unsubscribe(),
       );
     };
-  }, [connection]);
+  }, [subscribe]);
 
   const sortedItems = useMemo(
     () =>

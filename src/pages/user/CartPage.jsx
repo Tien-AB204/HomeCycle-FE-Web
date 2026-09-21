@@ -6,6 +6,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import cartApi from "../../services/apis/cartApi";
+import { useChatRealtime } from "../../hooks/useChatRealtime";
 import PostThumbnail from "../../components/shared/PostThumbnail";
 import {
   getSafeProblemDetail,
@@ -74,13 +75,15 @@ const CartPage = () => {
 
   const listRequestRef = useRef(0);
   const listControllerRef = useRef(null);
+  const loadStartedAtRef = useRef(0);
+  const { subscribe } = useChatRealtime();
 
   /*
    * Loader duy nhất cho cả lần tải đầu tiên lẫn sau khi xóa sản phẩm:
    * huỷ request trước, cấp request id mới, chỉ request id hiện hành
    * mới được ghi state - tránh response cũ về muộn đè lên kết quả mới.
    */
-  const loadCart = useCallback(async () => {
+  const loadCart = useCallback(async ({ silent = false } = {}) => {
     listControllerRef.current?.abort();
 
     const controller = new AbortController();
@@ -88,8 +91,11 @@ const CartPage = () => {
 
     const requestId = listRequestRef.current + 1;
     listRequestRef.current = requestId;
+    loadStartedAtRef.current = Date.now();
 
-    setState((current) => ({ ...current, loading: true, error: "" }));
+    if (!silent) {
+      setState((current) => ({ ...current, loading: true, error: "" }));
+    }
 
     try {
       const result = await cartApi.getCart({ signal: controller.signal });
@@ -114,6 +120,10 @@ const CartPage = () => {
         return;
       }
 
+      if (silent) {
+        return;
+      }
+
       setState({
         items: [],
         totalQuantity: 0,
@@ -135,6 +145,40 @@ const CartPage = () => {
       listControllerRef.current?.abort();
     };
   }, [loadCart]);
+
+  /*
+   * CartUpdated (sự kiện theo user, payload chỉ có updatedAt): tải lại giỏ
+   * hàng từ REST để đồng bộ giữa các tab/thiết bị và luồng nghiệp vụ.
+   * Thao tác xóa cục bộ vẫn tự gọi loadCart(); nếu giỏ vừa được tải lại
+   * ngay trước đó thì bỏ qua để tránh GET /cart trùng.
+   */
+  useEffect(() => {
+    let timeoutId = null;
+
+    const unsubscribe = subscribe("CartUpdated", () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      timeoutId = window.setTimeout(() => {
+        timeoutId = null;
+
+        if (Date.now() - loadStartedAtRef.current < 1000) {
+          return;
+        }
+
+        void loadCart({ silent: true });
+      }, 300);
+    });
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      unsubscribe();
+    };
+  }, [loadCart, subscribe]);
 
   const handleRemove = async (cartItemId) => {
     if (!cartItemId || removingId) {

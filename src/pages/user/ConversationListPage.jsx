@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import conversationApi from "../../services/apis/conversationApi";
+import { useChatRealtime } from "../../hooks/useChatRealtime";
 import Avatar from "../../components/shared/Avatar";
 
 const PAGE_SIZE = 20;
@@ -60,6 +61,7 @@ const ConversationListPage = () => {
 
   const listRequestRef = useRef(0);
   const listControllerRef = useRef(null);
+  const { subscribe, reconnectVersion } = useChatRealtime();
 
   const loadConversations = useCallback(async () => {
     listControllerRef.current?.abort();
@@ -120,6 +122,46 @@ const ConversationListPage = () => {
       listControllerRef.current?.abort();
     };
   }, [loadConversations]);
+
+  /*
+   * ConversationUpdated là sự kiện theo user (không cần join group): tải lại
+   * hộp thư để cập nhật tin nhắn mới nhất/số chưa đọc. Gom nhiều sự kiện
+   * liên tiếp thành một lần tải.
+   */
+  useEffect(() => {
+    let timeoutId = null;
+
+    const unsubscribe = subscribe("ConversationUpdated", () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      timeoutId = window.setTimeout(() => {
+        timeoutId = null;
+        void loadConversations();
+      }, 300);
+    });
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      unsubscribe();
+    };
+  }, [loadConversations, subscribe]);
+
+  useEffect(() => {
+    if (reconnectVersion <= 0) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      void loadConversations();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadConversations, reconnectVersion]);
 
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-5xl px-4 pb-14 pt-7 sm:px-6">

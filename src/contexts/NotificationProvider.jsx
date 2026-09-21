@@ -36,7 +36,7 @@ const mergeNotifications = (primary, secondary) => {
 
 export const NotificationProvider = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  const { connection, reconnectVersion } = useChatRealtime();
+  const { subscribe, reconnectVersion } = useChatRealtime();
 
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState([]);
@@ -206,7 +206,7 @@ export const NotificationProvider = ({ children }) => {
   }, [isAuthenticated, refreshNotifications]);
 
   useEffect(() => {
-    if (!connection || !isAuthenticated) return undefined;
+    if (!isAuthenticated) return undefined;
 
     const handleCreated = (payload) => {
       const item = normalizeNotification(payload);
@@ -263,17 +263,17 @@ export const NotificationProvider = ({ children }) => {
       setUnreadCount(getPayloadUnreadCount(payload) ?? 0);
     };
 
-    connection.on("NotificationCreated", handleCreated);
-    connection.on("NotificationRead", handleRead);
-    connection.on("NotificationsReadAll", handleAllRead);
+    const unsubscribers = [
+      subscribe("NotificationCreated", handleCreated),
+      subscribe("NotificationRead", handleRead),
+      subscribe("NotificationsReadAll", handleAllRead),
+    ];
 
     return () => {
-      connection.off("NotificationCreated", handleCreated);
-      connection.off("NotificationRead", handleRead);
-      connection.off("NotificationsReadAll", handleAllRead);
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
   }, [
-    connection,
+    subscribe,
     isAuthenticated,
     refreshNotifications,
     refreshUnreadCount,

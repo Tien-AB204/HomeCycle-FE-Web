@@ -11,6 +11,7 @@ import { ROLES } from "../../constants/roles";
 import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
 import InspectionFormPanel from "../../features/appointments/InspectionFormPanel";
 import { useAuth } from "../../hooks/useAuth";
+import { useChatRealtime } from "../../hooks/useChatRealtime";
 import appointmentApi from "../../services/apis/appointmentApi";
 import {
   getSafeProblemDetail,
@@ -175,12 +176,16 @@ const AppointmentDetailModal = ({
     useState(false);
 
 
-  const loadDetail = useCallback(async () => {
-    setState((current) => ({
-      ...current,
-      loading: true,
-      error: "",
-    }));
+  const { subscribe } = useChatRealtime();
+
+  const loadDetail = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) {
+      setState((current) => ({
+        ...current,
+        loading: true,
+        error: "",
+      }));
+    }
 
     try {
       const detail =
@@ -194,6 +199,10 @@ const AppointmentDetailModal = ({
         error: "",
       });
     } catch (error) {
+      if (silent) {
+        return;
+      }
+
       setState({
         loading: false,
         detail: null,
@@ -208,6 +217,51 @@ const AppointmentDetailModal = ({
   useEffect(() => {
     void loadDetail();
   }, [loadDetail]);
+
+  /*
+   * AppointmentUpdated chỉ là tín hiệu invalidation (appointmentId,
+   * agreementId, updatedAt): không merge payload, chỉ tải lại chi tiết từ
+   * REST khi đúng lịch hẹn đang mở. Sự kiện có thể đến từ thao tác ngoài
+   * màn này (đơn hàng, thanh toán, lịch thu gom...).
+   */
+  useEffect(() => {
+    const normalizedId = String(appointmentId || "").trim().toLowerCase();
+
+    if (!normalizedId) {
+      return undefined;
+    }
+
+    let timeoutId = null;
+
+    const unsubscribe = subscribe("AppointmentUpdated", (payload) => {
+      const eventId = String(
+        payload?.appointmentId ?? payload?.AppointmentId ?? "",
+      )
+        .trim()
+        .toLowerCase();
+
+      if (eventId !== normalizedId) {
+        return;
+      }
+
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      timeoutId = window.setTimeout(() => {
+        timeoutId = null;
+        void loadDetail({ silent: true });
+      }, 250);
+    });
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      unsubscribe();
+    };
+  }, [appointmentId, loadDetail, subscribe]);
 
   const handleCheckIn = async () => {
     setBusy("check-in");
@@ -704,6 +758,8 @@ const AppointmentPage = () => {
     error: "",
   });
   const handledNotificationLocationRef = useRef("");
+  const listLoadStartedAtRef = useRef(0);
+  const { subscribe } = useChatRealtime();
 
   useEffect(() => {
     if (state.loading || handledNotificationLocationRef.current === location.key) {
@@ -738,6 +794,7 @@ const AppointmentPage = () => {
 
   useEffect(() => {
     const controller = new AbortController();
+    listLoadStartedAtRef.current = Date.now();
 
     Promise.all(
       APPOINTMENT_SOURCES.map((source) =>
@@ -785,6 +842,40 @@ const AppointmentPage = () => {
 
     return () => controller.abort();
   }, [appliedKeyword, status, version]);
+
+  /*
+   * AppointmentUpdated (sự kiện theo user, không cần join group): tải lại
+   * cả bốn nguồn danh sách đang hiển thị (kiểm định/thu gom × mua/bán) từ
+   * REST. Gom sự kiện dồn dập và bỏ qua nếu danh sách vừa được tải lại do
+   * thao tác cục bộ (onChanged) để tránh gọi trùng.
+   */
+  useEffect(() => {
+    let timeoutId = null;
+
+    const unsubscribe = subscribe("AppointmentUpdated", () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      timeoutId = window.setTimeout(() => {
+        timeoutId = null;
+
+        if (Date.now() - listLoadStartedAtRef.current < 1500) {
+          return;
+        }
+
+        setVersion((value) => value + 1);
+      }, 400);
+    });
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+
+      unsubscribe();
+    };
+  }, [subscribe]);
 
   const changeFilter = (setter, value) => {
     setState((current) => ({ ...current, loading: true, error: "" }));

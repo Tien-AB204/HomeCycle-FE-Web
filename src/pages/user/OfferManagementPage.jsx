@@ -96,7 +96,7 @@ const OfferManagementPage = () => {
   const isPersonal = normalizedRole === ROLES.PERSONAL;
 
   const {
-    connection,
+    subscribe,
     reconnectVersion,
   } = useChatRealtime();
 
@@ -395,10 +395,6 @@ const OfferManagementPage = () => {
   ]);
 
   useEffect(() => {
-    if (!connection) {
-      return undefined;
-    }
-
     const normalizeRealtimeId = (
       value,
     ) =>
@@ -455,31 +451,26 @@ const OfferManagementPage = () => {
       }
     };
 
-    connection.on(
-      "OfferCreated",
-      handleOfferChanged,
-    );
-
-    connection.on(
-      "OfferUpdated",
-      handleOfferChanged,
-    );
-
-    return () => {
-      connection.off(
+    const unsubscribeCreated =
+      subscribe(
         "OfferCreated",
         handleOfferChanged,
       );
 
-      connection.off(
+    const unsubscribeUpdated =
+      subscribe(
         "OfferUpdated",
         handleOfferChanged,
       );
+
+    return () => {
+      unsubscribeCreated();
+      unsubscribeUpdated();
     };
   }, [
-    connection,
     scopedBuyPostId,
     selectedOfferId,
+    subscribe,
   ]);
 
   const changeTab = (nextTab) => {
