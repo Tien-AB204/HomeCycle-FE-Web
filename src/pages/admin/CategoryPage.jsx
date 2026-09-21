@@ -2,7 +2,10 @@ import { useEffect, useState } from "react";
 import CategoryModal from "../../features/system/category/CategoryModal";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import categoryApi from "../../services/apis/categoryApi";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const SEARCH_DELAY = 400;
@@ -43,8 +46,8 @@ const getErrorMessage = (error) => {
 
   return (
     getSafeValidationMessage(responseData?.errors) ||
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     "Đã xảy ra lỗi. Vui lòng thử lại."
   );
 };

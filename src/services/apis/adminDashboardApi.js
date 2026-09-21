@@ -381,6 +381,24 @@ const adminDashboardApi = {
       skipGlobalErrorPage: true,
     }),
 
+  getReportedListings: async ({
+    openOnly = true,
+    keyword,
+    pageNumber = 1,
+    pageSize = 10,
+    signal,
+  } = {}) =>
+    axiosClient.get("/admin/dashboard/listings/reported", {
+      params: cleanParams({
+        OpenOnly: openOnly,
+        Keyword: String(keyword || "").trim() || undefined,
+        PageNumber: pageNumber,
+        PageSize: pageSize,
+      }),
+      signal,
+      skipGlobalErrorPage: true,
+    }),
+
   getSubscriptionDashboard: async ({
     from,
     to,

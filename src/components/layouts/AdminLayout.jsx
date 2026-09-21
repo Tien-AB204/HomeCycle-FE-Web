@@ -15,6 +15,11 @@ const ADMIN_NAV_GROUPS = [
     group: "VẬN HÀNH",
     items: [
       {
+        label: "Thanh toán",
+        path: "/admin/dashboard/payments",
+        icon: "payments",
+      },
+      {
         label: "Đơn hàng",
         path: "/admin/dashboard/orders",
         icon: "inventory_2",
@@ -39,6 +44,7 @@ const ADMIN_NAV_GROUPS = [
       {
         label: "Bài đăng",
         path: "/admin/dashboard/posts",
+        matchPaths: ["/admin/posts"],
         icon: "article",
       },
     ],
@@ -52,11 +58,6 @@ const ADMIN_NAV_GROUPS = [
         icon: "account_balance",
       },
       {
-        label: "Thanh toán",
-        path: "/admin/dashboard/payments",
-        icon: "payments",
-      },
-      {
         label: "Ví & giao dịch",
         path: "/admin/finance-management",
         icon: "receipt_long",
@@ -67,14 +68,10 @@ const ADMIN_NAV_GROUPS = [
     group: "DOANH NGHIỆP",
     items: [
       {
-        label: "Tổng quan",
+        label: "Tổng quan & Nhu cầu",
         path: "/admin/dashboard/businesses/overview",
+        matchPaths: ["/admin/dashboard/businesses/demand"],
         icon: "domain",
-      },
-      {
-        label: "Nhu cầu",
-        path: "/admin/dashboard/businesses/demand",
-        icon: "query_stats",
       },
       {
         label: "Hoạt động mua bán",

@@ -6,6 +6,7 @@ import {
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import { USER_SECTION_TABS } from "../../constants/adminSections";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const ROLE_OPTIONS = [
   {
@@ -100,18 +101,31 @@ const normalize = (value) =>
     .trim()
     .toLowerCase();
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-  ).format(Number(value) || 0);
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const formatDecimal = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      maximumFractionDigits: 2,
-    },
-  ).format(Number(value) || 0);
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const formatNumber = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(number);
+};
+
+const formatDecimal = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        maximumFractionDigits: 2,
+      }).format(number);
+};
 
 const formatDateShort = (value) => {
   const date =
@@ -157,8 +171,8 @@ const formatDateTime = (value) => {
 };
 
 const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
+  getSafeProblemDetail(error?.response?.data?.error?.message) ||
+  getSafeProblemDetail(error?.response?.data?.message) ||
   "Không thể tải dữ liệu tổng quan quản trị.";
 
 const LoadingBlock = ({
@@ -397,18 +411,22 @@ const RoleDonutChart = ({
                 </span>
               </div>
 
-              <div className="text-right">
+              <div
+                className="text-right"
+                title={`${item.label}: ${formatNumber(item.count)} tài khoản`}
+              >
                 <p className="text-sm font-black text-text">
-                  {formatNumber(
-                    item.count,
-                  )}
-                </p>
-
-                <p className="text-xs text-textLight">
                   {formatDecimal(
                     percent,
                   )}
                   %
+                </p>
+
+                <p className="text-xs text-textLight">
+                  {formatNumber(
+                    item.count,
+                  )}{" "}
+                  tài khoản
                 </p>
               </div>
             </div>
@@ -1130,7 +1148,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
             Tổng tài khoản
@@ -1209,8 +1227,8 @@ export default function AdminDashboardPage() {
           <>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "Hôm nay", value: activity?.dailyRecordedActiveUsers, className: "text-primary" },
-                { label: "30 ngày gần nhất", value: activity?.monthlyRecordedActiveUsers, className: "text-primary" },
+                { label: "Có hoạt động ghi nhận hôm nay", value: activity?.dailyRecordedActiveUsers, className: "text-primary" },
+                { label: "Có hoạt động ghi nhận trong 30 ngày", value: activity?.monthlyRecordedActiveUsers, className: "text-primary" },
                 { label: "Hồ sơ doanh nghiệp chờ duyệt", value: activity?.pendingBusinessVerificationCount, className: "text-warning" },
                 { label: "Xác minh cá nhân chờ duyệt", value: activity?.pendingPersonalVerificationCount, className: "text-warning" },
               ].map((item) => (

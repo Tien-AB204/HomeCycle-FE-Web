@@ -5,7 +5,10 @@ import {
 import BrandModal from "../../features/system/brand/BrandModal";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import brandApi from "../../services/apis/brandApi";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_TIME = 400;
@@ -55,8 +58,8 @@ const getErrorMessage = (error) => {
     getSafeValidationMessage(
       responseData?.errors,
     ) ||
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     "Đã xảy ra lỗi. Vui lòng thử lại."
   );
 };

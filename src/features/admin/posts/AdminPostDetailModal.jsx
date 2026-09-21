@@ -58,11 +58,34 @@ const normalizeValue = (value) =>
 
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
-    label: status || "Chưa xác định",
+    label: "Chưa xác định",
     className: "border-border bg-background text-textLight",
   };
 
-const formatEnum = (value) => ENUM_LABELS[value] || value || "—";
+/*
+ * Chỉ dùng cho các trường enum (priorityLevel, functionalityStatus,
+ * damageLevel, spaceUsage, deliveryMethod): enum đã biết -> nhãn tiếng Việt,
+ * trống -> "—", enum lạ -> "Chưa xác định"; không hiển thị giá trị thô.
+ */
+const ENUM_LABEL_LOOKUP = Object.fromEntries(
+  Object.entries(ENUM_LABELS).map(([key, label]) => [
+    key.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    label,
+  ]),
+);
+
+const formatEnum = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const key = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  return ENUM_LABEL_LOOKUP[key] || "Chưa xác định";
+};
 
 const formatCurrency = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -106,8 +129,8 @@ const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     getSafeProblemDetail(responseData?.title) ||
     "Không thể tải chi tiết bài đăng."
   );
@@ -161,7 +184,6 @@ const DetailRow = ({ label, value, emphasize = false }) => (
 export default function AdminPostDetailModal({
   postSummary,
   onClose,
-  onRequestDelete,
 }) {
   const postId = postSummary?.postId;
   const [detailState, setDetailState] = useState({
@@ -223,8 +245,17 @@ export default function AdminPostDetailModal({
   const attributes = Array.isArray(product.attributeValues)
     ? product.attributeValues
     : [];
-  const isBuyPost = normalizeValue(post?.postType) === "buy";
-  const isDeleted = normalizeValue(post?.status) === "deleted";
+  // Chỉ "Buy" rõ ràng mới là tin thu mua; null/lạ không được coi là bán.
+  const postTypeKey = normalizeValue(post?.postType);
+  const isBuyPost = postTypeKey === "buy";
+  const isSellPost = postTypeKey === "sell";
+  const postTypeLabel = !postTypeKey
+    ? "—"
+    : isBuyPost
+      ? "Tin thu mua"
+      : isSellPost
+        ? "Tin đăng bán"
+        : "Chưa xác định";
 
   return (
     <div
@@ -359,16 +390,18 @@ export default function AdminPostDetailModal({
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
                         isBuyPost
                           ? "bg-success/10 text-success"
-                          : "bg-primary/10 text-primary"
+                          : isSellPost
+                            ? "bg-primary/10 text-primary"
+                            : "bg-background text-textLight"
                       }`}
                     >
-                      {isBuyPost ? "Tin thu mua" : "Tin đăng bán"}
+                      {postTypeLabel}
                     </span>
                   </div>
 
                   <div>
                     <p className="text-sm font-semibold text-textLight">
-                      {isBuyPost ? "Giá thu mua dự kiến" : "Giá bán"}
+                      {isBuyPost ? "Giá thu mua dự kiến" : "Giá"}
                     </p>
                     <p className="mt-1 text-3xl font-black text-text">
                       {formatCurrency(post.basePrice)}
@@ -526,18 +559,6 @@ export default function AdminPostDetailModal({
           >
             Đóng
           </button>
-          {post && !isDeleted && (
-            <button
-              type="button"
-              onClick={() => onRequestDelete(post)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-error px-4 py-2.5 text-sm font-bold text-white transition hover:bg-error"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                delete
-              </span>
-              Xóa bài đăng
-            </button>
-          )}
         </footer>
       </section>
     </div>

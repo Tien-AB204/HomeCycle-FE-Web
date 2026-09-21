@@ -165,7 +165,7 @@ export const createOrderReadApi = ({ listPath, detailPath }) => ({
     ).trim();
 
     if (!responseOrderId) {
-      throw new Error("Response chi tiết đơn hàng không hợp lệ.");
+      throw new Error("Dữ liệu chi tiết đơn hàng không hợp lệ.");
     }
 
     return source;

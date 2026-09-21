@@ -21,6 +21,7 @@ import {
   TRANSACTION_STATUS_OPTIONS,
   TRANSACTION_TYPE_LABELS,
   TRANSACTION_TYPE_OPTIONS,
+  excludeCommissionFeeTransactions,
 } from "./financePresentation";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -71,7 +72,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
       .then((page) =>
         setState({
           loading: false,
-          items: page.items,
+          items: excludeCommissionFeeTransactions(page.items),
           totalCount: page.totalCount,
           error: "",
         }),

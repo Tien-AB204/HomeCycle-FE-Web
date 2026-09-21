@@ -66,7 +66,9 @@ const MESSAGE_TYPES = Object.freeze({
 });
 
 const normalizeMessageType = (value) =>
-  typeof value === "number" ? MESSAGE_TYPES[value] || "Unknown" : String(value || "Unknown");
+  typeof value === "number"
+    ? MESSAGE_TYPES[value] || "Unspecified"
+    : String(value || "Unspecified");
 
 const getOfferTypeLabel = (type) =>
   type === "CounterOffer" ? "Đề nghị điều chỉnh" : "Đề nghị";

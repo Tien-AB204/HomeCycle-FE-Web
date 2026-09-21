@@ -67,18 +67,31 @@ const toneFor = (
   ];
 };
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-  ).format(Number(value) || 0);
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const formatDecimal = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      maximumFractionDigits: 1,
-    },
-  ).format(Number(value) || 0);
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const formatNumber = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(number);
+};
+
+const formatDecimal = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        maximumFractionDigits: 1,
+      }).format(number);
+};
 
 const formatDateShort = (value) => {
   if (!value) {
@@ -132,58 +145,50 @@ export function DashboardDonutChart({
     );
   }
 
-  const total =
-    safeRows.reduce(
-      (sum, item) =>
-        sum +
-        (Number(item?.count) || 0),
-      0,
-    );
+  const countValues = safeRows.map((item) => toFiniteNumber(item?.count));
+  const total = countValues.some((value) => value === null)
+    ? null
+    : countValues.reduce((sum, value) => sum + value, 0);
 
+  /*
+   * Phần trăm lấy nguyên từ Backend (DistributionItem.Percentage, thang
+   * 0..100). Không tự tính lại từ count/tổng: nếu Backend không trả phần
+   * trăm hợp lệ thì hàng đó không vẽ cung và hiển thị "—".
+   */
   const segments =
-    safeRows.map(
-      (item, index) => {
-        const count =
-          Number(item?.count) || 0;
+    safeRows.reduce(
+      (accumulator, item, index) => {
+        const count = toFiniteNumber(item?.count);
 
-        const percent =
-          total > 0
-            ? (count / total) * 100
-            : 0;
+        const rawPercent =
+          item?.percentage;
+
+        const hasPercent =
+          rawPercent !== null &&
+          rawPercent !== undefined &&
+          rawPercent !== "" &&
+          Number.isFinite(
+            Number(rawPercent),
+          );
+
+        const percent = hasPercent
+          ? Math.min(
+              100,
+              Math.max(
+                0,
+                Number(rawPercent),
+              ),
+            )
+          : null;
 
         const offset =
-          safeRows
-            .slice(0, index)
-            .reduce(
-              (
-                sum,
-                previousItem,
-              ) => {
-                const previousCount =
-                  Number(
-                    previousItem?.count,
-                  ) || 0;
+          accumulator.nextOffset;
 
-                const previousPercent =
-                  total > 0
-                    ? (
-                        previousCount /
-                        total
-                      ) * 100
-                    : 0;
-
-                return (
-                  sum +
-                  previousPercent
-                );
-              },
-              0,
-            );
-
-        return {
+        accumulator.items.push({
           ...item,
           count,
           percent,
+          hasPercent,
           offset,
           tone:
             toneFor(
@@ -191,9 +196,17 @@ export function DashboardDonutChart({
                 item?.label,
               index,
             ),
+        });
+
+        return {
+          items: accumulator.items,
+          nextOffset: hasPercent
+            ? offset + percent
+            : offset,
         };
       },
-    );
+      { items: [], nextOffset: 0 },
+    ).items;
 
   return (
     <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
@@ -209,8 +222,8 @@ export function DashboardDonutChart({
         )}
       </div>
 
-      <div className="mt-6 grid gap-7 md:grid-cols-[230px_1fr] md:items-center">
-        <div className="relative mx-auto h-52 w-52">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-7">
+        <div className="relative mx-auto h-52 w-52 shrink-0">
           <svg
             viewBox="0 0 120 120"
             className="h-full w-full -rotate-90"
@@ -232,6 +245,7 @@ export function DashboardDonutChart({
                 item,
                 index,
               ) =>
+                item.hasPercent &&
                 item.percent > 0 && (
                   <circle
                     key={`${item.key}-${index}`}
@@ -277,7 +291,7 @@ export function DashboardDonutChart({
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid min-w-0 basis-72 flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,12.5rem),1fr))] gap-2">
           {segments.map(
             (
               item,
@@ -300,15 +314,23 @@ export function DashboardDonutChart({
                   </span>
                 </div>
 
-                <span className="shrink-0 text-xs font-black text-text">
-                  {formatNumber(
-                    item.count,
-                  )}
-                  {" · "}
-                  {formatDecimal(
-                    item.percent,
-                  )}
-                  %
+                <span
+                  className="flex shrink-0 flex-col items-end"
+                  title={`${getLabel(item)}: ${formatNumber(item.count)}`}
+                >
+                  <span className="text-xs font-black text-text">
+                    {item.hasPercent
+                      ? `${formatDecimal(
+                          item.percent,
+                        )}%`
+                      : "—"}
+                  </span>
+
+                  <span className="text-[11px] font-semibold text-textLight">
+                    {formatNumber(
+                      item.count,
+                    )}
+                  </span>
                 </span>
               </div>
             ),
@@ -333,11 +355,7 @@ export function DashboardColumnChart({
   const maxValue =
     Math.max(
       1,
-      ...safeRows.map(
-        (item) =>
-          Number(item?.count) ||
-          0,
-      ),
+      ...safeRows.map((item) => toFiniteNumber(item?.count) ?? 0),
     );
 
   return (
@@ -373,13 +391,10 @@ export function DashboardColumnChart({
                 item,
                 index,
               ) => {
-                const count =
-                  Number(
-                    item?.count,
-                  ) || 0;
+                const count = toFiniteNumber(item?.count);
 
                 const height =
-                  count > 0
+                  count !== null && count > 0
                     ? Math.max(
                         8,
                         (count /
@@ -451,18 +466,15 @@ export function DashboardHorizontalBarChart({
     hideZero
       ? safeRows.filter(
           (item) =>
-            (Number(item?.count) || 0) >
-            0,
+            toFiniteNumber(item?.count) === null ||
+            toFiniteNumber(item?.count) > 0,
         )
       : safeRows;
 
   const maxValue =
     Math.max(
       1,
-      ...visibleRows.map(
-        (item) =>
-          Number(item?.count) || 0,
-      ),
+      ...visibleRows.map((item) => toFiniteNumber(item?.count) ?? 0),
     );
 
   return (
@@ -488,13 +500,10 @@ export function DashboardHorizontalBarChart({
               item,
               index,
             ) => {
-              const count =
-                Number(
-                  item?.count,
-                ) || 0;
+              const count = toFiniteNumber(item?.count);
 
               const width =
-                count > 0
+                count !== null && count > 0
                   ? Math.max(
                       3,
                       (count /
@@ -503,10 +512,33 @@ export function DashboardHorizontalBarChart({
                     )
                   : 0;
 
+              /*
+               * Chỉ hiển thị % khi Backend/caller cung cấp giá trị hợp lệ.
+               * Không tự tính từ count/maxValue - maxValue chỉ dùng cho
+               * chiều dài thanh.
+               */
+              const rawPercentage =
+                item?.percentage;
+
+              const hasPercentage =
+                rawPercentage !==
+                  null &&
+                rawPercentage !==
+                  undefined &&
+                rawPercentage !==
+                  "" &&
+                Number.isFinite(
+                  Number(
+                    rawPercentage,
+                  ),
+                );
+
               const percentage =
-                Number(
-                  item?.percentage,
-                ) || 0;
+                hasPercentage
+                  ? Number(
+                      rawPercentage,
+                    )
+                  : null;
 
               const tone =
                 toneFor(
@@ -524,16 +556,31 @@ export function DashboardHorizontalBarChart({
                       {getLabel(item)}
                     </span>
 
-                    <span className="shrink-0 text-sm font-black text-text">
-                      {formatNumber(
-                        count,
-                      )}
-                      {" · "}
-                      {formatDecimal(
-                        percentage,
-                      )}
-                      %
-                    </span>
+                    {hasPercentage ? (
+                      <span
+                        className="flex shrink-0 flex-col items-end"
+                        title={`${getLabel(item)}: ${formatNumber(count)}`}
+                      >
+                        <span className="text-sm font-black text-text">
+                          {formatDecimal(
+                            percentage,
+                          )}
+                          %
+                        </span>
+
+                        <span className="text-[11px] font-semibold text-textLight">
+                          {formatNumber(
+                            count,
+                          )}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-sm font-black text-text">
+                        {formatNumber(
+                          count,
+                        )}
+                      </span>
+                    )}
                   </div>
 
                   <div className="h-3 overflow-hidden rounded-full bg-background">
@@ -620,20 +667,23 @@ export function DashboardLineChart({
   const usableHeight =
     height - top - bottom;
 
+  const numericValues =
+    safeRows.flatMap((row) =>
+      safeSeries
+        .map((item) =>
+          toFiniteNumber(
+            row?.[item.key],
+          ),
+        )
+        .filter(
+          (value) => value !== null,
+        ),
+    );
+
   const maxValue =
     Math.max(
       1,
-      ...safeRows.flatMap(
-        (row) =>
-          safeSeries.map(
-            (item) =>
-              Number(
-                row?.[
-                  item.key
-                ],
-              ) || 0,
-          ),
-      ),
+      ...numericValues,
     );
 
   const xFor = (index) =>
@@ -651,10 +701,7 @@ export function DashboardLineChart({
   const yFor = (value) =>
     top +
     usableHeight -
-    (
-      (Number(value) || 0) /
-      maxValue
-    ) *
+    (value / maxValue) *
       usableHeight;
 
   const tickIndexes =
@@ -822,34 +869,69 @@ export function DashboardLineChart({
                   (
                     row,
                     index,
-                  ) => ({
-                    x:
-                      xFor(
-                        index,
-                      ),
-                    y:
-                      yFor(
+                  ) => {
+                    const value =
+                      toFiniteNumber(
                         row?.[
                           line.key
                         ],
-                      ),
-                    value:
-                      Number(
-                        row?.[
-                          line.key
-                        ],
-                      ) || 0,
-                    row,
-                  }),
+                      );
+
+                    return {
+                      x:
+                        xFor(
+                          index,
+                        ),
+                      y:
+                        value ===
+                        null
+                          ? null
+                          : yFor(
+                              value,
+                            ),
+                      value,
+                      row,
+                    };
+                  },
                 );
 
-              const polyline =
-                points
-                  .map(
-                    (point) =>
-                      `${point.x},${point.y}`,
-                  )
-                  .join(" ");
+              const segments = [];
+              let currentSegment = [];
+
+              points.forEach(
+                (point) => {
+                  if (
+                    point.value ===
+                      null ||
+                    point.y === null
+                  ) {
+                    if (
+                      currentSegment.length >
+                      0
+                    ) {
+                      segments.push(
+                        currentSegment,
+                      );
+                      currentSegment =
+                        [];
+                    }
+                    return;
+                  }
+
+                  currentSegment.push(
+                    point,
+                  );
+                },
+              );
+
+              if (
+                currentSegment.length >
+                0
+              ) {
+                segments.push(
+                  currentSegment,
+                );
+              }
 
               return (
                 <g
@@ -858,46 +940,61 @@ export function DashboardLineChart({
                     tone
                   }
                 >
-                  <polyline
-                    points={
-                      polyline
-                    }
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
+                  {segments.map(
+                    (
+                      segment,
+                      segmentIndex,
+                    ) => (
+                      <polyline
+                        key={`${line.key}-segment-${segmentIndex}`}
+                        points={segment
+                          .map(
+                            (point) =>
+                              `${point.x},${point.y}`,
+                          )
+                          .join(" ")}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                    ),
+                  )}
 
                   {points.map(
                     (
                       point,
                       index,
-                    ) => (
-                      <circle
-                        key={`${line.key}-${index}`}
-                        cx={
-                          point.x
-                        }
-                        cy={
-                          point.y
-                        }
-                        r="3.5"
-                        fill="currentColor"
-                      >
-                        <title>
-                          {`${formatDateShort(
-                            point
-                              .row
-                              ?.from,
-                          )} · ${
-                            line.label
-                          }: ${valueFormatter(
-                            point.value,
-                          )}`}
-                        </title>
-                      </circle>
-                    ),
+                    ) =>
+                      point.value !==
+                        null &&
+                      point.y !==
+                        null ? (
+                        <circle
+                          key={`${line.key}-${index}`}
+                          cx={
+                            point.x
+                          }
+                          cy={
+                            point.y
+                          }
+                          r="3.5"
+                          fill="currentColor"
+                        >
+                          <title>
+                            {`${formatDateShort(
+                              point
+                                .row
+                                ?.from,
+                            )} · ${
+                              line.label
+                            }: ${valueFormatter(
+                              point.value,
+                            )}`}
+                          </title>
+                        </circle>
+                      ) : null,
                   )}
                 </g>
               );

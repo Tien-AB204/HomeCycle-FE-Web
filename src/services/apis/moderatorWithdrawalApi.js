@@ -137,7 +137,7 @@ const moderatorWithdrawalApi = {
 
     if (!responseWithdrawalId) {
       throw new Error(
-        "Response chi tiết yêu cầu rút tiền không hợp lệ.",
+        "Dữ liệu chi tiết yêu cầu rút tiền không hợp lệ.",
       );
     }
 

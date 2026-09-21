@@ -1170,7 +1170,7 @@ export default function ProductTypeAttributePage() {
               </h3>
 
               <p className="mt-1 text-sm text-textLight">
-                Các thuộc tính được sắp xếp theo thứ tự hiển thị từ API.
+                Các thuộc tính được sắp xếp theo thứ tự hiển thị do hệ thống cung cấp.
               </p>
             </div>
 

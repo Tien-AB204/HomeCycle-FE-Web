@@ -1,9 +1,13 @@
+import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
+import { POST_SECTION_TABS } from "../../constants/adminSections";
 import ListingDashboardPanel from "../../features/dashboard/ListingDashboardPanel";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 
 export default function AdminPostOverviewPage() {
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
+      <AdminSectionTabs ariaLabel="Khu vực Bài đăng" items={POST_SECTION_TABS} />
+
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
         <div className="pointer-events-none absolute -right-12 -top-24 h-56 w-56 rounded-full border-[38px] border-white/5" />
 

@@ -17,6 +17,7 @@ import {
   sortItemsByDate,
 } from "../../utils/sortListItems";
 import { useLocation } from "react-router-dom";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const VerificationPage = () => {
   const location = useLocation();
@@ -296,8 +297,9 @@ const VerificationPage = () => {
     } catch (error) {
       const msg =
         error.response?.status >= 500
-          ? "Lỗi máy chủ. V.L lòng thử lại sau."
-          : error.response?.data?.message || "Có lỗi xảy ra khi duyệt.";
+          ? "Lỗi máy chủ. Vui lòng thử lại sau."
+          : getSafeProblemDetail(error.response?.data?.message) ||
+            "Có lỗi xảy ra khi duyệt.";
       setActionFeedback({ type: "error", text: msg });
     } finally {
       setSubmitting(false);
@@ -330,7 +332,8 @@ const VerificationPage = () => {
       const msg =
         error.response?.status >= 500
           ? "Lỗi máy chủ. Vui lòng thử lại sau."
-          : error.response?.data?.message || "Có lỗi xảy ra khi từ chối.";
+          : getSafeProblemDetail(error.response?.data?.message) ||
+            "Có lỗi xảy ra khi từ chối.";
       setActionFeedback({ type: "error", text: msg });
     } finally {
       setSubmitting(false);
@@ -338,6 +341,25 @@ const VerificationPage = () => {
   };
 
   // --- BẢNG ÁNH XẠ NHÃN (LABEL MAPPING) TIẾNG VIỆT TOÀN DIỆN ---
+  const DOCUMENT_TYPE_LABELS = {
+    0: "Mặt trước CCCD",
+    cccdfront: "Mặt trước CCCD",
+    1: "Mặt sau CCCD",
+    cccdback: "Mặt sau CCCD",
+    2: "Giấy phép kinh doanh",
+    businessregistration: "Giấy phép kinh doanh",
+    3: "Giấy ủy quyền",
+    authorizationletter: "Giấy ủy quyền",
+  };
+
+  const getDocumentTypeLabel = (value) =>
+    DOCUMENT_TYPE_LABELS[
+      String(value ?? "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "")
+    ] || "Tài liệu khác";
+
   const fieldLabels = {
     userId: "Mã người dùng",
     representativeCode: "Số CCCD",
@@ -615,7 +637,9 @@ const VerificationPage = () => {
                     )
                       return null;
 
-                    const labelText = fieldLabels[key] || key;
+                    // Không hiển thị tên trường thô của Backend khi chưa có nhãn.
+                    const labelText = fieldLabels[key];
+                    if (!labelText) return null;
                     let displayValue = String(value);
 
                     const lowerKey = key.toLowerCase();
@@ -663,14 +687,9 @@ const VerificationPage = () => {
                   {Array.isArray(profileDetail.documents) &&
                   profileDetail.documents.length > 0
                     ? profileDetail.documents.map((doc) => {
-                        let docLabel = `Tài liệu (${doc.documentType})`;
-                        if (doc.documentType === 0) docLabel = "Mặt trước CCCD";
-                        else if (doc.documentType === 1)
-                          docLabel = "Mặt sau CCCD";
-                        else if (doc.documentType === 2)
-                          docLabel = "Giấy phép kinh doanh";
-                        else if (doc.documentType === 3)
-                          docLabel = "Giấy ủy quyền";
+                        const docLabel = getDocumentTypeLabel(
+                          doc.documentType,
+                        );
 
                         return (
                           <div

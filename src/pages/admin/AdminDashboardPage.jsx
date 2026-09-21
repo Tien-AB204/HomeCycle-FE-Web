@@ -5,10 +5,21 @@ import {
 import { Link } from "react-router-dom";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-  ).format(Number(value) || 0);
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const formatNumber = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(number);
+};
 
 const formatDateTime = (value) => {
   if (!value) {
@@ -195,29 +206,29 @@ export default function AdminDashboardPage() {
   const attentionRows = [
     {
       label: "Đơn đang hoạt động",
-      value: Number(data?.orders?.activeCount) || 0,
+      value: toFiniteNumber(data?.orders?.activeCount),
       icon: "inventory_2",
     },
     {
       label: "Lịch hẹn hôm nay",
-      value: Number(data?.appointments?.todayCount) || 0,
+      value: toFiniteNumber(data?.appointments?.todayCount),
       icon: "event",
     },
     {
       label: "Thanh toán đang chờ",
-      value: Number(data?.payments?.pendingCount) || 0,
+      value: toFiniteNumber(data?.payments?.pendingCount),
       icon: "payments",
     },
     {
       label: "Tranh chấp chưa xử lý",
-      value: Number(data?.disputes?.unresolvedCount) || 0,
+      value: toFiniteNumber(data?.disputes?.unresolvedCount),
       icon: "gavel",
     },
   ];
 
   const maxAttentionValue = Math.max(
     1,
-    ...attentionRows.map((item) => item.value),
+    ...attentionRows.map((item) => item.value ?? 0),
   );
 
   return (
@@ -237,7 +248,7 @@ export default function AdminDashboardPage() {
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
               Theo dõi trạng thái vận hành hiện tại của hệ thống
-              bằng số liệu tổng hợp từ API Tổng quan vận hành.
+              qua các số liệu tổng hợp do máy chủ cung cấp.
             </p>
 
             {!loading &&
@@ -365,7 +376,7 @@ export default function AdminDashboardPage() {
             },
             {
               label:
-                "Đã giải quyết trong 30 ngày gần nhất",
+                "Đã giải quyết trong 30 ngày đã hoàn tất gần nhất",
               value:
                 data?.disputes
                   ?.resolvedInPeriodCount,
@@ -386,7 +397,7 @@ export default function AdminDashboardPage() {
       <div className="rounded-xl border border-border bg-white px-4 py-3 text-xs leading-5 text-textLight">
         Các số tổng, số đang hoạt động, chờ thanh toán, chưa xử lý xong,
         lịch sắp tới và hôm nay là trạng thái hiện tại trên toàn bộ dữ liệu.
-        Riêng số tranh chấp đã giải quyết sử dụng kỳ mặc định 30 ngày gần nhất của máy chủ.
+        Riêng số tranh chấp đã giải quyết tính theo kỳ mặc định của máy chủ: 30 ngày đã hoàn tất gần nhất, không gồm hôm nay.
       </div>
 
       <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
@@ -400,9 +411,9 @@ export default function AdminDashboardPage() {
           </h3>
 
           <p className="mt-1 text-sm leading-6 text-textLight">
-            Biểu đồ này chỉ dùng dữ liệu snapshot từ API Tổng quan vận hành.
+            Biểu đồ này chỉ dùng số liệu trạng thái hiện tại của trang tổng quan.
             Mỗi hàng là số lượng hiện tại của một hạng mục, không phải chuỗi
-            thời gian và không gọi thêm dashboard chi tiết.
+            thời gian; số liệu theo kỳ nằm ở từng trang phân tích riêng.
           </p>
         </div>
 
@@ -440,7 +451,7 @@ export default function AdminDashboardPage() {
                     className="h-full rounded-full bg-primary transition-[width]"
                     style={{
                       width:
-                        item.value > 0
+                        item.value !== null && item.value > 0
                           ? `${Math.max(
                               4,
                               (item.value / maxAttentionValue) * 100,

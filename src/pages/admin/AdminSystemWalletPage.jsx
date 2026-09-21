@@ -17,17 +17,23 @@ const normalize = (value) =>
 
 const purposeLabel = (value) =>
   PURPOSE_LABELS[normalize(value)] ||
-  "Ví hệ thống";
+  "Chưa xác định";
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    },
-  ).format(Number(value) || 0);
+const formatMoney = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const amount = Number(value);
+
+  return Number.isFinite(amount)
+    ? new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(amount)
+    : "—";
+};
 
 const isCanceledRequest = (error) =>
   error?.name === "CanceledError" ||

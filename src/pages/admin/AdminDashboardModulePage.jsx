@@ -16,6 +16,7 @@ import productTypeApi from "../../services/apis/productTypeApi";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import {
   APPOINTMENT_SECTION_TABS,
+  BUSINESS_SECTION_TABS,
   DISPUTE_SECTION_TABS,
   ORDER_SECTION_TABS,
 } from "../../constants/adminSections";
@@ -261,7 +262,7 @@ const LABELS = {
   approved: "Đã duyệt",
   personal: "Cá nhân",
   business: "Doanh nghiệp",
-  moderator: "Điều phối viên",
+  moderator: "Kiểm duyệt viên",
   admin: "Quản trị viên",
 };
 
@@ -304,10 +305,42 @@ const labelFor = (
     return "Đã hủy hoặc thay thế";
   }
 
+  return LABELS[key] || "Chưa xác định";
+};
+
+/*
+ * Phân bố theo danh mục/tên miền (ví dụ nguyên nhân tranh chấp): key là mã,
+ * label là tên do hệ thống/người dùng đặt và được giữ nguyên. Chỉ khóa
+ * "Unspecified" (Backend kèm nhãn tiếng Anh) mới đổi thành "Chưa xác định".
+ */
+const isUnknownDomainText = (value) => {
+  const key = normalize(value);
+
   return (
-    LABELS[key] ||
-    String(value || "Chưa xác định")
+    !key ||
+    key === "unspecified" ||
+    key === "unknown" ||
+    key === "unnamed" ||
+    key === "unknowninvalidvalue"
   );
+};
+
+const domainTextOrUnknown = (value) => {
+  const text = String(value ?? "").trim();
+  return isUnknownDomainText(text) ? "Chưa xác định" : text;
+};
+
+const domainLabelFor = (item) => {
+  const label = String(item?.label ?? "").trim();
+
+  if (
+    isUnknownDomainText(item?.key) ||
+    (label && isUnknownDomainText(label))
+  ) {
+    return "Chưa xác định";
+  }
+
+  return label || String(item?.key ?? "").trim() || "Chưa xác định";
 };
 
 const BUSINESS_DEMAND_LABELS = {
@@ -324,50 +357,89 @@ const BUSINESS_DEMAND_LABELS = {
   retail: "Thu mua lẻ",
 };
 
-const demandLabelFor = (value) =>
-  BUSINESS_DEMAND_LABELS[
-    normalize(value)
-  ] ||
-  String(value || "Chưa xác định");
-const formatNumber = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-  ).format(Number(value) || 0);
+/*
+ * Nhu cầu doanh nghiệp: nhóm enum (mức hư hỏng, tình trạng sử dụng, quy mô
+ * thu mua) tra theo key; nhóm văn bản (thành phố, phường/xã, loại sản phẩm)
+ * giữ nguyên tên thật, kể cả tên ASCII một từ như "Laptop".
+ */
+const demandLabelFor = (item, kind) => {
+  if (kind === "enum") {
+    return (
+      BUSINESS_DEMAND_LABELS[normalize(item?.key)] ||
+      "Chưa xác định"
+    );
+  }
 
-const formatDecimal = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      maximumFractionDigits: 1,
-    },
-  ).format(Number(value) || 0);
+  return domainLabelFor(item);
+};
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    },
-  ).format(Number(value) || 0);
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
 
-const formatCompactMoney = (value) =>
-  `${new Intl.NumberFormat("vi-VN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(Number(value) || 0)} ₫`;
-const formatPercent = (value) =>
-  value === null ||
-  value === undefined
+const formatNumber = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
     ? "—"
-    : `${formatDecimal(value)}%`;
+    : new Intl.NumberFormat("vi-VN").format(number);
+};
 
-const formatHours = (value) =>
-  value === null ||
-  value === undefined
+const formatDecimal = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
     ? "—"
-    : `${formatDecimal(value)} giờ`;
+    : new Intl.NumberFormat("vi-VN", {
+        maximumFractionDigits: 1,
+      }).format(number);
+};
+
+const formatMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(number);
+};
+
+const formatCompactMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : `${new Intl.NumberFormat("vi-VN", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(number)} ₫`;
+};
+const formatPercent = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : `${formatDecimal(number)}%`;
+};
+
+const sumWhenComplete = (...values) => {
+  const numbers = values.map(toFiniteNumber);
+  return numbers.some((value) => value === null)
+    ? null
+    : numbers.reduce((sum, value) => sum + value, 0);
+};
+
+const formatHours = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : `${formatDecimal(number)} giờ`;
+};
 
 const formatDate = (value) => {
   if (!value) {
@@ -460,6 +532,7 @@ const DistributionPanel = ({
   description,
   rows,
   dashboard,
+  getLabel,
 }) => (
   <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
     <div className="border-b border-border pb-4">
@@ -482,20 +555,16 @@ const DistributionPanel = ({
         </div>
       ) : (
         rows.map((item, index) => {
-          const percentage =
-            Number(
-              item.percentage,
-            ) || 0;
+          const rawPercentage = item?.percentage;
+          const percentage = toFiniteNumber(rawPercentage);
+          const safePercentage =
+            percentage === null
+              ? null
+              : Math.max(0, Math.min(100, percentage));
 
           const width =
-            percentage > 0
-              ? Math.max(
-                  2,
-                  Math.min(
-                    100,
-                    percentage,
-                  ),
-                )
+            safePercentage !== null && safePercentage > 0
+              ? Math.max(2, safePercentage)
               : 0;
 
           return (
@@ -504,22 +573,29 @@ const DistributionPanel = ({
             >
               <div className="mb-2 flex items-center justify-between gap-4">
                 <span className="text-sm font-bold text-text">
-                  {labelFor(
-                    item.label ||
-                      item.key,
-                    dashboard,
-                  )}
+                  {getLabel
+                    ? getLabel(item)
+                    : labelFor(
+                        item.key,
+                        dashboard,
+                      )}
                 </span>
 
-                <span className="text-sm font-black text-text">
-                  {formatNumber(
-                    item.count,
-                  )}
-                  {" · "}
-                  {formatDecimal(
-                    percentage,
-                  )}
-                  %
+                <span
+                  className="flex shrink-0 flex-col items-end"
+                  title={`Số lượng: ${formatNumber(item.count)}`}
+                >
+                  <span className="text-sm font-black text-text">
+                    {safePercentage === null
+                      ? "—"
+                      : `${formatDecimal(safePercentage)}%`}
+                  </span>
+
+                  <span className="text-[11px] font-semibold text-textLight">
+                    {formatNumber(
+                      item.count,
+                    )}
+                  </span>
                 </span>
               </div>
 
@@ -635,25 +711,13 @@ const PaymentMethodTable = ({
     </div>
   </section>
 );
-const isSupportedTradePair = (item) => {
-  const buyerRole = normalize(item?.buyerRole);
-  const sellerRole = normalize(item?.sellerRole);
-
-  return (
-    (buyerRole === "business" &&
-      sellerRole === "personal") ||
-    (buyerRole === "personal" &&
-      sellerRole === "personal")
-  );
-};
-
 const TradeChart = ({
   title,
   rows,
 }) => {
   const visibleRows = (
     Array.isArray(rows)
-      ? rows.filter(isSupportedTradePair)
+      ? rows
       : []
   ).filter(
     (item) =>
@@ -764,9 +828,172 @@ const EmptyPerformanceChart = ({
     </div>
   </section>
 );
+/*
+ * Xếp hạng doanh nghiệp theo giá trị đơn hoàn tất, chuyển tab Bán / Thu mua.
+ * Giá trị là tiền mua bán giữa người dùng (không phải doanh thu HomeCycle);
+ * dữ liệu lấy nguyên từ topSellers/topBuyers, không gọi thêm API người dùng.
+ */
+const RANKING_TABS = [
+  { key: "sellers", label: "Bán" },
+  { key: "buyers", label: "Thu mua" },
+];
+
+const BusinessRankingTabs = ({ sellers, buyers }) => {
+  const [tab, setTab] = useState("sellers");
+  const isSellers = tab === "sellers";
+  const source = isSellers ? sellers : buyers;
+
+  const rows = (Array.isArray(source) ? source : []).map((item) => ({
+    key: item.userId,
+    label: `${domainTextOrUnknown(item.name)} · ${formatNumber(item.completedOrderCount)} đơn`,
+    amount: item.gmv,
+  }));
+
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-black text-text">
+            Doanh nghiệp giao dịch nhiều nhất
+          </h3>
+
+          <p className="mt-1 text-xs leading-5 text-textLight">
+            {isSellers
+              ? "Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên bán."
+              : "Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên thu mua; đây là giá trị hàng đã mua, không phải doanh thu."}
+          </p>
+        </div>
+
+        <div
+          role="tablist"
+          aria-label="Chọn vai trò xếp hạng"
+          className="flex gap-1 rounded-xl border border-border bg-background p-1"
+        >
+          {RANKING_TABS.map((item) => {
+            const active = tab === item.key;
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(item.key)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${
+                  active
+                    ? "bg-primary text-white"
+                    : "text-textLight hover:text-text"
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <FinanceAmountBarChart
+          title={isSellers ? "Giá trị bán trong kỳ" : "Giá trị thu mua trong kỳ"}
+          rows={rows}
+          getLabel={(item) => item.label}
+        />
+      </div>
+    </section>
+  );
+};
+
+/*
+ * Điểm danh theo nhóm: cột đôi (đã điểm danh / thiếu) trên số lượt đủ điều
+ * kiện, kèm tỷ lệ do Backend tính. Chỉ lịch kiểm định đã đến giờ hẹn; các
+ * hàng là lượt tham gia, không phải số người riêng biệt.
+ */
+const CheckInGroupedChart = ({ title, description, rows, getLabel }) => {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const maxEligible = Math.max(
+    1,
+    ...safeRows.map((item) => Number(item?.eligibleCount) || 0),
+  );
+
+  const heightFor = (value) =>
+    `${Math.min(100, Math.max(0, ((Number(value) || 0) / maxEligible) * 100))}%`;
+
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+        {title}
+      </p>
+
+      {description && (
+        <p className="mt-1 text-xs leading-5 text-textLight">{description}</p>
+      )}
+
+      {safeRows.length === 0 ? (
+        <p className="mt-4 rounded-xl bg-background px-4 py-5 text-center text-sm text-textLight">
+          Chưa có dữ liệu.
+        </p>
+      ) : (
+        <>
+          <div className="mt-5 flex items-end justify-around gap-6">
+            {safeRows.map((item) => {
+              const label = getLabel(item);
+              const checkedIn = Number(item?.checkedInCount) || 0;
+              const missing = Number(item?.missingCount) || 0;
+              const rate = formatPercent(item?.checkInRate);
+
+              return (
+                <div
+                  key={item?.participantType || label}
+                  className="flex min-w-0 flex-1 flex-col items-center"
+                  title={`${label}: ${formatNumber(checkedIn)} đã điểm danh, ${formatNumber(missing)} thiếu trên ${formatNumber(item?.eligibleCount)} lượt · tỷ lệ ${rate}`}
+                >
+                  <span className="mb-2 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-black text-primary">
+                    {rate}
+                  </span>
+
+                  <div className="flex h-36 items-end gap-2">
+                    <div className="flex h-full w-8 flex-col justify-end">
+                      <div
+                        className="w-full rounded-t-lg bg-success transition-all duration-300"
+                        style={{ height: heightFor(checkedIn) }}
+                      />
+                    </div>
+                    <div className="flex h-full w-8 flex-col justify-end">
+                      <div
+                        className="w-full rounded-t-lg bg-warning transition-all duration-300"
+                        style={{ height: heightFor(missing) }}
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-sm font-black text-text">{label}</p>
+
+                  <p className="text-[11px] font-semibold text-textLight">
+                    {formatNumber(checkedIn)} đã điểm danh · {formatNumber(missing)} thiếu
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs font-bold text-textLight">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-success" /> Đã điểm danh
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-warning" /> Thiếu điểm danh
+            </span>
+          </div>
+        </>
+      )}
+    </section>
+  );
+};
+
 const DemandGroup = ({
   title,
   group,
+  kind = "text",
 }) => {
   const items = Array.isArray(group?.items)
     ? group.items
@@ -807,16 +1034,12 @@ const DemandGroup = ({
         <div className="mt-5 space-y-4">
           {items.map(
             (item, index) => {
-              const percentage =
-                Math.max(
-                  0,
-                  Math.min(
-                    100,
-                    Number(
-                      item.percentage,
-                    ) || 0,
-                  ),
-                );
+              const rawPercentage = item?.percentage;
+              const percentage = toFiniteNumber(rawPercentage);
+              const safePercentage =
+                percentage === null
+                  ? null
+                  : Math.max(0, Math.min(100, percentage));
 
               return (
                 <div
@@ -825,20 +1048,27 @@ const DemandGroup = ({
                   <div className="mb-2 flex items-start justify-between gap-4">
                     <span className="min-w-0 text-sm font-bold text-text">
                       {demandLabelFor(
-                        item.label ||
-                          item.key,
+                        item,
+                        kind,
                       )}
                     </span>
 
-                    <span className="shrink-0 text-right text-sm font-black text-text">
-                      {formatNumber(
-                        item.businessCount,
-                      )}
-                      {" · "}
-                      {formatDecimal(
-                        item.percentage,
-                      )}
-                      %
+                    <span
+                      className="flex shrink-0 flex-col items-end text-right"
+                      title={`${formatNumber(item.businessCount)} doanh nghiệp`}
+                    >
+                      <span className="text-sm font-black text-text">
+                        {safePercentage === null
+                          ? "—"
+                          : `${formatDecimal(safePercentage)}%`}
+                      </span>
+
+                      <span className="text-[11px] font-semibold text-textLight">
+                        {formatNumber(
+                          item.businessCount,
+                        )}{" "}
+                        doanh nghiệp
+                      </span>
                     </span>
                   </div>
 
@@ -846,21 +1076,16 @@ const DemandGroup = ({
                     className="h-3 overflow-hidden rounded-full bg-background"
                     role="img"
                     aria-label={`${demandLabelFor(
-                      item.label ||
-                        item.key,
-                    )}: ${formatDecimal(
-                      item.percentage,
-                    )}%`}
+                      item,
+                      kind,
+                    )}: ${safePercentage === null ? "chưa đủ dữ liệu" : `${formatDecimal(safePercentage)}%`}`}
                   >
                     <div
                       className="h-full rounded-full bg-primary transition-[width]"
                       style={{
                         width:
-                          percentage > 0
-                            ? `${Math.max(
-                                3,
-                                percentage,
-                              )}%`
+                          safePercentage !== null && safePercentage > 0
+                            ? `${Math.max(3, safePercentage)}%`
                             : "0%",
                       }}
                     />
@@ -1831,8 +2056,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   labelFor(
-                    item.label ||
-                      item.key,
+                item.key,
                     "payments",
                   )
                 }
@@ -1846,7 +2070,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   item.label ||
-                  item.key
+                  "Chưa xác định"
                 }
               />
             </div>
@@ -1909,8 +2133,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   labelFor(
-                    item.label ||
-                      item.key,
+                item.key,
                     "orders",
                   )
                 }
@@ -1924,7 +2147,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   item.label ||
-                  item.key
+                  "Chưa xác định"
                 }
               />
             </div>
@@ -1940,7 +2163,7 @@ export default function AdminDashboardModulePage({
             Đề xuất đổi lịch chưa được chấp nhận và lịch cũ đã bị thay thế không được tính như một lịch hiệu lực.
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
               label="Tổng lịch hiệu lực"
               value={formatNumber(
@@ -2005,8 +2228,7 @@ export default function AdminDashboardModulePage({
               }
               getLabel={(item) =>
                 labelFor(
-                  item.label ||
-                    item.key,
+                item.key,
                   "appointments",
                 )
               }
@@ -2074,8 +2296,7 @@ export default function AdminDashboardModulePage({
             }
             getLabel={(item) =>
               labelFor(
-                item.label ||
-                  item.key,
+                item.key,
                 "disputes",
               )
             }
@@ -2088,6 +2309,7 @@ export default function AdminDashboardModulePage({
               data?.categoryDistribution
             }
             dashboard="disputes"
+            getLabel={domainLabelFor}
           />
 
           <DashboardHorizontalBarChart
@@ -2096,13 +2318,7 @@ export default function AdminDashboardModulePage({
             rows={
               data?.unresolvedByCategory
             }
-            getLabel={(item) =>
-              labelFor(
-                item.label ||
-                  item.key,
-                "disputes",
-              )
-            }
+            getLabel={domainLabelFor}
             hideZero
           />
 
@@ -2114,7 +2330,7 @@ export default function AdminDashboardModulePage({
             }
             getLabel={(item) =>
               item.label ||
-              item.key
+              "Chưa xác định"
             }
           />
         </div>
@@ -2197,29 +2413,33 @@ export default function AdminDashboardModulePage({
           />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-3">
-          <DistributionPanel
+        <div className="grid gap-6 xl:grid-cols-2">
+          <DashboardDonutChart
             title="Trạng thái tài khoản"
+            description="Tài khoản doanh nghiệp theo trạng thái hiện tại."
             rows={data?.byUserStatus}
-            dashboard="business-user-status"
+            getLabel={(item) =>
+              labelFor(item.key, "business-user-status")
+            }
           />
 
-          <DistributionPanel
+          <DashboardDonutChart
             title="Trạng thái hồ sơ"
-            rows={
-              data?.byProfileStatus
+            description="Hồ sơ doanh nghiệp theo trạng thái xét duyệt hiện tại."
+            rows={data?.byProfileStatus}
+            getLabel={(item) =>
+              labelFor(item.key, "business-profile-status")
             }
-            dashboard="business-profile-status"
-          />
-
-          <DistributionPanel
-            title="Mô hình kinh doanh"
-            rows={
-              data?.byBusinessModel
-            }
-            dashboard="business-model"
           />
         </div>
+
+        <DistributionPanel
+          title="Mô hình kinh doanh"
+          rows={
+            data?.byBusinessModel
+          }
+          dashboard="business-model"
+        />
       </>
     );
 
@@ -2251,10 +2471,12 @@ export default function AdminDashboardModulePage({
           <DemandGroup
             title="Mức độ hư hỏng"
             group={data?.damageLevels}
+            kind="enum"
           />
 
           <DemandGroup
             title="Tình trạng sử dụng"
+            kind="enum"
             group={
               data?.functionalityStatuses
             }
@@ -2262,6 +2484,7 @@ export default function AdminDashboardModulePage({
 
           <DemandGroup
             title="Quy mô thu mua"
+            kind="enum"
             group={
               data?.procurementScales
             }
@@ -2305,11 +2528,19 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessPaymentCount,
             )}
-            hint={`Chiếm ${formatPercent(
+            hint="Số thanh toán đơn hàng thành công trong kỳ có ít nhất một bên là doanh nghiệp."
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Tỷ trọng thanh toán của doanh nghiệp"
+            value={formatPercent(
               data
                 ?.businessPaymentSharePercent,
-            )} số thanh toán đơn hàng thành công trong kỳ.`}
+            )}
+            hint="Tỷ lệ thanh toán đơn hàng thành công trong kỳ có ít nhất một bên là doanh nghiệp."
             loading={loading}
+            valueClassName="text-primary"
           />
 
           <KpiCard
@@ -2348,11 +2579,19 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessSalesValue,
             )}
-            hint={`Giá trị đơn hoàn tất mà bên bán là doanh nghiệp; chiếm ${formatPercent(
+            hint="Giá trị đơn hoàn tất trong kỳ mà bên bán là doanh nghiệp."
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Tỷ trọng giá trị bán của doanh nghiệp"
+            value={formatPercent(
               data
                 ?.businessSalesSharePercent,
-            )} tổng giá trị đơn hoàn tất.`}
+            )}
+            hint="Tỷ lệ giá trị đơn hoàn tất trong kỳ mà bên bán là doanh nghiệp trên tổng giá trị đơn hoàn tất."
             loading={loading}
+            valueClassName="text-primary"
           />
 
           <KpiCard
@@ -2543,54 +2782,31 @@ export default function AdminDashboardModulePage({
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <DashboardHorizontalBarChart
+          <DashboardDonutChart
             title="Lý do hủy đơn"
-            description="Số đơn đã hủy (tạo trong kỳ, có doanh nghiệp tham gia) theo lý do hủy được ghi nhận."
-            rows={(data?.cancellationReasons || []).map((item) => ({
-              key: item.key,
-              label: normalize(item.key) === "unspecified" ? "Không ghi lý do" : item.label,
-              count: item.count,
-            }))}
-            getLabel={(item) => item.label}
-            hideZero
+            description="Đơn đã hủy (tạo trong kỳ, có doanh nghiệp tham gia) theo lý do hủy được ghi nhận; tỷ lệ tính trên số đơn đã hủy."
+            rows={(data?.cancellationReasons || []).filter(
+              (item) => (Number(item?.count) || 0) > 0,
+            )}
+            getLabel={(item) =>
+              normalize(item.key) === "unspecified" ? "Không ghi lý do" : domainLabelFor(item)
+            }
           />
 
-          <DashboardHorizontalBarChart
+          <DashboardDonutChart
             title="Nguyên nhân tranh chấp"
-            description="Số tranh chấp về đơn hàng của các đơn tạo trong kỳ có doanh nghiệp tham gia, theo danh mục nguyên nhân."
-            rows={(data?.disputeReasons || []).map((item) => ({
-              key: item.key,
-              label: normalize(item.key) === "unspecified" ? "Chưa xác định" : item.label,
-              count: item.count,
-            }))}
-            getLabel={(item) => item.label}
-            hideZero
+            description="Tranh chấp về đơn hàng của các đơn tạo trong kỳ có doanh nghiệp tham gia, theo danh mục nguyên nhân; tỷ lệ tính trên số tranh chấp."
+            rows={(data?.disputeReasons || []).filter(
+              (item) => (Number(item?.count) || 0) > 0,
+            )}
+            getLabel={domainLabelFor}
           />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <FinanceAmountBarChart
-            title="Doanh nghiệp bán nhiều nhất"
-            description="Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên bán."
-            rows={(data?.topSellers || []).map((item) => ({
-              key: item.userId,
-              label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
-              amount: item.gmv,
-            }))}
-            getLabel={(item) => item.label}
-          />
-
-          <FinanceAmountBarChart
-            title="Doanh nghiệp mua nhiều nhất"
-            description="Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên mua."
-            rows={(data?.topBuyers || []).map((item) => ({
-              key: item.userId,
-              label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
-              amount: item.gmv,
-            }))}
-            getLabel={(item) => item.label}
-          />
-        </div>
+        <BusinessRankingTabs
+          sellers={data?.topSellers}
+          buyers={data?.topBuyers}
+        />
 
         <div className="grid gap-6 xl:grid-cols-2">
           {(data?.contributionSeries || []).some(
@@ -2645,7 +2861,7 @@ export default function AdminDashboardModulePage({
           description="Số đơn tạo trong kỳ có doanh nghiệp tham gia, theo thành phố của bài đăng."
           rows={(data?.transactionRegions || []).map((item) => ({
             key: item.city || "unspecified",
-            label: item.city || "Chưa rõ",
+            label: domainTextOrUnknown(item.city),
             count: item.orderCount,
           }))}
           getLabel={(item) => item.label}
@@ -2756,21 +2972,23 @@ export default function AdminDashboardModulePage({
               title="Trạng thái hiện tại của đơn tạo trong kỳ"
               description="Đơn được tạo trong kỳ, phân theo trạng thái hiện tại của chúng."
               rows={data?.createdStatusDistribution}
-              getLabel={(item) => labelFor(item.label || item.key, "orders")}
+              getLabel={(item) => labelFor(
+                item.key, "orders")}
             />
 
             <DashboardDonutChart
               title="Cách giao nhận của đơn tạo trong kỳ"
               description="Theo phương thức giao nhận mới nhất của từng đơn."
               rows={data?.deliveryMethodDistribution}
-              getLabel={(item) => labelFor(item.label || item.key)}
+              getLabel={(item) => labelFor(item.key)}
             />
 
             <DashboardDonutChart
               title="Phương thức thanh toán trong kỳ"
               description="Theo các lượt thanh toán đặt cọc/thanh toán toàn bộ đã thanh toán thành công trong kỳ (kể cả khoản sau đó được hoàn tiền)."
               rows={data?.paymentMethodDistribution}
-              getLabel={(item) => labelFor(item.label || item.key, "payments")}
+              getLabel={(item) => labelFor(
+                item.key, "payments")}
             />
           </div>
 
@@ -2838,8 +3056,7 @@ export default function AdminDashboardModulePage({
               }
               getLabel={(item) =>
                 labelFor(
-                  item.label ||
-                    item.key,
+                item.key,
                   "appointments",
                 )
               }
@@ -2956,22 +3173,30 @@ export default function AdminDashboardModulePage({
                             )}
                           </td>
                           <td className="px-3 py-3 text-success">
-                            {formatNumber(
-                              item.successfulCount,
-                            )}
-                            {" · "}
-                            {formatPercent(
-                              item.successRate,
-                            )}
+                            <span className="block font-black">
+                              {formatPercent(
+                                item.successRate,
+                              )}
+                            </span>
+                            <span className="block text-[11px] font-semibold text-textLight">
+                              {formatNumber(
+                                item.successfulCount,
+                              )}{" "}
+                              lịch
+                            </span>
                           </td>
                           <td className="px-3 py-3 text-error">
-                            {formatNumber(
-                              item.failedCount,
-                            )}
-                            {" · "}
-                            {formatPercent(
-                              item.failureRate,
-                            )}
+                            <span className="block font-black">
+                              {formatPercent(
+                                item.failureRate,
+                              )}
+                            </span>
+                            <span className="block text-[11px] font-semibold text-textLight">
+                              {formatNumber(
+                                item.failedCount,
+                              )}{" "}
+                              lịch
+                            </span>
                           </td>
                         </tr>
                       ),
@@ -3034,20 +3259,10 @@ export default function AdminDashboardModulePage({
                 <KpiCard
                   label="Thiếu điểm danh"
                   value={formatNumber(
-                    (
-                      Number(
-                        data
-                          ?.inspectionCheckIn
-                          ?.partialCheckInAppointmentCount,
-                      ) || 0
-                    ) +
-                      (
-                        Number(
-                          data
-                            ?.inspectionCheckIn
-                            ?.noCheckInAppointmentCount,
-                        ) || 0
-                      ),
+                    sumWhenComplete(
+                      data?.inspectionCheckIn?.partialCheckInAppointmentCount,
+                      data?.inspectionCheckIn?.noCheckInAppointmentCount,
+                    ),
                   )}
                   hint={`${formatNumber(
                     data?.inspectionCheckIn
@@ -3061,80 +3276,25 @@ export default function AdminDashboardModulePage({
                 />
               </div>
 
-              <div className="mt-5 space-y-3">
-                {(data?.checkInByParticipant || []).map(
-                  (item) => (
-                    <div
-                      key={
-                        item.participantType
-                      }
-                      className="rounded-xl border border-border bg-background/60 p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-black text-text">
-                            {normalize(
-                              item.participantType,
-                            ) === "buyer"
-                              ? "Người mua"
-                              : normalize(
-                                    item.participantType,
-                                  ) === "seller"
-                                ? "Người bán"
-                                : item.participantType}
-                          </p>
-
-                          <p className="mt-1 text-xs text-textLight">
-                            {formatNumber(
-                              item.checkedInCount,
-                            )}/
-                            {formatNumber(
-                              item.eligibleCount,
-                            )} đã điểm danh
-                          </p>
-                        </div>
-
-                        <span className="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
-                          {formatPercent(
-                            item.checkInRate,
-                          )}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/40">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Math.max(
-                                0,
-                                Number(
-                                  item.checkInRate,
-                                ) || 0,
-                              ),
-                            )}%`,
-                          }}
-                        />
-                      </div>
-
-                      <p className="mt-2 text-xs text-textLight">
-                        Thiếu{" "}
-                        {formatNumber(
-                          item.missingCount,
-                        )} lượt điểm danh.
-                      </p>
-                    </div>
-                  ),
-                )}
-              </div>
-
               <p className="mt-4 text-xs leading-5 text-textLight">
                 Chỉ thống kê việc điểm danh của lịch kiểm định đã đến giờ hẹn.
                 Trang tổng quan không đánh giá việc điểm danh đúng giờ, trễ hay thời điểm rời lịch hẹn.
               </p>
             </section>
           </div>
+
+          <CheckInGroupedChart
+            title="Điểm danh theo nhóm"
+            description="Lượt điểm danh của lịch kiểm định đã đến giờ hẹn, so sánh đã điểm danh và còn thiếu trên số lượt đủ điều kiện; tỷ lệ do hệ thống tính."
+            rows={data?.checkInByParticipant}
+            getLabel={(item) =>
+              normalize(item.participantType) === "buyer"
+                ? "Người mua"
+                : normalize(item.participantType) === "seller"
+                  ? "Người bán"
+                  : labelFor(item.participantType)
+            }
+          />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <KpiCard
@@ -3162,63 +3322,21 @@ export default function AdminDashboardModulePage({
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-                Điểm danh theo loại tài khoản
-              </p>
-
-              <p className="mt-1 text-xs leading-5 text-textLight">
-                Lượt điểm danh của lịch kiểm định đã đến giờ hẹn trong kỳ, gộp theo vai trò tài khoản của người tham gia.
-              </p>
-
-              <div className="mt-4 space-y-3">
-                {(data?.checkInByAccountRole || []).length === 0 ? (
-                  <p className="rounded-xl bg-background px-4 py-5 text-center text-sm text-textLight">
-                    Chưa có dữ liệu.
-                  </p>
-                ) : (
-                  (data?.checkInByAccountRole || []).map((item) => (
-                    <div
-                      key={item.participantType}
-                      className="rounded-xl border border-border bg-background/60 p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-black text-text">
-                            {labelFor(item.participantType)}
-                          </p>
-
-                          <p className="mt-1 text-xs text-textLight">
-                            {formatNumber(item.checkedInCount)}/
-                            {formatNumber(item.eligibleCount)} đã điểm danh
-                          </p>
-                        </div>
-
-                        <span className="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
-                          {formatPercent(item.checkInRate)}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/40">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{
-                            width: `${Math.min(100, Math.max(0, Number(item.checkInRate) || 0))}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
+            <CheckInGroupedChart
+              title="Điểm danh theo loại tài khoản"
+              description="Lượt điểm danh của lịch kiểm định đã đến giờ hẹn trong kỳ, gộp theo vai trò tài khoản; mỗi hàng là lượt tham gia, không phải số người riêng biệt."
+              rows={data?.checkInByAccountRole}
+              getLabel={(item) =>
+                labelFor(item.participantType)
+              }
+            />
 
             <DashboardHorizontalBarChart
               title="Khu vực có lịch hẹn trong kỳ"
               description="Số lịch hẹn hiệu lực theo thời điểm hẹn trong kỳ, gộp theo thành phố/phường của bài đăng liên quan và cách giao nhận."
               rows={(data?.regions || []).map((item) => ({
                 key: `${item.city}|${item.ward}|${item.deliveryMethod ?? ""}`,
-                label: `${item.city || "Chưa rõ"}${item.ward ? ` / ${item.ward}` : ""} · ${labelFor(item.deliveryMethod ?? "Unspecified")}`,
+                label: `${domainTextOrUnknown(item.city)} / ${domainTextOrUnknown(item.ward)} · ${labelFor(item.deliveryMethod ?? "Unspecified")}`,
                 count: item.appointmentCount,
               }))}
               getLabel={(item) => item.label}
@@ -3316,7 +3434,7 @@ export default function AdminDashboardModulePage({
             title="Kết quả giải quyết trong kỳ"
             description="Phân bố kết quả của các tranh chấp được giải quyết trong kỳ."
             rows={data?.resolutionDistribution}
-            getLabel={(item) => labelFor(item.label || item.key)}
+            getLabel={(item) => labelFor(item.key)}
           />
 
         <DashboardLineChart
@@ -3517,6 +3635,14 @@ export default function AdminDashboardModulePage({
         <AdminSectionTabs
           ariaLabel="Khu vực Lịch hẹn"
           items={APPOINTMENT_SECTION_TABS}
+        />
+      )}
+
+      {(dashboard === "business-overview" ||
+        dashboard === "business-demand") && (
+        <AdminSectionTabs
+          ariaLabel="Khu vực Doanh nghiệp"
+          items={BUSINESS_SECTION_TABS}
         />
       )}
 

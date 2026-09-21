@@ -532,10 +532,48 @@ const PostModerationPage = () => {
     }
   };
 
-  const getPostTitle = (post) => {
-    if (post.productName) return post.productName;
-    if (post.description) return post.description.substring(0, 50) + "...";
-    return "Bài đăng chưa cập nhật tên";
+  const getPostTitle = (post) =>
+    String(post?.productName || "").trim() ||
+    "Bài đăng chưa cập nhật tên";
+
+  const getPostTypeMeta = (postType) => {
+    const key = String(postType || "")
+      .trim()
+      .toLowerCase();
+
+    if (!key) {
+      return {
+        label: "—",
+        shortLabel: "Chưa xác định",
+        className: "bg-textLight",
+        textClassName: "text-textLight",
+      };
+    }
+
+    if (key === "buy") {
+      return {
+        label: "THU MUA",
+        shortLabel: "Thu mua",
+        className: "bg-error",
+        textClassName: "text-error",
+      };
+    }
+
+    if (key === "sell") {
+      return {
+        label: "ĐĂNG BÁN",
+        shortLabel: "Bán",
+        className: "bg-success",
+        textClassName: "text-success",
+      };
+    }
+
+    return {
+      label: "CHƯA XÁC ĐỊNH",
+      shortLabel: "Chưa xác định",
+      className: "bg-textLight",
+      textClassName: "text-textLight",
+    };
   };
 
   return (
@@ -781,11 +819,14 @@ const PostModerationPage = () => {
                     <h3
                       className={`font-semibold text-sm line-clamp-2 ${isSelected ? "text-primary" : "text-text"}`}
                     >
-                      {post.postType === "Buy" ? (
-                        <span className="text-error mr-1">[Thu mua]</span>
-                      ) : (
-                        <span className="text-success mr-1">[Bán]</span>
-                      )}
+                      {(() => {
+                        const postTypeMeta = getPostTypeMeta(post.postType);
+                        return (
+                          <span className={`${postTypeMeta.textClassName} mr-1`}>
+                            [{postTypeMeta.shortLabel}]
+                          </span>
+                        );
+                      })()}
                       {getPostTitle(post)}
                     </h3>
                   </div>
@@ -876,11 +917,16 @@ const PostModerationPage = () => {
             <div className="shrink-0 flex items-center justify-between gap-4 border-b border-border bg-white px-5 py-4 shadow-sm z-10">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-bold text-white ${selectedPost.postType === "Buy" ? "bg-error" : "bg-success"}`}
-                  >
-                    {selectedPost.postType === "Buy" ? "THU MUA" : "ĐĂNG BÁN"}
-                  </span>
+                  {(() => {
+                    const postTypeMeta = getPostTypeMeta(selectedPost.postType);
+                    return (
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-bold text-white ${postTypeMeta.className}`}
+                      >
+                        {postTypeMeta.label}
+                      </span>
+                    );
+                  })()}
                   <h1 className="text-2xl font-bold text-text">
                     {getPostTitle(selectedPost)}
                   </h1>

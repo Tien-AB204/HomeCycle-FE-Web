@@ -3,7 +3,10 @@ import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import platformPolicyApi, {
   PLATFORM_POLICY_TYPES,
 } from "../../services/apis/platformPolicyApi";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const POLICY_TABS = [
   {
@@ -403,8 +406,8 @@ const getErrorMessage = (
 
   return (
     getSafeValidationMessage(responseData?.errors) ||
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     fallback
   );
 };

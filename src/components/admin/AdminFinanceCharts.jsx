@@ -1,21 +1,34 @@
-const formatMoney = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    },
-  ).format(Number(value) || 0);
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const formatCompactMoney = (value) =>
-  `${new Intl.NumberFormat(
-    "vi-VN",
-    {
-      notation: "compact",
-      maximumFractionDigits: 1,
-    },
-  ).format(Number(value) || 0)} ₫`;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const formatMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(number);
+};
+
+const formatCompactMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : `${new Intl.NumberFormat("vi-VN", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(number)} ₫`;
+};
 
 const formatDateShort = (value) => {
   const parts =
@@ -79,16 +92,12 @@ export function FinanceCashFlowChart({
   ];
 
   const allValues =
-    safeRows.flatMap(
-      (row) =>
-        definitions.map(
-          (definition) =>
-            Number(
-              row?.[
-                definition.key
-              ],
-            ) || 0,
-        ),
+    safeRows.flatMap((row) =>
+      definitions
+        .map((definition) =>
+          toFiniteNumber(row?.[definition.key]),
+        )
+        .filter((value) => value !== null),
     );
 
   const minValue =
@@ -140,13 +149,7 @@ export function FinanceCashFlowChart({
 
   const yFor = (value) =>
     top +
-    (
-      (
-        maxValue -
-        (Number(value) || 0)
-      ) /
-      domain
-    ) *
+    ((maxValue - value) / domain) *
       usableHeight;
 
   const tickIndexes =
@@ -305,30 +308,22 @@ export function FinanceCashFlowChart({
           {definitions.map(
             (definition) => {
               const points =
-                safeRows.map(
-                  (
-                    row,
-                    index,
-                  ) => ({
-                    x:
-                      xFor(index),
-                    y:
-                      yFor(
-                        row?.[
-                          definition
-                            .key
-                        ],
-                      ),
-                    value:
-                      Number(
-                        row?.[
-                          definition
-                            .key
-                        ],
-                      ) || 0,
-                    row,
-                  }),
-                );
+                safeRows
+                  .map((row, index) => {
+                    const value = toFiniteNumber(
+                      row?.[definition.key],
+                    );
+
+                    return value === null
+                      ? null
+                      : {
+                          x: xFor(index),
+                          y: yFor(value),
+                          value,
+                          row,
+                        };
+                  })
+                  .filter(Boolean);
 
               return (
                 <g
@@ -419,14 +414,10 @@ export function FinanceAmountBarChart({
   const maxAmount =
     Math.max(
       1,
-      ...safeRows.map(
-        (item) =>
-          Math.abs(
-            Number(
-              item?.amount,
-            ) || 0,
-          ),
-      ),
+      ...safeRows.map((item) => {
+        const amount = toFiniteNumber(item?.amount);
+        return amount === null ? 0 : Math.abs(amount);
+      }),
     );
 
   return (
@@ -453,11 +444,12 @@ export function FinanceAmountBarChart({
               index,
             ) => {
               const amount =
-                Number(
+                toFiniteNumber(
                   item?.amount,
-                ) || 0;
+                );
 
               const width =
+                amount !== null &&
                 Math.abs(
                   amount,
                 ) > 0

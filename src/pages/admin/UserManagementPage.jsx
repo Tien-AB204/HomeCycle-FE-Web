@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import adminUserApi from "../../services/apis/adminUserApi";
@@ -7,6 +8,7 @@ import Avatar from "../../components/shared/Avatar";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import AdminUserDetailModal from "../../features/admin/users/AdminUserDetailModal";
 import { USER_SECTION_TABS } from "../../constants/adminSections";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_TIME = 400;
@@ -81,13 +83,13 @@ const normalizeValue = (value) =>
 
 const getRoleMeta = (role) =>
   ROLE_META[normalizeValue(role)] || {
-    label: role || "Chưa xác định",
+    label: "Chưa xác định",
     className: "border-border bg-background text-textLight",
   };
 
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
-    label: status || "Chưa xác định",
+    label: "Chưa xác định",
     className: "border-border bg-background text-textLight",
   };
 
@@ -95,8 +97,8 @@ const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     "Không thể thực hiện yêu cầu quản lý người dùng."
   );
 };
@@ -186,7 +188,9 @@ const Badge = ({ meta }) => (
 
 export default function UserManagementPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const currentUserId = getUserId(user);
+  const linkedUserId = String(searchParams.get("userId") || "").trim();
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -199,7 +203,7 @@ export default function UserManagementPage() {
     error: "",
     result: null,
   });
-  const [detailUserId, setDetailUserId] = useState("");
+  const [detailUserId, setDetailUserId] = useState(linkedUserId);
   const [pendingAction, setPendingAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -1044,7 +1048,7 @@ export default function UserManagementPage() {
                   disabled={
                     moderatorBusy
                   }
-                  placeholder="moderator@example.com"
+                  placeholder="kiemduyet@homecycle.vn"
                   className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-background"
                 />
 
@@ -1080,7 +1084,7 @@ export default function UserManagementPage() {
                   disabled={
                     moderatorBusy
                   }
-                  placeholder="moderator_01"
+                  placeholder="kiemduyet_01"
                   className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-background"
                 />
 

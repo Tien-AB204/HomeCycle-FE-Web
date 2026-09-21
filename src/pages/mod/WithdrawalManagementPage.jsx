@@ -30,6 +30,7 @@ import {
   filterItemsByMonth,
   sortItemsByDate,
 } from "../../utils/sortListItems";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const { RangePicker } = DatePicker;
 
@@ -225,8 +226,8 @@ const getWithdrawalActionErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.message ||
-    responseData?.error?.message ||
+    getSafeProblemDetail(responseData?.message) ||
+    getSafeProblemDetail(responseData?.error?.message) ||
     "Không thể xử lý yêu cầu rút tiền. Vui lòng thử lại."
   );
 };

@@ -56,8 +56,8 @@ const ACTOR_TYPE_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
-  { value: "1", name: "HttpApi", label: "API" },
-  { value: "2", name: "Webhook", label: "Webhook" },
+  { value: "1", name: "HttpApi", label: "Yêu cầu từ ứng dụng" },
+  { value: "2", name: "Webhook", label: "Thông báo từ dịch vụ ngoài" },
   {
     value: "3",
     name: "BackgroundJob",
@@ -752,7 +752,7 @@ export default function AuditLogPage() {
                 )
               }
               maxLength={100}
-              placeholder="VD: User.Login"
+              placeholder="Nhập mã hành động cần tìm"
               className="mt-1.5 w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
             />
           </label>
@@ -769,7 +769,7 @@ export default function AuditLogPage() {
                 )
               }
               maxLength={100}
-              placeholder="VD: Order"
+              placeholder="Ví dụ: Đơn hàng"
               className="mt-1.5 w-full rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
             />
           </label>
@@ -1393,7 +1393,7 @@ export default function AuditLogPage() {
                         />
                         <div className="sm:col-span-2">
                           <DetailField
-                            label="User agent"
+                            label="Trình duyệt / thiết bị"
                             value={
                               detail.userAgent
                             }
@@ -1427,7 +1427,7 @@ export default function AuditLogPage() {
 
                       <div className="rounded-2xl border border-border bg-background/60 p-4">
                         <p className="text-xs font-black uppercase tracking-wide text-primary">
-                          Metadata
+                          Dữ liệu bổ sung
                         </p>
                         <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-white p-3 text-xs text-text">
                           {formatJsonPayload(
