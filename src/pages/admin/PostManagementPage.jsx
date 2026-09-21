@@ -55,15 +55,37 @@ const getStatusMeta = (status) =>
     className: "border-border bg-background text-textLight",
   };
 
-const getPostTypeMeta = (postType) => {
-  const isBuyPost = normalizeValue(postType) === "buy";
+/*
+ * PostType của Backend có thể null: chỉ "Buy"/"Sell" được gán nhãn; trống
+ * hiển thị "—", giá trị lạ hiển thị "Chưa xác định". Không suy ra Sell.
+ */
+const POST_TYPE_META = {
+  buy: {
+    label: "Tin thu mua",
+    className: "border-success/30 bg-success/10 text-success",
+  },
+  sell: {
+    label: "Tin đăng bán",
+    className: "border-primary/30 bg-primary/10 text-primary",
+  },
+};
 
-  return {
-    label: isBuyPost ? "Tin thu mua" : "Tin đăng bán",
-    className: isBuyPost
-      ? "border-success/30 bg-success/10 text-success"
-      : "border-primary/30 bg-primary/10 text-primary",
-  };
+const getPostTypeMeta = (postType) => {
+  const key = normalizeValue(postType);
+
+  if (!key) {
+    return {
+      label: "—",
+      className: "border-border bg-background text-textLight",
+    };
+  }
+
+  return (
+    POST_TYPE_META[key] || {
+      label: "Chưa xác định",
+      className: "border-border bg-background text-textLight",
+    }
+  );
 };
 
 const formatCurrency = (value) => {

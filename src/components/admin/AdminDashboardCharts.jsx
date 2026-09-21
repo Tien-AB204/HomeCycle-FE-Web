@@ -140,50 +140,46 @@ export function DashboardDonutChart({
       0,
     );
 
+  /*
+   * Phần trăm lấy nguyên từ Backend (DistributionItem.Percentage, thang
+   * 0..100). Không tự tính lại từ count/tổng: nếu Backend không trả phần
+   * trăm hợp lệ thì hàng đó không vẽ cung và hiển thị "—".
+   */
   const segments =
-    safeRows.map(
-      (item, index) => {
+    safeRows.reduce(
+      (accumulator, item, index) => {
         const count =
           Number(item?.count) || 0;
 
-        const percent =
-          total > 0
-            ? (count / total) * 100
-            : 0;
+        const rawPercent =
+          item?.percentage;
+
+        const hasPercent =
+          rawPercent !== null &&
+          rawPercent !== undefined &&
+          rawPercent !== "" &&
+          Number.isFinite(
+            Number(rawPercent),
+          );
+
+        const percent = hasPercent
+          ? Math.min(
+              100,
+              Math.max(
+                0,
+                Number(rawPercent),
+              ),
+            )
+          : null;
 
         const offset =
-          safeRows
-            .slice(0, index)
-            .reduce(
-              (
-                sum,
-                previousItem,
-              ) => {
-                const previousCount =
-                  Number(
-                    previousItem?.count,
-                  ) || 0;
+          accumulator.nextOffset;
 
-                const previousPercent =
-                  total > 0
-                    ? (
-                        previousCount /
-                        total
-                      ) * 100
-                    : 0;
-
-                return (
-                  sum +
-                  previousPercent
-                );
-              },
-              0,
-            );
-
-        return {
+        accumulator.items.push({
           ...item,
           count,
           percent,
+          hasPercent,
           offset,
           tone:
             toneFor(
@@ -191,9 +187,17 @@ export function DashboardDonutChart({
                 item?.label,
               index,
             ),
+        });
+
+        return {
+          items: accumulator.items,
+          nextOffset: hasPercent
+            ? offset + percent
+            : offset,
         };
       },
-    );
+      { items: [], nextOffset: 0 },
+    ).items;
 
   return (
     <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
@@ -232,6 +236,7 @@ export function DashboardDonutChart({
                 item,
                 index,
               ) =>
+                item.hasPercent &&
                 item.percent > 0 && (
                   <circle
                     key={`${item.key}-${index}`}
@@ -305,10 +310,11 @@ export function DashboardDonutChart({
                   title={`${getLabel(item)}: ${formatNumber(item.count)}`}
                 >
                   <span className="text-xs font-black text-text">
-                    {formatDecimal(
-                      item.percent,
-                    )}
-                    %
+                    {item.hasPercent
+                      ? `${formatDecimal(
+                          item.percent,
+                        )}%`
+                      : "—"}
                   </span>
 
                   <span className="text-[11px] font-semibold text-textLight">

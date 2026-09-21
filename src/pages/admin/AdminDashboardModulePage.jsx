@@ -796,6 +796,168 @@ const EmptyPerformanceChart = ({
     </div>
   </section>
 );
+/*
+ * Xếp hạng doanh nghiệp theo giá trị đơn hoàn tất, chuyển tab Bán / Thu mua.
+ * Giá trị là tiền mua bán giữa người dùng (không phải doanh thu HomeCycle);
+ * dữ liệu lấy nguyên từ topSellers/topBuyers, không gọi thêm API người dùng.
+ */
+const RANKING_TABS = [
+  { key: "sellers", label: "Bán" },
+  { key: "buyers", label: "Thu mua" },
+];
+
+const BusinessRankingTabs = ({ sellers, buyers }) => {
+  const [tab, setTab] = useState("sellers");
+  const isSellers = tab === "sellers";
+  const source = isSellers ? sellers : buyers;
+
+  const rows = (Array.isArray(source) ? source : []).map((item) => ({
+    key: item.userId,
+    label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
+    amount: item.gmv,
+  }));
+
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-black text-text">
+            Doanh nghiệp giao dịch nhiều nhất
+          </h3>
+
+          <p className="mt-1 text-xs leading-5 text-textLight">
+            {isSellers
+              ? "Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên bán."
+              : "Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên thu mua; đây là giá trị hàng đã mua, không phải doanh thu."}
+          </p>
+        </div>
+
+        <div
+          role="tablist"
+          aria-label="Chọn vai trò xếp hạng"
+          className="flex gap-1 rounded-xl border border-border bg-background p-1"
+        >
+          {RANKING_TABS.map((item) => {
+            const active = tab === item.key;
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(item.key)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${
+                  active
+                    ? "bg-primary text-white"
+                    : "text-textLight hover:text-text"
+                }`}
+              >
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <FinanceAmountBarChart
+          title={isSellers ? "Giá trị bán trong kỳ" : "Giá trị thu mua trong kỳ"}
+          rows={rows}
+          getLabel={(item) => item.label}
+        />
+      </div>
+    </section>
+  );
+};
+
+/*
+ * Điểm danh theo nhóm: cột đôi (đã điểm danh / thiếu) trên số lượt đủ điều
+ * kiện, kèm tỷ lệ do Backend tính. Chỉ lịch kiểm định đã đến giờ hẹn; các
+ * hàng là lượt tham gia, không phải số người riêng biệt.
+ */
+const CheckInGroupedChart = ({ title, description, rows, getLabel }) => {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const maxEligible = Math.max(
+    1,
+    ...safeRows.map((item) => Number(item?.eligibleCount) || 0),
+  );
+
+  const heightFor = (value) =>
+    `${Math.min(100, Math.max(0, ((Number(value) || 0) / maxEligible) * 100))}%`;
+
+  return (
+    <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
+      <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
+        {title}
+      </p>
+
+      {description && (
+        <p className="mt-1 text-xs leading-5 text-textLight">{description}</p>
+      )}
+
+      {safeRows.length === 0 ? (
+        <p className="mt-4 rounded-xl bg-background px-4 py-5 text-center text-sm text-textLight">
+          Chưa có dữ liệu.
+        </p>
+      ) : (
+        <>
+          <div className="mt-5 flex items-end justify-around gap-6">
+            {safeRows.map((item) => {
+              const label = getLabel(item);
+              const checkedIn = Number(item?.checkedInCount) || 0;
+              const missing = Number(item?.missingCount) || 0;
+              const rate = formatPercent(item?.checkInRate);
+
+              return (
+                <div
+                  key={item?.participantType || label}
+                  className="flex min-w-0 flex-1 flex-col items-center"
+                  title={`${label}: ${formatNumber(checkedIn)} đã điểm danh, ${formatNumber(missing)} thiếu trên ${formatNumber(item?.eligibleCount)} lượt · tỷ lệ ${rate}`}
+                >
+                  <span className="mb-2 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-black text-primary">
+                    {rate}
+                  </span>
+
+                  <div className="flex h-36 items-end gap-2">
+                    <div className="flex h-full w-8 flex-col justify-end">
+                      <div
+                        className="w-full rounded-t-lg bg-success transition-all duration-300"
+                        style={{ height: heightFor(checkedIn) }}
+                      />
+                    </div>
+                    <div className="flex h-full w-8 flex-col justify-end">
+                      <div
+                        className="w-full rounded-t-lg bg-warning transition-all duration-300"
+                        style={{ height: heightFor(missing) }}
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-sm font-black text-text">{label}</p>
+
+                  <p className="text-[11px] font-semibold text-textLight">
+                    {formatNumber(checkedIn)} đã điểm danh · {formatNumber(missing)} thiếu
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-4 text-xs font-bold text-textLight">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-success" /> Đã điểm danh
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-warning" /> Thiếu điểm danh
+            </span>
+          </div>
+        </>
+      )}
+    </section>
+  );
+};
+
 const DemandGroup = ({
   title,
   group,
@@ -2229,29 +2391,33 @@ export default function AdminDashboardModulePage({
           />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-3">
-          <DistributionPanel
+        <div className="grid gap-6 xl:grid-cols-2">
+          <DashboardDonutChart
             title="Trạng thái tài khoản"
+            description="Tài khoản doanh nghiệp theo trạng thái hiện tại."
             rows={data?.byUserStatus}
-            dashboard="business-user-status"
+            getLabel={(item) =>
+              labelFor(item.key, "business-user-status")
+            }
           />
 
-          <DistributionPanel
+          <DashboardDonutChart
             title="Trạng thái hồ sơ"
-            rows={
-              data?.byProfileStatus
+            description="Hồ sơ doanh nghiệp theo trạng thái xét duyệt hiện tại."
+            rows={data?.byProfileStatus}
+            getLabel={(item) =>
+              labelFor(item.key, "business-profile-status")
             }
-            dashboard="business-profile-status"
-          />
-
-          <DistributionPanel
-            title="Mô hình kinh doanh"
-            rows={
-              data?.byBusinessModel
-            }
-            dashboard="business-model"
           />
         </div>
+
+        <DistributionPanel
+          title="Mô hình kinh doanh"
+          rows={
+            data?.byBusinessModel
+          }
+          dashboard="business-model"
+        />
       </>
     );
 
@@ -2578,54 +2744,31 @@ export default function AdminDashboardModulePage({
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
-          <DashboardHorizontalBarChart
+          <DashboardDonutChart
             title="Lý do hủy đơn"
-            description="Số đơn đã hủy (tạo trong kỳ, có doanh nghiệp tham gia) theo lý do hủy được ghi nhận."
-            rows={(data?.cancellationReasons || []).map((item) => ({
-              key: item.key,
-              label: normalize(item.key) === "unspecified" ? "Không ghi lý do" : item.label,
-              count: item.count,
-            }))}
-            getLabel={(item) => item.label}
-            hideZero
+            description="Đơn đã hủy (tạo trong kỳ, có doanh nghiệp tham gia) theo lý do hủy được ghi nhận; tỷ lệ tính trên số đơn đã hủy."
+            rows={(data?.cancellationReasons || []).filter(
+              (item) => (Number(item?.count) || 0) > 0,
+            )}
+            getLabel={(item) =>
+              normalize(item.key) === "unspecified" ? "Không ghi lý do" : domainLabelFor(item)
+            }
           />
 
-          <DashboardHorizontalBarChart
+          <DashboardDonutChart
             title="Nguyên nhân tranh chấp"
-            description="Số tranh chấp về đơn hàng của các đơn tạo trong kỳ có doanh nghiệp tham gia, theo danh mục nguyên nhân."
-            rows={(data?.disputeReasons || []).map((item) => ({
-              key: item.key,
-              label: normalize(item.key) === "unspecified" ? "Chưa xác định" : item.label,
-              count: item.count,
-            }))}
-            getLabel={(item) => item.label}
-            hideZero
+            description="Tranh chấp về đơn hàng của các đơn tạo trong kỳ có doanh nghiệp tham gia, theo danh mục nguyên nhân; tỷ lệ tính trên số tranh chấp."
+            rows={(data?.disputeReasons || []).filter(
+              (item) => (Number(item?.count) || 0) > 0,
+            )}
+            getLabel={domainLabelFor}
           />
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          <FinanceAmountBarChart
-            title="Doanh nghiệp bán nhiều nhất"
-            description="Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên bán."
-            rows={(data?.topSellers || []).map((item) => ({
-              key: item.userId,
-              label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
-              amount: item.gmv,
-            }))}
-            getLabel={(item) => item.label}
-          />
-
-          <FinanceAmountBarChart
-            title="Doanh nghiệp mua nhiều nhất"
-            description="Tối đa 10 doanh nghiệp theo giá trị đơn hoàn tất trong kỳ mà họ là bên mua."
-            rows={(data?.topBuyers || []).map((item) => ({
-              key: item.userId,
-              label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
-              amount: item.gmv,
-            }))}
-            getLabel={(item) => item.label}
-          />
-        </div>
+        <BusinessRankingTabs
+          sellers={data?.topSellers}
+          buyers={data?.topBuyers}
+        />
 
         <div className="grid gap-6 xl:grid-cols-2">
           {(data?.contributionSeries || []).some(
@@ -3179,6 +3322,19 @@ export default function AdminDashboardModulePage({
               </p>
             </section>
           </div>
+
+          <CheckInGroupedChart
+            title="Điểm danh theo nhóm"
+            description="Lượt điểm danh của lịch kiểm định đã đến giờ hẹn, so sánh đã điểm danh và còn thiếu trên số lượt đủ điều kiện; tỷ lệ do hệ thống tính."
+            rows={data?.checkInByParticipant}
+            getLabel={(item) =>
+              normalize(item.participantType) === "buyer"
+                ? "Người mua"
+                : normalize(item.participantType) === "seller"
+                  ? "Người bán"
+                  : labelFor(item.participantType)
+            }
+          />
 
           <div className="grid gap-4 sm:grid-cols-3">
             <KpiCard

@@ -1014,6 +1014,8 @@ export default function AdminFinanceDashboardPage() {
               ),
             count:
               item?.count,
+            percentage:
+              item?.percentageOfCreated,
           }),
         )
       : [];

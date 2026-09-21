@@ -245,7 +245,17 @@ export default function AdminPostDetailModal({
   const attributes = Array.isArray(product.attributeValues)
     ? product.attributeValues
     : [];
-  const isBuyPost = normalizeValue(post?.postType) === "buy";
+  // Chỉ "Buy" rõ ràng mới là tin thu mua; null/lạ không được coi là bán.
+  const postTypeKey = normalizeValue(post?.postType);
+  const isBuyPost = postTypeKey === "buy";
+  const isSellPost = postTypeKey === "sell";
+  const postTypeLabel = !postTypeKey
+    ? "—"
+    : isBuyPost
+      ? "Tin thu mua"
+      : isSellPost
+        ? "Tin đăng bán"
+        : "Chưa xác định";
 
   return (
     <div
@@ -380,16 +390,18 @@ export default function AdminPostDetailModal({
                       className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
                         isBuyPost
                           ? "bg-success/10 text-success"
-                          : "bg-primary/10 text-primary"
+                          : isSellPost
+                            ? "bg-primary/10 text-primary"
+                            : "bg-background text-textLight"
                       }`}
                     >
-                      {isBuyPost ? "Tin thu mua" : "Tin đăng bán"}
+                      {postTypeLabel}
                     </span>
                   </div>
 
                   <div>
                     <p className="text-sm font-semibold text-textLight">
-                      {isBuyPost ? "Giá thu mua dự kiến" : "Giá bán"}
+                      {isBuyPost ? "Giá thu mua dự kiến" : "Giá"}
                     </p>
                     <p className="mt-1 text-3xl font-black text-text">
                       {formatCurrency(post.basePrice)}

@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { DashboardLineChart } from "../../../components/admin/AdminDashboardCharts";
+import {
+  DashboardHorizontalBarChart,
+  DashboardLineChart,
+} from "../../../components/admin/AdminDashboardCharts";
+import { FinanceAmountBarChart } from "../../../components/admin/AdminFinanceCharts";
 import DashboardPeriodControls from "../../../components/admin/DashboardPeriodControls";
 import {
   DEFAULT_DASHBOARD_PERIOD,
@@ -212,6 +216,30 @@ export default function SubscriptionAnalyticsPanel({ packages = [] }) {
                   axisValueFormatter={formatCompactMoney}
                 />
               )}
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <DashboardHorizontalBarChart
+                  title="Doanh nghiệp đang dùng theo gói"
+                  description="Số tài khoản doanh nghiệp hiện có gói còn hiệu lực, theo từng gói (trạng thái hiện tại, không phụ thuộc kỳ)."
+                  rows={packageRows.map((row) => ({
+                    key: row.packageId,
+                    label: row.name,
+                    count: row.activeBusinessCount,
+                  }))}
+                  getLabel={(item) => item.label}
+                />
+
+                <FinanceAmountBarChart
+                  title="Doanh thu theo gói trong kỳ"
+                  description="Phí gói đăng ký thanh toán thành công trong kỳ, theo từng gói doanh nghiệp."
+                  rows={packageRows.map((row) => ({
+                    key: row.packageId,
+                    label: row.name,
+                    amount: row.revenue,
+                  }))}
+                  getLabel={(item) => item.label}
+                />
+              </div>
 
               <section className="rounded-2xl border border-border bg-white shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
                 <div className="border-b border-border px-5 py-4">
