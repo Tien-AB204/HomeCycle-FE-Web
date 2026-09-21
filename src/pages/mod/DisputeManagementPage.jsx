@@ -208,7 +208,6 @@ const getCategoryLabel = (category) => {
 
   return (
     String(category.name || "").trim() ||
-    String(category.code || "").trim() ||
     "Chưa xác định"
   );
 };
