@@ -502,25 +502,27 @@ function HealthCard({
   description,
   countOnly = false,
 }) {
-  const count =
-    Number(
-      countOnly
-        ? metric
-        : metric?.count,
-    ) || 0;
+  const count = toFiniteNumber(
+    countOnly ? metric : metric?.count,
+  );
 
-  const amount =
-    Number(
-      countOnly
-        ? 0
-        : metric?.amount,
-    ) || 0;
+  const amount = countOnly
+    ? null
+    : toFiniteNumber(metric?.amount);
 
   const active =
-    count > 0;
+    count !== null && count > 0;
+
+  const unavailable = count === null;
 
   const style =
-    active
+    unavailable
+      ? {
+          border: "border-border",
+          background: "bg-background/70",
+          value: "text-textLight",
+        }
+      : active
       ? {
           critical: {
             border:

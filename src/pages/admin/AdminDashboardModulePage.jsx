@@ -427,6 +427,13 @@ const formatPercent = (value) => {
     : `${formatDecimal(number)}%`;
 };
 
+const sumWhenComplete = (...values) => {
+  const numbers = values.map(toFiniteNumber);
+  return numbers.some((value) => value === null)
+    ? null
+    : numbers.reduce((sum, value) => sum + value, 0);
+};
+
 const formatHours = (value) => {
   const number = toFiniteNumber(value);
   return number === null
@@ -3252,20 +3259,10 @@ export default function AdminDashboardModulePage({
                 <KpiCard
                   label="Thiếu điểm danh"
                   value={formatNumber(
-                    (
-                      Number(
-                        data
-                          ?.inspectionCheckIn
-                          ?.partialCheckInAppointmentCount,
-                      ) || 0
-                    ) +
-                      (
-                        Number(
-                          data
-                            ?.inspectionCheckIn
-                            ?.noCheckInAppointmentCount,
-                        ) || 0
-                      ),
+                    sumWhenComplete(
+                      data?.inspectionCheckIn?.partialCheckInAppointmentCount,
+                      data?.inspectionCheckIn?.noCheckInAppointmentCount,
+                    ),
                   )}
                   hint={`${formatNumber(
                     data?.inspectionCheckIn

@@ -145,13 +145,10 @@ export function DashboardDonutChart({
     );
   }
 
-  const total =
-    safeRows.reduce(
-      (sum, item) =>
-        sum +
-        (Number(item?.count) || 0),
-      0,
-    );
+  const countValues = safeRows.map((item) => toFiniteNumber(item?.count));
+  const total = countValues.some((value) => value === null)
+    ? null
+    : countValues.reduce((sum, value) => sum + value, 0);
 
   /*
    * Phần trăm lấy nguyên từ Backend (DistributionItem.Percentage, thang
@@ -161,8 +158,7 @@ export function DashboardDonutChart({
   const segments =
     safeRows.reduce(
       (accumulator, item, index) => {
-        const count =
-          Number(item?.count) || 0;
+        const count = toFiniteNumber(item?.count);
 
         const rawPercent =
           item?.percentage;
@@ -359,11 +355,7 @@ export function DashboardColumnChart({
   const maxValue =
     Math.max(
       1,
-      ...safeRows.map(
-        (item) =>
-          Number(item?.count) ||
-          0,
-      ),
+      ...safeRows.map((item) => toFiniteNumber(item?.count) ?? 0),
     );
 
   return (
@@ -399,13 +391,10 @@ export function DashboardColumnChart({
                 item,
                 index,
               ) => {
-                const count =
-                  Number(
-                    item?.count,
-                  ) || 0;
+                const count = toFiniteNumber(item?.count);
 
                 const height =
-                  count > 0
+                  count !== null && count > 0
                     ? Math.max(
                         8,
                         (count /
@@ -477,18 +466,15 @@ export function DashboardHorizontalBarChart({
     hideZero
       ? safeRows.filter(
           (item) =>
-            (Number(item?.count) || 0) >
-            0,
+            toFiniteNumber(item?.count) === null ||
+            toFiniteNumber(item?.count) > 0,
         )
       : safeRows;
 
   const maxValue =
     Math.max(
       1,
-      ...visibleRows.map(
-        (item) =>
-          Number(item?.count) || 0,
-      ),
+      ...visibleRows.map((item) => toFiniteNumber(item?.count) ?? 0),
     );
 
   return (
@@ -514,13 +500,10 @@ export function DashboardHorizontalBarChart({
               item,
               index,
             ) => {
-              const count =
-                Number(
-                  item?.count,
-                ) || 0;
+              const count = toFiniteNumber(item?.count);
 
               const width =
-                count > 0
+                count !== null && count > 0
                   ? Math.max(
                       3,
                       (count /

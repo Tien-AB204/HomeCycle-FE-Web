@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import adminUserApi from "../../services/apis/adminUserApi";
@@ -187,7 +188,9 @@ const Badge = ({ meta }) => (
 
 export default function UserManagementPage() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const currentUserId = getUserId(user);
+  const linkedUserId = String(searchParams.get("userId") || "").trim();
   const [keyword, setKeyword] = useState("");
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
@@ -200,7 +203,7 @@ export default function UserManagementPage() {
     error: "",
     result: null,
   });
-  const [detailUserId, setDetailUserId] = useState("");
+  const [detailUserId, setDetailUserId] = useState(linkedUserId);
   const [pendingAction, setPendingAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState("");

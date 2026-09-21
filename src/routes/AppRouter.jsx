@@ -40,6 +40,7 @@ import AdminAppointmentHistoryPage from "../pages/admin/AdminAppointmentHistoryP
 import AdminDisputeHistoryPage from "../pages/admin/AdminDisputeHistoryPage";
 import AdminOrderHistoryPage from "../pages/admin/AdminOrderHistoryPage";
 import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
+import AdminReportedPostPage from "../pages/admin/AdminReportedPostPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
@@ -393,6 +394,11 @@ const AppRouter = () => {
           <Route path="users" element={<UserManagementPage />} />
 
           <Route path="posts" element={<PostManagementPage />} />
+
+          <Route
+            path="posts/reported"
+            element={<AdminReportedPostPage />}
+          />
 
           <Route
             path="finance-management"

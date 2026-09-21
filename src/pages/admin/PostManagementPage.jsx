@@ -106,6 +106,17 @@ const formatCurrency = (value) => {
   }).format(amount);
 };
 
+const formatQuantity = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const quantity = Number(value);
+  return Number.isFinite(quantity)
+    ? new Intl.NumberFormat("vi-VN").format(quantity)
+    : "—";
+};
+
 const formatDate = (value) => {
   if (!value) {
     return "—";
@@ -480,7 +491,8 @@ export default function PostManagementPage() {
                         {formatCurrency(post.basePrice)}
                       </td>
                       <td className="px-4 py-4 text-textLight">
-                        {post.remainingQuantity ?? 0}/{post.quantity ?? 0}
+                        {formatQuantity(post.remainingQuantity)}/
+                        {formatQuantity(post.quantity)}
                       </td>
                       <td className="px-4 py-4">
                         <Badge meta={statusMeta} />
@@ -551,7 +563,8 @@ export default function PostManagementPage() {
                     <div>
                       <dt className="text-textLight">Số lượng còn lại</dt>
                       <dd className="mt-1 font-semibold text-text">
-                        {post.remainingQuantity ?? 0}/{post.quantity ?? 0}
+                        {formatQuantity(post.remainingQuantity)}/
+                        {formatQuantity(post.quantity)}
                       </dd>
                     </div>
                     <div>
