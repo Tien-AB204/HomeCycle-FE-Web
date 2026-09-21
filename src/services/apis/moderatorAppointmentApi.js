@@ -166,7 +166,7 @@ export const createAppointmentReadApi = ({ listPath, detailPath }) => ({
     ).trim();
 
     if (!responseAppointmentId) {
-      throw new Error("Response chi tiết lịch hẹn không hợp lệ.");
+      throw new Error("Dữ liệu chi tiết lịch hẹn không hợp lệ.");
     }
 
     return source;

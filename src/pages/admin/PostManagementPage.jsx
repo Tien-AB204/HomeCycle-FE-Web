@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
+import { POST_SECTION_TABS } from "../../constants/adminSections";
 import AdminPostDetailModal from "../../features/admin/posts/AdminPostDetailModal";
 import adminPostApi from "../../services/apis/adminPostApi";
 import PostThumbnail from "../../components/shared/PostThumbnail";
@@ -175,10 +177,6 @@ export default function PostManagementPage() {
   const [postTypeFilter, setPostTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedPost, setSelectedPost] = useState(null);
-  const [pendingDelete, setPendingDelete] = useState(null);
-  const [deleteBusy, setDeleteBusy] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -250,49 +248,10 @@ export default function PostManagementPage() {
     setPageNumber(1);
   };
 
-  const openDeleteConfirmation = (post) => {
-    if (!post?.postId || deleteBusy) {
-      return;
-    }
-
-    setSelectedPost(null);
-    setDeleteError("");
-    setSuccessMessage("");
-    setPendingDelete(post);
-  };
-
-  const closeDeleteConfirmation = () => {
-    if (deleteBusy) {
-      return;
-    }
-
-    setDeleteError("");
-    setPendingDelete(null);
-  };
-
-  const handleDelete = async () => {
-    if (!pendingDelete?.postId || deleteBusy) {
-      return;
-    }
-
-    setDeleteBusy(true);
-    setDeleteError("");
-
-    try {
-      await adminPostApi.delete(pendingDelete.postId);
-      setPendingDelete(null);
-      setSuccessMessage("Đã xóa bài đăng khỏi hệ thống.");
-      setPageNumber(1);
-      setRequestVersion((currentVersion) => currentVersion + 1);
-    } catch (error) {
-      setDeleteError(getErrorMessage(error));
-    } finally {
-      setDeleteBusy(false);
-    }
-  };
-
   return (
     <section className="space-y-6 p-4 sm:p-6">
+      <AdminSectionTabs ariaLabel="Khu vực Bài đăng" items={POST_SECTION_TABS} />
+
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           Quản trị nội dung
@@ -301,7 +260,7 @@ export default function PostManagementPage() {
           Quản lý bài đăng
         </h1>
         <p className="mt-1 text-sm text-textLight">
-          Theo dõi bài đăng bán, tin thu mua và xử lý nội dung không phù hợp.
+          Tra cứu bài đăng bán và tin thu mua ở chế độ chỉ xem. Việc xử lý nội dung thuộc Trung tâm kiểm duyệt.
         </p>
       </header>
 
@@ -367,22 +326,6 @@ export default function PostManagementPage() {
         </div>
       </div>
 
-      {successMessage && (
-        <div
-          role="status"
-          className="flex items-start justify-between gap-4 rounded-xl border border-success/20 bg-success/10 p-4 text-sm font-semibold text-success"
-        >
-          <span>{successMessage}</span>
-          <button
-            type="button"
-            onClick={() => setSuccessMessage("")}
-            aria-label="Đóng thông báo"
-            className="shrink-0 font-black"
-          >
-            ×
-          </button>
-        </div>
-      )}
 
       {isLoading && (
         <div
@@ -475,7 +418,6 @@ export default function PostManagementPage() {
                   const thumbnailUrl = getThumbnailUrl(post);
                   const statusMeta = getStatusMeta(post.status);
                   const postTypeMeta = getPostTypeMeta(post.postType);
-                  const isDeleted = normalizeValue(post.status) === "deleted";
                   const isBuyPost = normalizeValue(post.postType) === "buy";
 
                   return (
@@ -536,21 +478,6 @@ export default function PostManagementPage() {
                               visibility
                             </span>
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => openDeleteConfirmation(post)}
-                            disabled={isDeleted}
-                            title={
-                              isDeleted
-                                ? "Bài đăng đã bị xóa"
-                                : "Xóa bài đăng"
-                            }
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-error/20 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-border"
-                          >
-                            <span className="material-symbols-outlined text-[19px]">
-                              delete
-                            </span>
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -565,7 +492,6 @@ export default function PostManagementPage() {
               const thumbnailUrl = getThumbnailUrl(post);
               const statusMeta = getStatusMeta(post.status);
               const postTypeMeta = getPostTypeMeta(post.postType);
-              const isDeleted = normalizeValue(post.status) === "deleted";
               const isBuyPost = normalizeValue(post.postType) === "buy";
 
               return (
@@ -614,21 +540,13 @@ export default function PostManagementPage() {
                     </div>
                   </dl>
 
-                  <div className="mt-4 grid grid-cols-2 gap-2">
+                  <div className="mt-4">
                     <button
                       type="button"
                       onClick={() => setSelectedPost(post)}
-                      className="rounded-lg border border-primary px-3 py-2.5 text-sm font-bold text-primary"
+                      className="w-full rounded-lg border border-primary px-3 py-2.5 text-sm font-bold text-primary"
                     >
                       Xem chi tiết
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openDeleteConfirmation(post)}
-                      disabled={isDeleted}
-                      className="rounded-lg border border-error px-3 py-2.5 text-sm font-bold text-error disabled:cursor-not-allowed disabled:border-border disabled:bg-background disabled:text-textLight"
-                    >
-                      {isDeleted ? "Đã xóa" : "Xóa bài"}
                     </button>
                   </div>
                 </article>
@@ -667,82 +585,9 @@ export default function PostManagementPage() {
         <AdminPostDetailModal
           postSummary={selectedPost}
           onClose={() => setSelectedPost(null)}
-          onRequestDelete={openDeleteConfirmation}
         />
       )}
 
-      {pendingDelete && (
-        <div
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              closeDeleteConfirmation();
-            }
-          }}
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 p-4"
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-delete-post-title"
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-error/10 text-error">
-                <span className="material-symbols-outlined">delete_forever</span>
-              </div>
-              <div className="min-w-0">
-                <h2
-                  id="admin-delete-post-title"
-                  className="text-lg font-bold text-text"
-                >
-                  Xóa bài đăng khỏi hệ thống?
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-textLight">
-                  Thao tác này xóa vĩnh viễn dữ liệu bài đăng và không thể hoàn
-                  tác. Chỉ tiếp tục khi nội dung thực sự cần bị loại bỏ.
-                </p>
-                <p className="mt-2 line-clamp-2 text-sm font-bold text-text">
-                  {pendingDelete.productName || "Bài đăng HomeCycle"}
-                </p>
-              </div>
-            </div>
-
-            {deleteError && (
-              <div
-                role="alert"
-                className="mt-4 rounded-lg border border-error/20 bg-error/10 p-3 text-sm leading-5 text-error"
-              >
-                {deleteError}
-              </div>
-            )}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeDeleteConfirmation}
-                disabled={deleteBusy}
-                className="rounded-lg border border-border px-4 py-2.5 text-sm font-bold text-text transition hover:bg-background disabled:opacity-50"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleteBusy}
-                className="inline-flex min-w-32 items-center justify-center gap-2 rounded-lg bg-error px-4 py-2.5 text-sm font-bold text-white transition hover:bg-error disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {deleteBusy && (
-                  <span className="material-symbols-outlined animate-spin text-[18px]">
-                    refresh
-                  </span>
-                )}
-                {deleteBusy ? "Đang xóa..." : "Xác nhận xóa"}
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
     </section>
   );
 }

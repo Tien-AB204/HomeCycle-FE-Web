@@ -16,6 +16,7 @@ import productTypeApi from "../../services/apis/productTypeApi";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import {
   APPOINTMENT_SECTION_TABS,
+  BUSINESS_SECTION_TABS,
   DISPUTE_SECTION_TABS,
   ORDER_SECTION_TABS,
 } from "../../constants/adminSections";
@@ -1963,7 +1964,7 @@ export default function AdminDashboardModulePage({
             Đề xuất đổi lịch chưa được chấp nhận và lịch cũ đã bị thay thế không được tính như một lịch hiệu lực.
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
               label="Tổng lịch hiệu lực"
               value={formatNumber(
@@ -3537,6 +3538,14 @@ export default function AdminDashboardModulePage({
         <AdminSectionTabs
           ariaLabel="Khu vực Lịch hẹn"
           items={APPOINTMENT_SECTION_TABS}
+        />
+      )}
+
+      {(dashboard === "business-overview" ||
+        dashboard === "business-demand") && (
+        <AdminSectionTabs
+          ariaLabel="Khu vực Doanh nghiệp"
+          items={BUSINESS_SECTION_TABS}
         />
       )}
 

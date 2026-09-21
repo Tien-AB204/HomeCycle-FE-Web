@@ -62,7 +62,7 @@ const normalizePostDetail = (result) => {
   const post = unwrapResult(result, "Không thể tải chi tiết bài đăng.");
 
   if (!post?.postId) {
-    throw new Error("Response chi tiết bài đăng không hợp lệ.");
+    throw new Error("Dữ liệu chi tiết bài đăng không hợp lệ.");
   }
 
   const product = post.product || {};
@@ -201,18 +201,6 @@ const adminPostApi = {
     return normalizePostDetail(result);
   },
 
-  delete: async (postId) => {
-    const normalizedPostId = normalizeRequiredId(
-      postId,
-      "Không tìm thấy mã bài đăng cần xóa.",
-    );
-
-    await axiosClient.delete(
-      `/posts/delete/${encodeURIComponent(normalizedPostId)}`,
-    );
-
-    return true;
-  },
 };
 
 export default adminPostApi;

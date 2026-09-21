@@ -161,7 +161,6 @@ const DetailRow = ({ label, value, emphasize = false }) => (
 export default function AdminPostDetailModal({
   postSummary,
   onClose,
-  onRequestDelete,
 }) {
   const postId = postSummary?.postId;
   const [detailState, setDetailState] = useState({
@@ -224,7 +223,6 @@ export default function AdminPostDetailModal({
     ? product.attributeValues
     : [];
   const isBuyPost = normalizeValue(post?.postType) === "buy";
-  const isDeleted = normalizeValue(post?.status) === "deleted";
 
   return (
     <div
@@ -526,18 +524,6 @@ export default function AdminPostDetailModal({
           >
             Đóng
           </button>
-          {post && !isDeleted && (
-            <button
-              type="button"
-              onClick={() => onRequestDelete(post)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-error px-4 py-2.5 text-sm font-bold text-white transition hover:bg-error"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                delete
-              </span>
-              Xóa bài đăng
-            </button>
-          )}
         </footer>
       </section>
     </div>
