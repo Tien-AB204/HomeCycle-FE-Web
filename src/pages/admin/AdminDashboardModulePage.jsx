@@ -3,7 +3,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { Link } from "react-router-dom";
 import {
   DashboardColumnChart,
   DashboardDonutChart,
@@ -22,9 +21,9 @@ import {
 } from "../../constants/adminSections";
 
 const GROUP_OPTIONS = [
-  { value: "Day", label: "Theo ngày" },
-  { value: "Week", label: "Theo tuần" },
-  { value: "Month", label: "Theo tháng" },
+  { value: "Day", label: "Mỗi ngày" },
+  { value: "Week", label: "Mỗi tuần" },
+  { value: "Month", label: "Mỗi tháng" },
 ];
 
 const PAYMENT_STATUS_OPTIONS = [
@@ -3445,7 +3444,7 @@ export default function AdminDashboardModulePage({
             {formatDate(data.period.toExclusive)}
           </strong>
           {" · UTC+7"}
-          {!filters.from && " · Mặc định 30 ngày gần nhất"}
+          {!filters.from && " · Mặc định 30 ngày đã hoàn tất gần nhất, không gồm hôm nay"}
         </div>
       )}
 
@@ -3550,16 +3549,6 @@ export default function AdminDashboardModulePage({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Link
-              to="/admin/dashboard"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                space_dashboard
-              </span>
-              Tổng quan
-            </Link>
-
             <button
               type="button"
               onClick={() =>

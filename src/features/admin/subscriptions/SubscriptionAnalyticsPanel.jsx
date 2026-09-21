@@ -152,7 +152,7 @@ export default function SubscriptionAnalyticsPanel({ packages = [] }) {
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">KỲ PHÂN TÍCH</p>
           <h3 className="mt-1 text-xl font-black text-text">Doanh thu và hiệu quả từng gói</h3>
           <p className="mt-1 text-sm text-textLight">
-            Khoảng thời gian và cách nhóm áp dụng cho doanh thu, lượt thanh toán và biểu đồ trong phần này. Mặc định là 30 ngày gần nhất.
+            Khoảng thời gian áp dụng cho doanh thu, lượt thanh toán và biểu đồ trong phần này; cách nhóm chỉ đổi cách gom điểm trên biểu đồ. Mặc định 30 ngày đã hoàn tất gần nhất, không gồm hôm nay.
           </p>
         </div>
 
@@ -170,7 +170,7 @@ export default function SubscriptionAnalyticsPanel({ packages = [] }) {
             {" → trước "}
             <strong className="text-text">{formatDashboardDate(data.period.toExclusive)}</strong>
             {" · UTC+7"}
-            {!period.from && " · Mặc định 30 ngày gần nhất"}
+            {!period.from && " · Mặc định 30 ngày đã hoàn tất gần nhất, không gồm hôm nay"}
           </div>
         )}
 

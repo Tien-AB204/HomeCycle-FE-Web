@@ -296,27 +296,30 @@ const PostModerationPage = () => {
     requestVersion,
   ]);
 
+  // BE only allows warn/suspend on posts that still have an open report; the
+  // open-only reported list is the only source that guarantees that.
+  const canModerateReported = isReportedSource && reportedOpenOnly;
+
+  const resetActionForm = () => {
+    setActionState("idle");
+    setWarningMessage("");
+    setActionFeedback(null);
+  };
+
   const switchListSource = (nextSource) => {
     if (nextSource === listSource) return;
     setListSource(nextSource);
     setPageNumber(1);
     setStatusFilter("");
     setMonthFilter("");
+    resetActionForm();
   };
 
   const toggleReportedOpenOnly = () => {
     setReportedOpenOnly((current) => !current);
     setPageNumber(1);
+    resetActionForm();
   };
-
-  const reportedStatusFiltered = statusFilter
-    ? reportedItems.filter(
-        (item) =>
-          String(item.status || "")
-            .trim()
-            .toUpperCase() === statusFilter,
-      )
-    : reportedItems;
 
   // --- LỌC CLIENT-SIDE (Hỗ trợ tìm theo tên, mô tả VÀ ID bài đăng) ---
   const searchedPosts = debouncedSearchQuery
@@ -432,6 +435,7 @@ const PostModerationPage = () => {
   // ACTIONS HANDLERS
   // =========================================================================
   const handleSuspendPost = async () => {
+    if (!canModerateReported || isProcessing) return;
     setIsProcessing(true);
     setActionFeedback(null);
     try {
@@ -462,7 +466,7 @@ const PostModerationPage = () => {
     trimmedWarningMessage.length <= WARNING_MESSAGE_MAX_LENGTH;
 
   const handleWarnOwner = async () => {
-    if (!warningMessageValid || isProcessing) return;
+    if (!canModerateReported || !warningMessageValid || isProcessing) return;
     setIsProcessing(true);
     setActionFeedback(null);
     try {
@@ -609,6 +613,7 @@ const PostModerationPage = () => {
             <SearchOutlined className="absolute left-3 top-2.5 text-textLight" />
           </div>
 
+          {!isReportedSource && (
           <div className="mt-3">
             <span className="block text-[10px] font-black uppercase tracking-[0.08em] text-textLight">
               Trạng thái
@@ -651,6 +656,7 @@ const PostModerationPage = () => {
               ))}
             </div>
           </div>
+          )}
 
           {!isReportedSource && (
           <div className="mt-2 flex items-center gap-2">
@@ -684,7 +690,7 @@ const PostModerationPage = () => {
 
           <p className="mt-3 text-xs leading-5 text-textLight">
             {isReportedSource
-              ? "Từ khóa được tìm trên toàn bộ bài bị báo cáo; lọc trạng thái áp dụng cho trang đang tải."
+              ? "Từ khóa được tìm trên toàn bộ bài đăng bị báo cáo; tùy chọn “chỉ báo cáo chưa giải quyết” do máy chủ lọc."
               : "Tìm kiếm, trạng thái, tháng và sắp xếp hiện áp dụng cho trang đang tải."}
           </p>
         </div>
@@ -707,14 +713,14 @@ const PostModerationPage = () => {
                   Thử lại
                 </Button>
               </div>
-            ) : reportedStatusFiltered.length === 0 ? (
+            ) : reportedItems.length === 0 ? (
               <div className="p-8 text-center text-textLight text-sm">
                 {reportedOpenOnly
                   ? "Không có bài đăng nào còn báo cáo chưa giải quyết."
                   : "Không tìm thấy bài đăng bị báo cáo nào."}
               </div>
             ) : (
-              reportedStatusFiltered.map((item) => {
+              reportedItems.map((item) => {
                 const isSelected =
                   selectedPost &&
                   (selectedPost.postId === item.postId ||
@@ -1122,31 +1128,37 @@ const PostModerationPage = () => {
                     </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      onClick={() => {
-                        setWarningMessage("");
-                        setActionState("warning");
-                      }}
-                      className="flex items-center gap-2 font-semibold"
-                    >
-                      <WarningOutlined /> Cảnh báo chủ bài đăng
-                    </Button>
-
-                    {!["SUSPENDED", "DELETED"].includes(selectedPost.status?.toUpperCase()) && (
+                  {canModerateReported ? (
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
-                        onClick={() => setActionState("suspending")}
-                        danger
+                        onClick={() => {
+                          setWarningMessage("");
+                          setActionState("warning");
+                        }}
                         className="flex items-center gap-2 font-semibold"
                       >
-                        <StopOutlined /> Đình chỉ bài đăng
+                        <WarningOutlined /> Cảnh báo chủ bài đăng
                       </Button>
-                    )}
-                  </div>
+
+                      {!["SUSPENDED", "DELETED"].includes(selectedPost.status?.toUpperCase()) && (
+                        <Button
+                          onClick={() => setActionState("suspending")}
+                          danger
+                          className="flex items-center gap-2 font-semibold"
+                        >
+                          <StopOutlined /> Đình chỉ bài đăng
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs leading-5 text-textLight">
+                      Cảnh báo và đình chỉ chỉ áp dụng cho bài đăng còn báo cáo chưa giải quyết. Hãy chọn bài từ danh sách “Bị báo cáo” với tùy chọn chỉ hiện báo cáo chưa giải quyết.
+                    </p>
+                  )}
                 </div>
               )}
 
-              {actionState === "warning" && (
+              {canModerateReported && actionState === "warning" && (
                 <div className="bg-warning/10 p-4 rounded-lg border border-warning/20">
                   <p className="font-semibold text-warning mb-2 flex items-center gap-2">
                     <WarningOutlined /> Gửi cảnh báo tới chủ bài đăng
@@ -1190,7 +1202,7 @@ const PostModerationPage = () => {
                 </div>
               )}
 
-              {actionState === "suspending" && (
+              {canModerateReported && actionState === "suspending" && (
                 <div className="bg-error/10 p-4 rounded-lg border border-error/20">
                   <p className="font-semibold text-error mb-2 flex items-center gap-2">
                     <WarningOutlined /> Xác nhận đình chỉ bài đăng?

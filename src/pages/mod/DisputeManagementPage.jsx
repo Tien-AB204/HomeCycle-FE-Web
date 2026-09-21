@@ -1837,6 +1837,7 @@ const DisputeManagementPage = ({
                 />
               )}
 
+              {!readOnly && (
               <div className="mb-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <h3 className="text-base font-black text-text">
@@ -1917,6 +1918,7 @@ const DisputeManagementPage = ({
                   </p>
                 )}
               </div>
+              )}
 
               <div className="grid gap-4 md:grid-cols-2">
                 {renderUserCard(
