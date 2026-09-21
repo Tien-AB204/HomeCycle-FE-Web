@@ -3276,74 +3276,6 @@ export default function AdminDashboardModulePage({
                 />
               </div>
 
-              <div className="mt-5 space-y-3">
-                {(data?.checkInByParticipant || []).map(
-                  (item) => (
-                    <div
-                      key={
-                        item.participantType
-                      }
-                      className="rounded-xl border border-border bg-background/60 p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-black text-text">
-                            {normalize(
-                              item.participantType,
-                            ) === "buyer"
-                              ? "Người mua"
-                              : normalize(
-                                    item.participantType,
-                                  ) === "seller"
-                                ? "Người bán"
-                                : "Chưa xác định"}
-                          </p>
-
-                          <p className="mt-1 text-xs text-textLight">
-                            {formatNumber(
-                              item.checkedInCount,
-                            )}/
-                            {formatNumber(
-                              item.eligibleCount,
-                            )} đã điểm danh
-                          </p>
-                        </div>
-
-                        <span className="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
-                          {formatPercent(
-                            item.checkInRate,
-                          )}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/40">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Math.max(
-                                0,
-                                Number(
-                                  item.checkInRate,
-                                ) || 0,
-                              ),
-                            )}%`,
-                          }}
-                        />
-                      </div>
-
-                      <p className="mt-2 text-xs text-textLight">
-                        Thiếu{" "}
-                        {formatNumber(
-                          item.missingCount,
-                        )} lượt điểm danh.
-                      </p>
-                    </div>
-                  ),
-                )}
-              </div>
-
               <p className="mt-4 text-xs leading-5 text-textLight">
                 Chỉ thống kê việc điểm danh của lịch kiểm định đã đến giờ hẹn.
                 Trang tổng quan không đánh giá việc điểm danh đúng giờ, trễ hay thời điểm rời lịch hẹn.
@@ -3390,56 +3322,14 @@ export default function AdminDashboardModulePage({
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)] sm:p-6">
-              <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-                Điểm danh theo loại tài khoản
-              </p>
-
-              <p className="mt-1 text-xs leading-5 text-textLight">
-                Lượt điểm danh của lịch kiểm định đã đến giờ hẹn trong kỳ, gộp theo vai trò tài khoản của người tham gia.
-              </p>
-
-              <div className="mt-4 space-y-3">
-                {(data?.checkInByAccountRole || []).length === 0 ? (
-                  <p className="rounded-xl bg-background px-4 py-5 text-center text-sm text-textLight">
-                    Chưa có dữ liệu.
-                  </p>
-                ) : (
-                  (data?.checkInByAccountRole || []).map((item) => (
-                    <div
-                      key={item.participantType}
-                      className="rounded-xl border border-border bg-background/60 p-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-black text-text">
-                            {labelFor(item.participantType)}
-                          </p>
-
-                          <p className="mt-1 text-xs text-textLight">
-                            {formatNumber(item.checkedInCount)}/
-                            {formatNumber(item.eligibleCount)} đã điểm danh
-                          </p>
-                        </div>
-
-                        <span className="rounded-full bg-primary/10 px-3 py-1.5 text-sm font-black text-primary">
-                          {formatPercent(item.checkInRate)}
-                        </span>
-                      </div>
-
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-border/40">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{
-                            width: `${Math.min(100, Math.max(0, Number(item.checkInRate) || 0))}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
+            <CheckInGroupedChart
+              title="Điểm danh theo loại tài khoản"
+              description="Lượt điểm danh của lịch kiểm định đã đến giờ hẹn trong kỳ, gộp theo vai trò tài khoản; mỗi hàng là lượt tham gia, không phải số người riêng biệt."
+              rows={data?.checkInByAccountRole}
+              getLabel={(item) =>
+                labelFor(item.participantType)
+              }
+            />
 
             <DashboardHorizontalBarChart
               title="Khu vực có lịch hẹn trong kỳ"
