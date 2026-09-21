@@ -7,6 +7,7 @@ import Avatar from "../../components/shared/Avatar";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import AdminUserDetailModal from "../../features/admin/users/AdminUserDetailModal";
 import { USER_SECTION_TABS } from "../../constants/adminSections";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_TIME = 400;
@@ -81,13 +82,13 @@ const normalizeValue = (value) =>
 
 const getRoleMeta = (role) =>
   ROLE_META[normalizeValue(role)] || {
-    label: role || "Chưa xác định",
+    label: "Chưa xác định",
     className: "border-border bg-background text-textLight",
   };
 
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
-    label: status || "Chưa xác định",
+    label: "Chưa xác định",
     className: "border-border bg-background text-textLight",
   };
 
@@ -95,8 +96,8 @@ const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     "Không thể thực hiện yêu cầu quản lý người dùng."
   );
 };

@@ -106,8 +106,8 @@ const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     getSafeProblemDetail(responseData?.title) ||
     "Không thể tải chi tiết bài đăng."
   );

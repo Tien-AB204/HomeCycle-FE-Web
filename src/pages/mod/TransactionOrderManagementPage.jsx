@@ -278,9 +278,15 @@ const ORDER_TRANSACTION_TYPE_LABELS = {
   Wallet_Payment: "Thanh toán từ ví",
   Payout_Release: "Giải ngân cho người bán",
   Order_Refund: "Hoàn tiền đơn hàng",
-  Commission_Fee: "Phí hoa hồng sàn",
   Shipping_Fee_Collected: "Thu phí vận chuyển",
 };
+
+// Phí hoa hồng không hiển thị trong giao diện quản trị/kiểm duyệt.
+const isCommissionFeeEvent = (event) =>
+  String(event?.transactionType ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "") === "commissionfee";
 
 const getOrderTransactionTypeLabel = (value) => {
   const key = String(value ?? "").trim();
@@ -487,7 +493,14 @@ export const OrderManagementContent = ({
     api
       .getOrderFinancialHistory(orderId, { signal: controller.signal })
       .then((items) => {
-        setFinancialState({ orderId, loading: false, items, error: "" });
+        setFinancialState({
+          orderId,
+          loading: false,
+          items: (Array.isArray(items) ? items : []).filter(
+            (event) => !isCommissionFeeEvent(event),
+          ),
+          error: "",
+        });
       })
       .catch((error) => {
         if (error?.name === "CanceledError" || error?.code === "ERR_CANCELED") {

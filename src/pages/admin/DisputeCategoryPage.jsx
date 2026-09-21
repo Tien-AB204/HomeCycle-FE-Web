@@ -5,6 +5,7 @@ import disputeCategoryApi from "../../services/apis/disputeCategoryApi";
 import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import { DISPUTE_SECTION_TABS } from "../../constants/adminSections";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const TARGET_TYPE_LABELS = {
   Order: "Đơn hàng",
@@ -14,7 +15,7 @@ const TARGET_TYPE_LABELS = {
 };
 
 const getTargetTypeLabel = (value) =>
-  TARGET_TYPE_LABELS[value] || value;
+  TARGET_TYPE_LABELS[value] || "Chưa xác định";
 
 const isCanceledRequest = (error) =>
   error?.name === "CanceledError" ||
@@ -30,8 +31,8 @@ const getErrorMessage = (error) => {
 
   return (
     getSafeValidationMessage(responseData?.errors) ||
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     "Đã xảy ra lỗi. Vui lòng thử lại."
   );
 };

@@ -6,6 +6,7 @@ import {
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import { USER_SECTION_TABS } from "../../constants/adminSections";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const ROLE_OPTIONS = [
   {
@@ -157,8 +158,8 @@ const formatDateTime = (value) => {
 };
 
 const getErrorMessage = (error) =>
-  error?.response?.data?.error?.message ||
-  error?.response?.data?.message ||
+  getSafeProblemDetail(error?.response?.data?.error?.message) ||
+  getSafeProblemDetail(error?.response?.data?.message) ||
   "Không thể tải dữ liệu tổng quan quản trị.";
 
 const LoadingBlock = ({

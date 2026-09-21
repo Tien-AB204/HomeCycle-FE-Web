@@ -503,10 +503,33 @@ export function DashboardHorizontalBarChart({
                     )
                   : 0;
 
+              /*
+               * Chỉ hiển thị % khi Backend/caller cung cấp giá trị hợp lệ.
+               * Không tự tính từ count/maxValue - maxValue chỉ dùng cho
+               * chiều dài thanh.
+               */
+              const rawPercentage =
+                item?.percentage;
+
+              const hasPercentage =
+                rawPercentage !==
+                  null &&
+                rawPercentage !==
+                  undefined &&
+                rawPercentage !==
+                  "" &&
+                Number.isFinite(
+                  Number(
+                    rawPercentage,
+                  ),
+                );
+
               const percentage =
-                Number(
-                  item?.percentage,
-                ) || 0;
+                hasPercentage
+                  ? Number(
+                      rawPercentage,
+                    )
+                  : null;
 
               const tone =
                 toneFor(
@@ -528,11 +551,15 @@ export function DashboardHorizontalBarChart({
                       {formatNumber(
                         count,
                       )}
-                      {" · "}
-                      {formatDecimal(
-                        percentage,
+                      {hasPercentage && (
+                        <>
+                          {" · "}
+                          {formatDecimal(
+                            percentage,
+                          )}
+                          %
+                        </>
                       )}
-                      %
                     </span>
                   </div>
 

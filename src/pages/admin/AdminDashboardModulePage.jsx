@@ -306,8 +306,26 @@ const labelFor = (
 
   return (
     LABELS[key] ||
-    String(value || "Chưa xác định")
+    safeDisplayText(value)
   );
+};
+
+/*
+ * Giá trị chưa có trong bảng nhãn: nếu trông như mã enum/DTO thô của Backend
+ * (định danh ASCII hoặc số) thì không hiển thị; văn bản do người dùng/Backend
+ * soạn (tên danh mục, lý do, thành phố...) được giữ nguyên.
+ */
+const looksLikeRawToken = (value) =>
+  /^[A-Za-z][A-Za-z0-9_]*$/.test(value) || /^\d+$/.test(value);
+
+const safeDisplayText = (value) => {
+  const text = String(value ?? "").trim();
+
+  if (!text || looksLikeRawToken(text)) {
+    return "Chưa xác định";
+  }
+
+  return text;
 };
 
 const BUSINESS_DEMAND_LABELS = {
@@ -327,8 +345,7 @@ const BUSINESS_DEMAND_LABELS = {
 const demandLabelFor = (value) =>
   BUSINESS_DEMAND_LABELS[
     normalize(value)
-  ] ||
-  String(value || "Chưa xác định");
+  ] || safeDisplayText(value);
 const formatNumber = (value) =>
   new Intl.NumberFormat(
     "vi-VN",

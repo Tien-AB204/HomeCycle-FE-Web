@@ -1393,7 +1393,7 @@ export default function AuditLogPage() {
                         />
                         <div className="sm:col-span-2">
                           <DetailField
-                            label="User agent"
+                            label="Trình duyệt / thiết bị"
                             value={
                               detail.userAgent
                             }
@@ -1427,7 +1427,7 @@ export default function AuditLogPage() {
 
                       <div className="rounded-2xl border border-border bg-background/60 p-4">
                         <p className="text-xs font-black uppercase tracking-wide text-primary">
-                          Metadata
+                          Dữ liệu bổ sung
                         </p>
                         <pre className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-white p-3 text-xs text-text">
                           {formatJsonPayload(

@@ -108,8 +108,8 @@ const getErrorMessage = (error) => {
   }
 
   return (
-    responseData?.error?.message ||
-    responseData?.message ||
+    getSafeProblemDetail(responseData?.error?.message) ||
+    getSafeProblemDetail(responseData?.message) ||
     getSafeProblemDetail(responseData?.title) ||
     "Không thể thực hiện yêu cầu quản lý bài đăng."
   );

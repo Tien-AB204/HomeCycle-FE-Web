@@ -14,15 +14,15 @@ import adminDashboardApi from "../../services/apis/adminDashboardApi";
 const GROUP_OPTIONS = [
   {
     value: "Day",
-    label: "Theo ngày",
+    label: "Mỗi ngày",
   },
   {
     value: "Week",
-    label: "Theo tuần",
+    label: "Mỗi tuần",
   },
   {
     value: "Month",
-    label: "Theo tháng",
+    label: "Mỗi tháng",
   },
 ];
 
@@ -54,7 +54,6 @@ const TRANSACTION_TYPE_OPTIONS = [
   ["5", "Tiền của người dùng đang yêu cầu rút"],
   ["6", "Rút tiền thành công"],
   ["7", "Tiền được trả lại sau yêu cầu rút"],
-  ["8", "Phí hoa hồng"],
   ["9", "Phí gói đăng ký"],
   ["10", "Thu phí vận chuyển GHN"],
 ];
@@ -67,7 +66,6 @@ const TRANSACTION_TYPE_LABELS = {
   "5": "Tiền của người dùng đang yêu cầu rút",
   "6": "Rút tiền thành công",
   "7": "Tiền được trả lại sau yêu cầu rút",
-  "8": "Phí hoa hồng",
   "9": "Phí gói đăng ký",
   "10": "Thu phí vận chuyển GHN",
   escrowdeposit:
@@ -84,12 +82,27 @@ const TRANSACTION_TYPE_LABELS = {
     "Rút tiền thành công",
   withdrawalrevert:
     "Tiền được trả lại sau yêu cầu rút",
-  commissionfee:
-    "Phí hoa hồng",
   subscriptionfee:
     "Phí gói đăng ký",
   shippingfeecollected:
     "Thu phí vận chuyển GHN",
+};
+
+// Giao dịch phí hoa hồng không được hiển thị trong giao diện quản trị.
+const isCommissionFeeTransaction = (
+  transactionType,
+) => {
+  const key = String(
+    transactionType ?? "",
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  return (
+    key === "8" ||
+    key === "commissionfee"
+  );
 };
 
 const TRANSACTION_STATUS_OPTIONS = [
@@ -194,14 +207,11 @@ const normalize = (value) =>
     .replace(/[^a-z0-9]/g, "");
 
 /*
- * Doanh thu nền tảng theo Backend = các khoản Commission_Fee và Subscription_Fee
- * đã ghi nhận vào ví Platform_Revenue trong kỳ. Phí vận chuyển GHN là tiền thu
- * hộ, không thuộc doanh thu. Dùng totalRevenue do Backend tính, không tự cộng.
+ * Khối doanh thu chỉ hiển thị khoản phí gói đăng ký do Backend trả trong
+ * revenue.sources (nguồn SubscriptionFee). Không dùng revenue.totalRevenue vì
+ * tổng đó theo hợp đồng cũ có thể gồm khoản không được trình bày trong giao
+ * diện quản trị. Phí vận chuyển GHN là tiền thu hộ, không thuộc doanh thu.
  */
-const REVENUE_SOURCE_LABELS = {
-  subscriptionfee: "Phí gói đăng ký",
-  commissionfee: "Phí hoa hồng",
-};
 
 const findRevenueSourceAmount = (
   sources,
@@ -1125,14 +1135,34 @@ export default function AdminFinanceDashboardPage() {
     );
   };
 
-  const transactions =
+  const transactions = (
     Array.isArray(
       transactionState.data
         ?.items,
     )
       ? transactionState.data
           .items
+      : []
+  ).filter(
+    (item) =>
+      !isCommissionFeeTransaction(
+        item?.transactionType,
+      ),
+  );
+
+  const internalMovementRows =
+    Array.isArray(
+      cashFlow?.internalMovements,
+    )
+      ? cashFlow.internalMovements
       : [];
+
+  const findInternalMovementAmount =
+    (type) =>
+      findRevenueSourceAmount(
+        internalMovementRows,
+        type,
+      );
 
   const breakdownLabel = (
     item,
@@ -1683,11 +1713,38 @@ export default function AdminFinanceDashboardPage() {
                 title="Dịch chuyển tiền nội bộ"
                 description="Tiền đổi chủ hoặc đổi trạng thái bên trong ví HomeCycle trong kỳ: hoàn tiền đơn hàng, chuyển tiền cho người bán, tiền đang yêu cầu rút và tiền được trả lại sau yêu cầu rút. Đây không phải tiền ra khỏi nền tảng."
                 rows={
-                  cashFlow
-                    ?.internalMovements
+                  internalMovementRows
                 }
                 getLabel={
                   breakdownLabel
+                }
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <MetricCard
+                label="Hoàn tiền đơn hàng trong kỳ"
+                value={formatMoneyOrDash(
+                  findInternalMovementAmount(
+                    "OrderRefund",
+                  ),
+                )}
+                hint="Tiền hoàn lại cho người mua bên trong ví HomeCycle trong kỳ; không phải tiền ra khỏi nền tảng."
+                loading={
+                  mainLoading
+                }
+              />
+
+              <MetricCard
+                label="Chuyển tiền cho người bán trong kỳ"
+                value={formatMoneyOrDash(
+                  findInternalMovementAmount(
+                    "PayoutRelease",
+                  ),
+                )}
+                hint="Tiền chuyển từ ví tạm giữ sang ví người bán bên trong HomeCycle trong kỳ; không phải tiền ra khỏi nền tảng."
+                loading={
+                  mainLoading
                 }
               />
             </div>
@@ -1702,11 +1759,11 @@ export default function AdminFinanceDashboardPage() {
           </p>
 
           <h3 className="mt-1 text-xl font-black text-text">
-            Doanh thu nền tảng theo kỳ
+            Doanh thu gói đăng ký theo kỳ
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Doanh thu nền tảng gồm các khoản phí được hệ thống ghi nhận là doanh thu HomeCycle trong kỳ: phí gói đăng ký và phí hoa hồng. Phí vận chuyển GHN là khoản thu hộ và không được tính vào doanh thu nền tảng.
+            Phí gói đăng ký doanh nghiệp đã được hệ thống ghi nhận vào ví doanh thu trong kỳ. Phí vận chuyển GHN là khoản thu hộ và không được tính vào doanh thu nền tảng.
           </p>
         </div>
 
@@ -1719,47 +1776,20 @@ export default function AdminFinanceDashboardPage() {
             }
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <MetricCard
-              label="Tổng doanh thu nền tảng"
-              value={formatMoney(
-                revenue?.totalRevenue,
-              )}
-              hint="Tổng phí gói đăng ký và phí hoa hồng đã ghi nhận vào ví doanh thu trong kỳ; do hệ thống tính."
-              loading={
-                mainLoading
-              }
-              valueClassName="text-primary"
-            />
-
-            <MetricCard
-              label={
-                REVENUE_SOURCE_LABELS.subscriptionfee
-              }
+              label="Doanh thu gói đăng ký trong kỳ"
               value={formatMoneyOrDash(
                 findRevenueSourceAmount(
                   revenue?.sources,
                   "SubscriptionFee",
                 ),
               )}
+              hint="Khoản phí gói đăng ký do hệ thống ghi nhận là doanh thu trong kỳ; hiển thị “—” khi Backend chưa trả nguồn này."
               loading={
                 mainLoading
               }
-            />
-
-            <MetricCard
-              label={
-                REVENUE_SOURCE_LABELS.commissionfee
-              }
-              value={formatMoneyOrDash(
-                findRevenueSourceAmount(
-                  revenue?.sources,
-                  "CommissionFee",
-                ),
-              )}
-              loading={
-                mainLoading
-              }
+              valueClassName="text-primary"
             />
           </div>
         )}
