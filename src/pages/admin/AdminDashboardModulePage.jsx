@@ -536,15 +536,22 @@ const DistributionPanel = ({
                       )}
                 </span>
 
-                <span className="text-sm font-black text-text">
-                  {formatNumber(
-                    item.count,
-                  )}
-                  {" · "}
-                  {formatDecimal(
-                    percentage,
-                  )}
-                  %
+                <span
+                  className="flex shrink-0 flex-col items-end"
+                  title={`Số lượng: ${formatNumber(item.count)}`}
+                >
+                  <span className="text-sm font-black text-text">
+                    {formatDecimal(
+                      percentage,
+                    )}
+                    %
+                  </span>
+
+                  <span className="text-[11px] font-semibold text-textLight">
+                    {formatNumber(
+                      item.count,
+                    )}
+                  </span>
                 </span>
               </div>
 
@@ -856,15 +863,23 @@ const DemandGroup = ({
                       )}
                     </span>
 
-                    <span className="shrink-0 text-right text-sm font-black text-text">
-                      {formatNumber(
-                        item.businessCount,
-                      )}
-                      {" · "}
-                      {formatDecimal(
-                        item.percentage,
-                      )}
-                      %
+                    <span
+                      className="flex shrink-0 flex-col items-end text-right"
+                      title={`${formatNumber(item.businessCount)} doanh nghiệp`}
+                    >
+                      <span className="text-sm font-black text-text">
+                        {formatDecimal(
+                          item.percentage,
+                        )}
+                        %
+                      </span>
+
+                      <span className="text-[11px] font-semibold text-textLight">
+                        {formatNumber(
+                          item.businessCount,
+                        )}{" "}
+                        doanh nghiệp
+                      </span>
                     </span>
                   </div>
 
@@ -2977,22 +2992,30 @@ export default function AdminDashboardModulePage({
                             )}
                           </td>
                           <td className="px-3 py-3 text-success">
-                            {formatNumber(
-                              item.successfulCount,
-                            )}
-                            {" · "}
-                            {formatPercent(
-                              item.successRate,
-                            )}
+                            <span className="block font-black">
+                              {formatPercent(
+                                item.successRate,
+                              )}
+                            </span>
+                            <span className="block text-[11px] font-semibold text-textLight">
+                              {formatNumber(
+                                item.successfulCount,
+                              )}{" "}
+                              lịch
+                            </span>
                           </td>
                           <td className="px-3 py-3 text-error">
-                            {formatNumber(
-                              item.failedCount,
-                            )}
-                            {" · "}
-                            {formatPercent(
-                              item.failureRate,
-                            )}
+                            <span className="block font-black">
+                              {formatPercent(
+                                item.failureRate,
+                              )}
+                            </span>
+                            <span className="block text-[11px] font-semibold text-textLight">
+                              {formatNumber(
+                                item.failedCount,
+                              )}{" "}
+                              lịch
+                            </span>
                           </td>
                         </tr>
                       ),

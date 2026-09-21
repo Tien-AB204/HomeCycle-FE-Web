@@ -300,15 +300,22 @@ export function DashboardDonutChart({
                   </span>
                 </div>
 
-                <span className="shrink-0 text-xs font-black text-text">
-                  {formatNumber(
-                    item.count,
-                  )}
-                  {" · "}
-                  {formatDecimal(
-                    item.percent,
-                  )}
-                  %
+                <span
+                  className="flex shrink-0 flex-col items-end"
+                  title={`${getLabel(item)}: ${formatNumber(item.count)}`}
+                >
+                  <span className="text-xs font-black text-text">
+                    {formatDecimal(
+                      item.percent,
+                    )}
+                    %
+                  </span>
+
+                  <span className="text-[11px] font-semibold text-textLight">
+                    {formatNumber(
+                      item.count,
+                    )}
+                  </span>
                 </span>
               </div>
             ),
@@ -547,20 +554,31 @@ export function DashboardHorizontalBarChart({
                       {getLabel(item)}
                     </span>
 
-                    <span className="shrink-0 text-sm font-black text-text">
-                      {formatNumber(
-                        count,
-                      )}
-                      {hasPercentage && (
-                        <>
-                          {" · "}
+                    {hasPercentage ? (
+                      <span
+                        className="flex shrink-0 flex-col items-end"
+                        title={`${getLabel(item)}: ${formatNumber(count)}`}
+                      >
+                        <span className="text-sm font-black text-text">
                           {formatDecimal(
                             percentage,
                           )}
                           %
-                        </>
-                      )}
-                    </span>
+                        </span>
+
+                        <span className="text-[11px] font-semibold text-textLight">
+                          {formatNumber(
+                            count,
+                          )}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="shrink-0 text-sm font-black text-text">
+                        {formatNumber(
+                          count,
+                        )}
+                      </span>
+                    )}
                   </div>
 
                   <div className="h-3 overflow-hidden rounded-full bg-background">

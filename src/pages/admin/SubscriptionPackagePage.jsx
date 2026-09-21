@@ -762,7 +762,7 @@ function CreatePackageModal({
                 value={form.code}
                 disabled={busy}
                 maxLength={100}
-                placeholder="VD: BIZ_STANDARD"
+                placeholder="Ví dụ: BIZ_STANDARD"
                 onChange={(event) =>
                   onChangeForm({
                     ...form,

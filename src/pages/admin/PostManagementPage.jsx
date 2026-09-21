@@ -51,7 +51,7 @@ const normalizeValue = (value) =>
 
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
-    label: status || "Chưa xác định",
+    label: "Chưa xác định",
     className: "border-border bg-background text-textLight",
   };
 

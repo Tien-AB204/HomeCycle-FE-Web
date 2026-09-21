@@ -58,11 +58,34 @@ const normalizeValue = (value) =>
 
 const getStatusMeta = (status) =>
   STATUS_META[normalizeValue(status)] || {
-    label: status || "Chưa xác định",
+    label: "Chưa xác định",
     className: "border-border bg-background text-textLight",
   };
 
-const formatEnum = (value) => ENUM_LABELS[value] || value || "—";
+/*
+ * Chỉ dùng cho các trường enum (priorityLevel, functionalityStatus,
+ * damageLevel, spaceUsage, deliveryMethod): enum đã biết -> nhãn tiếng Việt,
+ * trống -> "—", enum lạ -> "Chưa xác định"; không hiển thị giá trị thô.
+ */
+const ENUM_LABEL_LOOKUP = Object.fromEntries(
+  Object.entries(ENUM_LABELS).map(([key, label]) => [
+    key.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    label,
+  ]),
+);
+
+const formatEnum = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const key = String(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  return ENUM_LABEL_LOOKUP[key] || "Chưa xác định";
+};
 
 const formatCurrency = (value) => {
   if (value === null || value === undefined || value === "") {
