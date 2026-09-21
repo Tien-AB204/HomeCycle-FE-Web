@@ -12,21 +12,44 @@ import {
 } from "../../../utils/dashboardPeriod";
 import adminDashboardApi from "../../../services/apis/adminDashboardApi";
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat("vi-VN").format(Number(value) || 0);
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0);
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
 
-const formatCompactMoney = (value) =>
-  `${new Intl.NumberFormat("vi-VN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(Number(value) || 0)} ₫`;
+const formatNumber = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(number);
+};
+
+const formatMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(number);
+};
+
+const formatCompactMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : `${new Intl.NumberFormat("vi-VN", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(number)} ₫`;
+};
 
 const isCanceled = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";

@@ -33,8 +33,16 @@ const statusLabel = (item) =>
 const categoryLabel = (item) =>
   normalize(item?.name) === "unspecified" ? "Chưa phân loại" : item?.name || "Chưa phân loại";
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat("vi-VN").format(Number(value) || 0);
+const formatNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number)
+    ? new Intl.NumberFormat("vi-VN").format(number)
+    : "—";
+};
 
 const isCanceled = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";

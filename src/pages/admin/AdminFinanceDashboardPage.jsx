@@ -245,33 +245,45 @@ const enumLabel = (
   ] ||
   fallback;
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    },
-  ).format(Number(value) || 0);
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const formatMoneyOrDash = (value) =>
-  value === null || value === undefined
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const formatMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
     ? "—"
-    : formatMoney(value);
+    : new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(number);
+};
 
-const formatNumber = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-  ).format(Number(value) || 0);
+const formatMoneyOrDash = (value) => formatMoney(value);
 
-const formatPercent = (value) =>
-  `${new Intl.NumberFormat(
-    "vi-VN",
-    {
-      maximumFractionDigits: 1,
-    },
-  ).format(Number(value) || 0)}%`;
+const formatNumber = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(number);
+};
+
+const formatPercent = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : `${new Intl.NumberFormat("vi-VN", {
+        maximumFractionDigits: 1,
+      }).format(number)}%`;
+};
 
 const formatDate = (value) => {
   const parts =
@@ -1787,7 +1799,7 @@ export default function AdminFinanceDashboardPage() {
                   "SubscriptionFee",
                 ),
               )}
-              hint="Khoản phí gói đăng ký do hệ thống ghi nhận là doanh thu trong kỳ; hiển thị “—” khi Backend chưa trả nguồn này."
+              hint="Khoản phí gói đăng ký được hệ thống ghi nhận là doanh thu trong kỳ; hiển thị “—” khi chưa có dữ liệu nguồn doanh thu này."
               loading={
                 mainLoading
               }
