@@ -419,17 +419,19 @@ const formatCompactMoney = (value) => {
         maximumFractionDigits: 1,
       }).format(number)} ₫`;
 };
-const formatPercent = (value) =>
-  value === null ||
-  value === undefined
+const formatPercent = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
     ? "—"
-    : `${formatDecimal(value)}%`;
+    : `${formatDecimal(number)}%`;
+};
 
-const formatHours = (value) =>
-  value === null ||
-  value === undefined
+const formatHours = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
     ? "—"
-    : `${formatDecimal(value)} giờ`;
+    : `${formatDecimal(number)} giờ`;
+};
 
 const formatDate = (value) => {
   if (!value) {
