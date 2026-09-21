@@ -262,7 +262,7 @@ const LABELS = {
   approved: "Đã duyệt",
   personal: "Cá nhân",
   business: "Doanh nghiệp",
-  moderator: "Điều phối viên",
+  moderator: "Kiểm duyệt viên",
   admin: "Quản trị viên",
 };
 
@@ -2499,11 +2499,19 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessPaymentCount,
             )}
-            hint={`Chiếm ${formatPercent(
+            hint="Số thanh toán đơn hàng thành công trong kỳ có ít nhất một bên là doanh nghiệp."
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Tỷ trọng thanh toán của doanh nghiệp"
+            value={formatPercent(
               data
                 ?.businessPaymentSharePercent,
-            )} số thanh toán đơn hàng thành công trong kỳ.`}
+            )}
+            hint="Tỷ lệ thanh toán đơn hàng thành công trong kỳ có ít nhất một bên là doanh nghiệp."
             loading={loading}
+            valueClassName="text-primary"
           />
 
           <KpiCard
@@ -2542,11 +2550,19 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessSalesValue,
             )}
-            hint={`Giá trị đơn hoàn tất mà bên bán là doanh nghiệp; chiếm ${formatPercent(
+            hint="Giá trị đơn hoàn tất trong kỳ mà bên bán là doanh nghiệp."
+            loading={loading}
+          />
+
+          <KpiCard
+            label="Tỷ trọng giá trị bán của doanh nghiệp"
+            value={formatPercent(
               data
                 ?.businessSalesSharePercent,
-            )} tổng giá trị đơn hoàn tất.`}
+            )}
+            hint="Tỷ lệ giá trị đơn hoàn tất trong kỳ mà bên bán là doanh nghiệp trên tổng giá trị đơn hoàn tất."
             loading={loading}
+            valueClassName="text-primary"
           />
 
           <KpiCard
