@@ -352,34 +352,54 @@ const demandLabelFor = (item, kind) => {
 
   return domainLabelFor(item);
 };
-const formatNumber = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-  ).format(Number(value) || 0);
+const toFiniteNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
 
-const formatDecimal = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      maximumFractionDigits: 1,
-    },
-  ).format(Number(value) || 0);
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
 
-const formatMoney = (value) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    },
-  ).format(Number(value) || 0);
+const formatNumber = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(number);
+};
 
-const formatCompactMoney = (value) =>
-  `${new Intl.NumberFormat("vi-VN", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(Number(value) || 0)} ₫`;
+const formatDecimal = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        maximumFractionDigits: 1,
+      }).format(number);
+};
+
+const formatMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(number);
+};
+
+const formatCompactMoney = (value) => {
+  const number = toFiniteNumber(value);
+
+  return number === null
+    ? "—"
+    : `${new Intl.NumberFormat("vi-VN", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(number)} ₫`;
+};
 const formatPercent = (value) =>
   value === null ||
   value === undefined
@@ -506,20 +526,16 @@ const DistributionPanel = ({
         </div>
       ) : (
         rows.map((item, index) => {
-          const percentage =
-            Number(
-              item.percentage,
-            ) || 0;
+          const rawPercentage = item?.percentage;
+          const percentage = toFiniteNumber(rawPercentage);
+          const safePercentage =
+            percentage === null
+              ? null
+              : Math.max(0, Math.min(100, percentage));
 
           const width =
-            percentage > 0
-              ? Math.max(
-                  2,
-                  Math.min(
-                    100,
-                    percentage,
-                  ),
-                )
+            safePercentage !== null && safePercentage > 0
+              ? Math.max(2, safePercentage)
               : 0;
 
           return (
@@ -541,10 +557,9 @@ const DistributionPanel = ({
                   title={`Số lượng: ${formatNumber(item.count)}`}
                 >
                   <span className="text-sm font-black text-text">
-                    {formatDecimal(
-                      percentage,
-                    )}
-                    %
+                    {safePercentage === null
+                      ? "—"
+                      : `${formatDecimal(safePercentage)}%`}
                   </span>
 
                   <span className="text-[11px] font-semibold text-textLight">
@@ -1002,16 +1017,12 @@ const DemandGroup = ({
         <div className="mt-5 space-y-4">
           {items.map(
             (item, index) => {
-              const percentage =
-                Math.max(
-                  0,
-                  Math.min(
-                    100,
-                    Number(
-                      item.percentage,
-                    ) || 0,
-                  ),
-                );
+              const rawPercentage = item?.percentage;
+              const percentage = toFiniteNumber(rawPercentage);
+              const safePercentage =
+                percentage === null
+                  ? null
+                  : Math.max(0, Math.min(100, percentage));
 
               return (
                 <div
@@ -1030,10 +1041,9 @@ const DemandGroup = ({
                       title={`${formatNumber(item.businessCount)} doanh nghiệp`}
                     >
                       <span className="text-sm font-black text-text">
-                        {formatDecimal(
-                          item.percentage,
-                        )}
-                        %
+                        {safePercentage === null
+                          ? "—"
+                          : `${formatDecimal(safePercentage)}%`}
                       </span>
 
                       <span className="text-[11px] font-semibold text-textLight">
@@ -1051,19 +1061,14 @@ const DemandGroup = ({
                     aria-label={`${demandLabelFor(
                       item,
                       kind,
-                    )}: ${formatDecimal(
-                      item.percentage,
-                    )}%`}
+                    )}: ${safePercentage === null ? "chưa đủ dữ liệu" : `${formatDecimal(safePercentage)}%`}`}
                   >
                     <div
                       className="h-full rounded-full bg-primary transition-[width]"
                       style={{
                         width:
-                          percentage > 0
-                            ? `${Math.max(
-                                3,
-                                percentage,
-                              )}%`
+                          safePercentage !== null && safePercentage > 0
+                            ? `${Math.max(3, safePercentage)}%`
                             : "0%",
                       }}
                     />
