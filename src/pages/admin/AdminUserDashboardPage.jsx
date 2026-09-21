@@ -398,18 +398,22 @@ const RoleDonutChart = ({
                 </span>
               </div>
 
-              <div className="text-right">
+              <div
+                className="text-right"
+                title={`${item.label}: ${formatNumber(item.count)} tài khoản`}
+              >
                 <p className="text-sm font-black text-text">
-                  {formatNumber(
-                    item.count,
-                  )}
-                </p>
-
-                <p className="text-xs text-textLight">
                   {formatDecimal(
                     percent,
                   )}
                   %
+                </p>
+
+                <p className="text-xs text-textLight">
+                  {formatNumber(
+                    item.count,
+                  )}{" "}
+                  tài khoản
                 </p>
               </div>
             </div>
@@ -1131,7 +1135,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
           <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
             Tổng tài khoản
