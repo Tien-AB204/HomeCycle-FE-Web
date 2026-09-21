@@ -222,8 +222,8 @@ export function DashboardDonutChart({
         )}
       </div>
 
-      <div className="mt-6 grid gap-7 md:grid-cols-[230px_1fr] md:items-center">
-        <div className="relative mx-auto h-52 w-52">
+      <div className="mt-6 flex flex-wrap items-center justify-center gap-7">
+        <div className="relative mx-auto h-52 w-52 shrink-0">
           <svg
             viewBox="0 0 120 120"
             className="h-full w-full -rotate-90"
@@ -291,7 +291,7 @@ export function DashboardDonutChart({
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid min-w-0 basis-72 flex-1 grid-cols-[repeat(auto-fit,minmax(min(100%,12.5rem),1fr))] gap-2">
           {segments.map(
             (
               item,
