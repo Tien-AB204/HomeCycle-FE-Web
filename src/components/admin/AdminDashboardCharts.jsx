@@ -684,20 +684,23 @@ export function DashboardLineChart({
   const usableHeight =
     height - top - bottom;
 
+  const numericValues =
+    safeRows.flatMap((row) =>
+      safeSeries
+        .map((item) =>
+          toFiniteNumber(
+            row?.[item.key],
+          ),
+        )
+        .filter(
+          (value) => value !== null,
+        ),
+    );
+
   const maxValue =
     Math.max(
       1,
-      ...safeRows.flatMap(
-        (row) =>
-          safeSeries.map(
-            (item) =>
-              Number(
-                row?.[
-                  item.key
-                ],
-              ) || 0,
-          ),
-      ),
+      ...numericValues,
     );
 
   const xFor = (index) =>
@@ -715,10 +718,7 @@ export function DashboardLineChart({
   const yFor = (value) =>
     top +
     usableHeight -
-    (
-      (Number(value) || 0) /
-      maxValue
-    ) *
+    (value / maxValue) *
       usableHeight;
 
   const tickIndexes =
@@ -886,34 +886,69 @@ export function DashboardLineChart({
                   (
                     row,
                     index,
-                  ) => ({
-                    x:
-                      xFor(
-                        index,
-                      ),
-                    y:
-                      yFor(
+                  ) => {
+                    const value =
+                      toFiniteNumber(
                         row?.[
                           line.key
                         ],
-                      ),
-                    value:
-                      Number(
-                        row?.[
-                          line.key
-                        ],
-                      ) || 0,
-                    row,
-                  }),
+                      );
+
+                    return {
+                      x:
+                        xFor(
+                          index,
+                        ),
+                      y:
+                        value ===
+                        null
+                          ? null
+                          : yFor(
+                              value,
+                            ),
+                      value,
+                      row,
+                    };
+                  },
                 );
 
-              const polyline =
-                points
-                  .map(
-                    (point) =>
-                      `${point.x},${point.y}`,
-                  )
-                  .join(" ");
+              const segments = [];
+              let currentSegment = [];
+
+              points.forEach(
+                (point) => {
+                  if (
+                    point.value ===
+                      null ||
+                    point.y === null
+                  ) {
+                    if (
+                      currentSegment.length >
+                      0
+                    ) {
+                      segments.push(
+                        currentSegment,
+                      );
+                      currentSegment =
+                        [];
+                    }
+                    return;
+                  }
+
+                  currentSegment.push(
+                    point,
+                  );
+                },
+              );
+
+              if (
+                currentSegment.length >
+                0
+              ) {
+                segments.push(
+                  currentSegment,
+                );
+              }
 
               return (
                 <g
@@ -922,46 +957,61 @@ export function DashboardLineChart({
                     tone
                   }
                 >
-                  <polyline
-                    points={
-                      polyline
-                    }
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
+                  {segments.map(
+                    (
+                      segment,
+                      segmentIndex,
+                    ) => (
+                      <polyline
+                        key={`${line.key}-segment-${segmentIndex}`}
+                        points={segment
+                          .map(
+                            (point) =>
+                              `${point.x},${point.y}`,
+                          )
+                          .join(" ")}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                    ),
+                  )}
 
                   {points.map(
                     (
                       point,
                       index,
-                    ) => (
-                      <circle
-                        key={`${line.key}-${index}`}
-                        cx={
-                          point.x
-                        }
-                        cy={
-                          point.y
-                        }
-                        r="3.5"
-                        fill="currentColor"
-                      >
-                        <title>
-                          {`${formatDateShort(
-                            point
-                              .row
-                              ?.from,
-                          )} · ${
-                            line.label
-                          }: ${valueFormatter(
-                            point.value,
-                          )}`}
-                        </title>
-                      </circle>
-                    ),
+                    ) =>
+                      point.value !==
+                        null &&
+                      point.y !==
+                        null ? (
+                        <circle
+                          key={`${line.key}-${index}`}
+                          cx={
+                            point.x
+                          }
+                          cy={
+                            point.y
+                          }
+                          r="3.5"
+                          fill="currentColor"
+                        >
+                          <title>
+                            {`${formatDateShort(
+                              point
+                                .row
+                                ?.from,
+                            )} · ${
+                              line.label
+                            }: ${valueFormatter(
+                              point.value,
+                            )}`}
+                          </title>
+                        </circle>
+                      ) : null,
                   )}
                 </g>
               );
