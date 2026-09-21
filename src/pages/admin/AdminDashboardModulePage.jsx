@@ -330,14 +330,16 @@ const domainTextOrUnknown = (value) => {
 };
 
 const domainLabelFor = (item) => {
+  const label = String(item?.label ?? "").trim();
+
   if (
     isUnknownDomainText(item?.key) ||
-    isUnknownDomainText(item?.label)
+    (label && isUnknownDomainText(label))
   ) {
     return "Chưa xác định";
   }
 
-  return String(item?.label ?? item?.key ?? "").trim() || "Chưa xác định";
+  return label || String(item?.key ?? "").trim() || "Chưa xác định";
 };
 
 const BUSINESS_DEMAND_LABELS = {
