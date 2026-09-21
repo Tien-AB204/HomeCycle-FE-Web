@@ -1081,7 +1081,7 @@ export default function UserManagementPage() {
                   disabled={
                     moderatorBusy
                   }
-                  placeholder="moderator_01"
+                  placeholder="kiemduyet_01"
                   className="mt-2 w-full rounded-xl border border-border px-4 py-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-background"
                 />
 
