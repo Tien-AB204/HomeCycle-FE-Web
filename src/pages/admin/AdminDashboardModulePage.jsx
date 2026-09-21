@@ -320,6 +320,7 @@ const isUnknownDomainText = (value) => {
     !key ||
     key === "unspecified" ||
     key === "unknown" ||
+    key === "unnamed" ||
     key === "unknowninvalidvalue"
   );
 };
