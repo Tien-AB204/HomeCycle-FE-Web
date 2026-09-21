@@ -1342,7 +1342,7 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền tạm giữ chờ rút"
+              label="Tiền của người dùng đang yêu cầu rút"
               value={formatMoney(
                 position
                   ?.withdrawalLocked,
