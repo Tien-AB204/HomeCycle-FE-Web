@@ -79,7 +79,7 @@ export default function ModDashboardPage() {
           </h1>
 
           <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-            Truy cập các nghiệp vụ kiểm duyệt theo đúng dữ liệu và API của
+            Truy cập các nghiệp vụ kiểm duyệt theo đúng dữ liệu và quy trình của
             từng màn chức năng.
           </p>
         </div>
@@ -105,8 +105,8 @@ export default function ModDashboardPage() {
       </section>
 
       <div className="rounded-2xl border border-primary/10 bg-primary/[0.035] px-5 py-4 text-sm leading-6 text-textLight">
-        Trang này không tự ghép số liệu từ các API nghiệp vụ riêng lẻ để tạo
-        KPI tổng hợp. Số lượng, trạng thái và bộ lọc của từng nghiệp vụ được
+        Trang này không tự ghép số liệu từ các nghiệp vụ riêng lẻ để tạo
+        chỉ số tổng hợp. Số lượng, trạng thái và bộ lọc của từng nghiệp vụ được
         hiển thị tại màn chức năng tương ứng.
       </div>
 

@@ -682,25 +682,13 @@ const PaymentMethodTable = ({
     </div>
   </section>
 );
-const isSupportedTradePair = (item) => {
-  const buyerRole = normalize(item?.buyerRole);
-  const sellerRole = normalize(item?.sellerRole);
-
-  return (
-    (buyerRole === "business" &&
-      sellerRole === "personal") ||
-    (buyerRole === "personal" &&
-      sellerRole === "personal")
-  );
-};
-
 const TradeChart = ({
   title,
   rows,
 }) => {
   const visibleRows = (
     Array.isArray(rows)
-      ? rows.filter(isSupportedTradePair)
+      ? rows
       : []
   ).filter(
     (item) =>
