@@ -1227,8 +1227,8 @@ export default function AdminDashboardPage() {
           <>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "Hôm nay", value: activity?.dailyRecordedActiveUsers, className: "text-primary" },
-                { label: "30 ngày gần nhất", value: activity?.monthlyRecordedActiveUsers, className: "text-primary" },
+                { label: "Có hoạt động ghi nhận hôm nay", value: activity?.dailyRecordedActiveUsers, className: "text-primary" },
+                { label: "Có hoạt động ghi nhận trong 30 ngày", value: activity?.monthlyRecordedActiveUsers, className: "text-primary" },
                 { label: "Hồ sơ doanh nghiệp chờ duyệt", value: activity?.pendingBusinessVerificationCount, className: "text-warning" },
                 { label: "Xác minh cá nhân chờ duyệt", value: activity?.pendingPersonalVerificationCount, className: "text-warning" },
               ].map((item) => (
