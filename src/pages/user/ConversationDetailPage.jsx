@@ -4,7 +4,6 @@ import { getNegotiationStatusMeta } from "../../constants/negotiations";
 import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import conversationApi from "../../services/apis/conversationApi";
-import chatRealtimeService from "../../services/realtime/chatRealtimeService";
 import { getUserId } from "../../utils/authUtils";
 import Avatar from "../../components/shared/Avatar";
 
@@ -78,7 +77,7 @@ const ConversationDetailPage = () => {
   const { conversationId } = useParams();
   const { user } = useAuth();
   const currentUserId = getUserId(user);
-  const { connection } = useChatRealtime();
+  const { subscribe, joinConversation, leaveConversation } = useChatRealtime();
 
   const [conversation, setConversation] = useState(null);
   const [conversationError, setConversationError] = useState("");
@@ -224,17 +223,15 @@ const ConversationDetailPage = () => {
    * đơn giản và an toàn hơn cho một trang tổng hợp nhiều nguồn dữ liệu.
    */
   useEffect(() => {
-    if (!connection || !conversationId) {
+    if (!conversationId) {
       return undefined;
     }
 
     let isActive = true;
 
-    chatRealtimeService
-      .joinConversation(connection, conversationId)
-      .catch(() => {
-        /* Nếu tham gia group thất bại, trang vẫn dùng dữ liệu REST đã tải. */
-      });
+    joinConversation(conversationId).catch(() => {
+      /* Nếu tham gia group thất bại, trang vẫn dùng dữ liệu REST đã tải. */
+    });
 
     const handleUpdate = () => {
       if (!isActive) {
@@ -246,22 +243,27 @@ const ConversationDetailPage = () => {
       void loadConversation();
     };
 
-    connection.on("ConversationMessageCreated", handleUpdate);
-    connection.on("ConversationMessageUpdated", handleUpdate);
-    connection.on("ConversationMessagesRead", handleUpdate);
-    connection.on("ConversationUpdated", handleUpdate);
+    const unsubscribers = [
+      subscribe("ConversationMessageCreated", handleUpdate),
+      subscribe("ConversationMessageUpdated", handleUpdate),
+      subscribe("ConversationMessagesRead", handleUpdate),
+      subscribe("ConversationUpdated", handleUpdate),
+    ];
 
     return () => {
       isActive = false;
-      connection.off("ConversationMessageCreated", handleUpdate);
-      connection.off("ConversationMessageUpdated", handleUpdate);
-      connection.off("ConversationMessagesRead", handleUpdate);
-      connection.off("ConversationUpdated", handleUpdate);
-      chatRealtimeService
-        .leaveConversation(connection, conversationId)
-        .catch(() => {});
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+      void leaveConversation(conversationId);
     };
-  }, [connection, conversationId, loadTimeline, loadNegotiations, loadConversation]);
+  }, [
+    conversationId,
+    joinConversation,
+    leaveConversation,
+    loadConversation,
+    loadNegotiations,
+    loadTimeline,
+    subscribe,
+  ]);
 
   const participant = conversation?.otherParticipant;
 

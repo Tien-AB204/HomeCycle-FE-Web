@@ -193,10 +193,11 @@ export const orderApi = {
   },
 
   /**
-   * Hủy Order sau khi kết quả kiểm định bị từ chối.
-   * Quyền thao tác lấy từ OrderDetailDto.actions.canCancel.
+   * Hủy giao dịch (Order). Không có request body.
+   * Điều kiện hủy do Backend quyết định qua OrderDetailDto.actions.canCancel;
+   * FE không tự suy luận từ phương thức giao nhận, vận chuyển hay lịch hẹn.
    */
-  cancelAfterRejectedInspection: async (orderId) => {
+  cancelOrder: async (orderId) => {
     const id = normalizeIdentifier(
       orderId,
       "Không tìm thấy mã đơn hàng để hủy.",

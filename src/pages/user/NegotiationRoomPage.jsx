@@ -26,9 +26,8 @@ import messageApi, {
 import agreementApi from "../../services/apis/agreementApi";
 import negotiationApi from "../../services/apis/negotiationApi";
 import postApi from "../../services/apis/postApi";
-import chatRealtimeService, {
-  CHAT_REALTIME_STATUS,
-} from "../../services/realtime/chatRealtimeService";
+import { CHAT_REALTIME_STATUS } from "../../services/realtime/chatRealtimeService";
+import { useChatRealtime } from "../../hooks/useChatRealtime";
 import { getUserId } from "../../utils/authUtils";
 import {
   getNegotiationChangedFields,
@@ -429,9 +428,17 @@ const NegotiationRoomPage = () => {
     totalCount: 0,
     hasNextPage: false,
   });
-  const [realtimeStatus, setRealtimeStatus] = useState(
-    CHAT_REALTIME_STATUS.CONNECTING,
-  );
+  const {
+    status: hubStatus,
+    reconnectVersion,
+    subscribe,
+    joinNegotiation,
+    leaveNegotiation,
+  } = useChatRealtime();
+  const [groupJoinFailed, setGroupJoinFailed] = useState(false);
+  const realtimeStatus = groupJoinFailed
+    ? CHAT_REALTIME_STATUS.DISCONNECTED
+    : hubStatus;
   const messagesEndRef = useRef(null);
   const shouldScrollToBottomRef = useRef(true);
 
@@ -597,56 +604,31 @@ const NegotiationRoomPage = () => {
     };
   }, [markRoomAsRead, negotiationId, requestKey]);
 
+  /*
+   * Realtime dùng chung HubConnection của ChatRealtimeProvider: trang chỉ
+   * tham gia group Negotiation và đăng ký handler; provider tự tham gia lại
+   * group sau khi reconnect.
+   */
   useEffect(() => {
     if (!negotiationId || !currentUserId) {
       return undefined;
     }
 
-    const connection = chatRealtimeService.createConnection();
     let isActive = true;
-    let retryTimer = null;
 
-    const scheduleRetry = () => {
-      if (!isActive || retryTimer) {
-        return;
-      }
-
-      retryTimer = window.setTimeout(() => {
-        retryTimer = null;
-        void startConnection();
-      }, 5000);
-    };
-
-    const startConnection = async () => {
-      if (!isActive || connection.state !== "Disconnected") {
-        return;
-      }
-
-      setRealtimeStatus(CHAT_REALTIME_STATUS.CONNECTING);
-
-      try {
-        await connection.start();
-
-        if (!isActive) {
-          await connection.stop();
-          return;
-        }
-
-        await chatRealtimeService.joinNegotiation(
-          connection,
-          negotiationId,
-        );
-        setRealtimeStatus(CHAT_REALTIME_STATUS.CONNECTED);
-        await syncLatestMessages();
-      } catch {
+    joinNegotiation(negotiationId)
+      .then(() => {
         if (isActive) {
-          setRealtimeStatus(CHAT_REALTIME_STATUS.DISCONNECTED);
-          scheduleRetry();
+          setGroupJoinFailed(false);
         }
-      }
-    };
+      })
+      .catch(() => {
+        if (isActive) {
+          setGroupJoinFailed(true);
+        }
+      });
 
-    connection.on("MessageCreated", (rawMessage) => {
+    const unsubscribeCreated = subscribe("MessageCreated", (rawMessage) => {
       const message = normalizeMessage(rawMessage);
 
       if (!message || message.negotiationId !== negotiationId) {
@@ -661,7 +643,7 @@ const NegotiationRoomPage = () => {
       }
     });
 
-    connection.on("MessageUpdated", (rawMessage) => {
+    const unsubscribeUpdated = subscribe("MessageUpdated", (rawMessage) => {
       const message = normalizeMessage(rawMessage);
 
       if (!message || message.negotiationId !== negotiationId) {
@@ -679,7 +661,7 @@ const NegotiationRoomPage = () => {
       }
     });
 
-    connection.on("MessagesRead", (readReceipt) => {
+    const unsubscribeRead = subscribe("MessagesRead", (readReceipt) => {
       if (String(readReceipt?.negotiationId || "") !== negotiationId) {
         return;
       }
@@ -702,62 +684,40 @@ const NegotiationRoomPage = () => {
       );
     });
 
-    connection.onreconnecting(() => {
-      if (isActive) {
-        setRealtimeStatus(CHAT_REALTIME_STATUS.RECONNECTING);
-      }
-    });
-
-    connection.onreconnected(async () => {
-      if (!isActive) {
-        return;
-      }
-
-      try {
-        await chatRealtimeService.joinNegotiation(
-          connection,
-          negotiationId,
-        );
-        setRealtimeStatus(CHAT_REALTIME_STATUS.CONNECTED);
-        await syncLatestMessages();
-      } catch {
-        setRealtimeStatus(CHAT_REALTIME_STATUS.DISCONNECTED);
-      }
-    });
-
-    connection.onclose(() => {
-      if (isActive) {
-        setRealtimeStatus(CHAT_REALTIME_STATUS.DISCONNECTED);
-        scheduleRetry();
-      }
-    });
-
-    void startConnection();
-
     return () => {
       isActive = false;
-
-      if (retryTimer) {
-        window.clearTimeout(retryTimer);
-      }
-
-      connection.off("MessageCreated");
-      connection.off("MessageUpdated");
-      connection.off("MessagesRead");
-
-      void chatRealtimeService
-        .leaveNegotiation(connection, negotiationId)
-        .catch(() => undefined)
-        .finally(() => connection.stop().catch(() => undefined));
+      unsubscribeCreated();
+      unsubscribeUpdated();
+      unsubscribeRead();
+      void leaveNegotiation(negotiationId);
     };
   }, [
     currentUserId,
+    joinNegotiation,
+    leaveNegotiation,
     markRoomAsRead,
     negotiationId,
     refreshRoom,
-    syncLatestMessages,
+    subscribe,
     updateMessages,
   ]);
+
+  /*
+   * Sau mỗi lần kết nối/kết nối lại, provider đã tham gia lại group; tải
+   * bù các tin nhắn có thể đã bỏ lỡ trong lúc mất kết nối.
+   */
+  useEffect(() => {
+    if (reconnectVersion <= 0 || !negotiationId) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setGroupJoinFailed(false);
+      void syncLatestMessages();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [negotiationId, reconnectVersion, syncLatestMessages]);
 
   useEffect(() => {
     if (realtimeStatus === CHAT_REALTIME_STATUS.CONNECTED) {

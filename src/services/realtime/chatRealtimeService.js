@@ -25,6 +25,42 @@ export const CHAT_REALTIME_STATUS = Object.freeze({
   DISCONNECTED: "disconnected",
 });
 
+/*
+ * Toàn bộ sự kiện Backend phát qua hub /hubs/chat. Provider đăng ký đủ
+ * danh sách này trước khi connection.start() để không bỏ lỡ sự kiện.
+ */
+export const CHAT_HUB_EVENTS = Object.freeze([
+  // Group Negotiation
+  "MessageCreated",
+  "MessageUpdated",
+  "MessagesRead",
+  // Group Conversation
+  "ConversationMessageCreated",
+  "ConversationMessageUpdated",
+  "ConversationMessagesRead",
+  // Theo user
+  "ConversationUpdated",
+  "OfferCreated",
+  "OfferUpdated",
+  "NotificationCreated",
+  "NotificationRead",
+  "NotificationsReadAll",
+  "AppointmentUpdated",
+  "CartUpdated",
+  // Group Order
+  "OrderTrackingUpdated",
+]);
+
+/*
+ * Các group hub hỗ trợ join/leave. Appointment, Cart, Notification, Offer
+ * là sự kiện theo user nên không có group để tham gia.
+ */
+export const CHAT_HUB_GROUPS = Object.freeze({
+  negotiation: { join: "JoinNegotiation", leave: "LeaveNegotiation" },
+  conversation: { join: "JoinConversation", leave: "LeaveConversation" },
+  order: { join: "JoinOrder", leave: "LeaveOrder" },
+});
+
 const getAccessToken = () => {
   return getStoredAccessToken();
 };
@@ -40,42 +76,5 @@ export const createChatConnection = () => {
     .build();
 };
 
-export const joinNegotiation = async (connection, negotiationId) => {
-  if (connection?.state !== HubConnectionState.Connected) {
-    throw new Error("Kết nối phòng thương lượng chưa sẵn sàng.");
-  }
-
-  await connection.invoke("JoinNegotiation", negotiationId);
-};
-
-export const leaveNegotiation = async (connection, negotiationId) => {
-  if (connection?.state !== HubConnectionState.Connected) {
-    return;
-  }
-
-  await connection.invoke("LeaveNegotiation", negotiationId);
-};
-
-export const joinConversation = async (connection, conversationId) => {
-  if (connection?.state !== HubConnectionState.Connected) {
-    throw new Error("Kết nối hội thoại chưa sẵn sàng.");
-  }
-
-  await connection.invoke("JoinConversation", conversationId);
-};
-
-export const leaveConversation = async (connection, conversationId) => {
-  if (connection?.state !== HubConnectionState.Connected) {
-    return;
-  }
-
-  await connection.invoke("LeaveConversation", conversationId);
-};
-
-export default {
-  createConnection: createChatConnection,
-  joinNegotiation,
-  leaveNegotiation,
-  joinConversation,
-  leaveConversation,
-};
+export const isConnectionReady = (connection) =>
+  connection?.state === HubConnectionState.Connected;
