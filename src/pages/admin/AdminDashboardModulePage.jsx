@@ -304,28 +304,22 @@ const labelFor = (
     return "Đã hủy hoặc thay thế";
   }
 
-  return (
-    LABELS[key] ||
-    safeDisplayText(value)
-  );
+  return LABELS[key] || "Chưa xác định";
 };
 
 /*
- * Giá trị chưa có trong bảng nhãn: nếu trông như mã enum/DTO thô của Backend
- * (định danh ASCII hoặc số) thì không hiển thị; văn bản do người dùng/Backend
- * soạn (tên danh mục, lý do, thành phố...) được giữ nguyên.
+ * Phân bố theo danh mục/tên miền (ví dụ nguyên nhân tranh chấp): key là mã,
+ * label là tên do hệ thống/người dùng đặt và được giữ nguyên. Chỉ khóa
+ * "Unspecified" (Backend kèm nhãn tiếng Anh) mới đổi thành "Chưa xác định".
  */
-const looksLikeRawToken = (value) =>
-  /^[A-Za-z][A-Za-z0-9_]*$/.test(value) || /^\d+$/.test(value);
-
-const safeDisplayText = (value) => {
-  const text = String(value ?? "").trim();
-
-  if (!text || looksLikeRawToken(text)) {
+const domainLabelFor = (item) => {
+  if (normalize(item?.key) === "unspecified") {
     return "Chưa xác định";
   }
 
-  return text;
+  const text = String(item?.label ?? item?.key ?? "").trim();
+
+  return text || "Chưa xác định";
 };
 
 const BUSINESS_DEMAND_LABELS = {
@@ -342,10 +336,21 @@ const BUSINESS_DEMAND_LABELS = {
   retail: "Thu mua lẻ",
 };
 
-const demandLabelFor = (value) =>
-  BUSINESS_DEMAND_LABELS[
-    normalize(value)
-  ] || safeDisplayText(value);
+/*
+ * Nhu cầu doanh nghiệp: nhóm enum (mức hư hỏng, tình trạng sử dụng, quy mô
+ * thu mua) tra theo key; nhóm văn bản (thành phố, phường/xã, loại sản phẩm)
+ * giữ nguyên tên thật, kể cả tên ASCII một từ như "Laptop".
+ */
+const demandLabelFor = (item, kind) => {
+  if (kind === "enum") {
+    return (
+      BUSINESS_DEMAND_LABELS[normalize(item?.key)] ||
+      "Chưa xác định"
+    );
+  }
+
+  return domainLabelFor(item);
+};
 const formatNumber = (value) =>
   new Intl.NumberFormat(
     "vi-VN",
@@ -477,6 +482,7 @@ const DistributionPanel = ({
   description,
   rows,
   dashboard,
+  getLabel,
 }) => (
   <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
     <div className="border-b border-border pb-4">
@@ -521,11 +527,12 @@ const DistributionPanel = ({
             >
               <div className="mb-2 flex items-center justify-between gap-4">
                 <span className="text-sm font-bold text-text">
-                  {labelFor(
-                    item.label ||
-                      item.key,
-                    dashboard,
-                  )}
+                  {getLabel
+                    ? getLabel(item)
+                    : labelFor(
+                        item.key,
+                        dashboard,
+                      )}
                 </span>
 
                 <span className="text-sm font-black text-text">
@@ -784,6 +791,7 @@ const EmptyPerformanceChart = ({
 const DemandGroup = ({
   title,
   group,
+  kind = "text",
 }) => {
   const items = Array.isArray(group?.items)
     ? group.items
@@ -842,8 +850,8 @@ const DemandGroup = ({
                   <div className="mb-2 flex items-start justify-between gap-4">
                     <span className="min-w-0 text-sm font-bold text-text">
                       {demandLabelFor(
-                        item.label ||
-                          item.key,
+                        item,
+                        kind,
                       )}
                     </span>
 
@@ -863,8 +871,8 @@ const DemandGroup = ({
                     className="h-3 overflow-hidden rounded-full bg-background"
                     role="img"
                     aria-label={`${demandLabelFor(
-                      item.label ||
-                        item.key,
+                      item,
+                      kind,
                     )}: ${formatDecimal(
                       item.percentage,
                     )}%`}
@@ -1848,8 +1856,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   labelFor(
-                    item.label ||
-                      item.key,
+                item.key,
                     "payments",
                   )
                 }
@@ -1926,8 +1933,7 @@ export default function AdminDashboardModulePage({
                 }
                 getLabel={(item) =>
                   labelFor(
-                    item.label ||
-                      item.key,
+                item.key,
                     "orders",
                   )
                 }
@@ -2022,8 +2028,7 @@ export default function AdminDashboardModulePage({
               }
               getLabel={(item) =>
                 labelFor(
-                  item.label ||
-                    item.key,
+                item.key,
                   "appointments",
                 )
               }
@@ -2091,8 +2096,7 @@ export default function AdminDashboardModulePage({
             }
             getLabel={(item) =>
               labelFor(
-                item.label ||
-                  item.key,
+                item.key,
                 "disputes",
               )
             }
@@ -2105,6 +2109,7 @@ export default function AdminDashboardModulePage({
               data?.categoryDistribution
             }
             dashboard="disputes"
+            getLabel={domainLabelFor}
           />
 
           <DashboardHorizontalBarChart
@@ -2113,13 +2118,7 @@ export default function AdminDashboardModulePage({
             rows={
               data?.unresolvedByCategory
             }
-            getLabel={(item) =>
-              labelFor(
-                item.label ||
-                  item.key,
-                "disputes",
-              )
-            }
+            getLabel={domainLabelFor}
             hideZero
           />
 
@@ -2268,10 +2267,12 @@ export default function AdminDashboardModulePage({
           <DemandGroup
             title="Mức độ hư hỏng"
             group={data?.damageLevels}
+            kind="enum"
           />
 
           <DemandGroup
             title="Tình trạng sử dụng"
+            kind="enum"
             group={
               data?.functionalityStatuses
             }
@@ -2279,6 +2280,7 @@ export default function AdminDashboardModulePage({
 
           <DemandGroup
             title="Quy mô thu mua"
+            kind="enum"
             group={
               data?.procurementScales
             }
@@ -2773,21 +2775,23 @@ export default function AdminDashboardModulePage({
               title="Trạng thái hiện tại của đơn tạo trong kỳ"
               description="Đơn được tạo trong kỳ, phân theo trạng thái hiện tại của chúng."
               rows={data?.createdStatusDistribution}
-              getLabel={(item) => labelFor(item.label || item.key, "orders")}
+              getLabel={(item) => labelFor(
+                item.key, "orders")}
             />
 
             <DashboardDonutChart
               title="Cách giao nhận của đơn tạo trong kỳ"
               description="Theo phương thức giao nhận mới nhất của từng đơn."
               rows={data?.deliveryMethodDistribution}
-              getLabel={(item) => labelFor(item.label || item.key)}
+              getLabel={(item) => labelFor(item.key)}
             />
 
             <DashboardDonutChart
               title="Phương thức thanh toán trong kỳ"
               description="Theo các lượt thanh toán đặt cọc/thanh toán toàn bộ đã thanh toán thành công trong kỳ (kể cả khoản sau đó được hoàn tiền)."
               rows={data?.paymentMethodDistribution}
-              getLabel={(item) => labelFor(item.label || item.key, "payments")}
+              getLabel={(item) => labelFor(
+                item.key, "payments")}
             />
           </div>
 
@@ -2855,8 +2859,7 @@ export default function AdminDashboardModulePage({
               }
               getLabel={(item) =>
                 labelFor(
-                  item.label ||
-                    item.key,
+                item.key,
                   "appointments",
                 )
               }
@@ -3333,7 +3336,7 @@ export default function AdminDashboardModulePage({
             title="Kết quả giải quyết trong kỳ"
             description="Phân bố kết quả của các tranh chấp được giải quyết trong kỳ."
             rows={data?.resolutionDistribution}
-            getLabel={(item) => labelFor(item.label || item.key)}
+            getLabel={(item) => labelFor(item.key)}
           />
 
         <DashboardLineChart

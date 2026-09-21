@@ -56,8 +56,8 @@ const ACTOR_TYPE_OPTIONS = [
 ];
 
 const SOURCE_OPTIONS = [
-  { value: "1", name: "HttpApi", label: "API" },
-  { value: "2", name: "Webhook", label: "Webhook" },
+  { value: "1", name: "HttpApi", label: "Yêu cầu từ ứng dụng" },
+  { value: "2", name: "Webhook", label: "Thông báo từ dịch vụ ngoài" },
   {
     value: "3",
     name: "BackgroundJob",
