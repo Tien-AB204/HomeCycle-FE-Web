@@ -313,14 +313,31 @@ const labelFor = (
  * label là tên do hệ thống/người dùng đặt và được giữ nguyên. Chỉ khóa
  * "Unspecified" (Backend kèm nhãn tiếng Anh) mới đổi thành "Chưa xác định".
  */
+const isUnknownDomainText = (value) => {
+  const key = normalize(value);
+
+  return (
+    !key ||
+    key === "unspecified" ||
+    key === "unknown" ||
+    key === "unknowninvalidvalue"
+  );
+};
+
+const domainTextOrUnknown = (value) => {
+  const text = String(value ?? "").trim();
+  return isUnknownDomainText(text) ? "Chưa xác định" : text;
+};
+
 const domainLabelFor = (item) => {
-  if (normalize(item?.key) === "unspecified") {
+  if (
+    isUnknownDomainText(item?.key) ||
+    isUnknownDomainText(item?.label)
+  ) {
     return "Chưa xác định";
   }
 
-  const text = String(item?.label ?? item?.key ?? "").trim();
-
-  return text || "Chưa xác định";
+  return String(item?.label ?? item?.key ?? "").trim() || "Chưa xác định";
 };
 
 const BUSINESS_DEMAND_LABELS = {
@@ -816,7 +833,7 @@ const BusinessRankingTabs = ({ sellers, buyers }) => {
 
   const rows = (Array.isArray(source) ? source : []).map((item) => ({
     key: item.userId,
-    label: `${item.name || "Doanh nghiệp"} · ${formatNumber(item.completedOrderCount)} đơn`,
+    label: `${domainTextOrUnknown(item.name)} · ${formatNumber(item.completedOrderCount)} đơn`,
     amount: item.gmv,
   }));
 
@@ -2832,7 +2849,7 @@ export default function AdminDashboardModulePage({
           description="Số đơn tạo trong kỳ có doanh nghiệp tham gia, theo thành phố của bài đăng."
           rows={(data?.transactionRegions || []).map((item) => ({
             key: item.city || "unspecified",
-            label: item.city || "Chưa rõ",
+            label: domainTextOrUnknown(item.city),
             count: item.orderCount,
           }))}
           getLabel={(item) => item.label}
@@ -3427,7 +3444,7 @@ export default function AdminDashboardModulePage({
               description="Số lịch hẹn hiệu lực theo thời điểm hẹn trong kỳ, gộp theo thành phố/phường của bài đăng liên quan và cách giao nhận."
               rows={(data?.regions || []).map((item) => ({
                 key: `${item.city}|${item.ward}|${item.deliveryMethod ?? ""}`,
-                label: `${item.city || "Chưa rõ"}${item.ward ? ` / ${item.ward}` : ""} · ${labelFor(item.deliveryMethod ?? "Unspecified")}`,
+                label: `${domainTextOrUnknown(item.city)} / ${domainTextOrUnknown(item.ward)} · ${labelFor(item.deliveryMethod ?? "Unspecified")}`,
                 count: item.appointmentCount,
               }))}
               getLabel={(item) => item.label}
