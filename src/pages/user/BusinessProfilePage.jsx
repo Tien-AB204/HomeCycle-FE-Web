@@ -535,31 +535,31 @@ export default function BusinessProfilePage() {
     "Doanh nghiệp";
 
   return (
-    <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 pb-16 pt-7 sm:px-6">
-      <div className="mb-6 overflow-hidden rounded-3xl bg-primary p-6 text-white shadow-[0_18px_50px_rgba(23,40,48,0.16)] sm:p-8">
+    <div className="hc-profile-page mx-auto w-full max-w-7xl px-4 pb-16 pt-7 sm:px-6">
+      <div className="hc-profile-heading mb-6 border-b border-border pb-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/65">
+            <p className="hc-eyebrow">
               HomeCycle Business
             </p>
-            <h1 className="mt-2 text-3xl font-black sm:text-4xl">
-              Trung tâm hồ sơ doanh nghiệp
+            <h1 className="mt-2 text-2xl font-bold">
+              Hồ sơ doanh nghiệp
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75">
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-textLight">
               Quản lý pháp lý, khu vực hoạt động và nhu cầu thu mua trong một nơi.
             </p>
           </div>
 
-          <div className="min-w-[230px] rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur">
+          <div className="w-full max-w-xs py-2">
             <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-bold text-white/70">
+              <span className="font-medium text-textLight">
                 Mức hoàn thiện
               </span>
               <span className="font-black">
                 {progress}%
               </span>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/15">
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border/40">
               <div
                 className="h-full rounded-full bg-success transition-all"
                 style={{
@@ -594,9 +594,9 @@ export default function BusinessProfilePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="space-y-4">
-          <div className="flex flex-col items-center rounded-3xl border border-border bg-white p-6 text-center shadow-[0_10px_30px_rgba(23,40,48,0.06)]">
+      <div className="hc-profile-layout">
+        <div className="hc-profile-summary">
+          <div className="hc-profile-identity">
             <AvatarUploader
               avatarUrl={profile.avatarUrl}
               displayName={displayName}
@@ -623,8 +623,8 @@ export default function BusinessProfilePage() {
             </span>
           </div>
 
-          <nav className="overflow-hidden rounded-3xl border border-border bg-white shadow-[0_10px_30px_rgba(23,40,48,0.06)]">
-            {TABS.map((tab, index) => (
+          <nav className="hc-profile-tabs" aria-label="Các phần hồ sơ doanh nghiệp">
+            {TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
@@ -636,15 +636,8 @@ export default function BusinessProfilePage() {
                   setError("");
                   setSuccess("");
                 }}
-                className={`flex w-full items-center gap-3 border-l-4 px-5 py-3.5 text-left text-sm font-bold transition ${
-                  index
-                    ? "border-t border-t-border"
-                    : ""
-                } ${
-                  activeTab === tab.id
-                    ? "border-l-primary bg-primary/10 text-text"
-                    : "border-l-transparent text-textLight hover:bg-background"
-                }`}
+                aria-current={activeTab === tab.id ? "page" : undefined}
+                className={activeTab === tab.id ? "is-active" : ""}
               >
                 <span className="material-symbols-outlined text-[21px]">
                   {tab.icon}
@@ -653,9 +646,9 @@ export default function BusinessProfilePage() {
               </button>
             ))}
           </nav>
-        </aside>
+        </div>
 
-        <main className="min-h-[520px] rounded-3xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.06)] sm:p-7">
+        <main className="hc-profile-panel">
           {activeTab === "account" && (
             <div>
               <div className="mb-6 border-b border-border pb-5">
@@ -663,7 +656,7 @@ export default function BusinessProfilePage() {
                   Thông tin tài khoản
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-textLight">
-                  Email được cố định theo tài khoản đăng ký. Tên đăng nhập và số điện thoại có API cập nhật riêng.
+                  Cập nhật tên đăng nhập và số điện thoại liên hệ. Email đăng ký không thể thay đổi.
                 </p>
               </div>
               <form

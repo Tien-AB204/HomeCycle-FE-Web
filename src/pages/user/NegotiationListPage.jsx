@@ -185,8 +185,8 @@ const NegotiationListPage = () => {
 
       {!loading && !error && negotiations.length > 0 && (
         <>
-          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(23,40,48,0.05)]">
-            <div className="hidden grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] items-center gap-4 bg-background px-5 py-3 text-[11px] font-black uppercase tracking-[0.08em] text-textLight md:grid">
+          <div className="hc-negotiation-table mt-4 overflow-hidden rounded-lg border border-border bg-white">
+            <div className="hc-negotiation-head hidden grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] items-center gap-4 bg-background px-5 py-3 text-[11px] font-bold text-textLight md:grid">
               <span>Đối tác</span>
               <span>Giá hiện tại</span>
               <span>Số lượng</span>
@@ -204,7 +204,7 @@ const NegotiationListPage = () => {
               return (
                 <article
                   key={negotiation.negotiationId}
-                  className="grid gap-4 px-5 py-4 transition hover:bg-background md:grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] md:items-center"
+                  className="hc-negotiation-row grid gap-4 px-5 py-4 transition hover:bg-background md:grid-cols-[minmax(190px,1.4fr)_150px_80px_130px_155px_120px] md:items-center"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                       <Avatar
@@ -219,7 +219,7 @@ const NegotiationListPage = () => {
                   </div>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wide text-textLight md:hidden">Giá hiện tại</p>
-                    <p className="mt-0.5 text-base font-black text-error">{formatCurrency(negotiation.currentOfferPrice)}</p>
+                    <p className="mt-0.5 text-base font-semibold text-text">{formatCurrency(negotiation.currentOfferPrice)}</p>
                   </div>
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wide text-textLight md:hidden">Số lượng</p>
