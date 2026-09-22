@@ -79,6 +79,7 @@ import PaymentResultPage from "../pages/user/PaymentResultPage";
 import WalletPage from "../pages/user/WalletPage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
+import ClientEntryRoute from "./ClientEntryRoute";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
 import SubscriptionPage from "../pages/user/SubscriptionPage";
 
@@ -197,6 +198,7 @@ const AppRouter = () => {
             <RoleRoute allowedRoles={[ROLES.PERSONAL, ROLES.BUSINESS]} />
           }
         >
+          <Route path="/quan-ly" element={<ClientEntryRoute />} />
           <Route path="/ho-so" element={<ProfilePage />} />
         </Route>
 

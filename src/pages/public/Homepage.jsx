@@ -1,12 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AppstoreOutlined,
-  CheckCircleOutlined,
   HomeOutlined,
-  MessageOutlined,
-  SearchOutlined,
-  ShoppingOutlined,
-  SyncOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -32,7 +27,7 @@ import {
   getSafeValidationMessage,
 } from "../../utils/safeErrorMessage";
 
-const HOME_PAGE_SIZE = 20;
+const HOME_PAGE_SIZE = 100;
 const BUSINESS_POST_LIMIT = 4;
 const PERSONAL_POST_LIMIT = 4;
 
@@ -55,12 +50,6 @@ const CATEGORIES = [
     icon: HomeOutlined,
     className: "border border-border bg-white text-primary",
   },
-];
-
-const BENEFITS = [
-  { icon: CheckCircleOutlined, title: "Minh bạch", description: "Thông tin rõ ràng" },
-  { icon: MessageOutlined, title: "Linh hoạt", description: "Thương lượng trực tiếp" },
-  { icon: SyncOutlined, title: "Bền vững", description: "Kéo dài vòng đời sản phẩm" },
 ];
 
 const isCanceledRequest = (error) =>
@@ -157,62 +146,6 @@ const BusinessSurveyPrompt = () => (
   </section>
 );
 
-const HomepageSearch = () => {
-  const navigate = useNavigate();
-  const keywordInputRef = useRef(null);
-
-  const navigateToSearch = (showFilter) => {
-    const keyword = keywordInputRef.current?.value.trim() || "";
-    const searchParams = new URLSearchParams();
-
-    if (keyword) {
-      searchParams.set("keyword", keyword);
-    }
-
-    searchParams.set("showFilter", showFilter ? "1" : "0");
-    navigate(`/search?${searchParams.toString()}`);
-  };
-
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    navigateToSearch(false);
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="mt-7 flex max-w-2xl flex-col gap-2 rounded-2xl bg-white p-2 shadow-[0_18px_50px_rgba(23,40,48,0.10)] sm:flex-row"
-    >
-      <label htmlFor="homepage-search-keyword" className="sr-only">
-        Từ khóa tìm kiếm
-      </label>
-      <div className="flex min-w-0 flex-1 items-center">
-        <span className="pl-4 text-xl text-textLight" aria-hidden="true">⌕</span>
-        <input
-          id="homepage-search-keyword"
-          ref={keywordInputRef}
-          type="search"
-          placeholder="Tìm tên sản phẩm, thương hiệu..."
-          className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-text outline-none placeholder:text-textLight"
-        />
-      </div>
-      <button
-        type="submit"
-        className="rounded-xl border border-primary bg-white px-6 py-3 text-sm font-extrabold text-primary transition hover:bg-primary hover:text-white"
-      >
-        Tìm kiếm
-      </button>
-      <button
-        type="button"
-        onClick={() => navigateToSearch(true)}
-        className="rounded-xl border border-border px-4 py-3 text-sm font-bold text-primary transition hover:bg-background"
-      >
-        Bộ lọc
-      </button>
-    </form>
-  );
-};
-
 const SectionHeader = ({ eyebrow, title, description, to }) => (
   <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
     <div>
@@ -247,28 +180,6 @@ const Homepage = () => {
   const [requestVersion, setRequestVersion] = useState(0);
   const normalizedRole = normalizeRole(user?.role);
   const isBusinessUser = isAuthenticated && normalizedRole === ROLES.BUSINESS;
-  const preferredDisplayName =
-    user?.fullName ||
-    user?.FullName ||
-    user?.representativeName ||
-    user?.displayName ||
-    "";
-  const username =
-    user?.username ||
-    user?.Username ||
-    user?.name ||
-    user?.Name ||
-    "";
-  const displayName =
-    preferredDisplayName ||
-    (!username.includes("@") ? username : "") ||
-    "bạn";
-  const managedPostPath = isBusinessUser
-    ? "/tin-thu-mua?view=mine"
-    : "/tin-dang-ban?view=mine";
-  const managedPostLabel = isBusinessUser
-    ? "Tin thu mua của tôi"
-    : "Tin đăng bán của tôi";
   useEffect(() => {
     const controller = new AbortController();
     let isActive = true;
@@ -475,124 +386,10 @@ const Homepage = () => {
   };
 
   return (
-    <div className="overflow-hidden pb-20">
-      <section className="relative bg-gradient-to-br from-background via-white to-background">
-        <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-success/10 blur-3xl" />
-        <div className="absolute left-[38%] top-1/3 h-72 w-72 rounded-full bg-warning/10 blur-3xl" />
-
-        <div className="relative mx-auto grid max-w-7xl gap-10 px-6 py-14 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:py-20">
-          <div>
-            <span className="inline-flex items-center rounded-full bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.14em] text-primary shadow-sm">
-              {isAuthenticated
-                ? `Xin chào, ${displayName}`
-                : "Marketplace đồ cũ cho gia đình"}
-            </span>
-            <h1 className="mt-6 max-w-3xl text-4xl font-black leading-[1.08] tracking-[-0.035em] text-text sm:text-5xl lg:text-6xl">
-              {isAuthenticated ? (
-                <>
-                  Sẵn sàng cho
-                  <span className="block text-primary">giao dịch tiếp theo?</span>
-                </>
-              ) : (
-                <>
-                  Đồ cũ trao tay,
-                  <span className="block text-primary">giá trị ở lại.</span>
-                </>
-              )}
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-textLight sm:text-lg">
-              {isAuthenticated
-                ? isBusinessUser
-                  ? "Tìm nguồn hàng phù hợp, quản lý nhu cầu thu mua và tiếp tục các phiên thương lượng của doanh nghiệp tại một nơi."
-                  : "Quản lý tin đăng bán, theo dõi thương lượng và kết nối với những nhu cầu thu mua phù hợp ngay hôm nay."
-                : "Tìm mua, đăng bán và thương lượng đồ gia dụng đã qua sử dụng trên một nền tảng minh bạch, thuận tiện và bền vững."}
-            </p>
-
-            {!isAuthenticated && <HomepageSearch />}
-          </div>
-
-          <div className="relative mx-auto w-full max-w-lg lg:mx-0 lg:ml-auto">
-            <div className="absolute inset-8 rotate-6 rounded-[2.5rem] bg-primary/20" />
-            <div className="relative rounded-[2.5rem] border border-white/80 bg-white/90 p-6 shadow-[0_30px_80px_rgba(23,40,48,0.12)] backdrop-blur sm:p-8">
-              <div>
-                <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-textLight">
-                  {isAuthenticated ? "Khu vực của bạn" : "HomeCycle hôm nay"}
-                </p>
-                <p className="mt-2 text-3xl font-black text-text">
-                  {isAuthenticated
-                    ? isBusinessUser
-                      ? "Thu mua chủ động"
-                      : "Bán đồ thuận tiện"
-                    : "Mua bán dễ dàng"}
-                </p>
-              </div>
-
-              <div className="mt-7 grid grid-cols-2 gap-3">
-                <Link
-                  to={isAuthenticated ? managedPostPath : "/tin-dang-ban"}
-                  className="rounded-2xl border border-border bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <ShoppingOutlined className="text-3xl text-primary" aria-hidden="true" />
-                  <p className="mt-4 font-black text-text">
-                    {isAuthenticated ? managedPostLabel : "Tin đăng bán"}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-textLight">
-                    {isAuthenticated ? "Theo dõi và cập nhật bài đăng của bạn." : "Đăng sản phẩm và nhận đề nghị phù hợp."}
-                  </p>
-                </Link>
-                <Link
-                  to={isAuthenticated ? "/lich-hen" : "/tin-thu-mua"}
-                  className="rounded-2xl border border-border bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"
-                >
-                  <SearchOutlined className="text-3xl text-success" aria-hidden="true" />
-                  <p className="mt-4 font-black text-text">
-                    {isAuthenticated ? "Lịch hẹn" : "Tin thu mua"}
-                  </p>
-                  <p className="mt-1 text-xs leading-5 text-textLight">
-                    {isAuthenticated ? "Kiểm tra các lịch kiểm định và thu gom." : "Kết nối đúng người đang cần sản phẩm."}
-                  </p>
-                </Link>
-              </div>
-
-              <Link
-                to={isAuthenticated ? "/don-hang" : "/auth/register"}
-                className="mt-3 block rounded-2xl bg-primary p-5 text-white transition hover:bg-primary/90"
-              >
-                <p className="text-sm font-black">
-                  {isAuthenticated ? "Đơn hàng của tôi" : "Thương lượng trực tiếp"}
-                </p>
-                <p className="mt-1 text-xs leading-5 text-white/75">
-                  {isAuthenticated ? "Theo dõi thanh toán và tiến trình các đơn hàng." : "Hai bên chủ động thống nhất giá, số lượng và cách giao nhận."}
-                </p>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-border bg-white">
-        <div className="mx-auto grid max-w-7xl divide-y divide-border px-6 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {BENEFITS.map((benefit) => {
-            const BenefitIcon = benefit.icon;
-
-            return (
-              <div key={benefit.title} className="flex items-center gap-4 py-5 sm:justify-center sm:px-5">
-                <span className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-background text-xl text-success" aria-hidden="true">
-                  <BenefitIcon />
-                </span>
-                <div>
-                  <p className="font-extrabold text-text">{benefit.title}</p>
-                  <p className="text-xs text-textLight">{benefit.description}</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-6xl px-6">
-        <section className="py-14">
+    <div className="hc-home pb-12">
+      <h1 className="sr-only">Chợ đồ cũ HomeCycle</h1>
+      <div className="mx-auto max-w-7xl px-5 sm:px-6">
+        <section className="py-8">
           <div className="mb-6 flex items-end justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary">Danh mục nổi bật</p>
@@ -611,7 +408,7 @@ const Homepage = () => {
                 <Link
                   key={category.name}
                   to={`/search?keyword=${encodeURIComponent(category.name)}&showFilter=1`}
-                  className={`group flex items-center gap-5 rounded-3xl p-6 transition hover:-translate-y-1 hover:shadow-lg ${category.className}`}
+                  className={`group flex items-center gap-4 rounded-lg p-4 transition hover:border-primary ${category.className}`}
                 >
                   <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/75 text-3xl shadow-sm transition group-hover:scale-105" aria-hidden="true">
                     <CategoryIcon />
@@ -706,7 +503,7 @@ const Homepage = () => {
               description="Kết nối với người đang tìm đúng sản phẩm bạn có và chủ động gửi đề nghị phù hợp."
               to="/tin-thu-mua"
             />
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {loading ? (
                 <LoadingCards count={BUSINESS_POST_LIMIT} />
               ) : buyPosts.length > 0 ? (
@@ -722,14 +519,14 @@ const Homepage = () => {
       </div>
 
       <section className="bg-background py-16">
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6">
           <SectionHeader
             eyebrow="Đồ cũ còn tốt"
             title="Sản phẩm mới đăng"
             description="Khám phá sản phẩm từ cộng đồng và gửi mức giá bạn mong muốn ngay trên HomeCycle."
             to="/tin-dang-ban?view=marketplace"
           />
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {loading ? (
               <LoadingCards count={PERSONAL_POST_LIMIT} />
             ) : personalPosts.length > 0 ? (
