@@ -68,7 +68,6 @@ import ConversationListPage from "../pages/user/ConversationListPage";
 import CreatePostPage from "../pages/user/CreatePostPage";
 import DisputeDetailPage from "../pages/user/DisputeDetailPage";
 import DisputeListPage from "../pages/user/DisputeListPage";
-import NegotiationListPage from "../pages/user/NegotiationListPage";
 import NegotiationRoomPage from "../pages/user/NegotiationRoomPage";
 import NotificationPage from "../pages/user/NotificationPage";
 import OfferManagementPage from "../pages/user/OfferManagementPage";
@@ -129,7 +128,7 @@ const AppRouter = () => {
 
           <Route path="/thuong-luong" element={<OfferManagementPage />} />
 
-          <Route path="/thuong-luong/phien" element={<NegotiationListPage />} />
+          <Route path="/thuong-luong/phien" element={<Navigate to="/hop-thu" replace />} />
 
           <Route
             path="/thuong-luong/:negotiationId/thoa-thuan"

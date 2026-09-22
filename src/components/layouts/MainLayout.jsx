@@ -25,8 +25,7 @@ const MainLayout = () => {
   const isManager = role === ROLES.MODERATOR || role === ROLES.ADMIN;
   const canUseClientAccount = isAuthenticated && !isManager;
   const managerPath = role === ROLES.MODERATOR ? "/mod/dashboard" : "/admin/dashboard";
-  const displayName = user?.fullName || user?.FullName || user?.representativeName ||
-    user?.displayName || user?.username || user?.Username || user?.name || "Tài khoản";
+  const displayName = user?.username || user?.userName || user?.Username || user?.UserName || "Tài khoản";
   const clientPage = canUseClientAccount ? getClientPage(location, role) : null;
   const createLabel = role === ROLES.BUSINESS ? "Đăng tin thu mua" : role === ROLES.PERSONAL ? "Đăng tin bán" : "Đăng tin";
   const closeMenu = () => setMenuOpen(false);
@@ -109,7 +108,7 @@ const MainLayout = () => {
           <div className="hc-header-actions">
             {canUseClientAccount && <>
               <Link to="/gio-hang" className="hc-icon-button hc-cart" aria-label="Giỏ hàng" title="Giỏ hàng"><Icon name="shopping_cart" /></Link>
-              <Link to="/thuong-luong/phien" className="hc-icon-button" aria-label="Phòng thương lượng" title="Phòng thương lượng"><Icon name="chat_bubble" /></Link>
+              <Link to="/hop-thu" className="hc-icon-button" aria-label="Tin nhắn" title="Tin nhắn"><Icon name="chat_bubble" /></Link>
               <NotificationBell allNotificationsPath="/thong-bao" />
             </>}
             {isAuthenticated ? (

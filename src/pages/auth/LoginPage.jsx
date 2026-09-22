@@ -7,7 +7,8 @@ import {
 import googleLogo from "../../assets/brand/google-logo.svg";
 import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
-import { decodeJwtPayload, getHomePathByRole } from "../../utils/authUtils";
+import { decodeJwtPayload, getHomePathByRole, normalizeRole } from "../../utils/authUtils";
+import { ROLES } from "../../constants/roles";
 import {
   EMAIL_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
@@ -213,7 +214,9 @@ const LoginPage = () => {
       );
 
       navigate(
-        returnPath || getHomePathByRole(loggedInUser?.role),
+        normalizeRole(loggedInUser?.role) === ROLES.BUSINESS
+          ? getHomePathByRole(loggedInUser?.role)
+          : returnPath || getHomePathByRole(loggedInUser?.role),
         { replace: true },
       );
     } catch (error) {
@@ -400,10 +403,9 @@ const LoginPage = () => {
         );
 
       navigate(
-        returnPath ||
-          getHomePathByRole(
-            loggedInUser?.role,
-          ),
+        normalizeRole(loggedInUser?.role) === ROLES.BUSINESS
+          ? getHomePathByRole(loggedInUser?.role)
+          : returnPath || getHomePathByRole(loggedInUser?.role),
         {
           replace: true,
         },

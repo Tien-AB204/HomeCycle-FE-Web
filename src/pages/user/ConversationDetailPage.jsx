@@ -1,440 +1,118 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Modal } from "antd";
 import { getNegotiationStatusMeta } from "../../constants/negotiations";
-import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import conversationApi from "../../services/apis/conversationApi";
-import { getUserId } from "../../utils/authUtils";
-import Avatar from "../../components/shared/Avatar";
+import postApi from "../../services/apis/postApi";
+import NegotiationRoomPage from "./NegotiationRoomPage";
 
-const PAGE_SIZE = 30;
+const ConversationDetail = ({ conversationId }) => {
+  const [params, setParams] = useSearchParams();
+  const [state, setState] = useState({ conversation: null, items: [], loading: true, error: "" });
+  const [open, setOpen] = useState(false);
+  const [version, setVersion] = useState(0);
+  const [posts, setPosts] = useState({});
+  const { subscribe, joinConversation, leaveConversation, reconnectVersion } = useChatRealtime();
 
-const isCanceledRequest = (error) =>
-  error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const conversation = await conversationApi.getConversationById(conversationId, { signal: controller.signal });
+        const items = [];
+        let pageNumber = 1;
+        let page;
+        do {
+          page = await conversationApi.getNegotiations(conversationId, { pageNumber, pageSize: 50, signal: controller.signal });
+          items.push(...page.items);
+          pageNumber += 1;
+        } while (page.hasNextPage && page.items.length > 0);
+        if (!controller.signal.aborted) setState((previous) => ({ conversation, items, defaultId: previous.defaultId || conversation.latestNegotiationId || items[0]?.negotiationId, loading: false, error: "" }));
+      } catch (error) {
+        if (controller.signal.aborted || error?.code === "ERR_CANCELED") return;
+        setState((previous) => ({ ...previous, loading: false, error: "Không thể tải hội thoại. Vui lòng thử lại." }));
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [conversationId, version, reconnectVersion]);
 
-const formatDateTime = (value) => {
-  if (!value) {
-    return "—";
-  }
+  useEffect(() => {
+    let timer;
+    void joinConversation(conversationId).catch(() => {});
+    const update = (event) => {
+      if (event?.conversationId && event.conversationId !== conversationId) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setVersion((value) => value + 1), 300);
+    };
+    const unsubscribe = subscribe("ConversationUpdated", update);
+    return () => {
+      window.clearTimeout(timer);
+      unsubscribe();
+      void leaveConversation(conversationId);
+    };
+  }, [conversationId, subscribe, joinConversation, leaveConversation]);
 
-  const date = new Date(value);
+  useEffect(() => {
+    if (!open) return;
+    const controller = new AbortController();
+    const ids = [...new Set(state.items.map((item) => item.postId).filter(Boolean))];
+    ids.forEach((id) => {
+      postApi.getById(id, { signal: controller.signal }).then((post) => {
+        if (!controller.signal.aborted) setPosts((previous) => ({ ...previous, [id]: post }));
+      }).catch(() => {});
+    });
+    return () => controller.abort();
+  }, [open, state.items]);
 
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
+  const selected = state.items.find((item) => item.negotiationId === params.get("negotiationId"))
+    || state.items.find((item) => item.negotiationId === state.defaultId)
+    || state.items[0];
 
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
-
-const formatCurrency = (value) => {
-  if (typeof value !== "number" && typeof value !== "string") {
-    return null;
-  }
-
-  const raw = typeof value === "string" ? value.trim() : value;
-
-  if (raw === "") {
-    return null;
-  }
-
-  const amount = Number(raw);
-
-  return Number.isFinite(amount) ? `${amount.toLocaleString("vi-VN")} đ` : null;
-};
-
-const getMessageBodyText = (message) => {
-  if (message.messageContent) {
-    return message.messageContent;
-  }
-
-  if (message.messageType === "Offer" || message.messageType === "CounterOffer") {
-    const price = formatCurrency(message.offerPrice);
-    const quantity = message.offerQuantity;
-
-    return [
-      "Đề xuất giá",
-      price ? `${price}` : null,
-      Number.isFinite(quantity) ? `x${quantity}` : null,
-    ]
-      .filter(Boolean)
-      .join(" ");
-  }
-
-  if (message.messageType === "Agreement") {
-    return "Đã cập nhật thỏa thuận.";
-  }
-
-  return "Tin nhắn không có nội dung hiển thị.";
+  return (
+    <section className="hc-conversation-page mx-auto w-full min-w-0 max-w-5xl pb-8">
+      {!selected && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
+        <Link to="/hop-thu" className="inline-flex items-center gap-2 font-bold text-primary">
+          <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>Tin nhắn
+        </Link>
+      </div>}
+      {state.loading && <p role="status" className="py-8 text-center">Đang tải hội thoại...</p>}
+      {state.error && <div role="alert" className="mb-4 text-error">{state.error}<button type="button" className="ml-3 underline" onClick={() => setVersion((value) => value + 1)}>Thử lại</button></div>}
+      {!state.loading && !state.error && !selected && <p className="py-8 text-center text-textLight">Chưa có phiên thương lượng nào.</p>}
+      {selected && <NegotiationRoomPage key={selected.negotiationId} sessionId={selected.negotiationId} conversationId={conversationId} participant={state.conversation?.otherParticipant} embedded sessionCount={state.items.length} onOpenSessions={() => setOpen(true)} />}
+      <Modal title="Phiên thương lượng" open={open} onCancel={() => setOpen(false)} footer={null}>
+        <div className="max-h-[65vh] space-y-3 overflow-y-auto py-3">
+          {state.items.map((item, index) => {
+            const status = getNegotiationStatusMeta(item.negotiationStatus);
+            const active = item.negotiationId === selected?.negotiationId;
+            return (
+              <button type="button" key={item.negotiationId} aria-pressed={active} onClick={() => {
+                const next = new URLSearchParams(params);
+                next.set("negotiationId", item.negotiationId);
+                setParams(next);
+                setOpen(false);
+              }} className={`flex w-full items-center gap-3 rounded-lg border p-4 text-left ${active ? "border-primary bg-primary/5" : "border-border"}`}>
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words font-bold">{posts[item.postId]?.title || `Phiên ${index + 1}`}</span>
+                  <span className="mt-1 block text-sm text-textLight">{status.label}{item.currentOfferPrice != null ? ` · ${Number(item.currentOfferPrice).toLocaleString("vi-VN")} đ` : ""}</span>
+                  <span className="mt-1 block text-xs text-textLight">Số lượng: {item.currentOfferQuantity}</span>
+                  {item.lastMessageAt && <span className="mt-1 block text-xs text-textLight">{new Date(item.lastMessageAt).toLocaleString("vi-VN")}</span>}
+                  {item.unreadCount > 0 && <span className="text-xs font-bold text-primary">{item.unreadCount} chưa đọc</span>}
+                </span>
+                <span className="material-symbols-outlined shrink-0 text-primary" aria-hidden="true">{active ? "check_circle" : "chevron_right"}</span>
+              </button>
+            );
+          })}
+        </div>
+      </Modal>
+    </section>
+  );
 };
 
 const ConversationDetailPage = () => {
   const { conversationId } = useParams();
-  const { user } = useAuth();
-  const currentUserId = getUserId(user);
-  const { subscribe, joinConversation, leaveConversation } = useChatRealtime();
-
-  const [conversation, setConversation] = useState(null);
-  const [conversationError, setConversationError] = useState("");
-
-  const [timelineState, setTimelineState] = useState({
-    messages: [],
-    loading: true,
-    error: "",
-  });
-
-  const [negotiationsState, setNegotiationsState] = useState({
-    items: [],
-    loading: true,
-    error: "",
-  });
-
-  const timelineRequestRef = useRef(0);
-  const timelineControllerRef = useRef(null);
-  const negotiationsRequestRef = useRef(0);
-  const negotiationsControllerRef = useRef(null);
-
-  const loadConversation = useCallback(async () => {
-    try {
-      const data = await conversationApi.getConversationById(conversationId);
-      setConversation(data);
-      setConversationError("");
-    } catch {
-      setConversationError("Không thể tải thông tin hội thoại.");
-    }
-  }, [conversationId]);
-
-  const loadTimeline = useCallback(async () => {
-    timelineControllerRef.current?.abort();
-
-    const controller = new AbortController();
-    timelineControllerRef.current = controller;
-
-    const requestId = timelineRequestRef.current + 1;
-    timelineRequestRef.current = requestId;
-
-    setTimelineState((current) => ({ ...current, loading: true, error: "" }));
-
-    try {
-      const result = await conversationApi.getMessages(conversationId, {
-        pageNumber: 1,
-        pageSize: PAGE_SIZE,
-        signal: controller.signal,
-      });
-
-      if (timelineRequestRef.current !== requestId) {
-        return;
-      }
-
-      setTimelineState({
-        messages: result.items,
-        loading: false,
-        error: "",
-      });
-    } catch (error) {
-      if (timelineRequestRef.current !== requestId) {
-        return;
-      }
-
-      if (isCanceledRequest(error)) {
-        return;
-      }
-
-      setTimelineState({
-        messages: [],
-        loading: false,
-        error: "Không thể tải lịch sử tin nhắn. Vui lòng thử lại.",
-      });
-    }
-  }, [conversationId]);
-
-  const loadNegotiations = useCallback(async () => {
-    negotiationsControllerRef.current?.abort();
-
-    const controller = new AbortController();
-    negotiationsControllerRef.current = controller;
-
-    const requestId = negotiationsRequestRef.current + 1;
-    negotiationsRequestRef.current = requestId;
-
-    setNegotiationsState((current) => ({ ...current, loading: true, error: "" }));
-
-    try {
-      const result = await conversationApi.getNegotiations(conversationId, {
-        pageNumber: 1,
-        pageSize: PAGE_SIZE,
-        signal: controller.signal,
-      });
-
-      if (negotiationsRequestRef.current !== requestId) {
-        return;
-      }
-
-      setNegotiationsState({
-        items: result.items,
-        loading: false,
-        error: "",
-      });
-    } catch (error) {
-      if (negotiationsRequestRef.current !== requestId) {
-        return;
-      }
-
-      if (isCanceledRequest(error)) {
-        return;
-      }
-
-      setNegotiationsState({
-        items: [],
-        loading: false,
-        error: "Không thể tải danh sách phiên thương lượng.",
-      });
-    }
-  }, [conversationId]);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void loadConversation();
-      void loadTimeline();
-      void loadNegotiations();
-      conversationApi.markAsRead(conversationId).catch(() => {
-        /* Đánh dấu đã đọc là phụ; không chặn hiển thị nội dung. */
-      });
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      timelineRequestRef.current += 1;
-      timelineControllerRef.current?.abort();
-      negotiationsRequestRef.current += 1;
-      negotiationsControllerRef.current?.abort();
-    };
-  }, [conversationId, loadConversation, loadTimeline, loadNegotiations]);
-
-  /*
-   * Realtime: tham gia group Conversation qua ChatHub dùng chung với
-   * Negotiation/Order (không tạo provider realtime thứ hai). Khi có sự
-   * kiện, tải lại timeline/danh sách negotiation thay vì tự ghép mảng -
-   * đơn giản và an toàn hơn cho một trang tổng hợp nhiều nguồn dữ liệu.
-   */
-  useEffect(() => {
-    if (!conversationId) {
-      return undefined;
-    }
-
-    let isActive = true;
-
-    joinConversation(conversationId).catch(() => {
-      /* Nếu tham gia group thất bại, trang vẫn dùng dữ liệu REST đã tải. */
-    });
-
-    const handleUpdate = () => {
-      if (!isActive) {
-        return;
-      }
-
-      void loadTimeline();
-      void loadNegotiations();
-      void loadConversation();
-    };
-
-    const unsubscribers = [
-      subscribe("ConversationMessageCreated", handleUpdate),
-      subscribe("ConversationMessageUpdated", handleUpdate),
-      subscribe("ConversationMessagesRead", handleUpdate),
-      subscribe("ConversationUpdated", handleUpdate),
-    ];
-
-    return () => {
-      isActive = false;
-      unsubscribers.forEach((unsubscribe) => unsubscribe());
-      void leaveConversation(conversationId);
-    };
-  }, [
-    conversationId,
-    joinConversation,
-    leaveConversation,
-    loadConversation,
-    loadNegotiations,
-    loadTimeline,
-    subscribe,
-  ]);
-
-  const participant = conversation?.otherParticipant;
-
-  return (
-    <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-4xl px-4 pb-14 pt-7 sm:px-6">
-      <div className="flex items-center gap-3 border-b border-border pb-5">
-        <Link
-          to="/hop-thu"
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-white text-primary transition hover:bg-background"
-          aria-label="Quay lại hộp thư"
-        >
-          <span className="material-symbols-outlined" aria-hidden="true">
-            arrow_back
-          </span>
-        </Link>
-
-        <Avatar
-          src={participant?.avatarUrl}
-          alt={participant?.displayName || ""}
-          className="h-11 w-11"
-        />
-
-        <div className="min-w-0">
-          <p className="truncate font-black text-text">
-            {participant?.displayName || "Người dùng HomeCycle"}
-          </p>
-          <p className="text-xs text-textLight">Hội thoại tổng hợp</p>
-        </div>
-      </div>
-
-      {conversationError && (
-        <div className="mt-4 rounded-xl border border-error/30 bg-error/10 p-3 text-sm font-semibold text-error">
-          {conversationError}
-        </div>
-      )}
-
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_260px]">
-        <div className="rounded-2xl border border-border bg-white p-4 shadow-[0_8px_24px_rgba(23,40,48,0.05)]">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-textLight">
-            Lịch sử tin nhắn
-          </h2>
-
-          {timelineState.loading && (
-            <p className="py-8 text-center text-sm font-semibold text-textLight">
-              Đang tải lịch sử tin nhắn...
-            </p>
-          )}
-
-          {timelineState.error && !timelineState.loading && (
-            <p className="py-8 text-center text-sm font-semibold text-error">
-              {timelineState.error}
-            </p>
-          )}
-
-          {!timelineState.loading &&
-            !timelineState.error &&
-            timelineState.messages.length === 0 && (
-              <p className="py-8 text-center text-sm text-textLight">
-                Chưa có tin nhắn nào.
-              </p>
-            )}
-
-          {!timelineState.loading &&
-            !timelineState.error &&
-            timelineState.messages.length > 0 && (
-              <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
-                {timelineState.messages.map((message) => {
-                  const isMine =
-                    String(message.senderId || "") === String(currentUserId || "");
-
-                  return (
-                    <div
-                      key={message.messageId}
-                      className={`flex ${isMine ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-                          isMine
-                            ? "bg-primary text-white"
-                            : "border border-border bg-background text-text"
-                        }`}
-                      >
-                        <p className="leading-6 whitespace-pre-wrap break-words">
-                          {getMessageBodyText(message)}
-                        </p>
-                        <p
-                          className={`mt-1 text-[11px] ${
-                            isMine ? "text-white/70" : "text-textLight"
-                          }`}
-                        >
-                          {formatDateTime(message.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-          <p className="mt-3 text-xs text-textLight">
-            Đây là lịch sử tổng hợp, chỉ để xem lại. Để tiếp tục trao đổi hoặc
-            phản hồi đề xuất, mở đúng phiên thương lượng bên phải.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-white p-4 shadow-[0_8px_24px_rgba(23,40,48,0.05)]">
-          <h2 className="mb-3 text-sm font-black uppercase tracking-wide text-textLight">
-            Phiên thương lượng
-          </h2>
-
-          {negotiationsState.loading && (
-            <p className="py-4 text-center text-sm font-semibold text-textLight">
-              Đang tải...
-            </p>
-          )}
-
-          {negotiationsState.error && !negotiationsState.loading && (
-            <p className="py-4 text-center text-sm font-semibold text-error">
-              {negotiationsState.error}
-            </p>
-          )}
-
-          {!negotiationsState.loading &&
-            !negotiationsState.error &&
-            negotiationsState.items.length === 0 && (
-              <p className="py-4 text-center text-sm text-textLight">
-                Chưa có phiên thương lượng nào.
-              </p>
-            )}
-
-          <div className="space-y-2">
-            {negotiationsState.items.map((negotiation) => {
-              const statusMeta = getNegotiationStatusMeta(
-                negotiation.negotiationStatus,
-              );
-
-              return (
-                <Link
-                  key={negotiation.negotiationId}
-                  to={`/thuong-luong/${encodeURIComponent(negotiation.negotiationId)}`}
-                  className="block rounded-xl border border-border p-3 transition hover:border-primary/40 hover:bg-background"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${statusMeta.className}`}
-                    >
-                      {statusMeta.label}
-                    </span>
-
-                    {negotiation.unreadCount > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1 text-[10px] font-black text-white">
-                        {negotiation.unreadCount > 99 ? "99+" : negotiation.unreadCount}
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="mt-2 text-sm font-black text-error">
-                    {formatCurrency(negotiation.currentOfferPrice) || "Chưa có giá"}
-                  </p>
-
-                  <p className="mt-1 text-xs text-textLight">
-                    Cập nhật: {formatDateTime(negotiation.lastMessageAt)}
-                  </p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
+  return <ConversationDetail key={conversationId} conversationId={conversationId} />;
 };
 
 export default ConversationDetailPage;
