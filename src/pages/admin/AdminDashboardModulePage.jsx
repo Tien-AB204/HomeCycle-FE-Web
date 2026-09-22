@@ -2977,7 +2977,7 @@ export default function AdminDashboardModulePage({
             />
 
             <DashboardDonutChart
-              title="Cách giao nhận của đơn tạo trong kỳ"
+              title="Phương thức giao nhận của đơn tạo trong kỳ"
               description="Theo phương thức giao nhận mới nhất của từng đơn."
               rows={data?.deliveryMethodDistribution}
               getLabel={(item) => labelFor(item.key)}
