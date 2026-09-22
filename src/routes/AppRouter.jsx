@@ -68,7 +68,6 @@ import ConversationListPage from "../pages/user/ConversationListPage";
 import CreatePostPage from "../pages/user/CreatePostPage";
 import DisputeDetailPage from "../pages/user/DisputeDetailPage";
 import DisputeListPage from "../pages/user/DisputeListPage";
-import NegotiationListPage from "../pages/user/NegotiationListPage";
 import NegotiationRoomPage from "../pages/user/NegotiationRoomPage";
 import NotificationPage from "../pages/user/NotificationPage";
 import OfferManagementPage from "../pages/user/OfferManagementPage";
@@ -79,6 +78,7 @@ import PaymentResultPage from "../pages/user/PaymentResultPage";
 import WalletPage from "../pages/user/WalletPage";
 import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
+import ClientEntryRoute from "./ClientEntryRoute";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
 import SubscriptionPage from "../pages/user/SubscriptionPage";
 
@@ -128,7 +128,7 @@ const AppRouter = () => {
 
           <Route path="/thuong-luong" element={<OfferManagementPage />} />
 
-          <Route path="/thuong-luong/phien" element={<NegotiationListPage />} />
+          <Route path="/thuong-luong/phien" element={<Navigate to="/hop-thu" replace />} />
 
           <Route
             path="/thuong-luong/:negotiationId/thoa-thuan"
@@ -197,6 +197,7 @@ const AppRouter = () => {
             <RoleRoute allowedRoles={[ROLES.PERSONAL, ROLES.BUSINESS]} />
           }
         >
+          <Route path="/quan-ly" element={<ClientEntryRoute />} />
           <Route path="/ho-so" element={<ProfilePage />} />
         </Route>
 

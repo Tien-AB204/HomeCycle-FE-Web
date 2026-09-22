@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./client-shell.css";
 
 :root {
   --color-text: #172830;
@@ -21,7 +22,7 @@
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-background: var(--color-background);
-  --color-white: var(--color-white);
+  --color-white: #FFFFFF;
 }
 
 html {

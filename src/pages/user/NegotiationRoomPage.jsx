@@ -25,6 +25,7 @@ import messageApi, {
 } from "../../services/apis/messageApi";
 import agreementApi from "../../services/apis/agreementApi";
 import negotiationApi from "../../services/apis/negotiationApi";
+import conversationApi from "../../services/apis/conversationApi";
 import postApi from "../../services/apis/postApi";
 import { CHAT_REALTIME_STATUS } from "../../services/realtime/chatRealtimeService";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
@@ -354,7 +355,7 @@ const ProposalMessage = ({
 const TextMessage = ({ message, isMine }) => {
   return (
     <article
-      className={`max-w-[78%] rounded-xl px-3.5 py-2.5 text-sm leading-5 shadow-sm sm:max-w-[70%] ${
+      className={`hc-chat-text-message max-w-[78%] rounded-xl px-3.5 py-2.5 text-sm leading-5 shadow-sm sm:max-w-[70%] ${
         isMine
           ? "ml-auto bg-primary text-white"
           : "mr-auto border border-border/40 bg-white text-text"
@@ -394,14 +395,18 @@ const AgreementMessage = ({ message, negotiationId, isMine }) => (
   </article>
 );
 
-const NegotiationRoomPage = () => {
-  const { negotiationId = "" } = useParams();
+const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded = false, sessionCount = 0, onOpenSessions }) => {
+  const { negotiationId: routeNegotiationId = "" } = useParams();
+  const negotiationId = sessionId || routeNegotiationId;
   const location = useLocation();
   const { user } = useAuth();
   const currentUserId = getUserId(user);
-  const summary = location.state?.negotiationSummary || null;
+  const summary = participant ? { otherPartyName: participant.displayName, otherPartyAvatarUrl: participant.avatarUrl } : location.state?.negotiationSummary || null;
   const [requestVersion, setRequestVersion] = useState(0);
   const requestKey = `${negotiationId}:${requestVersion}`;
+  const getHistory = useCallback((id, options) => conversationId
+    ? conversationApi.getMessages(conversationId, options)
+    : messageApi.getHistory(id, options), [conversationId]);
   const [requestState, setRequestState] = useState({
     requestKey: "",
     negotiation: null,
@@ -482,7 +487,8 @@ const NegotiationRoomPage = () => {
     }
 
     try {
-      await messageApi.markAsRead(negotiationId);
+      if (conversationId) await conversationApi.markAsRead(conversationId);
+      else await messageApi.markAsRead(negotiationId);
 
       updateMessages((currentMessages) =>
         currentMessages.map((message) =>
@@ -494,7 +500,7 @@ const NegotiationRoomPage = () => {
     } catch {
       // Tin nhắn vẫn hiển thị được nếu thao tác read receipt tạm thời thất bại.
     }
-  }, [currentUserId, negotiationId, updateMessages]);
+  }, [conversationId, currentUserId, negotiationId, updateMessages]);
 
   const syncLatestMessages = useCallback(async () => {
     if (!negotiationId) {
@@ -502,7 +508,7 @@ const NegotiationRoomPage = () => {
     }
 
     try {
-      const history = await messageApi.getHistory(negotiationId, {
+      const history = await getHistory(negotiationId, {
         pageNumber: 1,
         pageSize: MESSAGE_PAGE_SIZE,
       });
@@ -526,7 +532,25 @@ const NegotiationRoomPage = () => {
     } catch {
       // SignalR có polling dự phòng; lỗi đồng bộ nền không che nội dung hiện tại.
     }
-  }, [markRoomAsRead, negotiationId, updateMessages]);
+  }, [getHistory, markRoomAsRead, negotiationId, updateMessages]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    let timer;
+    const update = (event) => {
+      if (event?.conversationId && event.conversationId !== conversationId) return;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => void syncLatestMessages(), 250);
+    };
+    const unsubscribers = [
+      subscribe("ConversationMessageCreated", update),
+      subscribe("ConversationMessageUpdated", update),
+    ];
+    return () => {
+      window.clearTimeout(timer);
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
+    };
+  }, [conversationId, subscribe, syncLatestMessages]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -536,7 +560,7 @@ const NegotiationRoomPage = () => {
       negotiationApi.getById(negotiationId, {
         signal: controller.signal,
       }),
-      messageApi.getHistory(negotiationId, {
+      getHistory(negotiationId, {
         pageNumber: 1,
         pageSize: MESSAGE_PAGE_SIZE,
         signal: controller.signal,
@@ -602,7 +626,7 @@ const NegotiationRoomPage = () => {
       isActive = false;
       controller.abort();
     };
-  }, [markRoomAsRead, negotiationId, requestKey]);
+  }, [getHistory, markRoomAsRead, negotiationId, requestKey]);
 
   /*
    * Realtime dùng chung HubConnection của ChatRealtimeProvider: trang chỉ
@@ -767,7 +791,7 @@ const NegotiationRoomPage = () => {
   const messages = sortMessages(negotiation?.messages || []);
 
   const latestPendingProposal =
-    getLatestPendingProposal(negotiation);
+    getLatestPendingProposal(negotiation ? { ...negotiation, messages: messages.filter((message) => message.negotiationId === negotiationId) } : null);
 
   const pendingProposalIsMine =
     Boolean(
@@ -801,9 +825,10 @@ const NegotiationRoomPage = () => {
       return;
     }
 
-    messagesEndRef.current?.scrollIntoView({
+    const timeline = messagesEndRef.current?.parentElement;
+    timeline?.scrollTo({
+      top: timeline.scrollHeight,
       behavior: "smooth",
-      block: "end",
     });
     shouldScrollToBottomRef.current = false;
   }, [messages]);
@@ -823,7 +848,7 @@ const NegotiationRoomPage = () => {
 
     try {
       const nextPageNumber = messagePagination.pageNumber + 1;
-      const history = await messageApi.getHistory(negotiationId, {
+      const history = await getHistory(negotiationId, {
         pageNumber: nextPageNumber,
         pageSize: MESSAGE_PAGE_SIZE,
       });
@@ -919,12 +944,12 @@ const NegotiationRoomPage = () => {
   };
 
   const stopForRoomChange = (verification) => {
-    setRequestState({
+    setRequestState((previous) => ({
       requestKey,
-      negotiation: verification.latestNegotiation,
+      negotiation: { ...verification.latestNegotiation, messages: mergeMessages(previous.negotiation?.messages || [], verification.latestNegotiation.messages || []) },
       post: verification.latestPost,
       error: "",
-    });
+    }));
     setCounterForm({
       offerPrice: String(
         verification.latestNegotiation.currentOfferPrice ?? "",
@@ -1072,13 +1097,12 @@ const NegotiationRoomPage = () => {
         latestPendingProposalForCounter.senderId,
       ) === String(currentUserId || "")
     ) {
-      setRequestState({
+      setRequestState((previous) => ({
         requestKey,
-        negotiation:
-          verification.latestNegotiation,
+        negotiation: { ...verification.latestNegotiation, messages: mergeMessages(previous.negotiation?.messages || [], verification.latestNegotiation.messages || []) },
         post: verification.latestPost,
         error: "",
-      });
+      }));
 
       setCounterForm({
         offerPrice: String(
@@ -1181,13 +1205,13 @@ const NegotiationRoomPage = () => {
   };
 
   return (
-    <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-5xl px-4 pb-12 pt-5 sm:px-6">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+    <section className={embedded ? "hc-chat-room w-full min-w-0" : "mx-auto min-h-[calc(100vh-220px)] w-full max-w-5xl px-4 pb-12 pt-5 sm:px-6"}>
+      {(!embedded || loading || loadError) && <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
         <Link
-          to="/thuong-luong/phien"
+          to="/hop-thu"
           className="inline-flex items-center gap-2 text-sm font-bold text-primary transition hover:text-text"
         >
-          <span aria-hidden="true">←</span> Danh sách phiên
+          <span aria-hidden="true">←</span> Tin nhắn
         </Link>
         <button
           type="button"
@@ -1200,7 +1224,7 @@ const NegotiationRoomPage = () => {
           </span>
           Làm mới phòng
         </button>
-      </div>
+      </div>}
 
       {loading && (
         <div role="status" className="rounded-xl border border-border bg-white p-12 text-center text-textLight shadow-[0_8px_24px_rgba(23,40,48,0.05)]">
@@ -1223,9 +1247,12 @@ const NegotiationRoomPage = () => {
       )}
 
       {negotiation && !loading && !loadError && (
-        <div className="overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(23,40,48,0.07)]">
+        <div className="hc-chat-frame overflow-hidden rounded-xl border border-border bg-white shadow-[0_8px_24px_rgba(23,40,48,0.07)]">
           <header className="border-b border-border bg-white px-4 py-3 sm:flex sm:items-center sm:justify-between sm:gap-5 sm:px-5">
             <div className="flex min-w-0 items-center gap-3">
+              {embedded && <Link to="/hop-thu" aria-label="Quay lại tin nhắn" title="Quay lại tin nhắn" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-background">
+                <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
+              </Link>}
               <Avatar
                 src={summary?.otherPartyAvatarUrl}
                 alt={summary?.otherPartyName || ""}
@@ -1250,17 +1277,24 @@ const NegotiationRoomPage = () => {
               <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusMeta.className}`}>
                 {statusMeta.label}
               </span>
+              {onOpenSessions && <button type="button" onClick={onOpenSessions} className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10">
+                <span className="material-symbols-outlined text-lg" aria-hidden="true">layers</span>
+                {sessionCount} phiên
+              </button>}
               <Link
                 to={`/posts/${encodeURIComponent(negotiation.postId)}`}
                 className="rounded-lg border border-border bg-white px-3 py-2 text-xs font-bold text-primary transition hover:bg-primary/10"
               >
                 Xem bài đăng
               </Link>
+              {embedded && <button type="button" onClick={refreshRoom} aria-label="Làm mới phòng" title="Làm mới phòng" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-primary hover:bg-primary/10">
+                <span className="material-symbols-outlined text-lg" aria-hidden="true">refresh</span>
+              </button>}
             </div>
           </header>
 
-          <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_250px]">
-            <div className="min-w-0 bg-background">
+          <div className="hc-chat-body grid gap-0 lg:grid-cols-[minmax(0,1fr)_250px]">
+            <div className="hc-chat-main min-w-0 bg-background">
               {(successMessage || actionError) && (
                 <div
                   role={actionError ? "alert" : "status"}
@@ -1274,7 +1308,7 @@ const NegotiationRoomPage = () => {
                 </div>
               )}
 
-              <div className="max-h-[420px] min-h-[300px] space-y-3 overflow-y-auto p-4">
+              <div className="hc-chat-timeline max-h-[420px] min-h-[300px] space-y-3 overflow-y-auto p-4">
                 {messagePagination.hasNextPage && (
                   <div className="flex justify-center">
                     <button
@@ -1299,6 +1333,7 @@ const NegotiationRoomPage = () => {
                     const isMine = String(message.senderId) === currentUserId;
                     const canRespond = Boolean(
                       isOpen &&
+                        message.negotiationId === negotiationId &&
                         !isMine &&
                         String(message.offerStatus).toLowerCase() === "pending",
                     );
@@ -1307,7 +1342,7 @@ const NegotiationRoomPage = () => {
                       <AgreementMessage
                         key={message.messageId}
                         message={message}
-                        negotiationId={negotiationId}
+                        negotiationId={message.negotiationId || negotiationId}
                         isMine={isMine}
                       />
                     ) : isProposalMessage(message.messageType) ? (
@@ -1336,7 +1371,7 @@ const NegotiationRoomPage = () => {
                 <div ref={messagesEndRef} aria-hidden="true" />
               </div>
 
-              <div className="border-t border-border bg-white p-3.5">
+              <div className="hc-chat-composer border-t border-border bg-white p-3.5">
                 {messageError && (
                   <p
                     role="alert"

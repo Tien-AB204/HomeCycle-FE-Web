@@ -1,7 +1,12 @@
 import axios from "axios";
 
-const BANK_DIRECTORY_URL =
-  "https://api.vietqr.io/v2/banks";
+const BANK_DIRECTORY_URL = String(
+  import.meta.env.VITE_BANK_DIRECTORY_URL || "",
+).replace(/\/+$/, "");
+
+if (!BANK_DIRECTORY_URL) {
+  throw new Error("Thiếu biến môi trường VITE_BANK_DIRECTORY_URL.");
+}
 
 const CACHE_KEY =
   "homecycle:vietqr-banks";

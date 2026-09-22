@@ -48,8 +48,10 @@ export const getHomePathByRole = (role) => {
     case ROLES.MODERATOR:
       return "/mod/verification";
 
-    case ROLES.PERSONAL:
     case ROLES.BUSINESS:
+      return "/business/dashboard";
+
+    case ROLES.PERSONAL:
     default:
       return "/";
   }

@@ -25,3 +25,8 @@ dist-ssr
 
 # Expo local files
 .expo/
+
+# Environment variables
+.env
+.env.*
+!.env.example

@@ -828,7 +828,7 @@ export default function UserProfilePage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-7xl animate-fade-in px-4 pb-14 pt-7 sm:px-6">
+    <div className="hc-profile-page mx-auto w-full max-w-7xl px-4 pb-14 pt-7 sm:px-6">
       <div className="mb-6 border-b border-border pb-5">
         <p className="text-xs font-black uppercase tracking-[0.2em] text-primary">Tài khoản</p>
         <h1 className="mt-2 text-3xl font-black text-text">Quản lý hồ sơ</h1>
@@ -856,9 +856,9 @@ export default function UserProfilePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[270px_minmax(0,1fr)]">
-        <aside className="space-y-4">
-          <div className="flex flex-col items-center rounded-2xl border border-border bg-white p-5 text-center shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+      <div className="hc-profile-layout">
+        <div className="hc-profile-summary">
+          <div className="hc-profile-identity">
             <AvatarUploader
               avatarUrl={profile.avatarUrl}
               displayName={profile.fullName || profile.username}
@@ -898,10 +898,11 @@ export default function UserProfilePage() {
             </div>
           </div>
 
-          <nav className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+          <nav className="hc-profile-tabs" aria-label="Các phần hồ sơ cá nhân">
             <button
               type="button"
               onClick={() => handleTabChange("personal")}
+              aria-current={activeTab === "personal" ? "page" : undefined}
               className={`flex w-full items-center gap-3 border-l-4 px-5 py-3.5 text-sm font-medium ${
                 activeTab === "personal"
                   ? "border-primary bg-primary/10 text-text"
@@ -915,6 +916,7 @@ export default function UserProfilePage() {
             <button
               type="button"
               onClick={() => handleTabChange("kyc")}
+              aria-current={activeTab === "kyc" ? "page" : undefined}
               className={`flex w-full items-center gap-3 border-l-4 border-t border-border px-5 py-3.5 text-sm font-medium ${
                 activeTab === "kyc"
                   ? "border-l-primary bg-primary/10 text-text"
@@ -928,6 +930,7 @@ export default function UserProfilePage() {
             <button
               type="button"
               onClick={() => handleTabChange("bank")}
+              aria-current={activeTab === "bank" ? "page" : undefined}
               className={`flex w-full items-center gap-3 border-l-4 border-t border-border px-5 py-3.5 text-sm font-medium ${
                 activeTab === "bank"
                   ? "border-l-primary bg-primary/10 text-text"
@@ -938,9 +941,9 @@ export default function UserProfilePage() {
               Tài khoản ngân hàng
             </button>
           </nav>
-        </aside>
+        </div>
 
-        <section className="min-h-[400px] rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6">
+        <section className="hc-profile-panel">
           {activeTab === "personal" && (
             <div>
               <div className="mb-6 flex items-center justify-between border-b pb-3">
