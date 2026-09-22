@@ -1,4 +1,10 @@
-const PROVINCE_API_BASE_URL = "https://provinces.open-api.vn/api/v2";
+const PROVINCE_API_BASE_URL = (
+  import.meta.env.VITE_PROVINCE_API_BASE_URL || ""
+).replace(/\/+$/, "");
+
+if (!PROVINCE_API_BASE_URL) {
+  throw new Error("Thiếu biến môi trường VITE_PROVINCE_API_BASE_URL.");
+}
 
 let provincesPromise;
 const provinceDetails = new Map();
