@@ -33,6 +33,31 @@ const getStatusLabel = (value) => {
     : code;
 };
 
+// Vận đơn vừa tạo chưa nhận callback nào nên carrierStatus rỗng; GHN khởi tạo đơn ở ready_to_pick.
+const getEffectiveCarrierStatus = (shipment) => {
+  const carrierStatus = String(shipment?.carrierStatus || "").trim();
+
+  if (carrierStatus) {
+    return carrierStatus;
+  }
+
+  return shipment &&
+    !shipment.isTerminal &&
+    shipment.shipmentStatus === "ReadyToPick"
+    ? "ready_to_pick"
+    : "";
+};
+
+const getCarrierStatusLabel = (shipment) => {
+  const effectiveStatus = getEffectiveCarrierStatus(shipment);
+
+  if (effectiveStatus && !String(shipment?.carrierStatus || "").trim()) {
+    return `Chưa có callback – xem như ${getStatusLabel(effectiveStatus)}`;
+  }
+
+  return getStatusLabel(effectiveStatus);
+};
+
 const getNextStatus = (currentStatus) => {
   const index = MAIN_STATUS_FLOW.indexOf(String(currentStatus || "").trim());
 
@@ -161,7 +186,7 @@ export default function GhnWebhookTestConsolePage() {
 
       setShipment(result);
 
-      const suggestedStatus = getNextStatus(result?.carrierStatus);
+      const suggestedStatus = getNextStatus(getEffectiveCarrierStatus(result));
       setSelectedStatus(suggestedStatus);
 
       if (!preserveResult) {
@@ -184,11 +209,10 @@ export default function GhnWebhookTestConsolePage() {
     void runLookup();
   };
 
-  const forwardStatuses = getForwardStatuses(shipment?.carrierStatus);
-  const suggestedStatus = getNextStatus(shipment?.carrierStatus);
-  const isMainFlowStatus = MAIN_STATUS_FLOW.includes(
-    String(shipment?.carrierStatus || "").trim(),
-  );
+  const effectiveCarrierStatus = getEffectiveCarrierStatus(shipment);
+  const forwardStatuses = getForwardStatuses(effectiveCarrierStatus);
+  const suggestedStatus = getNextStatus(effectiveCarrierStatus);
+  const isMainFlowStatus = MAIN_STATUS_FLOW.includes(effectiveCarrierStatus);
   const canSubmit =
     Boolean(shipment) &&
     !shipment?.isTerminal &&
@@ -369,7 +393,7 @@ export default function GhnWebhookTestConsolePage() {
                 />
                 <SummaryRow
                   label="Trạng thái GHN hiện tại"
-                  value={getStatusLabel(shipment.carrierStatus)}
+                  value={getCarrierStatusLabel(shipment)}
                 />
                 <SummaryRow
                   label="Trạng thái HomeCycle hiện tại"
@@ -412,7 +436,7 @@ export default function GhnWebhookTestConsolePage() {
                         Hiện tại
                       </p>
                       <p className="mt-1 text-sm font-black text-text">
-                        {getStatusLabel(shipment.carrierStatus)}
+                        {getCarrierStatusLabel(shipment)}
                       </p>
                     </div>
 
@@ -502,7 +526,7 @@ export default function GhnWebhookTestConsolePage() {
             <strong>Mã vận đơn GHN:</strong> {shipment?.orderCode || "—"}
             <br />
             <strong>Trạng thái GHN hiện tại:</strong>{" "}
-            {getStatusLabel(shipment?.carrierStatus)}
+            {getCarrierStatusLabel(shipment)}
             <br />
             <strong>Callback mô phỏng:</strong>{" "}
             {getStatusLabel(selectedStatus)}
