@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
-import ghnApi from "../../services/apis/ghnApi";
+import ghnDemoApi, {
+  clearDemoSession,
+  getDemoSession,
+} from "../../services/apis/ghnDemoApi";
 
 const MAIN_STATUS_FLOW = [
   "ready_to_pick",
@@ -81,14 +84,25 @@ const getForwardStatuses = (currentStatus) => {
 const isCanceled = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 
+const getErrorCode = (error) => error?.response?.data?.code || "";
+
 const mapErrorMessage = (error) => {
   const status = Number(error?.response?.status);
+
+  switch (getErrorCode(error)) {
+    case "GhnWebhook.UnauthorizedSource":
+      return "Backend chưa cho phép mô phỏng callback. Kiểm tra GHNSettings__EnableWebhookDemo trên server hoặc đăng nhập lại bằng tài khoản Admin.";
+    case "GhnWebhook.InvalidShop":
+      return "ShopId của vận đơn không khớp với cấu hình GHN của Backend.";
+    default:
+      break;
+  }
 
   switch (status) {
     case 400:
       return "Payload hoặc trạng thái callback không hợp lệ.";
     case 401:
-      return "Yêu cầu mô phỏng không được chấp nhận. Vui lòng kiểm tra lại phiên đăng nhập hoặc thông tin vận đơn.";
+      return "Phiên đăng nhập demo đã hết hạn. Vui lòng đăng nhập lại.";
     case 403:
       return "Tài khoản hiện tại không có quyền sử dụng công cụ demo.";
     case 404:
@@ -120,6 +134,154 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
+const mapLoginErrorMessage = (error) => {
+  if (error?.code === "DEMO_ADMIN_REQUIRED") {
+    return error.message;
+  }
+
+  const status = Number(error?.response?.status);
+
+  if (status === 400 || status === 401) {
+    return error?.response?.data?.message || "Email hoặc mật khẩu không đúng.";
+  }
+
+  return error?.response?.data?.message || "Không thể đăng nhập. Vui lòng thử lại.";
+};
+
+const DemoLoginModal = ({ open, onClose, onLoggedIn }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape" && !loading) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, loading, onClose]);
+
+  if (!open) {
+    return null;
+  }
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!email.trim() || !password || loading) {
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const session = await ghnDemoApi.login({ email, password });
+      setPassword("");
+      onLoggedIn(session);
+    } catch (loginError) {
+      setError(mapLoginErrorMessage(loginError));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-primary/60 p-4 backdrop-blur-sm"
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !loading) {
+          onClose();
+        }
+      }}
+    >
+      <form
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="demo-login-title"
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm rounded-2xl border border-border bg-white p-6 shadow-[0_24px_70px_rgba(24,63,65,0.22)]"
+      >
+        <h2 id="demo-login-title" className="text-lg font-black text-text">
+          Đăng nhập Admin cho demo
+        </h2>
+        <p className="mt-1 text-xs leading-5 text-textLight">
+          Phiên này chỉ dùng cho công cụ mô phỏng, tách khỏi phiên đăng nhập của HomeCycle và mất khi đóng tab.
+        </p>
+
+        <label className="mt-4 block">
+          <span className="text-xs font-black uppercase tracking-[0.1em] text-textLight">
+            Email
+          </span>
+          <input
+            type="email"
+            autoComplete="username"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoFocus
+            className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
+          />
+        </label>
+
+        <label className="mt-3 block">
+          <span className="text-xs font-black uppercase tracking-[0.1em] text-textLight">
+            Mật khẩu
+          </span>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
+          />
+        </label>
+
+        {error && (
+          <p className="mt-3 rounded-xl border border-error/20 bg-error/10 px-3 py-2 text-xs font-semibold text-error">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="rounded-xl border border-border bg-white px-4 py-2 text-sm font-black text-textLight transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            disabled={!email.trim() || !password || loading}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loading && (
+              <span
+                className="material-symbols-outlined animate-spin text-[18px]"
+                aria-hidden="true"
+              >
+                progress_activity
+              </span>
+            )}
+            Đăng nhập
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 const SummaryRow = ({ label, value }) => (
   <div className="grid gap-1 border-b border-border/70 py-3 last:border-0 sm:grid-cols-[220px_1fr] sm:items-center">
     <dt className="text-xs font-black uppercase tracking-[0.08em] text-textLight">
@@ -132,6 +294,8 @@ const SummaryRow = ({ label, value }) => (
 );
 
 export default function GhnWebhookTestConsolePage() {
+  const [demoSession, setDemoSession] = useState(getDemoSession);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [identifierType, setIdentifierType] = useState("orderCode");
   const [identifierInput, setIdentifierInput] = useState("");
   const [shipment, setShipment] = useState(null);
@@ -154,10 +318,33 @@ export default function GhnWebhookTestConsolePage() {
     [],
   );
 
+  const endDemoSession = () => {
+    lookupControllerRef.current?.abort();
+    submitControllerRef.current?.abort();
+    clearDemoSession();
+    setDemoSession(null);
+    setShipment(null);
+    setSelectedStatus("");
+    setConfirmOpen(false);
+  };
+
+  const handleLogout = () => {
+    endDemoSession();
+    setLookupError("");
+    setSubmitError("");
+    setResultMessage("");
+  };
+
   const runLookup = async ({ preserveResult = false } = {}) => {
     const identifier = identifierInput.trim();
 
     if (!identifier || lookupLoading) {
+      return;
+    }
+
+    if (!getDemoSession()) {
+      endDemoSession();
+      setLoginOpen(true);
       return;
     }
 
@@ -179,7 +366,7 @@ export default function GhnWebhookTestConsolePage() {
           ? { orderCode: identifier }
           : { clientOrderCode: identifier };
 
-      const result = await ghnApi.lookupAdminOrder({
+      const result = await ghnDemoApi.lookupAdminOrder({
         ...params,
         signal: controller.signal,
       });
@@ -195,6 +382,10 @@ export default function GhnWebhookTestConsolePage() {
     } catch (error) {
       if (isCanceled(error)) {
         return;
+      }
+
+      if (Number(error?.response?.status) === 401) {
+        endDemoSession();
       }
 
       setShipment(null);
@@ -234,6 +425,13 @@ export default function GhnWebhookTestConsolePage() {
       return;
     }
 
+    if (!getDemoSession()) {
+      endDemoSession();
+      setLookupError("Phiên đăng nhập demo đã hết hạn. Vui lòng đăng nhập lại.");
+      setLoginOpen(true);
+      return;
+    }
+
     const controller = new AbortController();
     submitControllerRef.current = controller;
 
@@ -258,7 +456,7 @@ export default function GhnWebhookTestConsolePage() {
         PaymentType: shipment.paymentType ?? 0,
       };
 
-      await ghnApi.simulateWebhook(payload, {
+      await ghnDemoApi.simulateWebhook(payload, {
         signal: controller.signal,
       });
 
@@ -280,9 +478,38 @@ export default function GhnWebhookTestConsolePage() {
     <main className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
       <section className="mx-auto w-full max-w-5xl space-y-6">
         <header className="rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
-            GHN WEBHOOK TEST CONSOLE
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/70">
+              GHN WEBHOOK TEST CONSOLE
+            </p>
+
+            {demoSession ? (
+              <div className="flex min-w-0 items-center gap-2 text-xs font-bold text-white/80">
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                  admin_panel_settings
+                </span>
+                <span className="truncate">{demoSession.email}</span>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-lg border border-white/30 px-2.5 py-1 font-black text-white transition hover:bg-white/10"
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setLoginOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/30 px-2.5 py-1 text-xs font-black text-white transition hover:bg-white/10"
+              >
+                <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                  login
+                </span>
+                Đăng nhập Admin
+              </button>
+            )}
+          </div>
           <h1 className="mt-2 text-2xl font-black sm:text-3xl">
             Mô phỏng callback GHN
           </h1>
@@ -348,7 +575,7 @@ export default function GhnWebhookTestConsolePage() {
             <button
               type="button"
               onClick={handleLookupClick}
-              disabled={!identifierInput.trim() || lookupLoading}
+              disabled={!demoSession || !identifierInput.trim() || lookupLoading}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {lookupLoading && (
@@ -362,6 +589,12 @@ export default function GhnWebhookTestConsolePage() {
               Tra cứu
             </button>
           </div>
+
+          {!demoSession && (
+            <p className="mt-4 text-sm font-semibold text-textLight">
+              Đăng nhập tài khoản Admin (nút góc trên) để tra cứu và gửi callback mô phỏng.
+            </p>
+          )}
 
           {lookupError && (
             <p className="mt-4 rounded-xl border border-error/20 bg-error/10 px-4 py-3 text-sm font-semibold text-error">
@@ -517,6 +750,16 @@ export default function GhnWebhookTestConsolePage() {
           </>
         )}
       </section>
+
+      <DemoLoginModal
+        open={loginOpen}
+        onClose={() => setLoginOpen(false)}
+        onLoggedIn={(session) => {
+          setDemoSession(session);
+          setLoginOpen(false);
+          setLookupError("");
+        }}
+      />
 
       <ConfirmActionModal
         open={confirmOpen}

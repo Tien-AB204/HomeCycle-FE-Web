@@ -65,43 +65,6 @@ const ghnApi = {
 
     return normalizeList(response);
   },
-
-  lookupAdminOrder: async ({
-    orderCode,
-    clientOrderCode,
-    signal,
-  } = {}) => {
-    const trimmedOrderCode = String(orderCode || "").trim();
-    const trimmedClientOrderCode = String(
-      clientOrderCode || "",
-    ).trim();
-
-    const params = {};
-
-    if (trimmedOrderCode) {
-      params.orderCode = trimmedOrderCode;
-    }
-
-    if (trimmedClientOrderCode) {
-      params.clientOrderCode = trimmedClientOrderCode;
-    }
-
-    return axiosClient.get("/GHN/admin/orders/lookup", {
-      params,
-      signal,
-      skipGlobalErrorPage: true,
-    });
-  },
-
-  simulateWebhook: async (payload, { signal } = {}) =>
-    axiosClient.post("/GHN/webhook", payload, {
-      signal,
-      headers: {
-        "Content-Type": "application/json",
-        "X-HomeCycle-Demo": "true",
-      },
-      skipGlobalErrorPage: true,
-    }),
 };
 
 export default ghnApi;

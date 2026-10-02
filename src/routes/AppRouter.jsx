@@ -28,7 +28,6 @@ import WithdrawalManagementPage from "../pages/mod/WithdrawalManagementPage";
 import ModDashboardPage from "../pages/mod/ModDashboardPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
-import GhnWebhookDemoRoute from "./GhnWebhookDemoRoute";
 import HomeRoute from "./HomeRoute";
 import RoleRoute from "./RoleRoute";
 
@@ -285,12 +284,10 @@ const AppRouter = () => {
       </Route>
 
       {isGhnWebhookDemoEnabled && (
-        <Route element={<GhnWebhookDemoRoute />}>
-          <Route
-            path="/demo/ghn-webhook"
-            element={<GhnWebhookTestConsolePage />}
-          />
-        </Route>
+        <Route
+          path="/demo/ghn-webhook"
+          element={<GhnWebhookTestConsolePage />}
+        />
       )}
 
       {/* Admin */}
