@@ -28,6 +28,16 @@ import { useLocation } from "react-router-dom";
 import Avatar from "../../components/shared/Avatar";
 import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
+import { getDeliveryMethodLabel } from "../../constants/agreements";
+import { getAppointmentStatusMeta } from "../../constants/appointments";
+import {
+  getAppearanceStatusLabel,
+  getInspectionConclusionLabel,
+  getInspectionStatusLabel,
+  getMatchStatusLabel,
+  getOperatingStatusLabel,
+  getPartsStatusLabel,
+} from "../../constants/inspections";
 import useActionToast from "../../hooks/useActionToast";
 import moderatorDisputeApi from "../../services/apis/moderatorDisputeApi";
 import {
@@ -45,6 +55,7 @@ const STATUS_OPTIONS = [
   { value: 3, label: "Đã đóng" },
   { value: 4, label: "Đang xử lý" },
   { value: 5, label: "Chờ hoàn trả" },
+  { value: 6, label: "Chờ bên kia phản hồi" },
 ];
 
 const TARGET_TYPE_OPTIONS = [
@@ -62,6 +73,7 @@ const ENUM_NAME_TO_VALUE = {
     closed: 3,
     underreview: 4,
     awaitingreturn: 5,
+    awaitingresponse: 6,
   },
   targetType: {
     appointment: 1,
@@ -122,6 +134,71 @@ const RESOLUTION_OUTCOME_LABELS = {
 
   "2": "Có lợi cho người bán",
   sellerfavored: "Có lợi cho người bán",
+
+  "3": "Xác nhận vi phạm",
+  violationconfirmed: "Xác nhận vi phạm",
+
+  "4": "Không vi phạm",
+  noviolation: "Không vi phạm",
+};
+
+const DISPUTE_ORIGIN_LABELS = {
+  "1": "Người dùng báo cáo",
+  userreported: "Người dùng báo cáo",
+
+  "2": "Kết quả kiểm định bị từ chối",
+  inspectionrejected: "Kết quả kiểm định bị từ chối",
+
+  "3": "Không đủ check-in tại lịch kiểm định",
+  inspectionnoshow: "Không đủ check-in tại lịch kiểm định",
+
+  "4": "Quá thời gian chờ giao nhận",
+  collectionnoshow: "Quá thời gian chờ giao nhận",
+};
+
+const SYSTEM_DISPUTE_ORIGINS = [
+  "3",
+  "inspectionnoshow",
+  "4",
+  "collectionnoshow",
+];
+
+const RESOLUTION_SOURCE_LABELS = {
+  "1": "Hai bên tự thỏa thuận",
+  mutualagreement: "Hai bên tự thỏa thuận",
+
+  "2": "Kiểm duyệt viên quyết định",
+  moderatordecision: "Kiểm duyệt viên quyết định",
+
+  "3": "Hệ thống tự đóng",
+  systemautoclosed: "Hệ thống tự đóng",
+};
+
+const RESPONSE_TYPE_META = {
+  "1": { label: "Chấp nhận", color: "#2F765D", background: "rgba(47,118,93,0.10)" },
+  accept: { label: "Chấp nhận", color: "#2F765D", background: "rgba(47,118,93,0.10)" },
+
+  "2": { label: "Phản biện", color: "#7A1012", background: "rgba(122,16,18,0.08)" },
+  rebut: { label: "Phản biện", color: "#7A1012", background: "rgba(122,16,18,0.08)" },
+
+  "3": { label: "Trình bày", color: "#2B5659", background: "rgba(43,86,89,0.10)" },
+  statement: { label: "Trình bày", color: "#2B5659", background: "rgba(43,86,89,0.10)" },
+};
+
+const APPOINTMENT_TYPE_LABELS = {
+  "0": "Lịch kiểm định",
+  inspection: "Lịch kiểm định",
+
+  "1": "Lịch thu gom",
+  collection: "Lịch thu gom",
+};
+
+const INSPECTION_MODE_LABELS = {
+  "1": "Kiểm định chi tiết",
+  detailed: "Kiểm định chi tiết",
+
+  "2": "Chấp nhận nhanh",
+  quickaccept: "Chấp nhận nhanh",
 };
 
 const SAFE_ACTION_ERRORS = {
@@ -368,6 +445,13 @@ const getStatusMeta = (status) => {
         background: "rgba(154,100,24,0.10)",
       };
 
+    case 6:
+      return {
+        label: "Chờ bên kia phản hồi",
+        color: "#9A6418",
+        background: "rgba(154,100,24,0.10)",
+      };
+
     default:
       return {
         label: "Chưa xác định",
@@ -380,6 +464,35 @@ const getStatusMeta = (status) => {
 const getRoleLabel = (role) =>
   ROLE_LABELS[normalizeKey(role)] ||
   "Chưa xác định";
+
+const getMappedLabel = (
+  labels,
+  value,
+  emptyLabel = "Chưa có",
+) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return emptyLabel;
+  }
+
+  return (
+    labels[normalizeKey(value)] ||
+    "Chưa xác định"
+  );
+};
+
+const isSystemOrigin = (origin) =>
+  SYSTEM_DISPUTE_ORIGINS.includes(
+    normalizeKey(origin),
+  );
+
+const hasValue = (value) =>
+  value !== null &&
+  value !== undefined &&
+  value !== "";
 
 const getOrderStatusLabel = (value) =>
   ORDER_STATUS_LABELS[normalizeKey(value)] ||
@@ -1307,6 +1420,55 @@ const DisputeManagementPage = ({
     detail?.evidenceImages,
   );
 
+  const disputeResponses = (
+    Array.isArray(detail?.responses)
+      ? detail.responses
+      : []
+  )
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt) -
+        new Date(b.createdAt),
+    );
+
+  const timelineSteps = (
+    Array.isArray(detail?.timeline)
+      ? detail.timeline
+      : []
+  )
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.occurredAt) -
+        new Date(b.occurredAt),
+    );
+
+  const appointmentContext =
+    detail?.appointmentContext ?? null;
+
+  const inspectionContext =
+    detail?.inspectionContext ?? null;
+
+  const inspectionImages = normalizeMediaItems(
+    inspectionContext?.images,
+  );
+
+  const isAwaitingResponse =
+    normalizeEnumValue(
+      detail?.status,
+      "status",
+    ) === 6;
+
+  // Giữ số ô của bảng thông tin chẵn để Descriptions 2 cột không lệch hàng.
+  const optionalDisputeInfoCount = [
+    detail?.resolutionSource,
+    detail?.proposedResolutionOutcome,
+    detail?.responseDeadlineAt,
+    detail?.escalatedAt,
+    detail?.moderatorClaimedAt,
+  ].filter(hasValue).length;
+
   const postImages = normalizeMediaItems(
     post?.images,
   );
@@ -1620,7 +1782,9 @@ const DisputeManagementPage = ({
                             <p className="mt-1 truncate text-xs text-textLight">
                               Người gửi:{" "}
                               {item.senderUsername ||
-                                "Chưa có"}
+                                (item.senderId
+                                  ? "Chưa có"
+                                  : "Hệ thống")}
                             </p>
 
                             <p className="mt-1 truncate text-xs text-textLight">
@@ -1920,9 +2084,41 @@ const DisputeManagementPage = ({
               )}
 
               <div className="grid gap-4 md:grid-cols-2">
-                {renderUserCard(
-                  "Người gửi",
-                  detail.sender,
+                {detail.sender ? (
+                  renderUserCard(
+                    "Người gửi",
+                    detail.sender,
+                  )
+                ) : (
+                  <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
+                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-textLight">
+                      Người gửi
+                    </p>
+
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="material-symbols-outlined flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[22px] text-primary"
+                        aria-hidden="true"
+                      >
+                        smart_toy
+                      </span>
+
+                      <div className="min-w-0">
+                        <p className="font-bold text-text">
+                          Hệ thống HomeCycle
+                        </p>
+
+                        <p className="mt-1 text-xs text-textLight">
+                          {isSystemOrigin(detail.origin)
+                            ? `Tự động tạo: ${getMappedLabel(
+                                DISPUTE_ORIGIN_LABELS,
+                                detail.origin,
+                              )}`
+                            : "Tranh chấp được hệ thống tạo tự động"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 {renderUserCard(
@@ -2017,6 +2213,61 @@ const DisputeManagementPage = ({
                   </Descriptions.Item>
 
                   <Descriptions.Item
+                    label="Nguồn tạo"
+                    span={
+                      optionalDisputeInfoCount % 2 === 0
+                        ? 2
+                        : 1
+                    }
+                  >
+                    {getMappedLabel(
+                      DISPUTE_ORIGIN_LABELS,
+                      detail.origin,
+                    )}
+                  </Descriptions.Item>
+
+                  {hasValue(detail.resolutionSource) ? (
+                    <Descriptions.Item label="Hình thức giải quyết">
+                      {getMappedLabel(
+                        RESOLUTION_SOURCE_LABELS,
+                        detail.resolutionSource,
+                      )}
+                    </Descriptions.Item>
+                  ) : null}
+
+                  {hasValue(detail.proposedResolutionOutcome) ? (
+                    <Descriptions.Item label="Phương án người gửi đề xuất">
+                      {getResolutionOutcomeLabel(
+                        detail.proposedResolutionOutcome,
+                      )}
+                    </Descriptions.Item>
+                  ) : null}
+
+                  {hasValue(detail.responseDeadlineAt) ? (
+                    <Descriptions.Item label="Hạn phản hồi của bên bị khiếu nại">
+                      {formatDateTime(
+                        detail.responseDeadlineAt,
+                      )}
+                    </Descriptions.Item>
+                  ) : null}
+
+                  {hasValue(detail.escalatedAt) ? (
+                    <Descriptions.Item label="Chuyển lên kiểm duyệt">
+                      {formatDateTime(
+                        detail.escalatedAt,
+                      )}
+                    </Descriptions.Item>
+                  ) : null}
+
+                  {hasValue(detail.moderatorClaimedAt) ? (
+                    <Descriptions.Item label="Kiểm duyệt viên tiếp nhận">
+                      {formatDateTime(
+                        detail.moderatorClaimedAt,
+                      )}
+                    </Descriptions.Item>
+                  ) : null}
+
+                  <Descriptions.Item
                     label="Mô tả của người báo cáo"
                     span={2}
                   >
@@ -2036,7 +2287,317 @@ const DisputeManagementPage = ({
                     </span>
                   </Descriptions.Item>
                 </Descriptions>
+
+                {isAwaitingResponse && (
+                  <Alert
+                    className="mt-4"
+                    type="info"
+                    showIcon
+                    message={`Đang chờ bên bị khiếu nại phản hồi${
+                      detail.responseDeadlineAt
+                        ? ` đến ${formatDateTime(detail.responseDeadlineAt)}`
+                        : ""
+                    }. Tranh chấp chỉ chuyển sang kiểm duyệt viên khi bên kia phản biện hoặc hết thời hạn phản hồi.`}
+                  />
+                )}
               </div>
+
+              {timelineSteps.length > 0 && (
+                <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                  <h3 className="mb-4 text-base font-black text-text">
+                    Tiến trình tranh chấp
+                  </h3>
+
+                  <ol className="space-y-4">
+                    {timelineSteps.map((step, index) => {
+                      // Backend ghi hạn phản hồi dạng ISO trong mô tả; hiển thị lại theo giờ Việt Nam.
+                      const stepDescription =
+                        step.code === "response_window_opened" &&
+                        detail.responseDeadlineAt
+                          ? `Hạn phản hồi: ${formatDateTime(detail.responseDeadlineAt)}`
+                          : step.description;
+
+                      return (
+                        <li
+                          key={`${step.code}-${index}`}
+                          className="flex gap-3"
+                        >
+                          <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-text">
+                              {step.title || step.code}
+                            </p>
+
+                            {stepDescription && (
+                              <p className="mt-0.5 text-xs leading-5 text-textLight">
+                                {stepDescription}
+                              </p>
+                            )}
+
+                            <p className="mt-0.5 text-xs font-semibold text-textLight">
+                              {formatDateTime(step.occurredAt)}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
+
+              {(isOrderTarget || disputeResponses.length > 0) && (
+                <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-base font-black text-text">
+                        Phản hồi của các bên
+                      </h3>
+                      <p className="mt-1 text-xs text-textLight">
+                        Chấp nhận, phản biện hoặc trình bày của các bên trước khi kiểm duyệt viên ra quyết định.
+                      </p>
+                    </div>
+
+                    <span className="text-xs font-bold text-textLight">
+                      {disputeResponses.length} phản hồi
+                    </span>
+                  </div>
+
+                  {disputeResponses.length === 0 ? (
+                    <Empty
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                      description="Chưa có phản hồi nào"
+                    />
+                  ) : (
+                    <div className="space-y-4">
+                      {disputeResponses.map((response) => {
+                        const typeMeta =
+                          RESPONSE_TYPE_META[
+                            normalizeKey(response.responseType)
+                          ] || {
+                            label: "Phản hồi",
+                            color: "#547B7D",
+                            background: "rgba(84,123,125,0.10)",
+                          };
+                        const responseImages =
+                          normalizeMediaItems(
+                            response.evidenceImages,
+                          );
+
+                        return (
+                          <div
+                            key={response.disputeResponseId}
+                            className="rounded-xl border border-border bg-background p-4"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <Avatar
+                                  src={response.responder?.avatarUrl}
+                                  alt={response.responder?.username || "Người phản hồi"}
+                                  className="h-9 w-9 border border-border"
+                                />
+
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-bold text-text">
+                                    {response.responder?.username || "Chưa có"}
+                                  </p>
+                                  <p className="text-xs text-textLight">
+                                    {getRoleLabel(response.responder?.role)} ·{" "}
+                                    {formatDateTime(response.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <Tag
+                                className="m-0"
+                                style={{
+                                  color: typeMeta.color,
+                                  background: typeMeta.background,
+                                  borderColor: typeMeta.color,
+                                }}
+                              >
+                                {typeMeta.label}
+                              </Tag>
+                            </div>
+
+                            <p className="mt-3 whitespace-pre-wrap text-sm text-text">
+                              {response.content || "Không có nội dung"}
+                            </p>
+
+                            {responseImages.length > 0 && (
+                              <Image.PreviewGroup>
+                                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
+                                  {responseImages.map((media) => (
+                                    <Image
+                                      key={media.key}
+                                      src={media.url}
+                                      alt={media.fileName}
+                                      className="h-24 w-full rounded-lg object-cover"
+                                      width="100%"
+                                    />
+                                  ))}
+                                </div>
+                              </Image.PreviewGroup>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {appointmentContext && (
+                <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                  <h3 className="mb-4 text-base font-black text-text">
+                    Lịch hẹn liên quan
+                  </h3>
+
+                  <Descriptions
+                    bordered
+                    column={{
+                      xs: 1,
+                      sm: 1,
+                      md: 2,
+                    }}
+                    size="small"
+                  >
+                    <Descriptions.Item label="Loại lịch">
+                      {getMappedLabel(
+                        APPOINTMENT_TYPE_LABELS,
+                        appointmentContext.appointmentType,
+                      )}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Trạng thái lịch">
+                      {hasValue(appointmentContext.appointmentStatus)
+                        ? getAppointmentStatusMeta(
+                            appointmentContext.appointmentStatus,
+                          ).label
+                        : "Chưa có"}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Thời gian hẹn">
+                      {formatDateTime(appointmentContext.scheduledAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Mốc tính trễ">
+                      {formatDateTime(appointmentContext.lateThresholdAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Người mua check-in">
+                      {formatDateTime(appointmentContext.buyerCheckAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Người bán check-in">
+                      {formatDateTime(appointmentContext.sellerCheckAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Địa điểm" span={2}>
+                      {appointmentContext.location || "Chưa có"}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </div>
+              )}
+
+              {inspectionContext && (
+                <>
+                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Biên bản kiểm định liên quan
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Hình thức">
+                        {getMappedLabel(
+                          INSPECTION_MODE_LABELS,
+                          inspectionContext.inspectionMode,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái biên bản">
+                        {hasValue(inspectionContext.inspectionStatus)
+                          ? getInspectionStatusLabel(
+                              inspectionContext.inspectionStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Tình trạng vận hành">
+                        {hasValue(inspectionContext.operatingStatus)
+                          ? getOperatingStatusLabel(
+                              inspectionContext.operatingStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ngoại quan">
+                        {hasValue(inspectionContext.appearanceStatus)
+                          ? getAppearanceStatusLabel(
+                              inspectionContext.appearanceStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Phụ kiện">
+                        {hasValue(inspectionContext.partsStatus)
+                          ? getPartsStatusLabel(
+                              inspectionContext.partsStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mức khớp mô tả">
+                        {hasValue(inspectionContext.matchStatus)
+                          ? getMatchStatusLabel(
+                              inspectionContext.matchStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Kết luận">
+                        {getInspectionConclusionLabel(
+                          inspectionContext.conclusion,
+                        ) || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Thời điểm gửi biên bản">
+                        {formatDateTime(inspectionContext.submittedAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người bán quyết định lúc">
+                        {formatDateTime(inspectionContext.sellerDecisionAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Lý do của người bán">
+                        {inspectionContext.sellerDecisionReason || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ghi chú kiểm định" span={2}>
+                        <span className="whitespace-pre-wrap">
+                          {inspectionContext.inspectorNotes || "Chưa có ghi chú"}
+                        </span>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+
+                  {inspectionImages.length > 0 &&
+                    renderMediaGallery(
+                      "Ảnh trong biên bản kiểm định",
+                      "Hình ảnh được ghi nhận khi kiểm định sản phẩm.",
+                      inspectionImages,
+                      "Không có ảnh kiểm định",
+                    )}
+                </>
+              )}
 
               {isPostTarget && !post && (
                 <Alert
@@ -2270,6 +2831,29 @@ const DisputeManagementPage = ({
                       <Descriptions.Item label="Hạn tạo tranh chấp">
                         {formatDateTime(
                           order.disputeDeadlineUtc,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item
+                        label="Hình thức giao hàng"
+                        span={2}
+                      >
+                        {hasValue(order.deliveryMethod)
+                          ? getDeliveryMethodLabel(
+                              order.deliveryMethod,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người bán xác nhận đã giao">
+                        {formatDateTime(
+                          order.sellerHandoverConfirmedAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người mua xác nhận đã nhận">
+                        {formatDateTime(
+                          order.buyerReceivedConfirmedAt,
                         )}
                       </Descriptions.Item>
                     </Descriptions>

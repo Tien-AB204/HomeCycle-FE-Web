@@ -25,6 +25,7 @@ export const DISPUTE_STATUS = Object.freeze({
   CLOSED: 3,
   UNDER_REVIEW: 4,
   AWAITING_RETURN: 5,
+  AWAITING_RESPONSE: 6,
 });
 
 /*
@@ -39,6 +40,7 @@ const DISPUTE_STATUS_NAMES = Object.freeze({
   [DISPUTE_STATUS.CLOSED]: "Closed",
   [DISPUTE_STATUS.UNDER_REVIEW]: "UnderReview",
   [DISPUTE_STATUS.AWAITING_RETURN]: "AwaitingReturn",
+  [DISPUTE_STATUS.AWAITING_RESPONSE]: "AwaitingResponse",
 });
 
 const DISPUTE_TARGET_TYPE_NAMES = Object.freeze({
@@ -172,6 +174,11 @@ const DISPUTE_STATUS_META = Object.freeze({
   },
   [DISPUTE_STATUS.AWAITING_RETURN]: {
     label: "Chờ hoàn trả",
+    className:
+      "border-warning/30 bg-warning/10 text-warning",
+  },
+  [DISPUTE_STATUS.AWAITING_RESPONSE]: {
+    label: "Chờ bên kia phản hồi",
     className:
       "border-warning/30 bg-warning/10 text-warning",
   },
