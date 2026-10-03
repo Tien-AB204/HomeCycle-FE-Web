@@ -3,7 +3,6 @@ import {
   useState,
 } from "react";
 import {
-  DashboardDonutChart,
 } from "../../components/admin/AdminDashboardCharts";
 import {
   FinanceAmountBarChart,
@@ -25,151 +24,6 @@ const GROUP_OPTIONS = [
     label: "Mỗi tháng",
   },
 ];
-
-const PAYMENT_STATUS_LABELS = {
-  "0": "Chờ thanh toán",
-  "1": "Đã hoàn tất",
-  "2": "Thất bại",
-  "3": "Đã hoàn tiền",
-  "4": "Hoàn tiền một phần",
-  "5": "Đã hết hạn",
-  "6": "Đã hủy",
-  pending: "Chờ thanh toán",
-  completed: "Đã hoàn tất",
-  failed: "Thất bại",
-  refunded: "Đã hoàn tiền",
-  partiallyrefunded:
-    "Hoàn tiền một phần",
-  expired: "Đã hết hạn",
-  cancelled: "Đã hủy",
-  unspecified: "Chưa xác định",
-};
-
-const TRANSACTION_TYPE_OPTIONS = [
-  ["", "Tất cả loại giao dịch"],
-  ["1", "Tạm giữ tiền cho đơn hàng"],
-  ["2", "Thanh toán bằng ví"],
-  ["3", "Chuyển tiền cho người bán"],
-  ["4", "Hoàn tiền đơn hàng"],
-  ["5", "Tiền của người dùng đang yêu cầu rút"],
-  ["6", "Rút tiền thành công"],
-  ["7", "Tiền được trả lại sau yêu cầu rút"],
-  ["9", "Phí gói đăng ký"],
-  ["10", "Thu phí vận chuyển GHN"],
-];
-
-const TRANSACTION_TYPE_LABELS = {
-  "1": "Tạm giữ tiền cho đơn hàng",
-  "2": "Thanh toán bằng ví",
-  "3": "Chuyển tiền cho người bán",
-  "4": "Hoàn tiền đơn hàng",
-  "5": "Tiền của người dùng đang yêu cầu rút",
-  "6": "Rút tiền thành công",
-  "7": "Tiền được trả lại sau yêu cầu rút",
-  "9": "Phí gói đăng ký",
-  "10": "Thu phí vận chuyển GHN",
-  escrowdeposit:
-    "Tạm giữ tiền cho đơn hàng",
-  walletpayment:
-    "Thanh toán bằng ví",
-  payoutrelease:
-    "Chuyển tiền cho người bán",
-  orderrefund:
-    "Hoàn tiền đơn hàng",
-  withdrawallock:
-    "Tiền của người dùng đang yêu cầu rút",
-  withdrawalsuccess:
-    "Rút tiền thành công",
-  withdrawalrevert:
-    "Tiền được trả lại sau yêu cầu rút",
-  subscriptionfee:
-    "Phí gói đăng ký",
-  shippingfeecollected:
-    "Thu phí vận chuyển GHN",
-};
-
-// Giao dịch phí hoa hồng không được hiển thị trong giao diện quản trị.
-const isCommissionFeeTransaction = (
-  transactionType,
-) => {
-  const key = String(
-    transactionType ?? "",
-  )
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
-
-  return (
-    key === "8" ||
-    key === "commissionfee"
-  );
-};
-
-const TRANSACTION_STATUS_OPTIONS = [
-  ["", "Tất cả trạng thái"],
-  ["0", "Đang chờ"],
-  ["1", "Đã hoàn tất"],
-  ["2", "Thất bại"],
-  ["3", "Đã hủy"],
-];
-
-const TRANSACTION_STATUS_LABELS = {
-  "0": "Đang chờ",
-  "1": "Đã hoàn tất",
-  "2": "Thất bại",
-  "3": "Đã hủy",
-  pending: "Đang chờ",
-  completed: "Đã hoàn tất",
-  failed: "Thất bại",
-  cancelled: "Đã hủy",
-};
-
-const REFERENCE_OPTIONS = [
-  ["", "Tất cả đối tượng"],
-  ["1", "Đơn hàng"],
-  ["2", "Gói dịch vụ"],
-  ["3", "Tranh chấp"],
-  ["4", "Yêu cầu rút tiền"],
-];
-
-const REFERENCE_LABELS = {
-  "1": "Đơn hàng",
-  "2": "Gói dịch vụ",
-  "3": "Tranh chấp",
-  "4": "Yêu cầu rút tiền",
-  order: "Đơn hàng",
-  subscription: "Gói dịch vụ",
-  dispute: "Tranh chấp",
-  withdrawal: "Yêu cầu rút tiền",
-};
-
-const FLOW_OPTIONS = [
-  ["", "Tất cả dòng tiền"],
-  ["1", "Tiền vào"],
-  ["2", "Tiền ra"],
-  ["3", "Nội bộ"],
-  ["0", "Chưa phân loại"],
-];
-
-const FLOW_LABELS = {
-  "0": "Chưa phân loại",
-  "1": "Tiền vào",
-  "2": "Tiền ra",
-  "3": "Nội bộ",
-  unclassified: "Chưa phân loại",
-  externalin: "Tiền vào",
-  externalout: "Tiền ra",
-  internal: "Nội bộ",
-};
-
-const PAYMENT_METHOD_LABELS = {
-  "1": "PayOS",
-  "2": "Ví nội bộ",
-  "3": "Chưa xác định",
-  payos: "PayOS",
-  internalwallet: "Ví nội bộ",
-  unknown: "Chưa xác định",
-};
 
 const BREAKDOWN_LABELS = {
   depositpayment:
@@ -232,19 +86,6 @@ const findRevenueSourceAmount = (
   return match?.amount;
 };
 
-const enumLabel = (
-  value,
-  dictionary,
-  fallback = "Chưa xác định",
-) =>
-  dictionary[
-    normalize(value)
-  ] ||
-  dictionary[
-    String(value ?? "")
-  ] ||
-  fallback;
-
 const toFiniteNumber = (value) => {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -273,16 +114,6 @@ const formatNumber = (value) => {
   return number === null
     ? "—"
     : new Intl.NumberFormat("vi-VN").format(number);
-};
-
-const formatPercent = (value) => {
-  const number = toFiniteNumber(value);
-
-  return number === null
-    ? "—"
-    : `${new Intl.NumberFormat("vi-VN", {
-        maximumFractionDigits: 1,
-      }).format(number)}%`;
 };
 
 const formatDate = (value) => {
@@ -495,6 +326,112 @@ function SectionError({
   );
 }
 
+const DATA_ALERTS = [
+  {
+    field: "stalePendingPayments",
+    label: "Thanh toán chờ đã quá hạn",
+    severity: "warning",
+    description: "Yêu cầu thanh toán vẫn đang chờ dù đã qua thời điểm hết hạn.",
+  },
+  {
+    field: "pendingPaymentsWithoutExpiry",
+    label: "Thanh toán chờ chưa có thời hạn",
+    severity: "warning",
+    description: "Yêu cầu thanh toán đang chờ nhưng chưa được đặt thời điểm hết hạn.",
+  },
+  {
+    field: "overdueReleaseOrders",
+    label: "Đơn đã hoàn tất nhưng tiền chưa được chuyển",
+    severity: "warning",
+    description: "Đã hết thời gian khiếu nại, không còn tranh chấp nhưng tiền vẫn đang tạm giữ.",
+  },
+  {
+    field: "completedOrdersMissingReleaseDeadline",
+    label: "Đơn hoàn tất chưa có mốc chuyển tiền",
+    severity: "warning",
+    description: "Tiền vẫn đang tạm giữ nhưng đơn chưa có thời điểm kết thúc khiếu nại.",
+  },
+  {
+    field: "negativeWalletCount",
+    label: "Ví có số dư âm",
+    severity: "critical",
+    description: "Ví có số dư khả dụng hoặc tạm giữ nhỏ hơn 0; cần kiểm tra ngay.",
+    countOnly: true,
+  },
+  {
+    field: "unclassifiedTransactionsInPeriod",
+    label: "Giao dịch chưa phân loại trong kỳ",
+    severity: "warning",
+    description: "Chưa xếp được vào nhóm tiền vào, tiền ra hay dịch chuyển nội bộ.",
+  },
+];
+
+const hasAlert = (metric, countOnly) =>
+  (toFiniteNumber(countOnly ? metric : metric?.count) ?? 0) > 0;
+
+const INTEGRITY_CHECKS = [
+  { field: "walletBalanceMismatchCount", label: "Ví lệch giữa số dư và sổ cái" },
+  { field: "completedTransactionWithoutLedgerCount", label: "Giao dịch hoàn tất thiếu bút toán sổ cái" },
+  { field: "completedOrderPaymentWithoutEscrowPostingCount", label: "Thanh toán đơn hoàn tất chưa ghi vào ví tạm giữ" },
+  { field: "legacyOrderHoldCount", label: "Khoản tạm giữ theo cách cũ còn tồn" },
+  { field: "negativeOrderEscrowPositionCount", label: "Đơn có số dư tạm giữ âm" },
+  { field: "duplicatePayoutOrderCount", label: "Đơn bị chuyển tiền cho người bán nhiều lần" },
+  { field: "overRefundedOrderCount", label: "Đơn bị hoàn tiền vượt số đã thanh toán" },
+  { field: "payOsSuccessAccountingAnomalyCount", label: "Thanh toán PayOS thành công chưa được ghi nhận nội bộ" },
+];
+
+function IntegrityStatus({ integrity }) {
+  if (!integrity) {
+    return null;
+  }
+
+  const issues = INTEGRITY_CHECKS.filter(
+    (check) => (toFiniteNumber(integrity[check.field]) ?? 0) > 0,
+  );
+  const escrowDifference = toFiniteNumber(integrity.orderEscrowDifference) ?? 0;
+  const escrowUnbalanced =
+    integrity.orderEscrowWalletExists === false ||
+    integrity.orderEscrowBalanced === false;
+
+  if (integrity.isHealthy && issues.length === 0 && !escrowUnbalanced) {
+    return (
+      <div className="flex items-center gap-2 rounded-2xl border border-success/30 bg-success/10 px-5 py-3 text-sm font-bold text-success">
+        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+          verified
+        </span>
+        Sổ sách khớp: số dư ví, sổ cái và ví tạm giữ đơn hàng đều cân bằng.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-error/30 bg-error/10 px-5 py-4">
+      <p className="flex items-center gap-2 text-sm font-black text-error">
+        <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+          report
+        </span>
+        Sổ sách có điểm bất thường cần kiểm tra
+      </p>
+
+      <ul className="mt-2 space-y-1 text-sm text-text">
+        {escrowUnbalanced && (
+          <li>
+            Ví tạm giữ đơn hàng{" "}
+            {integrity.orderEscrowWalletExists === false
+              ? "chưa được tạo"
+              : `lệch ${formatMoney(escrowDifference)} so với sổ cái`}
+          </li>
+        )}
+        {issues.map((check) => (
+          <li key={check.field}>
+            {check.label}: <strong>{formatNumber(integrity[check.field])}</strong>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function HealthCard({
   label,
   metric,
@@ -592,68 +529,6 @@ function HealthCard({
   );
 }
 
-const flowBadgeClass = (
-  value,
-) => {
-  const key =
-    normalize(value);
-
-  if (
-    key === "1" ||
-    key === "externalin"
-  ) {
-    return "bg-success/10 text-success";
-  }
-
-  if (
-    key === "2" ||
-    key === "externalout"
-  ) {
-    return "bg-warning/10 text-warning";
-  }
-
-  if (
-    key === "0" ||
-    key === "unclassified"
-  ) {
-    return "bg-error/10 text-error";
-  }
-
-  return "bg-primary/10 text-primary";
-};
-
-const transactionStatusClass = (
-  value,
-) => {
-  const key =
-    normalize(value);
-
-  if (
-    key === "1" ||
-    key === "completed"
-  ) {
-    return "bg-success/10 text-success";
-  }
-
-  if (
-    key === "0" ||
-    key === "pending"
-  ) {
-    return "bg-warning/10 text-warning";
-  }
-
-  if (
-    key === "2" ||
-    key === "failed" ||
-    key === "3" ||
-    key === "cancelled"
-  ) {
-    return "bg-error/10 text-error";
-  }
-
-  return "bg-background text-textLight";
-};
-
 export default function AdminFinanceDashboardPage() {
   const [draft, setDraft] =
     useState({
@@ -684,37 +559,15 @@ export default function AdminFinanceDashboardPage() {
     setRefreshVersion,
   ] = useState(0);
 
-  const [
-    transactionFilters,
-    setTransactionFilters,
-  ] = useState({
-    transactionType: "",
-    status: "",
-    referenceType: "",
-    flowScope: "",
-    pageNumber: 1,
-    pageSize: 20,
-  });
-
   const [mainState, setMainState] =
     useState({
       requestKey: "",
       overview: null,
       cashFlow: null,
-      paymentStatus: null,
       health: null,
       revenue: null,
       errors: {},
     });
-
-  const [
-    transactionState,
-    setTransactionState,
-  ] = useState({
-    requestKey: "",
-    data: null,
-    error: "",
-  });
 
   const from =
     filters.from;
@@ -758,10 +611,6 @@ export default function AdminFinanceDashboardPage() {
           args,
         ),
       adminDashboardApi
-        .getFinancePaymentStatus(
-          args,
-        ),
-      adminDashboardApi
         .getFinanceHealth(
           args,
         ),
@@ -777,7 +626,6 @@ export default function AdminFinanceDashboardPage() {
       const [
         overviewResult,
         cashFlowResult,
-        paymentStatusResult,
         healthResult,
         revenueResult,
       ] = results;
@@ -802,16 +650,6 @@ export default function AdminFinanceDashboardPage() {
         )
       ) {
         errors.cashFlow = true;
-      }
-
-      if (
-        paymentStatusResult.status ===
-        "rejected" &&
-        !isCanceled(
-          paymentStatusResult.reason,
-        )
-      ) {
-        errors.paymentStatus = true;
       }
 
       if (
@@ -847,11 +685,6 @@ export default function AdminFinanceDashboardPage() {
           "fulfilled"
             ? cashFlowResult.value
             : null,
-        paymentStatus:
-          paymentStatusResult.status ===
-          "fulfilled"
-            ? paymentStatusResult.value
-            : null,
         health:
           healthResult.status ===
           "fulfilled"
@@ -877,120 +710,15 @@ export default function AdminFinanceDashboardPage() {
     mainRequestKey,
   ]);
 
-  const {
-    transactionType,
-    status,
-    referenceType,
-    flowScope,
-    pageNumber,
-    pageSize,
-  } = transactionFilters;
-
-  const transactionRequestKey = [
-    from,
-    to,
-    groupBy,
-    transactionType,
-    status,
-    referenceType,
-    flowScope,
-    pageNumber,
-    pageSize,
-    refreshVersion,
-  ].join("|");
-
-  useEffect(() => {
-    const controller =
-      new AbortController();
-
-    let active = true;
-
-    adminDashboardApi
-      .getFinanceTransactions({
-        from:
-          from || undefined,
-        to:
-          to || undefined,
-        groupBy,
-        transactionType:
-          transactionType ||
-          undefined,
-        status:
-          status ||
-          undefined,
-        referenceType:
-          referenceType ||
-          undefined,
-        flowScope:
-          flowScope ||
-          undefined,
-        pageNumber,
-        pageSize,
-        signal:
-          controller.signal,
-      })
-      .then((data) => {
-        if (!active) {
-          return;
-        }
-
-        setTransactionState({
-          requestKey:
-            transactionRequestKey,
-          data,
-          error: "",
-        });
-      })
-      .catch((error) => {
-        if (
-          !active ||
-          isCanceled(error)
-        ) {
-          return;
-        }
-
-        setTransactionState({
-          requestKey:
-            transactionRequestKey,
-          data: null,
-          error:
-            "Không thể tải lịch sử giao dịch.",
-        });
-      });
-
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [
-    from,
-    to,
-    groupBy,
-    transactionType,
-    status,
-    referenceType,
-    flowScope,
-    pageNumber,
-    pageSize,
-    transactionRequestKey,
-  ]);
-
   const mainLoading =
     mainState.requestKey !==
     mainRequestKey;
-
-  const transactionsLoading =
-    transactionState.requestKey !==
-    transactionRequestKey;
 
   const overview =
     mainState.overview;
 
   const cashFlow =
     mainState.cashFlow;
-
-  const paymentStatus =
-    mainState.paymentStatus;
 
   const health =
     mainState.health;
@@ -1007,32 +735,8 @@ export default function AdminFinanceDashboardPage() {
   const period =
     overview?.period ||
     cashFlow?.period ||
-    paymentStatus?.period ||
     health?.period ||
     revenue?.period;
-
-  const paymentDonutRows =
-    Array.isArray(
-      paymentStatus?.statuses,
-    )
-      ? paymentStatus.statuses.map(
-          (item) => ({
-            key:
-              item?.status ??
-              item?.label,
-            label:
-              enumLabel(
-                item?.status ??
-                  item?.label,
-                PAYMENT_STATUS_LABELS,
-              ),
-            count:
-              item?.count,
-            percentage:
-              item?.percentageOfCreated,
-          }),
-        )
-      : [];
 
   const applyFilters = (
     event,
@@ -1061,13 +765,6 @@ export default function AdminFinanceDashboardPage() {
         draft.to
         ? "custom"
         : "30",
-    );
-
-    setTransactionFilters(
-      (current) => ({
-        ...current,
-        pageNumber: 1,
-      }),
     );
   };
 
@@ -1122,13 +819,6 @@ export default function AdminFinanceDashboardPage() {
     setFilters(next);
     setActivePreset(preset);
     setFilterError("");
-
-    setTransactionFilters(
-      (current) => ({
-        ...current,
-        pageNumber: 1,
-      }),
-    );
   };
 
   const refreshAll = () => {
@@ -1137,34 +827,6 @@ export default function AdminFinanceDashboardPage() {
         current + 1,
     );
   };
-
-  const updateTransactionFilter = (
-    field,
-    value,
-  ) => {
-    setTransactionFilters(
-      (current) => ({
-        ...current,
-        [field]: value,
-        pageNumber: 1,
-      }),
-    );
-  };
-
-  const transactions = (
-    Array.isArray(
-      transactionState.data
-        ?.items,
-    )
-      ? transactionState.data
-          .items
-      : []
-  ).filter(
-    (item) =>
-      !isCommissionFeeTransaction(
-        item?.transactionType,
-      ),
-  );
 
   const internalMovementRows =
     Array.isArray(
@@ -1395,7 +1057,7 @@ export default function AdminFinanceDashboardPage() {
           </h3>
 
           <p className="mt-1 max-w-4xl text-sm leading-6 text-textLight">
-            Bộ lọc này áp dụng cho hoạt động, dòng tiền, doanh thu, trạng thái thanh toán và sổ giao dịch. Nó không thay đổi các số dư hiện tại ở phía trên; trong mục “Các khoản cần theo dõi”, chỉ “Giao dịch chưa phân loại trong kỳ” thay đổi theo kỳ.
+            Áp dụng cho hoạt động, dòng tiền và doanh thu; không ảnh hưởng số dư hiện tại.
           </p>
         </div>
 
@@ -1814,194 +1476,6 @@ export default function AdminFinanceDashboardPage() {
       <section className="space-y-4">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            TRẠNG THÁI THANH TOÁN
-          </p>
-
-          <h3 className="mt-1 text-xl font-black text-text">
-            Thanh toán được tạo trong kỳ
-          </h3>
-
-          <p className="mt-1 text-sm text-textLight">
-            Phân loại các yêu cầu thanh toán được tạo trong kỳ theo trạng thái hiện tại của chúng.
-          </p>
-        </div>
-
-        {mainState.errors
-          .paymentStatus ? (
-          <SectionError
-            message="Không thể tải trạng thái thanh toán."
-            onRetry={
-              refreshAll
-            }
-          />
-        ) : (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <MetricCard
-                label="Số thanh toán được tạo"
-                value={formatNumber(
-                  paymentStatus
-                    ?.totalCreatedCount,
-                )}
-                loading={
-                  mainLoading
-                }
-              />
-
-              <MetricCard
-                label="Tổng giá trị"
-                value={formatMoney(
-                  paymentStatus
-                    ?.totalCreatedAmount,
-                )}
-                loading={
-                  mainLoading
-                }
-              />
-
-              <MetricCard
-                label="Tỷ lệ thanh toán"
-                value={formatPercent(
-                  paymentStatus
-                    ?.paidRatePercent,
-                )}
-                loading={
-                  mainLoading
-                }
-                valueClassName="text-success"
-              />
-
-              <MetricCard
-                label="Tỷ lệ thất bại"
-                value={formatPercent(
-                  paymentStatus
-                    ?.failureRatePercent,
-                )}
-                loading={
-                  mainLoading
-                }
-                valueClassName="text-error"
-              />
-
-              <MetricCard
-                label="Tỷ lệ hoàn tiền"
-                value={formatPercent(
-                  paymentStatus
-                    ?.refundedPaymentRatePercent,
-                )}
-                loading={
-                  mainLoading
-                }
-              />
-            </div>
-
-            <div className="grid gap-6 xl:grid-cols-2">
-              <DashboardDonutChart
-                title="Cơ cấu trạng thái thanh toán"
-                description="Số lượng thanh toán được tạo trong kỳ theo trạng thái hiện tại."
-                rows={
-                  paymentDonutRows
-                }
-                getLabel={(item) =>
-                  item.label ||
-                  "Chưa xác định"
-                }
-              />
-
-              <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
-                <div className="border-b border-border px-5 py-5 sm:px-6">
-                  <h3 className="text-lg font-black text-text">
-                    Chi tiết theo trạng thái
-                  </h3>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-border bg-background/60 text-xs uppercase tracking-[0.08em] text-textLight">
-                        <th className="px-5 py-3">
-                          Trạng thái
-                        </th>
-                        <th className="px-5 py-3 text-right">
-                          Số lượng
-                        </th>
-                        <th className="px-5 py-3 text-right">
-                          Giá trị
-                        </th>
-                        <th className="px-5 py-3 text-right">
-                          Tỷ trọng
-                        </th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {Array.isArray(
-                        paymentStatus
-                          ?.statuses,
-                      ) &&
-                      paymentStatus
-                        .statuses
-                        .length >
-                        0 ? (
-                        paymentStatus.statuses.map(
-                          (
-                            item,
-                            index,
-                          ) => (
-                            <tr
-                              key={`${item?.status}-${index}`}
-                              className="border-b border-border/70 last:border-0"
-                            >
-                              <td className="px-5 py-3 font-bold text-text">
-                                {enumLabel(
-                                  item?.status ??
-                                    item?.label,
-                                  PAYMENT_STATUS_LABELS,
-                                )}
-                              </td>
-
-                              <td className="px-5 py-3 text-right font-black text-text">
-                                {formatNumber(
-                                  item?.count,
-                                )}
-                              </td>
-
-                              <td className="px-5 py-3 text-right font-black text-text">
-                                {formatMoney(
-                                  item?.amount,
-                                )}
-                              </td>
-
-                              <td className="px-5 py-3 text-right font-bold text-textLight">
-                                {formatPercent(
-                                  item?.percentageOfCreated,
-                                )}
-                              </td>
-                            </tr>
-                          ),
-                        )
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={4}
-                            className="px-5 py-10 text-center text-textLight"
-                          >
-                            Chưa có dữ liệu.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            </div>
-          </>
-        )}
-      </section>
-
-      <section className="space-y-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
             CÁC KHOẢN CẦN THEO DÕI
           </p>
 
@@ -2010,7 +1484,7 @@ export default function AdminFinanceDashboardPage() {
           </h3>
 
           <p className="mt-1 text-sm text-textLight">
-            Hầu hết chỉ số ở đây là trạng thái hiện tại. Riêng “Giao dịch chưa phân loại trong kỳ” sử dụng Kỳ phân tích; không phải mọi khoản đang tạm giữ đều là lỗi.
+            Các mục bất thường chỉ hiện khi có trường hợp cần kiểm tra.
           </p>
         </div>
 
@@ -2023,520 +1497,46 @@ export default function AdminFinanceDashboardPage() {
             }
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            <HealthCard
-              label="Thanh toán chờ đã quá hạn"
-              metric={
-                health
-                  ?.stalePendingPayments
-              }
-              severity="warning"
-              description="Yêu cầu thanh toán vẫn đang chờ dù đã qua thời điểm hết hạn."
-            />
+          <div className="space-y-4">
+            <IntegrityStatus integrity={health?.integrity} />
 
-            <HealthCard
-              label="Thanh toán chờ chưa có thời hạn"
-              metric={
-                health
-                  ?.pendingPaymentsWithoutExpiry
-              }
-              severity="warning"
-              description="Yêu cầu thanh toán đang chờ nhưng chưa được đặt thời điểm hết hạn."
-            />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <HealthCard
+                label="Yêu cầu rút tiền đang chờ"
+                metric={health?.pendingWithdrawals}
+                severity="info"
+                description="Yêu cầu rút tiền đang chờ được xử lý."
+              />
 
-            <HealthCard
-              label="Yêu cầu rút tiền đang chờ"
-              metric={
-                health
-                  ?.pendingWithdrawals
-              }
-              severity="info"
-              description="Yêu cầu rút tiền đang chờ được xử lý."
-            />
+              <HealthCard
+                label="Rút tiền đang xử lý"
+                metric={health?.processingWithdrawals}
+                severity="info"
+                description="Đã duyệt và đang chuyển tiền, chưa có kết quả cuối."
+              />
 
-            <HealthCard
-              label="Rút tiền đang xử lý"
-              metric={
-                health
-                  ?.processingWithdrawals
-              }
-              severity="info"
-              description="Yêu cầu rút tiền đã được duyệt và đang chuyển tiền, chưa có kết quả cuối."
-            />
+              <HealthCard
+                label="Tiền đang tạm giữ do tranh chấp"
+                metric={health?.activeDisputeHeldFunds}
+                severity="info"
+                description="Tiền của đơn đang có tranh chấp chưa giải quyết."
+              />
 
-            <HealthCard
-              label="Đơn đã hoàn tất nhưng tiền chưa được chuyển"
-              metric={
-                health
-                  ?.overdueReleaseOrders
-              }
-              severity="warning"
-              description="Đơn đã hoàn tất, đã hết thời gian khiếu nại và không còn tranh chấp nhưng tiền vẫn đang tạm giữ."
-            />
-
-            <HealthCard
-              label="Đơn hoàn tất chưa có mốc chuyển tiền"
-              metric={
-                health
-                  ?.completedOrdersMissingReleaseDeadline
-              }
-              severity="warning"
-              description="Đơn đã hoàn tất và tiền vẫn đang tạm giữ nhưng chưa có thời điểm kết thúc thời gian khiếu nại."
-            />
-
-            <HealthCard
-              label="Tiền đang tạm giữ do tranh chấp"
-              metric={
-                health
-                  ?.activeDisputeHeldFunds
-              }
-              severity="info"
-              description="Tiền của đơn hàng đang tạm giữ vì đơn có tranh chấp chưa giải quyết; đây là trạng thái theo dõi, không mặc nhiên là lỗi."
-            />
-
-            <HealthCard
-              label="Ví có số dư âm"
-              metric={
-                health
-                  ?.negativeWalletCount
-              }
-              severity="critical"
-              description="Ví có số dư khả dụng hoặc số dư tạm giữ nhỏ hơn 0; cần kiểm tra ngay."
-              countOnly
-            />
-
-            <HealthCard
-              label="Giao dịch chưa phân loại"
-              metric={
-                health
-                  ?.unclassifiedTransactionsInPeriod
-              }
-              severity="warning"
-              description="Giao dịch trong kỳ chưa xếp được vào nhóm tiền vào, tiền ra hay dịch chuyển nội bộ."
-            />
-          </div>
-        )}
-      </section>
-
-      <section className="overflow-hidden rounded-2xl border border-border bg-white shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
-        <div className="border-b border-border px-5 py-5 sm:px-6">
-          <p className="text-xs font-black uppercase tracking-[0.14em] text-primary">
-            SỔ GIAO DỊCH
-          </p>
-
-          <div className="mt-1 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h3 className="text-xl font-black text-text">
-                Lịch sử giao dịch trong kỳ
-              </h3>
-
-              <p className="mt-1 text-xs leading-5 text-textLight">
-                Mỗi dòng thể hiện một giao dịch nghiệp vụ được HomeCycle ghi nhận; không phải từng thay đổi số dư riêng lẻ.
-              </p>
-            </div>
-
-            <div className="text-xs font-bold text-textLight">
-              {formatNumber(
-                transactionState
-                  .data?.totalCount,
-              )}{" "}
-              giao dịch
+              {DATA_ALERTS.filter((alert) =>
+                hasAlert(health?.[alert.field], alert.countOnly),
+              ).map((alert) => (
+                <HealthCard
+                  key={alert.field}
+                  label={alert.label}
+                  metric={health?.[alert.field]}
+                  severity={alert.severity}
+                  description={alert.description}
+                  countOnly={alert.countOnly}
+                />
+              ))}
             </div>
           </div>
-        </div>
-
-        <div className="grid gap-3 border-b border-border bg-background/40 p-4 sm:grid-cols-2 xl:grid-cols-5">
-          <select
-            value={
-              transactionType
-            }
-            onChange={(event) =>
-              updateTransactionFilter(
-                "transactionType",
-                event.target.value,
-              )
-            }
-            className="rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {TRANSACTION_TYPE_OPTIONS.map(
-              ([value, label]) => (
-                <option
-                  key={
-                    value ||
-                    "all"
-                  }
-                  value={value}
-                >
-                  {label}
-                </option>
-              ),
-            )}
-          </select>
-
-          <select
-            value={flowScope}
-            onChange={(event) =>
-              updateTransactionFilter(
-                "flowScope",
-                event.target.value,
-              )
-            }
-            className="rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {FLOW_OPTIONS.map(
-              ([value, label]) => (
-                <option
-                  key={
-                    value ||
-                    "all"
-                  }
-                  value={value}
-                >
-                  {label}
-                </option>
-              ),
-            )}
-          </select>
-
-          <select
-            value={status}
-            onChange={(event) =>
-              updateTransactionFilter(
-                "status",
-                event.target.value,
-              )
-            }
-            className="rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {TRANSACTION_STATUS_OPTIONS.map(
-              ([value, label]) => (
-                <option
-                  key={
-                    value ||
-                    "all"
-                  }
-                  value={value}
-                >
-                  {label}
-                </option>
-              ),
-            )}
-          </select>
-
-          <select
-            value={referenceType}
-            onChange={(event) =>
-              updateTransactionFilter(
-                "referenceType",
-                event.target.value,
-              )
-            }
-            className="rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            {REFERENCE_OPTIONS.map(
-              ([value, label]) => (
-                <option
-                  key={
-                    value ||
-                    "all"
-                  }
-                  value={value}
-                >
-                  {label}
-                </option>
-              ),
-            )}
-          </select>
-
-          <select
-            value={pageSize}
-            onChange={(event) =>
-              setTransactionFilters(
-                (current) => ({
-                  ...current,
-                  pageNumber: 1,
-                  pageSize:
-                    Number(
-                      event.target
-                        .value,
-                    ),
-                }),
-              )
-            }
-            className="rounded-xl border border-border bg-white px-3 py-2.5 text-sm font-bold text-text outline-none focus:border-primary"
-          >
-            <option value={20}>
-              20 / trang
-            </option>
-            <option value={50}>
-              50 / trang
-            </option>
-            <option value={100}>
-              100 / trang
-            </option>
-          </select>
-        </div>
-
-        {transactionState.error &&
-        !transactionsLoading ? (
-          <div className="p-5">
-            <SectionError
-              message={
-                transactionState.error
-              }
-              onRetry={
-                refreshAll
-              }
-            />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-[1100px] w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border bg-background/60 text-xs uppercase tracking-[0.07em] text-textLight">
-                  <th className="px-4 py-3">
-                    Thời gian
-                  </th>
-                  <th className="px-4 py-3">
-                    Giao dịch
-                  </th>
-                  <th className="px-4 py-3">
-                    Tham chiếu
-                  </th>
-                  <th className="px-4 py-3">
-                    Người dùng
-                  </th>
-                  <th className="px-4 py-3">
-                    Phương thức
-                  </th>
-                  <th className="px-4 py-3 text-right">
-                    Giá trị
-                  </th>
-                  <th className="px-4 py-3">
-                    Dòng tiền
-                  </th>
-                  <th className="px-4 py-3">
-                    Trạng thái
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {transactionsLoading ? (
-                  Array.from(
-                    { length: 6 },
-                    (_, index) => (
-                      <tr
-                        key={index}
-                        className="border-b border-border/70"
-                      >
-                        <td
-                          colSpan={8}
-                          className="px-4 py-4"
-                        >
-                          <div className="h-5 animate-pulse rounded bg-background" />
-                        </td>
-                      </tr>
-                    ),
-                  )
-                ) : transactions.length ===
-                  0 ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="px-5 py-12 text-center text-textLight"
-                    >
-                      Không có giao dịch phù hợp bộ lọc.
-                    </td>
-                  </tr>
-                ) : (
-                  transactions.map(
-                    (
-                      item,
-                      index,
-                    ) => (
-                      <tr
-                        key={
-                          item
-                            ?.walletTransactionId ||
-                          index
-                        }
-                        className="border-b border-border/70 last:border-0"
-                      >
-                        <td className="whitespace-nowrap px-4 py-3 text-xs font-semibold text-textLight">
-                          {formatDateTime(
-                            item
-                              ?.createdAt,
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3 font-black text-text">
-                          {enumLabel(
-                            item
-                              ?.transactionType,
-                            TRANSACTION_TYPE_LABELS,
-                            "Giao dịch khác",
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3">
-                          <p className="font-bold text-text">
-                            {item
-                              ?.referenceCode ||
-                              "—"}
-                          </p>
-
-                          {item
-                            ?.referenceType !==
-                            null &&
-                            item
-                              ?.referenceType !==
-                              undefined && (
-                              <p className="mt-1 text-xs text-textLight">
-                                {enumLabel(
-                                  item
-                                    ?.referenceType,
-                                  REFERENCE_LABELS,
-                                )}
-                              </p>
-                            )}
-                        </td>
-
-                        <td className="px-4 py-3 font-semibold text-text">
-                          {item
-                            ?.username ||
-                            "—"}
-                        </td>
-
-                        <td className="px-4 py-3 text-text">
-                          {enumLabel(
-                            item
-                              ?.paymentMethod,
-                            PAYMENT_METHOD_LABELS,
-                            "—",
-                          )}
-                        </td>
-
-                        <td className="whitespace-nowrap px-4 py-3 text-right font-black text-text">
-                          {formatMoney(
-                            item
-                              ?.amount,
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3">
-                          <span
-                            className={[
-                              "inline-flex rounded-full px-2.5 py-1 text-xs font-black",
-                              flowBadgeClass(
-                                item
-                                  ?.flowScope,
-                              ),
-                            ].join(" ")}
-                          >
-                            {enumLabel(
-                              item
-                                ?.flowScope,
-                              FLOW_LABELS,
-                            )}
-                          </span>
-                        </td>
-
-                        <td className="px-4 py-3">
-                          <span
-                            className={[
-                              "inline-flex rounded-full px-2.5 py-1 text-xs font-black",
-                              transactionStatusClass(
-                                item
-                                  ?.status,
-                              ),
-                            ].join(" ")}
-                          >
-                            {enumLabel(
-                              item
-                                ?.status,
-                              TRANSACTION_STATUS_LABELS,
-                            )}
-                          </span>
-                        </td>
-                      </tr>
-                    ),
-                  )
-                )}
-              </tbody>
-            </table>
-          </div>
         )}
-
-        <div className="flex flex-col gap-3 border-t border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs font-bold text-textLight">
-            Trang{" "}
-            {formatNumber(
-              transactionState
-                .data
-                ?.pageNumber ||
-                pageNumber,
-            )}
-            {" / "}
-            {formatNumber(
-              transactionState
-                .data
-                ?.totalPages ||
-                1,
-            )}
-          </p>
-
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={
-                transactionsLoading ||
-                !transactionState
-                  .data
-                  ?.hasPreviousPage
-              }
-              onClick={() =>
-                setTransactionFilters(
-                  (current) => ({
-                    ...current,
-                    pageNumber:
-                      Math.max(
-                        1,
-                        current.pageNumber -
-                          1,
-                      ),
-                  }),
-                )
-              }
-              className="rounded-xl border border-border bg-white px-4 py-2 text-xs font-black text-text disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Trang trước
-            </button>
-
-            <button
-              type="button"
-              disabled={
-                transactionsLoading ||
-                !transactionState
-                  .data
-                  ?.hasNextPage
-              }
-              onClick={() =>
-                setTransactionFilters(
-                  (current) => ({
-                    ...current,
-                    pageNumber:
-                      current.pageNumber +
-                      1,
-                  }),
-                )
-              }
-              className="rounded-xl border border-border bg-white px-4 py-2 text-xs font-black text-text disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              Trang sau
-            </button>
-          </div>
-        </div>
       </section>
     </section>
   );

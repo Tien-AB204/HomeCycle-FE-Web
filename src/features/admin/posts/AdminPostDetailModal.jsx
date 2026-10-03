@@ -63,7 +63,7 @@ const getStatusMeta = (status) =>
   };
 
 /*
- * Chỉ dùng cho các trường enum (priorityLevel, functionalityStatus,
+ * Chỉ dùng cho các trường enum (functionalityStatus,
  * damageLevel, spaceUsage, deliveryMethod): enum đã biết -> nhãn tiếng Việt,
  * trống -> "—", enum lạ -> "Chưa xác định"; không hiển thị giá trị thô.
  */
@@ -425,10 +425,6 @@ export default function AdminPostDetailModal({
                     <DetailRow
                       label="Thương hiệu"
                       value={post.brandName || "—"}
-                    />
-                    <DetailRow
-                      label="Độ ưu tiên"
-                      value={formatEnum(post.priorityLevel)}
                     />
                   </dl>
 
