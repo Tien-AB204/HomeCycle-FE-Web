@@ -9,6 +9,7 @@ import {
   DashboardHorizontalBarChart,
   DashboardLineChart,
 } from "../../components/admin/AdminDashboardCharts";
+import { Tooltip } from "antd";
 import { FinanceAmountBarChart } from "../../components/admin/AdminFinanceCharts";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import disputeCategoryApi from "../../services/apis/disputeCategoryApi";
@@ -99,6 +100,10 @@ const DISPUTE_STATUS_OPTIONS = [
   {
     value: "AwaitingReturn",
     label: "Đang chờ hoàn trả",
+  },
+  {
+    value: "AwaitingResponse",
+    label: "Chờ bên kia phản hồi",
   },
 ];
 
@@ -195,11 +200,6 @@ const MODULES = {
   },
 };
 
-const PERIOD_SCOPE_NOTES = {
-  "business-performance":
-    "Toàn bộ số liệu Hoạt động mua bán của doanh nghiệp được giới hạn theo khoảng thời gian đã chọn.",
-};
-
 const normalize = (value) =>
   String(value || "")
     .trim()
@@ -230,6 +230,7 @@ const LABELS = {
   closed: "Đã đóng",
   underreview: "Đang xem xét",
   awaitingreturn: "Đang chờ hoàn trả",
+  awaitingresponse: "Chờ bên kia phản hồi",
   appointment: "Lịch hẹn",
   order: "Đơn hàng",
   review: "Đánh giá",
@@ -498,12 +499,23 @@ const KpiCard = ({
   label,
   value,
   hint,
+  sub,
   loading,
   valueClassName = "text-text",
 }) => (
   <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
-    <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
+    <p className="flex items-center gap-1 text-xs font-black uppercase tracking-[0.12em] text-textLight">
       {label}
+      {hint && (
+        <Tooltip title={hint}>
+          <span
+            className="material-symbols-outlined cursor-help text-[16px] normal-case tracking-normal"
+            aria-label={hint}
+          >
+            info
+          </span>
+        </Tooltip>
+      )}
     </p>
 
     <p
@@ -519,9 +531,9 @@ const KpiCard = ({
       )}
     </p>
 
-    {hint && (
+    {sub && !loading && (
       <p className="mt-2 text-xs leading-5 text-textLight">
-        {hint}
+        {sub}
       </p>
     )}
   </article>
@@ -2270,21 +2282,16 @@ export default function AdminDashboardModulePage({
             valueClassName="text-error"
           />
 
-          <KpiCard
-            label="Nguyên nhân chưa xác định"
-            value={formatNumber(
-              data?.unknownCategoryCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Tiền đang tạm giữ do tranh chấp"
-            value={formatMoney(data?.currentDisputedHeldAmount)}
-            hint="Số tiền hiện đang tạm giữ của các đơn có tranh chấp chưa giải quyết; là tiền của người dùng đang bị giữ, không phải doanh thu hay thiệt hại."
-            loading={loading}
-            valueClassName="text-warning"
-          />
+          {Number(data?.unknownCategoryCount) > 0 && (
+            <KpiCard
+              label="Nguyên nhân chưa xác định"
+              value={formatNumber(
+                data?.unknownCategoryCount,
+              )}
+              loading={loading}
+              valueClassName="text-warning"
+            />
+          )}
         </div>
 
         <div className="grid gap-6 xl:grid-cols-2">
@@ -2300,16 +2307,6 @@ export default function AdminDashboardModulePage({
                 "disputes",
               )
             }
-          />
-
-          <DistributionPanel
-            title="Theo nguyên nhân"
-            description="Phân bố tất cả tranh chấp theo nguyên nhân."
-            rows={
-              data?.categoryDistribution
-            }
-            dashboard="disputes"
-            getLabel={domainLabelFor}
           />
 
           <DashboardHorizontalBarChart
@@ -2355,15 +2352,7 @@ export default function AdminDashboardModulePage({
             value={formatNumber(
               data?.withProfileCount,
             )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Chưa có hồ sơ"
-            value={formatNumber(
-              data
-                ?.withoutProfileCount,
-            )}
+            sub={`Còn ${formatNumber(data?.withoutProfileCount)} tài khoản chưa có hồ sơ.`}
             loading={loading}
           />
 
@@ -2373,43 +2362,9 @@ export default function AdminDashboardModulePage({
               data
                 ?.surveyCoveragePercent,
             )}
+            sub={`${formatNumber(data?.withSurveyCount)} đã có, ${formatNumber(data?.withoutSurveyCount)} chưa có khảo sát.`}
             loading={loading}
             valueClassName="text-primary"
-          />
-
-          <KpiCard
-            label="Đã có khảo sát"
-            value={formatNumber(
-              data?.withSurveyCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Chưa có khảo sát"
-            value={formatNumber(
-              data
-                ?.withoutSurveyCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Có loại sản phẩm"
-            value={formatNumber(
-              data
-                ?.withProductTypesCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Có khu vực phục vụ"
-            value={formatNumber(
-              data
-                ?.withServiceAreasCount,
-            )}
-            loading={loading}
           />
         </div>
 
@@ -2464,33 +2419,6 @@ export default function AdminDashboardModulePage({
 
         <div className="grid gap-6 xl:grid-cols-2">
           <DemandGroup
-            title="Thành phố mục tiêu"
-            group={data?.targetCities}
-          />
-
-          <DemandGroup
-            title="Mức độ hư hỏng"
-            group={data?.damageLevels}
-            kind="enum"
-          />
-
-          <DemandGroup
-            title="Tình trạng sử dụng"
-            kind="enum"
-            group={
-              data?.functionalityStatuses
-            }
-          />
-
-          <DemandGroup
-            title="Quy mô thu mua"
-            kind="enum"
-            group={
-              data?.procurementScales
-            }
-          />
-
-          <DemandGroup
             title="Loại sản phẩm"
             group={data?.productTypes}
           />
@@ -2499,11 +2427,6 @@ export default function AdminDashboardModulePage({
             title="Thành phố phục vụ"
             group={data?.serviceCities}
           />
-
-          <DemandGroup
-            title="Phường/xã phục vụ"
-            group={data?.serviceWards}
-          />
         </div>
       </>
     );
@@ -2511,36 +2434,16 @@ export default function AdminDashboardModulePage({
   const renderBusinessPerformance =
     () => (
       <>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard
-            label="Thanh toán đơn hàng thành công"
-            value={formatNumber(
-              data
-                ?.eligiblePaidPaymentCount,
-            )}
-            hint="Thanh toán đặt cọc hoặc thanh toán toàn bộ đã thanh toán thành công trong kỳ."
-            loading={loading}
-          />
-
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <KpiCard
             label="Thanh toán có doanh nghiệp tham gia"
             value={formatNumber(
               data
                 ?.businessPaymentCount,
             )}
-            hint="Số thanh toán đơn hàng thành công trong kỳ có ít nhất một bên là doanh nghiệp."
+            sub={`${formatPercent(data?.businessPaymentSharePercent)} trên ${formatNumber(data?.eligiblePaidPaymentCount)} thanh toán đơn hàng thành công.`}
+            hint="Thanh toán đặt cọc hoặc toàn bộ đã thành công trong kỳ, có ít nhất một bên là doanh nghiệp."
             loading={loading}
-          />
-
-          <KpiCard
-            label="Tỷ trọng thanh toán của doanh nghiệp"
-            value={formatPercent(
-              data
-                ?.businessPaymentSharePercent,
-            )}
-            hint="Tỷ lệ thanh toán đơn hàng thành công trong kỳ có ít nhất một bên là doanh nghiệp."
-            loading={loading}
-            valueClassName="text-primary"
           />
 
           <KpiCard
@@ -2558,7 +2461,7 @@ export default function AdminDashboardModulePage({
               data
                 ?.totalCompletedOrderValue,
             )}
-            hint="Tổng tiền cuối cùng của các đơn hoàn tất trong kỳ; là giá trị mua bán giữa người dùng, không phải doanh thu HomeCycle."
+            hint="Tổng tiền cuối cùng của đơn hoàn tất, có thể gồm phí giao hàng; là giá trị mua bán giữa người dùng, không phải doanh thu HomeCycle."
             loading={loading}
             valueClassName="text-primary"
           />
@@ -2569,7 +2472,7 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessPurchaseValue,
             )}
-            hint="Giá trị đơn hoàn tất trong kỳ mà bên mua là doanh nghiệp."
+            sub={`${formatNumber(data?.businessPurchaseOrderCount)} đơn từ ${formatNumber(data?.purchasingBusinessCount)} doanh nghiệp.`}
             loading={loading}
           />
 
@@ -2579,92 +2482,29 @@ export default function AdminDashboardModulePage({
               data
                 ?.businessSalesValue,
             )}
-            hint="Giá trị đơn hoàn tất trong kỳ mà bên bán là doanh nghiệp."
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Tỷ trọng giá trị bán của doanh nghiệp"
-            value={formatPercent(
-              data
-                ?.businessSalesSharePercent,
-            )}
-            hint="Tỷ lệ giá trị đơn hoàn tất trong kỳ mà bên bán là doanh nghiệp trên tổng giá trị đơn hoàn tất."
-            loading={loading}
-            valueClassName="text-primary"
-          />
-
-          <KpiCard
-            label="Số doanh nghiệp có mua"
-            value={formatNumber(
-              data
-                ?.purchasingBusinessCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Số doanh nghiệp có bán"
-            value={formatNumber(
-              data
-                ?.sellingBusinessCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Thanh toán chưa phân loại"
-            value={formatNumber(
-              data
-                ?.unclassifiedPaymentCount,
-            )}
-            hint="Không xác định được vai trò bên mua hoặc bên bán."
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Đơn chưa có tổng tiền"
-            value={formatNumber(
-              data
-                ?.ordersWithMissingAmountCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Đơn chưa phân loại"
-            value={formatNumber(
-              data
-                ?.unclassifiedOrderCount,
-            )}
-            hint="Không xác định được vai trò bên mua hoặc bên bán."
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Đơn doanh nghiệp mua"
-            value={formatNumber(
-              data
-                ?.businessPurchaseOrderCount,
-            )}
-            loading={loading}
-          />
-
-          <KpiCard
-            label="Đơn doanh nghiệp bán"
-            value={formatNumber(
-              data
-                ?.businessSalesOrderCount,
-            )}
+            sub={`${formatNumber(data?.businessSalesOrderCount)} đơn từ ${formatNumber(data?.sellingBusinessCount)} doanh nghiệp · ${formatPercent(data?.businessSalesSharePercent)} tổng giá trị.`}
             loading={loading}
           />
         </div>
 
-        <div className="rounded-xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm leading-6 text-text">
-          Giá trị đơn hoàn tất là tổng tiền cuối cùng của đơn (giá trị mua bán giữa người dùng)
-          và có thể bao gồm phí giao hàng đã cấu hình.
-          Đây không phải doanh thu của HomeCycle.
-        </div>
+        {[
+          { label: "Thanh toán chưa phân loại", value: data?.unclassifiedPaymentCount },
+          { label: "Đơn chưa có tổng tiền", value: data?.ordersWithMissingAmountCount },
+          { label: "Đơn chưa phân loại", value: data?.unclassifiedOrderCount },
+        ].some((item) => Number(item.value) > 0) && (
+          <div className="rounded-xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm leading-6 text-text">
+            Dữ liệu chưa đầy đủ trong kỳ:{" "}
+            {[
+              { label: "thanh toán chưa phân loại", value: data?.unclassifiedPaymentCount },
+              { label: "đơn chưa có tổng tiền", value: data?.ordersWithMissingAmountCount },
+              { label: "đơn chưa phân loại", value: data?.unclassifiedOrderCount },
+            ]
+              .filter((item) => Number(item.value) > 0)
+              .map((item) => `${formatNumber(item.value)} ${item.label}`)
+              .join(", ")}
+            .
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-2">
           <TradeChart
@@ -2808,29 +2648,7 @@ export default function AdminDashboardModulePage({
           buyers={data?.topBuyers}
         />
 
-        <div className="grid gap-6 xl:grid-cols-2">
-          {(data?.contributionSeries || []).some(
-            (point) =>
-              (Number(point?.businessOrderCount) || 0) +
-                (Number(point?.personalOrderCount) || 0) >
-              0,
-          ) ? (
-            <DashboardLineChart
-              title="Đơn hoàn tất: doanh nghiệp so với cá nhân"
-              description="Số đơn hoàn tất theo kỳ, tách theo đơn có doanh nghiệp tham gia và đơn chỉ giữa cá nhân."
-              rows={data?.contributionSeries}
-              series={[
-                { key: "businessOrderCount", label: "Có doanh nghiệp", className: "text-primary" },
-                { key: "personalOrderCount", label: "Chỉ cá nhân", className: "text-textLight" },
-              ]}
-            />
-          ) : (
-            <EmptyPerformanceChart
-              title="Đơn hoàn tất: doanh nghiệp so với cá nhân"
-              message="Chưa có đơn hoàn tất trong kỳ đã chọn."
-            />
-          )}
-
+        <div>
           {(data?.contributionSeries || []).some(
             (point) =>
               (Number(point?.businessGmv) || 0) +
@@ -3698,20 +3516,6 @@ export default function AdminDashboardModulePage({
         onSubmit={applyFilters}
         className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.04)]"
       >
-        {usesPeriod && !splitsPeriod && (
-          <div className="mb-4 rounded-xl border border-primary/10 bg-primary/[0.035] px-4 py-3">
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-primary">
-              {dashboard === "business-performance"
-                ? "Kỳ dữ liệu toàn trang"
-                : "Phạm vi bộ lọc thời gian"}
-            </p>
-
-            <p className="mt-1 text-xs leading-5 text-textLight">
-              {PERIOD_SCOPE_NOTES[dashboard]}
-            </p>
-          </div>
-        )}
-
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {renderFilters()}
         </div>
