@@ -68,12 +68,20 @@ const adminDashboardApi = {
       },
     ),
 
-  getOperationOverview: async ({
+  getAdminOverview: async ({
+    from,
+    to,
+    groupBy = "Day",
     signal,
   } = {}) =>
     axiosClient.get(
-      "/admin/dashboard/operations/overview",
+      "/admin/dashboard/overview",
       {
+        params: cleanParams({
+          from,
+          to,
+          groupBy,
+        }),
         signal,
         skipGlobalErrorPage: true,
       },
@@ -282,25 +290,6 @@ const adminDashboardApi = {
       },
     ),
 
-  getFinancePaymentStatus: async ({
-    from,
-    to,
-    groupBy = "Day",
-    signal,
-  } = {}) =>
-    axiosClient.get(
-      "/admin/dashboard/finance/payment-status",
-      {
-        params: cleanParams({
-          from,
-          to,
-          groupBy,
-        }),
-        signal,
-        skipGlobalErrorPage: true,
-      },
-    ),
-
   getFinanceHealth: async ({
     from,
     to,
@@ -339,36 +328,6 @@ const adminDashboardApi = {
       },
     ),
 
-  getFinanceTransactions: async ({
-    from,
-    to,
-    groupBy = "Day",
-    pageNumber = 1,
-    pageSize = 20,
-    transactionType,
-    status,
-    referenceType,
-    flowScope,
-    signal,
-  } = {}) =>
-    axiosClient.get(
-      "/admin/dashboard/finance/transactions",
-      {
-        params: cleanParams({
-          from,
-          to,
-          groupBy,
-          pageNumber,
-          pageSize,
-          transactionType,
-          status,
-          referenceType,
-          flowScope,
-        }),
-        signal,
-        skipGlobalErrorPage: true,
-      },
-    ),
   getListings: async ({
     from,
     to,

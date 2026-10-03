@@ -3,7 +3,22 @@ import {
   useState,
 } from "react";
 import { Link } from "react-router-dom";
+import { Tooltip } from "antd";
+import {
+  DashboardDonutChart,
+  DashboardLineChart,
+} from "../../components/admin/AdminDashboardCharts";
+import DashboardPeriodControls from "../../components/admin/DashboardPeriodControls";
 import adminDashboardApi from "../../services/apis/adminDashboardApi";
+
+const ORDER_STATUS_LABELS = {
+  pending: "Chờ xử lý",
+  processing: "Đang xử lý",
+  completed: "Hoàn tất",
+  cancelled: "Đã hủy",
+  disputing: "Đang tranh chấp",
+  returned: "Đã hoàn trả",
+};
 
 const toFiniteNumber = (value) => {
   if (value === null || value === undefined || value === "") {
@@ -21,36 +36,74 @@ const formatNumber = (value) => {
     : new Intl.NumberFormat("vi-VN").format(number);
 };
 
+const formatMoney = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0,
+      }).format(number);
+};
+
+const formatCompactMoney = (value) => {
+  const number = toFiniteNumber(value);
+  return number === null
+    ? "—"
+    : new Intl.NumberFormat("vi-VN", {
+        notation: "compact",
+        maximumFractionDigits: 1,
+      }).format(number);
+};
+
 const formatDateTime = (value) => {
   if (!value) {
     return "—";
   }
 
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
-  if (
-    Number.isNaN(
-      date.getTime(),
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat(
-    "vi-VN",
-    {
-      dateStyle: "medium",
-      timeStyle: "short",
-      timeZone:
-        "Asia/Ho_Chi_Minh",
-    },
-  ).format(date);
+  return new Intl.DateTimeFormat("vi-VN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Ho_Chi_Minh",
+  }).format(date);
 };
 
-const LoadingBlock = ({
-  className = "",
-}) => (
+const formatDate = (value) => {
+  const parts = String(value || "").split("-");
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : "—";
+};
+
+const validatePeriod = (from, to) => {
+  if (Boolean(from) !== Boolean(to)) {
+    return "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.";
+  }
+
+  if (!from && !to) {
+    return "";
+  }
+
+  const days = Math.round(
+    (new Date(`${to}T00:00:00Z`) - new Date(`${from}T00:00:00Z`)) /
+      86400000,
+  );
+
+  if (days < 1 || days > 366) {
+    return "Khoảng thời gian phải từ 1 đến 366 ngày.";
+  }
+
+  return "";
+};
+
+const EMPTY_PERIOD = { from: "", to: "", groupBy: "Day" };
+
+const LoadingBlock = ({ className = "" }) => (
   <span
     className={[
       "inline-block animate-pulse rounded-lg bg-background",
@@ -59,120 +112,130 @@ const LoadingBlock = ({
   />
 );
 
-function OverviewCard({
-  title,
-  icon,
-  to,
-  items,
-  loading,
-}) {
+function InfoTip({ text }) {
+  return (
+    <Tooltip title={text}>
+      <span
+        className="material-symbols-outlined cursor-help align-middle text-[16px] text-textLight"
+        aria-label={text}
+      >
+        info
+      </span>
+    </Tooltip>
+  );
+}
+
+function KpiCard({ label, metric, formatter, loading, tip }) {
+  const changePercent = toFiniteNumber(metric?.changePercent);
+  const change = toFiniteNumber(metric?.change);
+  const isUp = (change ?? 0) > 0;
+  const isDown = (change ?? 0) < 0;
+
   return (
     <article className="rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.055)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.12em] text-textLight">
-            {title}
-          </p>
-        </div>
+      <p className="flex items-center gap-1 text-xs font-black uppercase tracking-[0.1em] text-textLight">
+        {label}
+        {tip && <InfoTip text={tip} />}
+      </p>
 
-        <span className="material-symbols-outlined rounded-xl bg-background p-2 text-primary">
-          {icon}
-        </span>
-      </div>
-
-      <div className="mt-4 space-y-3">
-        {items.map(
-          (item, index) => (
-            <div
-              key={item.label}
-              className={
-                index === 0
-                  ? ""
-                  : "border-t border-border pt-3"
-              }
-            >
-              <p className="text-xs font-bold text-textLight">
-                {item.label}
-              </p>
-
-              <p
-                className={[
-                  "mt-0.5 text-xl font-black",
-                  item.className ||
-                    "text-text",
-                ].join(" ")}
-              >
-                {loading ? (
-                  <LoadingBlock className="h-8 w-16" />
-                ) : (
-                  formatNumber(
-                    item.value,
-                  )
-                )}
-              </p>
-            </div>
-          ),
+      <p className="mt-2 text-2xl font-black text-text">
+        {loading ? (
+          <LoadingBlock className="h-8 w-24" />
+        ) : (
+          formatter(metric?.value)
         )}
-      </div>
+      </p>
 
-      <Link
-        to={to}
-        className="mt-4 inline-flex items-center gap-1 text-xs font-black text-primary"
-      >
-        Xem chi tiết
-        <span className="material-symbols-outlined text-[17px]">
-          arrow_forward
-        </span>
-      </Link>
+      {!loading && metric && (
+        <p
+          className={[
+            "mt-1 text-xs font-bold",
+            isUp ? "text-success" : isDown ? "text-error" : "text-textLight",
+          ].join(" ")}
+        >
+          {changePercent === null
+            ? `Kỳ trước: ${formatter(metric.previousValue)}`
+            : `${isUp ? "▲" : isDown ? "▼" : "•"} ${Math.abs(changePercent).toLocaleString("vi-VN", { maximumFractionDigits: 1 })}% so với kỳ trước`}
+        </p>
+      )}
     </article>
   );
 }
 
+function BacklogItem({ icon, label, value, amount, to, tone = "text-text", loading }) {
+  const count = toFiniteNumber(value);
+
+  return (
+    <Link
+      to={to}
+      className="flex items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 transition hover:border-primary/40 hover:bg-background"
+    >
+      <span className="flex min-w-0 items-center gap-2 text-sm font-bold text-text">
+        <span className="material-symbols-outlined text-[20px] text-primary" aria-hidden="true">
+          {icon}
+        </span>
+        <span className="truncate">{label}</span>
+      </span>
+
+      <span className="shrink-0 text-right">
+        {loading ? (
+          <LoadingBlock className="h-6 w-10" />
+        ) : (
+          <>
+            <span className={`block text-lg font-black ${count > 0 ? tone : "text-textLight"}`}>
+              {formatNumber(count)}
+            </span>
+            {amount !== undefined && count > 0 && (
+              <span className="block text-xs font-semibold text-textLight">
+                {formatMoney(amount)}
+              </span>
+            )}
+          </>
+        )}
+      </span>
+    </Link>
+  );
+}
+
 export default function AdminDashboardPage() {
-  const [
+  const [draft, setDraft] = useState(EMPTY_PERIOD);
+  const [period, setPeriod] = useState(EMPTY_PERIOD);
+  const [periodError, setPeriodError] = useState("");
+  const [requestVersion, setRequestVersion] = useState(0);
+  const [state, setState] = useState({
+    requestKey: "",
+    data: null,
+    error: "",
+  });
+
+  const requestKey = [
     requestVersion,
-    setRequestVersion,
-  ] = useState(0);
-
-  const [state, setState] =
-    useState({
-      requestKey: "",
-      data: null,
-      error: "",
-    });
-
-  const requestKey =
-    String(requestVersion);
+    period.from,
+    period.to,
+    period.groupBy,
+  ].join("|");
 
   useEffect(() => {
-    const controller =
-      new AbortController();
-
+    const controller = new AbortController();
     let active = true;
 
     adminDashboardApi
-      .getOperationOverview({
-        signal:
-          controller.signal,
+      .getAdminOverview({
+        from: period.from || undefined,
+        to: period.to || undefined,
+        groupBy: period.groupBy,
+        signal: controller.signal,
       })
       .then((data) => {
-        if (!active) {
-          return;
+        if (active) {
+          setState({ requestKey, data, error: "" });
         }
-
-        setState({
-          requestKey,
-          data,
-          error: "",
-        });
       })
       .catch((error) => {
         if (
           !active ||
-          error?.name ===
-            "CanceledError" ||
-          error?.code ===
-            "ERR_CANCELED"
+          error?.name === "CanceledError" ||
+          error?.code === "ERR_CANCELED"
         ) {
           return;
         }
@@ -180,8 +243,7 @@ export default function AdminDashboardPage() {
         setState({
           requestKey,
           data: null,
-          error:
-            "Không thể tải dữ liệu tổng quan vận hành lúc này.",
+          error: "Không thể tải dữ liệu tổng quan lúc này.",
         });
       });
 
@@ -189,47 +251,49 @@ export default function AdminDashboardPage() {
       active = false;
       controller.abort();
     };
-  }, [requestKey]);
+  }, [requestKey, period.from, period.to, period.groupBy]);
 
-  const loading =
-    state.requestKey !==
-    requestKey;
-
-  const data =
-    state.data;
-
-  const refresh = () =>
-    setRequestVersion(
-      (current) => current + 1,
-    );
-
-  const attentionRows = [
-    {
-      label: "Đơn đang hoạt động",
-      value: toFiniteNumber(data?.orders?.activeCount),
-      icon: "inventory_2",
-    },
-    {
-      label: "Lịch hẹn hôm nay",
-      value: toFiniteNumber(data?.appointments?.todayCount),
-      icon: "event",
-    },
-    {
-      label: "Thanh toán đang chờ",
-      value: toFiniteNumber(data?.payments?.pendingCount),
-      icon: "payments",
-    },
-    {
-      label: "Tranh chấp chưa xử lý",
-      value: toFiniteNumber(data?.disputes?.unresolvedCount),
-      icon: "gavel",
-    },
-  ];
-
-  const maxAttentionValue = Math.max(
-    1,
-    ...attentionRows.map((item) => item.value ?? 0),
+  const loading = state.requestKey !== requestKey;
+  const data = state.data;
+  const kpis = data?.kpis;
+  const snapshot = data?.snapshot;
+  const missingAmountCount = toFiniteNumber(
+    data?.dataQuality?.completedOrdersMissingAmountCount,
   );
+
+  const moneySeries = (Array.isArray(data?.orderSeries) ? data.orderSeries : []).map(
+    (point) => ({
+      from: point.from,
+      gmv: point.gmv,
+      revenue:
+        (Array.isArray(data?.revenueSeries) ? data.revenueSeries : []).find(
+          (item) => item.from === point.from,
+        )?.amount ?? 0,
+    }),
+  );
+
+  const topCategories = Array.isArray(data?.topCategoriesByGmv)
+    ? data.topCategoriesByGmv
+    : [];
+
+  const applyPeriod = (event) => {
+    event.preventDefault();
+    const message = validatePeriod(draft.from, draft.to);
+
+    if (message) {
+      setPeriodError(message);
+      return;
+    }
+
+    setPeriodError("");
+    setPeriod({ ...draft });
+  };
+
+  const resetPeriod = () => {
+    setDraft(EMPTY_PERIOD);
+    setPeriod(EMPTY_PERIOD);
+    setPeriodError("");
+  };
 
   return (
     <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
@@ -243,228 +307,256 @@ export default function AdminDashboardPage() {
             </p>
 
             <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-              Tổng quan vận hành
+              Tổng quan hệ thống
             </h2>
 
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-              Theo dõi trạng thái vận hành hiện tại của hệ thống
-              qua các số liệu tổng hợp do máy chủ cung cấp.
-            </p>
-
-            {!loading &&
-              data?.generatedAtUtc && (
-                <p className="mt-3 text-xs font-semibold text-white/60">
-                  Cập nhật lúc{" "}
-                  {formatDateTime(
-                    data.generatedAtUtc,
-                  )}
-                </p>
-              )}
+            {!loading && data?.period && (
+              <p className="mt-2 text-sm font-semibold text-white/75">
+                Kỳ {formatDate(data.period.from)} – {formatDate(data.period.toExclusive)} (không gồm ngày cuối)
+                {data.period.isPartialPeriod ? " · kỳ đang diễn ra" : ""}
+                {data.generatedAtUtc
+                  ? ` · cập nhật ${formatDateTime(data.generatedAtUtc)}`
+                  : ""}
+              </p>
+            )}
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={refresh}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                refresh
-              </span>
-              Làm mới
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {state.error &&
-        !loading && (
-          <div
-            role="alert"
-            className="rounded-2xl border border-error/20 bg-error/10 px-5 py-4 text-sm font-semibold text-error"
+          <button
+            type="button"
+            onClick={() => setRequestVersion((current) => current + 1)}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
           >
-            {state.error}
-          </div>
-        )}
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <OverviewCard
-          title="Đơn hàng"
-          icon="inventory_2"
-          to="/admin/dashboard/orders"
-          loading={loading}
-          items={[
-            {
-              label: "Tổng đơn",
-              value:
-                data?.orders
-                  ?.totalCount,
-            },
-            {
-              label: "Đang hoạt động",
-              value:
-                data?.orders
-                  ?.activeCount,
-              className:
-                "text-primary",
-            },
-          ]}
-        />
-
-        <OverviewCard
-          title="Lịch hẹn"
-          icon="event"
-          to="/admin/dashboard/appointments"
-          loading={loading}
-          items={[
-            {
-              label: "Sắp tới",
-              value:
-                data?.appointments
-                  ?.upcomingCount,
-            },
-            {
-              label: "Hôm nay",
-              value:
-                data?.appointments
-                  ?.todayCount,
-              className:
-                "text-primary",
-            },
-          ]}
-        />
-
-        <OverviewCard
-          title="Thanh toán"
-          icon="payments"
-          to="/admin/dashboard/payments"
-          loading={loading}
-          items={[
-            {
-              label:
-                "Tổng thanh toán",
-              value:
-                data?.payments
-                  ?.totalCount,
-            },
-            {
-              label:
-                "Chờ thanh toán",
-              value:
-                data?.payments
-                  ?.pendingCount,
-              className:
-                "text-warning",
-            },
-          ]}
-        />
-
-        <OverviewCard
-          title="Tranh chấp"
-          icon="gavel"
-          to="/admin/dashboard/disputes"
-          loading={loading}
-          items={[
-            {
-              label:
-                "Chưa xử lý xong",
-              value:
-                data?.disputes
-                  ?.unresolvedCount,
-              className:
-                "text-error",
-            },
-            {
-              label:
-                "Đã giải quyết trong 30 ngày đã hoàn tất gần nhất",
-              value:
-                data?.disputes
-                  ?.resolvedInPeriodCount,
-              className:
-                "text-success",
-            },
-            {
-              label:
-                "Tổng tranh chấp",
-              value:
-                data?.disputes
-                  ?.totalCount,
-            },
-          ]}
-        />
-      </div>
-
-      <div className="rounded-xl border border-border bg-white px-4 py-3 text-xs leading-5 text-textLight">
-        Các số tổng, số đang hoạt động, chờ thanh toán, chưa xử lý xong,
-        lịch sắp tới và hôm nay là trạng thái hiện tại trên toàn bộ dữ liệu.
-        Riêng số tranh chấp đã giải quyết tính theo kỳ mặc định của máy chủ: 30 ngày đã hoàn tất gần nhất, không gồm hôm nay.
-      </div>
-
-      <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
-        <div className="border-b border-border pb-4">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
-            KHỐI LƯỢNG HIỆN TẠI
-          </p>
-
-          <h3 className="mt-1 text-xl font-black text-text">
-            Các hạng mục cần theo dõi
-          </h3>
-
-          <p className="mt-1 text-sm leading-6 text-textLight">
-            Biểu đồ này chỉ dùng số liệu trạng thái hiện tại của trang tổng quan.
-            Mỗi hàng là số lượng hiện tại của một hạng mục, không phải chuỗi
-            thời gian; số liệu theo kỳ nằm ở từng trang phân tích riêng.
-          </p>
+            <span className="material-symbols-outlined text-[20px]">refresh</span>
+            Làm mới
+          </button>
         </div>
+      </div>
 
-        {loading ? (
-          <div className="mt-5 space-y-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <LoadingBlock
-                key={index}
-                className="h-12 w-full rounded-xl"
-              />
-            ))}
+      <DashboardPeriodControls
+        draft={draft}
+        onChange={setDraft}
+        onApply={applyPeriod}
+        onReset={resetPeriod}
+        error={periodError}
+      />
+
+      {state.error && !loading && (
+        <div
+          role="alert"
+          className="rounded-2xl border border-error/20 bg-error/10 px-5 py-4 text-sm font-semibold text-error"
+        >
+          {state.error}
+        </div>
+      )}
+
+      {!loading && missingAmountCount > 0 && (
+        <div
+          role="status"
+          className="rounded-2xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-semibold text-text"
+        >
+          {formatNumber(missingAmountCount)} đơn hoàn tất trong kỳ chưa có tổng tiền nên chưa được tính vào GMV.
+        </div>
+      )}
+
+      <div>
+        <h3 className="mb-3 text-base font-black text-text">
+          Kết quả trong kỳ
+        </h3>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+          <KpiCard
+            label="Khách hàng mới"
+            metric={kpis?.newCustomers}
+            formatter={formatNumber}
+            loading={loading}
+            tip="Tài khoản Cá nhân và Doanh nghiệp được tạo trong kỳ."
+          />
+          <KpiCard
+            label="Bài đăng mới"
+            metric={kpis?.newListings}
+            formatter={formatNumber}
+            loading={loading}
+          />
+          <KpiCard
+            label="Đơn hoàn tất"
+            metric={kpis?.completedOrders}
+            formatter={formatNumber}
+            loading={loading}
+          />
+          <KpiCard
+            label="GMV"
+            metric={kpis?.completedGmv}
+            formatter={formatMoney}
+            loading={loading}
+            tip="Tổng giá trị đơn hoàn tất trong kỳ, gồm phí vận chuyển."
+          />
+          <KpiCard
+            label="Doanh thu nền tảng"
+            metric={kpis?.platformRevenue}
+            formatter={formatMoney}
+            loading={loading}
+            tip="Phí gói đăng ký đã thu trong kỳ."
+          />
+        </div>
+      </div>
+
+      <div>
+        <h3 className="mb-3 flex items-center gap-1 text-base font-black text-text">
+          Cần xử lý hiện tại
+          <InfoTip text="Số liệu tại thời điểm hiện tại, không phụ thuộc kỳ đã chọn." />
+        </h3>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <BacklogItem
+            icon="gavel"
+            label="Tranh chấp chưa xử lý"
+            value={snapshot?.unresolvedDisputes}
+            to="/admin/dashboard/disputes"
+            tone="text-error"
+            loading={loading}
+          />
+          <BacklogItem
+            icon="schedule"
+            label="Đơn quá hạn chuyển tiền"
+            value={snapshot?.overdueReleaseOrders?.count}
+            amount={snapshot?.overdueReleaseOrders?.amount}
+            to="/admin/finance-management"
+            tone="text-error"
+            loading={loading}
+          />
+          <BacklogItem
+            icon="hourglass_top"
+            label="Thanh toán treo quá hạn"
+            value={snapshot?.stalePendingPayments?.count}
+            amount={snapshot?.stalePendingPayments?.amount}
+            to="/admin/dashboard/payments"
+            tone="text-warning"
+            loading={loading}
+          />
+          <BacklogItem
+            icon="flag"
+            label="Bài đăng đang bị báo cáo"
+            value={snapshot?.currentlyReportedListingCount}
+            to="/admin/posts/reported"
+            tone="text-warning"
+            loading={loading}
+          />
+          <BacklogItem
+            icon="inventory_2"
+            label="Đơn đang hoạt động"
+            value={snapshot?.activeOrders}
+            to="/admin/dashboard/orders"
+            tone="text-primary"
+            loading={loading}
+          />
+          <BacklogItem
+            icon="event"
+            label="Lịch hẹn hôm nay"
+            value={snapshot?.todayAppointments}
+            to="/admin/dashboard/appointments"
+            tone="text-primary"
+            loading={loading}
+          />
+          <BacklogItem
+            icon="storefront"
+            label="Hồ sơ doanh nghiệp chờ duyệt"
+            value={snapshot?.pendingBusinessVerificationCount}
+            to="/admin/dashboard/businesses/overview"
+            tone="text-warning"
+            loading={loading}
+          />
+          <BacklogItem
+            icon="badge"
+            label="Xác minh cá nhân chờ duyệt"
+            value={snapshot?.pendingPersonalVerificationCount}
+            to="/admin/dashboard/users"
+            tone="text-warning"
+            loading={loading}
+          />
+        </div>
+      </div>
+
+      {!loading && data && (
+        <>
+          <div className="grid gap-6 xl:grid-cols-2">
+            <DashboardLineChart
+              title="Đơn hàng theo kỳ"
+              description="Số đơn được tạo và số đơn hoàn tất."
+              rows={data.orderSeries}
+              series={[
+                { key: "createdCount", label: "Đơn tạo", className: "text-textLight" },
+                { key: "completedCount", label: "Đơn hoàn tất", className: "text-primary" },
+              ]}
+            />
+
+            <DashboardLineChart
+              title="GMV và doanh thu theo kỳ"
+              description="GMV của đơn hoàn tất và doanh thu phí gói đăng ký."
+              rows={moneySeries}
+              series={[
+                { key: "gmv", label: "GMV", className: "text-primary" },
+                { key: "revenue", label: "Doanh thu", className: "text-success" },
+              ]}
+              valueFormatter={formatMoney}
+              axisValueFormatter={formatCompactMoney}
+            />
           </div>
-        ) : (
-          <div className="mt-5 space-y-5">
-            {attentionRows.map((item) => (
-              <div key={item.label}>
-                <div className="mb-2 flex items-center justify-between gap-4">
-                  <span className="flex min-w-0 items-center gap-2 text-sm font-black text-text">
-                    <span
-                      className="material-symbols-outlined text-[20px] text-primary"
-                      aria-hidden="true"
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <DashboardDonutChart
+              title="Trạng thái đơn tạo trong kỳ"
+              description="Trạng thái hiện tại của các đơn được tạo trong kỳ."
+              rows={data.createdOrderStatusDistribution}
+              getLabel={(item) =>
+                ORDER_STATUS_LABELS[String(item?.key || "").toLowerCase()] ||
+                item?.label ||
+                "Chưa xác định"
+              }
+            />
+
+            <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
+              <h3 className="text-lg font-black text-text">
+                Danh mục dẫn đầu theo GMV
+              </h3>
+              <p className="mt-1 text-sm text-textLight">
+                Tối đa 5 danh mục có GMV cao nhất trong kỳ.
+              </p>
+
+              {topCategories.length === 0 ? (
+                <p className="mt-6 text-sm font-semibold text-textLight">
+                  Chưa có đơn hoàn tất trong kỳ.
+                </p>
+              ) : (
+                <ol className="mt-4 divide-y divide-border">
+                  {topCategories.map((category, index) => (
+                    <li
+                      key={category.categoryId || category.name || index}
+                      className="flex items-center justify-between gap-4 py-3"
                     >
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </span>
-
-                  <strong className="shrink-0 text-sm font-black text-text">
-                    {formatNumber(item.value)}
-                  </strong>
-                </div>
-
-                <div className="h-3 overflow-hidden rounded-full bg-background">
-                  <div
-                    className="h-full rounded-full bg-primary transition-[width]"
-                    style={{
-                      width:
-                        item.value !== null && item.value > 0
-                          ? `${Math.max(
-                              4,
-                              (item.value / maxAttentionValue) * 100,
-                            )}%`
-                          : "0%",
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
+                      <span className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-black text-primary">
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-bold text-text">
+                            {category.name || "Chưa phân loại"}
+                          </span>
+                          <span className="block text-xs text-textLight">
+                            {formatNumber(category.completedOrderCount)} đơn hoàn tất
+                          </span>
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-sm font-black text-text">
+                        {formatMoney(category.gmv)}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
           </div>
-        )}
-      </section>
+        </>
+      )}
     </section>
   );
 }
