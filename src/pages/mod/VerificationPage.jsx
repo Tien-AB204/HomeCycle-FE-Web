@@ -760,53 +760,6 @@ const VerificationPage = () => {
               </div>
             </div>
 
-            <section className="mx-5 mb-4 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
-              <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="material-symbols-outlined flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-[20px] text-primary"
-                    aria-hidden="true"
-                  >
-                    history
-                  </span>
-
-                  <div>
-                    <h3 className="text-sm font-black text-text">
-                      Lịch sử xác thực
-                    </h3>
-
-                    <p className="mt-0.5 text-xs text-textLight">
-                      Theo dõi các lần thay đổi và kết quả xử lý hồ sơ.
-                    </p>
-                  </div>
-                </div>
-
-                <span className="rounded-full border border-border bg-background px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.08em] text-textLight">
-                  Lịch sử
-                </span>
-              </div>
-
-              <div className="mt-4 flex items-start gap-3 rounded-xl border border-dashed border-border bg-background/50 p-4">
-                <span
-                  className="material-symbols-outlined text-[21px] text-textLight"
-                  aria-hidden="true"
-                >
-                  schedule
-                </span>
-
-                <div>
-                  <p className="text-sm font-bold text-text">
-                    Chưa có lịch sử xác thực để hiển thị
-                  </p>
-
-                  <p className="mt-1 text-xs leading-5 text-textLight">
-                    Các lần thay đổi trạng thái và kết quả xử lý sẽ
-                    xuất hiện tại đây khi có dữ liệu.
-                  </p>
-                </div>
-              </div>
-            </section>
-
             {/* INLINE ACTIONS FOOTER */}
             <div className="shrink-0 bg-white border-t border-border p-4 px-8 flex flex-col z-10 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)]">
               {actionFeedback && (
