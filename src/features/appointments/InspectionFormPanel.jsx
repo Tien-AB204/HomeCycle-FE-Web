@@ -14,7 +14,12 @@ import {
   getPartsStatusLabel,
   getSafeInspectionErrorMessage,
 } from "../../constants/inspections";
+import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
+import { ROLES } from "../../constants/roles";
+import { useAuth } from "../../hooks/useAuth";
 import inspectionFormApi from "../../services/apis/inspectionFormApi";
+import { getApiErrorMessage } from "../../utils/apiError";
+import { normalizeRole } from "../../utils/authUtils";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import CollectionSchedulePanel from "./CollectionSchedulePanel";
 import EvidenceImage from "../../components/shared/EvidenceImage";
@@ -221,6 +226,12 @@ const InspectionFormPanel = ({
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [quickAcceptOpen, setQuickAcceptOpen] = useState(false);
+  const [quickAcceptError, setQuickAcceptError] = useState("");
+  const { user } = useAuth();
+  // Backend chỉ cho người mua cá nhân xác nhận nhanh; doanh nghiệp phải kiểm định chi tiết.
+  const canQuickAccept =
+    canCreateInspectionForm && normalizeRole(user?.role) !== ROLES.BUSINESS;
 
   const previewItems = useMemo(
     () =>
@@ -664,6 +675,34 @@ const InspectionFormPanel = ({
     );
   }
 
+  const handleQuickAccept = async () => {
+    if (busy) {
+      return;
+    }
+
+    setBusy("quick-accept");
+    setQuickAcceptError("");
+
+    try {
+      const created = await inspectionFormApi.quickAccept(appointmentId);
+
+      setQuickAcceptOpen(false);
+      setState({ loading: false, form: created, notFound: false, error: "" });
+      setMode("view");
+      setNotice(
+        "Đã xác nhận nhanh. Bạn có thể chọn Nhận hàng ngay hoặc Đặt lịch giao nhận.",
+      );
+      onAppointmentChanged?.();
+    } catch (error) {
+      setQuickAcceptOpen(false);
+      setQuickAcceptError(
+        getApiErrorMessage(error, "Không thể xác nhận nhanh lúc này."),
+      );
+    } finally {
+      setBusy("");
+    }
+  };
+
   if (state.notFound) {
     if (!canCreateInspectionForm) {
       return (
@@ -679,13 +718,54 @@ const InspectionFormPanel = ({
           <p className="text-sm leading-6 text-primary">
             Bạn có thể tạo biên bản kiểm định để ghi nhận kết quả cho lịch hẹn này.
           </p>
-          <button
-            type="button"
-            onClick={startCreate}
-            className="mt-3 rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90"
-          >
-            Tạo biên bản kiểm định
-          </button>
+          {canQuickAccept && (
+            <p className="mt-1 text-sm leading-6 text-textLight">
+              Hoặc xác nhận nhanh nếu bạn đã hài lòng với tình trạng sản phẩm.
+            </p>
+          )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={startCreate}
+              disabled={Boolean(busy)}
+              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-black text-white transition hover:bg-primary/90 disabled:opacity-50"
+            >
+              Tạo biên bản kiểm định
+            </button>
+            {canQuickAccept && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuickAcceptError("");
+                  setQuickAcceptOpen(true);
+                }}
+                disabled={Boolean(busy)}
+                className="rounded-lg border border-primary bg-white px-4 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10 disabled:opacity-50"
+              >
+                Xác nhận nhanh
+              </button>
+            )}
+          </div>
+          {quickAcceptError && (
+            <p
+              role="alert"
+              className="mt-3 rounded-lg border border-error/20 bg-error/10 px-3 py-2.5 text-xs font-semibold leading-5 text-error"
+            >
+              {quickAcceptError}
+            </p>
+          )}
+          <ConfirmActionModal
+            open={quickAcceptOpen}
+            title="Xác nhận nhanh tình trạng sản phẩm?"
+            description="Bạn đang chấp nhận tình trạng sản phẩm mà không làm checklist kiểm định chi tiết. Sau này nếu khiếu nại về tình trạng hoặc chất lượng sản phẩm, bạn có thể không được trả hàng."
+            confirmLabel="Xác nhận nhanh"
+            cancelLabel="Đóng"
+            tone="warning"
+            icon="warning"
+            busy={busy === "quick-accept"}
+            onCancel={() => setQuickAcceptOpen(false)}
+            onConfirm={() => void handleQuickAccept()}
+          />
         </section>
       );
     }
