@@ -33,7 +33,7 @@ import RoleRoute from "./RoleRoute";
 
 // Admin Pages
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
+import AdminOverviewPage from "../pages/admin/AdminOverviewPage";
 import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
 import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
 import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
@@ -291,9 +291,9 @@ const AppRouter = () => {
       {/* Admin */}
       <Route element={<RoleRoute allowedRole={ROLES.ADMIN} />}>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboardPage />} />
+          <Route index element={<AdminOverviewPage />} />
 
-          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="dashboard" element={<AdminOverviewPage />} />
 
           <Route path="notifications" element={<NotificationPage />} />
 

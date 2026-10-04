@@ -1,0 +1,463 @@
+/* Trang Tổng quan vận hành — theo homecycle-admin-overview-local.html */
+.hc-overview .content {
+  max-width: 1380px;
+  padding: 25px 30px 40px;
+}
+
+.hc-overview .heading,
+.hc-overview .section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hc-overview .heading {
+  margin-bottom: 22px;
+}
+
+.hc-overview .section-head {
+  margin: 22px 0 13px;
+}
+
+.hc-overview .section-head .muted {
+  font-size: 11px;
+}
+
+.hc-overview h1 {
+  font-size: 27px;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin: 0 0 7px;
+}
+
+.hc-overview h2 {
+  margin: 0;
+}
+
+.hc-overview .stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 17px;
+}
+
+.hc-overview .stats.operation-stats {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.hc-overview .stats > .metric,
+.hc-overview .stats > .metric:nth-child(n) {
+  padding: 16px 18px;
+  border: 1px solid #cddfd8;
+  border-top: 3px solid #397768;
+  background: #edf6f3;
+  border-radius: 11px;
+}
+
+.hc-overview .metric .label {
+  font-size: 12px;
+  font-weight: 650;
+  color: #285e50;
+  margin: 0;
+}
+
+.hc-overview .metric .value {
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 750;
+  margin: 7px 0;
+  color: #285e50;
+  letter-spacing: normal;
+}
+
+.hc-overview .metric .caption {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.hc-overview .stats > .metric.blue {
+  background: #eef4fc;
+  border-color: #d3dfed;
+  border-top-color: var(--blue);
+}
+
+.hc-overview .stats > .metric.blue .label,
+.hc-overview .stats > .metric.blue .value {
+  color: #365f91;
+}
+
+.hc-overview .ov-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.hc-overview .panel {
+  padding: 19px 20px;
+}
+
+.hc-overview .panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.hc-overview .panel-head a,
+.hc-overview .panel-head button.text {
+  font-size: 11px;
+  white-space: nowrap;
+  color: var(--teal);
+  text-decoration: none;
+}
+
+.hc-overview .panel-head .muted {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.hc-overview .ov-barrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 4px 8px;
+  margin: 12px 0;
+}
+
+.hc-overview .barlabel {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.hc-overview .barlabel strong {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-overview .ov-track {
+  height: 5px;
+  align-self: center;
+  background: #edf2f2;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.hc-overview .ov-track i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--teal);
+}
+
+.hc-overview .percent {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-overview .note {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+.hc-overview .post-types {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.hc-overview .type-chip {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 7px;
+  background: #f1f6f5;
+  font-size: 12px;
+}
+
+.hc-overview .type-chip.blue {
+  background: #eef4fc;
+}
+
+.hc-overview .type-chip strong {
+  float: right;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-overview .donut-layout {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+}
+
+.hc-overview .ring {
+  width: 144px;
+  height: 144px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin: auto;
+}
+
+.hc-overview .ring-inner {
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  align-content: center;
+  text-align: center;
+}
+
+.hc-overview .ring-inner strong {
+  font-size: 27px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-overview .ring-inner span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hc-overview .ring-legend {
+  display: grid;
+  gap: 11px;
+}
+
+.hc-overview .ring-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px 43px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.hc-overview .ring-row > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.hc-overview .ring-row strong,
+.hc-overview .ring-row > span:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-overview .ring-row > span:last-child {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hc-overview .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  display: inline-block;
+  flex: 0 0 auto;
+  background: var(--teal);
+  margin: 0;
+}
+
+.hc-overview .period-section {
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.hc-overview .periodbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 18px;
+  margin: 14px 0 18px;
+}
+
+.hc-overview .periodbar label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hc-overview .periodbar select {
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.hc-overview .periodbar > .muted {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.hc-overview .stats.period-stats {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.hc-overview .stats.period-stats > .metric {
+  background: #fff;
+  border-color: var(--line);
+  border-top: 1px solid var(--line);
+  padding: 14px 16px;
+}
+
+.hc-overview .period-stats .label {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.hc-overview .period-stats .value {
+  font-size: 23px;
+  color: var(--ink);
+  margin: 7px 0;
+}
+
+.hc-overview .delta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.hc-overview .delta.up {
+  color: var(--green);
+}
+
+.hc-overview .delta.down {
+  color: var(--red);
+}
+
+.hc-overview .legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 8px 0 10px;
+}
+
+.hc-overview .legend span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.hc-overview .chart {
+  display: block;
+  width: 100%;
+}
+
+.hc-overview .chart text {
+  font: 11px system-ui, sans-serif;
+  fill: var(--muted);
+}
+
+.hc-overview .chart-total {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-overview .financial .panel-head {
+  margin-bottom: 6px;
+}
+
+.hc-overview .foot {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 24px;
+}
+
+.hc-overview .basis-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--teal);
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.hc-overview dialog {
+  max-width: 540px;
+  border-radius: 14px;
+}
+
+.hc-overview .modalhead {
+  padding: 17px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f6f9f8;
+  gap: 15px;
+}
+
+.hc-overview .modalbody {
+  padding: 20px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.hc-overview .modalbody p + p {
+  margin-top: 12px;
+}
+
+@media (max-width: 1100px) {
+  .hc-overview .stats.period-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .hc-overview .donut-layout {
+    grid-template-columns: 125px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .hc-overview .ring {
+    width: 120px;
+    height: 120px;
+  }
+
+  .hc-overview .ring-inner {
+    width: 90px;
+    height: 90px;
+  }
+}
+
+@media (max-width: 800px) {
+  .hc-overview .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hc-overview .ov-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .hc-overview .stats,
+  .hc-overview .stats.period-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-overview .donut-layout {
+    grid-template-columns: 1fr;
+  }
+}
