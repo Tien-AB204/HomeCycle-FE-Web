@@ -1,3 +1,5 @@
+import PendingSettlementsCard from "../../features/wallet/PendingSettlementsCard";
+import WalletTransactionsPanel from "../../features/wallet/WalletTransactionsPanel";
 import {
   useCallback,
   useEffect,
@@ -1035,6 +1037,10 @@ const WalletPage = () => {
             </article>
           </div>
 
+          <PendingSettlementsCard
+            refreshKey={`${availableBalance}-${holdBalance}`}
+          />
+
           <section className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
               Rút tiền
@@ -1180,6 +1186,10 @@ const WalletPage = () => {
             </div>
 
           </section>
+
+          <WalletTransactionsPanel
+            refreshKey={`${availableBalance}-${holdBalance}`}
+          />
 
           <section className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6">
             <div className="flex flex-wrap items-end justify-between gap-3">
