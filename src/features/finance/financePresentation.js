@@ -81,8 +81,10 @@ export const WALLET_TYPE_LABELS = Object.freeze({
 export const SYSTEM_PURPOSE_LABELS = Object.freeze({
   1: "Quỹ phí vận chuyển GHN",
   2: "Doanh thu nền tảng",
+  3: "Ví tạm giữ tiền đơn hàng",
   Shipping_Escrow: "Quỹ phí vận chuyển GHN",
   Platform_Revenue: "Doanh thu nền tảng",
+  Order_Escrow: "Ví tạm giữ tiền đơn hàng",
 });
 
 export const PAYMENT_METHOD_LABELS = Object.freeze({

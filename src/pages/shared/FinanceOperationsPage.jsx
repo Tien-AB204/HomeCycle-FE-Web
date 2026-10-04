@@ -78,17 +78,24 @@ function FundsPanel() {
         </section>
         <section className="rounded-2xl border border-border bg-background/50 p-4">
           <h3 className="font-black text-text">Doanh nghiệp</h3>
-          <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <SummaryCard label="Khả dụng" value={data.totalBusinessAvailable} />
-            <SummaryCard label="Tạm giữ" value={data.totalBusinessHold} />
-            <SummaryCard label="Tổng" value={businessTotal} />
-          </div>
+          {/* Doanh nghiệp chỉ mua nên ví không có tiền tạm giữ; chỉ hiện khi dữ liệu bất thường. */}
+          {Number(data.totalBusinessHold || 0) > 0 ? (
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              <SummaryCard label="Khả dụng" value={data.totalBusinessAvailable} />
+              <SummaryCard label="Tạm giữ" value={data.totalBusinessHold} />
+              <SummaryCard label="Tổng" value={businessTotal} />
+            </div>
+          ) : (
+            <div className="mt-3 grid gap-3">
+              <SummaryCard label="Số dư khả dụng" value={data.totalBusinessAvailable} />
+            </div>
+          )}
         </section>
       </div>
 
       <section>
         <div className="grid gap-3 sm:grid-cols-2">
-          <SummaryCard label="Tổng số dư ví hệ thống" value={Number(data.totalSystemAvailable || 0) + Number(data.totalSystemHold || 0)} description="Bao gồm số dư khả dụng và tạm giữ của các ví do HomeCycle quản lý." />
+          <SummaryCard label="Tổng số dư ví hệ thống" value={data.totalSystemBalance} description="Tổng số dư các ví do HomeCycle quản lý: quỹ phí vận chuyển, doanh thu nền tảng và ví tạm giữ tiền đơn hàng." />
           <SummaryCard label="Tổng số dư trong các ví HomeCycle" value={data.totalRecordedBalance} description="Tổng khả dụng và tạm giữ của toàn bộ ví người dùng và ví hệ thống; không phải số dư ngân hàng hay doanh thu." />
         </div>
         <h3 className="mb-3 mt-5 font-black text-text">Các ví hệ thống</h3>
@@ -99,11 +106,8 @@ function FundsPanel() {
             {systemWallets.map((wallet) => (
               <article key={wallet.walletId} className="rounded-2xl border border-border bg-white p-4">
                 <p className="font-black text-text">{getFinanceLabel(SYSTEM_PURPOSE_LABELS, wallet.purpose)}</p>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-                  <div><p className="text-xs text-textLight">Khả dụng</p><p className="font-bold">{formatFinanceCurrency(wallet.availableBalance)}</p></div>
-                  <div><p className="text-xs text-textLight">Tạm giữ</p><p className="font-bold">{formatFinanceCurrency(wallet.holdBalance)}</p></div>
-                  <div><p className="text-xs text-textLight">Tổng</p><p className="font-bold">{formatFinanceCurrency(Number(wallet.availableBalance || 0) + Number(wallet.holdBalance || 0))}</p></div>
-                </div>
+                <p className="mt-3 text-xs text-textLight">Số dư</p>
+                <p className="text-xl font-black text-text">{formatFinanceCurrency(wallet.balance)}</p>
               </article>
             ))}
           </div>
