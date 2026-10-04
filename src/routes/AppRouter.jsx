@@ -46,7 +46,7 @@ import CategoryPage from "../pages/admin/CategoryPage";
 import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
-import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
+import AdminSubscriptionsPage from "../pages/admin/AdminSubscriptionsPage";
 import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 import GhnWebhookTestConsolePage from "../pages/demo/GhnWebhookTestConsolePage";
 
@@ -422,7 +422,7 @@ const AppRouter = () => {
 
           <Route
             path="subscription-packages"
-            element={<SubscriptionPackagePage />}
+            element={<AdminSubscriptionsPage />}
           />
         </Route>
       </Route>
