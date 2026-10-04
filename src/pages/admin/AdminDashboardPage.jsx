@@ -75,6 +75,22 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
+const formatPeriodEnd = (toExclusive) => {
+  const parts = String(toExclusive || "").split("-").map(Number);
+
+  if (parts.length !== 3 || parts.some(Number.isNaN)) {
+    return "—";
+  }
+
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] - 1));
+  return formatDate(date.toISOString().slice(0, 10));
+};
+
+const formatPeriod = (period) =>
+  period
+    ? `${formatDate(period.from)} – ${formatPeriodEnd(period.toExclusive)}`
+    : "—";
+
 const formatDate = (value) => {
   const parts = String(value || "").split("-");
   return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : "—";
@@ -154,7 +170,7 @@ function KpiCard({ label, metric, formatter, loading, tip }) {
           ].join(" ")}
         >
           {changePercent === null
-            ? `Kỳ trước: ${formatter(metric.previousValue)}`
+            ? "Chưa có cơ sở so sánh"
             : `${isUp ? "▲" : isDown ? "▼" : "•"} ${Math.abs(changePercent).toLocaleString("vi-VN", { maximumFractionDigits: 1 })}% so với kỳ trước`}
         </p>
       )}
@@ -260,17 +276,17 @@ export default function AdminDashboardPage() {
   const missingAmountCount = toFiniteNumber(
     data?.dataQuality?.completedOrdersMissingAmountCount,
   );
-
-  const moneySeries = (Array.isArray(data?.orderSeries) ? data.orderSeries : []).map(
-    (point) => ({
-      from: point.from,
-      gmv: point.gmv,
-      revenue:
-        (Array.isArray(data?.revenueSeries) ? data.revenueSeries : []).find(
-          (item) => item.from === point.from,
-        )?.amount ?? 0,
-    }),
+  const previousMissingAmountCount = toFiniteNumber(
+    data?.dataQuality?.previousCompletedOrdersMissingAmountCount,
   );
+  const dataNotes = [
+    missingAmountCount > 0 &&
+      `${formatNumber(missingAmountCount)} đơn hoàn tất trong kỳ chưa có tổng tiền nên chưa được tính vào giá trị giao dịch.`,
+    previousMissingAmountCount > 0 &&
+      `${formatNumber(previousMissingAmountCount)} đơn hoàn tất của kỳ trước chưa có tổng tiền, nên so sánh giá trị giao dịch có thể chưa chính xác.`,
+    data?.isComparisonPartial &&
+      "Kỳ hiện tại chứa hôm nay nên chưa trọn ngày; mức tăng/giảm so với kỳ trước chỉ mang tính tạm thời.",
+  ].filter(Boolean);
 
   const topCategories = Array.isArray(data?.topCategoriesByGmv)
     ? data.topCategoriesByGmv
@@ -312,11 +328,17 @@ export default function AdminDashboardPage() {
 
             {!loading && data?.period && (
               <p className="mt-2 text-sm font-semibold text-white/75">
-                Kỳ {formatDate(data.period.from)} – {formatDate(data.period.toExclusive)} (không gồm ngày cuối)
-                {data.period.isPartialPeriod ? " · kỳ đang diễn ra" : ""}
-                {data.generatedAtUtc
-                  ? ` · cập nhật ${formatDateTime(data.generatedAtUtc)}`
+                Kỳ {formatPeriod(data.period)}
+                {data.period.isPartialPeriod ? " (đang diễn ra)" : ""}
+                {data.comparisonPeriod
+                  ? ` · so với ${formatPeriod(data.comparisonPeriod)}`
                   : ""}
+              </p>
+            )}
+
+            {!loading && data?.generatedAtUtc && (
+              <p className="mt-1 text-xs font-semibold text-white/60">
+                Cập nhật lúc {formatDateTime(data.generatedAtUtc)}
               </p>
             )}
           </div>
@@ -349,12 +371,14 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {!loading && missingAmountCount > 0 && (
+      {!loading && dataNotes.length > 0 && (
         <div
           role="status"
-          className="rounded-2xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-semibold text-text"
+          className="space-y-1 rounded-2xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-semibold text-text"
         >
-          {formatNumber(missingAmountCount)} đơn hoàn tất trong kỳ chưa có tổng tiền nên chưa được tính vào giá trị giao dịch.
+          {dataNotes.map((note) => (
+            <p key={note}>{note}</p>
+          ))}
         </div>
       )}
 
@@ -404,6 +428,11 @@ export default function AdminDashboardPage() {
         <h3 className="mb-3 flex items-center gap-1 text-base font-black text-text">
           Cần xử lý hiện tại
           <InfoTip text="Số liệu tại thời điểm hiện tại, không phụ thuộc kỳ đã chọn." />
+          {!loading && snapshot?.asOfUtc && (
+            <span className="ml-2 text-xs font-semibold text-textLight">
+              tính đến {formatDateTime(snapshot.asOfUtc)}
+            </span>
+          )}
         </h3>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -480,8 +509,8 @@ export default function AdminDashboardPage() {
         <>
           <div className="grid gap-6 xl:grid-cols-2">
             <DashboardLineChart
-              title="Đơn hàng theo kỳ"
-              description="Số đơn được tạo và số đơn hoàn tất."
+              title="Hoạt động giao dịch"
+              description="Số đơn được tạo và số đơn hoàn tất theo từng mốc."
               rows={data.orderSeries}
               series={[
                 { key: "createdCount", label: "Đơn tạo", className: "text-textLight" },
@@ -490,19 +519,27 @@ export default function AdminDashboardPage() {
             />
 
             <DashboardLineChart
-              title="Giá trị giao dịch và doanh thu theo kỳ"
-              description="Giá trị đơn hoàn tất và doanh thu phí gói đăng ký."
-              rows={moneySeries}
+              title="Giá trị giao dịch theo kỳ"
+              description="Tổng giá trị đơn hoàn tất theo từng mốc, gồm phí vận chuyển."
+              rows={data.orderSeries}
               series={[
                 { key: "gmv", label: "Giá trị giao dịch", className: "text-primary" },
-                { key: "revenue", label: "Doanh thu", className: "text-success" },
               ]}
               valueFormatter={formatMoney}
               axisValueFormatter={formatCompactMoney}
             />
-          </div>
 
-          <div className="grid gap-6 xl:grid-cols-2">
+            <DashboardLineChart
+              title="Doanh thu nền tảng theo kỳ"
+              description="Phí gói đăng ký đã thu vào ví doanh thu nền tảng."
+              rows={data.revenueSeries}
+              series={[
+                { key: "amount", label: "Doanh thu", className: "text-success" },
+              ]}
+              valueFormatter={formatMoney}
+              axisValueFormatter={formatCompactMoney}
+            />
+
             <DashboardDonutChart
               title="Trạng thái đơn tạo trong kỳ"
               description="Trạng thái hiện tại của các đơn được tạo trong kỳ."
