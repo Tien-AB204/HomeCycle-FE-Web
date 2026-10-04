@@ -35,7 +35,7 @@ import RoleRoute from "./RoleRoute";
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
-import AdminDisputeHistoryPage from "../pages/admin/AdminDisputeHistoryPage";
+import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
 import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
 import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
 import AdminReportedPostPage from "../pages/admin/AdminReportedPostPage";
@@ -43,7 +43,6 @@ import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
-import DisputeCategoryPage from "../pages/admin/DisputeCategoryPage";
 import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
 import PostManagementPage from "../pages/admin/PostManagementPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
@@ -325,7 +324,7 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/disputes/history"
-            element={<AdminDisputeHistoryPage />}
+            element={<Navigate to="/admin/dashboard/disputes" replace />}
           />
 
           <Route
@@ -347,9 +346,7 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/disputes"
-            element={
-              <AdminDashboardModulePage dashboard="disputes" />
-            }
+            element={<AdminDisputesPage />}
           />
 
           <Route
@@ -412,7 +409,7 @@ const AppRouter = () => {
 
           <Route
             path="dispute-categories"
-            element={<DisputeCategoryPage />}
+            element={<Navigate to="/admin/dashboard/disputes?tab=categories" replace />}
           />
 
           <Route

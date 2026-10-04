@@ -208,7 +208,7 @@ export default function AdminReportedPostPage() {
   const openCase = (disputeId) => {
     const id = String(disputeId || "").trim();
     if (!id) return;
-    navigate("/admin/dashboard/disputes/history", {
+    navigate("/admin/dashboard/disputes", {
       state: { notificationDisputeId: id },
     });
   };
