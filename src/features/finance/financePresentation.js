@@ -253,4 +253,7 @@ const toOptions = (labels) =>
 export const PAYMENT_STATUS_OPTIONS = toOptions(PAYMENT_STATUS_LABELS);
 export const PAYMENT_TYPE_OPTIONS = toOptions(PAYMENT_TYPE_LABELS);
 export const PAYMENT_METHOD_OPTIONS = toOptions(PAYMENT_METHOD_LABELS);
-export const ORDER_STATUS_OPTIONS = toOptions(ORDER_STATUS_LABELS);
+// Luồng hoàn trả đã bỏ ở Backend nên không lọc theo "Returned"; nhãn vẫn giữ cho dữ liệu cũ.
+export const ORDER_STATUS_OPTIONS = Object.freeze(
+  toOptions(ORDER_STATUS_LABELS).filter((option) => option.value !== "Returned"),
+);

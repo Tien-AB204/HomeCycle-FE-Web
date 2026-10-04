@@ -70,12 +70,6 @@ const moderatorDisputeApi = {
       localRequestConfig(),
     ),
 
-  verifyReturn: (disputeId, payload) =>
-    axiosClient.post(
-      `/moderator/disputes/${normalizeDisputeId(disputeId)}/verify-return`,
-      payload,
-      localRequestConfig(),
-    ),
 };
 
 export default moderatorDisputeApi;

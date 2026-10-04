@@ -55,7 +55,6 @@ const STATUS_OPTIONS = [
   { value: 2, label: "Đã từ chối" },
   { value: 3, label: "Đã đóng" },
   { value: 4, label: "Đang xử lý" },
-  { value: 5, label: "Chờ hoàn trả" },
   { value: 6, label: "Chờ bên kia phản hồi" },
 ];
 
@@ -214,10 +213,6 @@ const SAFE_ACTION_ERRORS = {
     "Tranh chấp hiện chưa cho phép đưa ra kết luận.",
   DISPUTE_NOT_ASSIGNED_MODERATOR:
     "Bạn không phải kiểm duyệt viên đang phụ trách tranh chấp này.",
-  DISPUTE_RETURN_VERIFICATION_NOT_ALLOWED:
-    "Tranh chấp hiện chưa cho phép xác minh hoàn trả.",
-  DISPUTE_RETURN_VERIFICATION_NOT_DUE:
-    "Chưa đến thời điểm được phép xác minh hoàn trả.",
   DISPUTE_TARGET_NOT_SUPPORTED:
     "Loại đối tượng tranh chấp này hiện chưa hỗ trợ thao tác kết luận.",
   DISPUTE_CONTENT_UNAVAILABLE:
@@ -777,10 +772,6 @@ const DisputeManagementPage = ({
     setResolutionOutcome,
   ] = useState("BuyerFavored");
   const [
-    returnCompleted,
-    setReturnCompleted,
-  ] = useState(true);
-  const [
     submittingAction,
     setSubmittingAction,
   ] = useState(false);
@@ -1166,7 +1157,6 @@ const DisputeManagementPage = ({
     setActionMode(mode);
     setActionNote("");
     setResolutionOutcome("BuyerFavored");
-    setReturnCompleted(true);
     setActionFeedback(null);
   };
 
@@ -1184,8 +1174,7 @@ const DisputeManagementPage = ({
 
   const actionNeedsNote =
     actionMode === "resolve" ||
-    actionMode === "reject" ||
-    actionMode === "verify-return";
+    actionMode === "reject";
 
   const noteIsValid =
     !actionNeedsNote ||
@@ -1254,25 +1243,6 @@ const DisputeManagementPage = ({
         successMessage = isContentTarget
           ? "Đã từ chối báo cáo."
           : "Đã từ chối tranh chấp.";
-      }
-
-      if (
-        actionMode ===
-        "verify-return"
-      ) {
-        actionResponse =
-          await moderatorDisputeApi.verifyReturn(
-            selectedDisputeId,
-            {
-              isReturnCompleted:
-                returnCompleted,
-              moderatorNote:
-                trimmedActionNote,
-            },
-          );
-
-        successMessage =
-          "Đã xác minh tình trạng hoàn trả.";
       }
 
       const penaltyPointsApplied =
@@ -1501,18 +1471,10 @@ const DisputeManagementPage = ({
       "canRejectDispute",
     );
 
-  const canVerifyReturn =
-    !readOnly &&
-    getActionFlag(
-      actions,
-      "canVerifyReturn",
-    ) && isOrderTarget;
-
   const hasModeratorAction =
     canClaim ||
     canResolve ||
-    canReject ||
-    canVerifyReturn;
+    canReject;
 
   // Chia phản hồi theo từng bên để đối chiếu; phản hồi không thuộc bên nào hiển thị riêng.
   const senderUserId = detail?.sender?.userId;
@@ -1646,8 +1608,6 @@ const DisputeManagementPage = ({
     reject: isContentTarget
       ? "Từ chối báo cáo"
       : "Từ chối tranh chấp",
-    "verify-return":
-      "Xác minh hoàn trả",
   }[actionMode];
 
   const modalOkText = {
@@ -1658,7 +1618,6 @@ const DisputeManagementPage = ({
     reject: isContentTarget
       ? "Từ chối báo cáo"
       : "Từ chối tranh chấp",
-    "verify-return": "Xác minh",
   }[actionMode];
 
   return (
@@ -1969,15 +1928,6 @@ const DisputeManagementPage = ({
                           </p>
                         )}
 
-                        {item.returnDueAt && (
-                          <p className="mt-1 text-xs text-[#9A6418]">
-                            Hạn hoàn trả:{" "}
-                            {formatDateTime(
-                              item.returnDueAt,
-                            )}
-                          </p>
-                        )}
-
                         <div className="mt-3 flex items-center justify-between gap-2 text-[11px] text-textLight">
                           <span>
                             {getCategoryLabel(
@@ -2173,19 +2123,6 @@ const DisputeManagementPage = ({
                           {isContentTarget
                             ? "Từ chối báo cáo"
                             : "Từ chối tranh chấp"}
-                        </Button>
-                      )}
-
-                      {canVerifyReturn && (
-                        <Button
-                          type="primary"
-                          onClick={() =>
-                            openActionModal(
-                              "verify-return",
-                            )
-                          }
-                        >
-                          Xác minh hoàn trả
                         </Button>
                       )}
                     </div>
@@ -2391,7 +2328,7 @@ const DisputeManagementPage = ({
                 items={[
                   order && {
                     key: "order",
-                    label: "Đơn hàng & hoàn trả",
+                    label: "Đơn hàng",
                     children: (
                       <>
               {order && (
@@ -2477,61 +2414,6 @@ const DisputeManagementPage = ({
                         )}
                       </Descriptions.Item>
                     </Descriptions>
-                  </div>
-
-                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-base font-black text-text">
-                      Tiến trình hoàn trả
-                    </h3>
-
-                    <Descriptions
-                      bordered
-                      column={{
-                        xs: 1,
-                        sm: 1,
-                        md: 2,
-                      }}
-                      size="small"
-                    >
-                      <Descriptions.Item label="Người mua xác nhận đã trả hàng">
-                        {formatDateTime(
-                          order.buyerReturnConfirmedAt,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Người bán xác nhận đã nhận lại hàng">
-                        {formatDateTime(
-                          order.sellerReturnReceivedAt,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Hạn phản hồi hoàn trả">
-                        {formatDateTime(
-                          order.returnDueAt,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Thời gian hoàn trả hoàn tất">
-                        {formatDateTime(
-                          order.returnedAt,
-                        )}
-                      </Descriptions.Item>
-                    </Descriptions>
-
-                    {normalizeEnumValue(
-                      detail.status,
-                      "status",
-                    ) === 5 &&
-                      order.returnDueAt && (
-                        <Alert
-                          className="mt-4"
-                          type="warning"
-                          showIcon
-                          message={`Đang chờ quy trình hoàn trả. Mốc hiện tại: ${formatDateTime(
-                            order.returnDueAt,
-                          )}.`}
-                        />
-                      )}
                   </div>
                 </>
               )}
@@ -3251,36 +3133,6 @@ const DisputeManagementPage = ({
 
               <Radio value="SellerFavored">
                 Có lợi cho người bán
-              </Radio>
-            </Radio.Group>
-          </>
-        )}
-
-        {actionMode ===
-          "verify-return" && (
-          <>
-            <p className="mb-2 font-semibold text-text">
-              Kết quả xác minh
-            </p>
-
-            <Radio.Group
-              className="mb-4 flex flex-col gap-2"
-              value={
-                returnCompleted
-              }
-              onChange={(event) =>
-                setReturnCompleted(
-                  event.target
-                    .value,
-                )
-              }
-            >
-              <Radio value={true}>
-                Đã hoàn trả đầy đủ
-              </Radio>
-
-              <Radio value={false}>
-                Chưa hoàn trả đầy đủ
               </Radio>
             </Radio.Group>
           </>

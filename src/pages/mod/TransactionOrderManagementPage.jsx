@@ -47,7 +47,6 @@ const ORDER_STATUS_FILTER_OPTIONS = [
   { value: "Completed", label: "Hoàn tất" },
   { value: "Cancelled", label: "Đã hủy" },
   { value: "Disputing", label: "Đang tranh chấp" },
-  { value: "Returned", label: "Đã trả hàng" },
 ];
 
 const PAYMENT_STATUS_FILTER_OPTIONS = [
@@ -1122,14 +1121,12 @@ export const OrderManagementContent = ({
               </div>
             )}
 
-            {(detail.buyerReturnConfirmedAt ||
-              detail.sellerReturnReceivedAt ||
-              detail.returnDueAt ||
-              detail.returnedAt ||
-              detail.completionSource) && (
+            {(detail.completionSource ||
+              detail.sellerHandoverConfirmedAt ||
+              detail.buyerReceivedConfirmedAt) && (
               <div className="rounded-2xl border border-border bg-background/60 p-4">
                 <p className="text-xs font-black uppercase tracking-wide text-primary">
-                  Hoàn tất / Trả hàng
+                  Hoàn tất
                 </p>
                 <div className="mt-2 grid gap-2 text-xs text-textLight sm:grid-cols-2">
                   <DetailLine
@@ -1138,10 +1135,6 @@ export const OrderManagementContent = ({
                   />
                   <DetailLine label="Người bán bàn giao" value={detail.sellerHandoverConfirmedAt} format={formatDateTime} />
                   <DetailLine label="Người mua nhận hàng" value={detail.buyerReceivedConfirmedAt} format={formatDateTime} />
-                  <DetailLine label="Người mua trả hàng" value={detail.buyerReturnConfirmedAt} format={formatDateTime} />
-                  <DetailLine label="Người bán nhận lại" value={detail.sellerReturnReceivedAt} format={formatDateTime} />
-                  <DetailLine label="Hạn trả hàng" value={detail.returnDueAt} format={formatDateTime} />
-                  <DetailLine label="Đã trả hàng" value={detail.returnedAt} format={formatDateTime} />
                 </div>
               </div>
             )}
