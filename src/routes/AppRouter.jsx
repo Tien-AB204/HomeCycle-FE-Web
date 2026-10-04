@@ -33,6 +33,7 @@ import RoleRoute from "./RoleRoute";
 
 // Admin Pages
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
+import AdminBusinessSurveyPage from "../pages/admin/AdminBusinessSurveyPage";
 import AdminOverviewPage from "../pages/admin/AdminOverviewPage";
 import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
 import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
@@ -356,14 +357,14 @@ const AppRouter = () => {
           <Route
             path="dashboard/businesses/overview"
             element={
-              <AdminDashboardModulePage dashboard="business-overview" />
+              <AdminBusinessSurveyPage />
             }
           />
 
           <Route
             path="dashboard/businesses/demand"
             element={
-              <AdminDashboardModulePage dashboard="business-demand" />
+              <Navigate to="/admin/dashboard/businesses/overview" replace />
             }
           />
 

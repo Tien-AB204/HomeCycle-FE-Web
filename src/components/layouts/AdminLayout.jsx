@@ -34,6 +34,19 @@ const ADMIN_NAV_GROUPS = [
         icon: "group",
       },
       {
+        label: "Doanh nghiệp & khảo sát",
+        path: "/admin/dashboard/businesses/overview",
+        matchPaths: ["/admin/dashboard/businesses/demand"],
+        icon: "domain",
+        child: true,
+      },
+      {
+        label: "Hoạt động mua bán",
+        path: "/admin/dashboard/businesses/performance",
+        icon: "monitoring",
+        child: true,
+      },
+      {
         label: "Bài đăng",
         path: "/admin/dashboard/posts",
         matchPaths: ["/admin/posts"],
@@ -55,22 +68,6 @@ const ADMIN_NAV_GROUPS = [
         path: "/admin/finance-management",
         icon: "receipt_long",
         child: true,
-      },
-    ],
-  },
-  {
-    group: "DOANH NGHIỆP",
-    items: [
-      {
-        label: "Tổng quan & Nhu cầu",
-        path: "/admin/dashboard/businesses/overview",
-        matchPaths: ["/admin/dashboard/businesses/demand"],
-        icon: "domain",
-      },
-      {
-        label: "Hoạt động mua bán",
-        path: "/admin/dashboard/businesses/performance",
-        icon: "monitoring",
       },
     ],
   },
