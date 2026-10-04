@@ -6,6 +6,7 @@ import {
   updateStoredTokens,
 } from "../../utils/authStorage";
 import { notifyGlobalApiError } from "../../utils/globalApiError";
+import { syncServerClock } from "../../utils/serverClock";
 
 const DEFAULT_API_BASE_URL = "https://homecycle-backend.onrender.com/api";
 
@@ -61,9 +62,15 @@ axiosClient.interceptors.request.use(
 );
 
 axiosClient.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    syncServerClock(response.headers?.date);
+
+    return response.data;
+  },
 
   async (error) => {
+    syncServerClock(error?.response?.headers?.date);
+
     const originalRequest = error?.config;
     const status = error?.response?.status;
 
