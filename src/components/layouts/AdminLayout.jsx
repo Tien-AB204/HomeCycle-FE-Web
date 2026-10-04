@@ -15,11 +15,6 @@ const ADMIN_NAV_GROUPS = [
     group: "VẬN HÀNH",
     items: [
       {
-        label: "Thanh toán",
-        path: "/admin/dashboard/payments",
-        icon: "payments",
-      },
-      {
         label: "Đơn hàng & lịch hẹn",
         path: "/admin/dashboard/orders",
         matchPaths: ["/admin/dashboard/appointments"],
@@ -50,14 +45,16 @@ const ADMIN_NAV_GROUPS = [
     group: "TÀI CHÍNH",
     items: [
       {
-        label: "Tổng quan",
+        label: "Tài chính & ví",
         path: "/admin/dashboard/finance",
+        matchPaths: ["/admin/dashboard/payments"],
         icon: "account_balance",
       },
       {
         label: "Ví & giao dịch",
         path: "/admin/finance-management",
         icon: "receipt_long",
+        child: true,
       },
     ],
   },

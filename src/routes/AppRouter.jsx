@@ -34,7 +34,7 @@ import RoleRoute from "./RoleRoute";
 // Admin Pages
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
-import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
+import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
 import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
 import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
 import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
@@ -299,7 +299,7 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/finance"
-            element={<AdminFinanceDashboardPage />}
+            element={<AdminFinanceWalletPage />}
           />
 
           <Route
@@ -329,9 +329,7 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/payments"
-            element={
-              <AdminDashboardModulePage dashboard="payments" />
-            }
+            element={<Navigate to="/admin/dashboard/finance?tab=finance" replace />}
           />
 
           <Route
