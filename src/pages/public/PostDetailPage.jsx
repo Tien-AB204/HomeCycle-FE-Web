@@ -21,6 +21,7 @@ import {
 } from "@ant-design/icons";
 import { ROLES } from "../../constants/roles";
 import PostThumbnail from "../../components/shared/PostThumbnail";
+import { PriorityNotice } from "../../components/shared/PriorityBadge";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import OfferFormModal from "../../features/offers/OfferFormModal";
@@ -83,12 +84,6 @@ const DAMAGE_LEVELS = {
   Severe_Damage: "Hư hỏng nặng",
   Total_Loss: "Mất hoàn toàn",
   Major_Damage: "Hư hỏng nặng",
-};
-
-const PRIORITY_LEVELS = {
-  Low: "Thấp",
-  Medium: "Trung bình",
-  High: "Cao",
 };
 
 const POST_STATUS_META = {
@@ -1202,6 +1197,8 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 {post.brandName}
               </p>
 
+              <PriorityNotice post={post} className="mt-3" />
+
               <div className="mt-4 rounded-xl border border-error/20 bg-error/5 p-4">
                 {isBuyPost ? (
                   <div>
@@ -1333,18 +1330,6 @@ const PostDetailPage = ({ ownerMode = false }) => {
                     </dd>
                   </div>
                 )}
-                <div className="flex justify-between gap-4 border-b border-border pb-2.5">
-                  <dt className="flex items-center gap-2 text-textLight">
-                    <CalendarOutlined className="text-primary" />
-                    Độ ưu tiên
-                  </dt>
-                  <dd className="font-semibold text-text">
-                    {getMappedValue(
-                      PRIORITY_LEVELS,
-                      post.priorityLevel,
-                    )}
-                  </dd>
-                </div>
                 <div>
                   <dt className="flex items-center gap-2 text-textLight">
                     <EnvironmentOutlined className="text-primary" />

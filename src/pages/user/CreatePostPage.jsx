@@ -18,7 +18,6 @@ import {
   DAMAGE_LEVEL_OPTIONS,
   DELIVERY_METHOD_OPTIONS,
   FUNCTIONALITY_OPTIONS,
-  PRIORITY_LEVEL_OPTIONS,
   SPACE_USAGE_OPTIONS,
 } from "../../constants/postFormOptions";
 import {
@@ -94,7 +93,6 @@ const createInitialForm = () => ({
   quantity: "1",
   description: "",
   detailDescription: "",
-  priorityLevel: "Low",
   deliveryMethod: "Unknown",
   city: "",
   ward: "",
@@ -146,7 +144,6 @@ const createFormFromPost = (post) => {
     quantity: toFormString(post?.quantity, "1"),
     description: post?.description || "",
     detailDescription: product.detailDescription || "",
-    priorityLevel: post?.priorityLevel || "Low",
     deliveryMethod: post?.deliveryMethod || "Unknown",
     city: post?.city || "",
     ward: post?.ward || "",
@@ -1396,27 +1393,6 @@ const CreatePostPage = () => {
                 className={inputClassName}
               />
               <FieldError message={fieldErrors.quantity} />
-            </label>
-
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-text">
-                Độ ưu tiên
-              </span>
-              <select
-                value={form.priorityLevel}
-                onChange={(event) =>
-                  updateField("priorityLevel", event.target.value)
-                }
-                disabled={isSubmitting}
-                className={inputClassName}
-              >
-                {PRIORITY_LEVEL_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <FieldError message={fieldErrors.priorityLevel} />
             </label>
 
             {!isBuyPost && (

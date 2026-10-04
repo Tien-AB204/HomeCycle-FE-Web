@@ -33,6 +33,7 @@ import {
 
 const HOME_PAGE_SIZE = 100;
 const BUSINESS_POST_LIMIT = 4;
+const FEATURED_POST_LIMIT = 8;
 const PERSONAL_POST_LIMIT = 4;
 
 const CATEGORIES = [
@@ -94,6 +95,27 @@ const hasPostType = (post, postType) => {
     ) === normalizedPostType
   );
 };
+
+/*
+ * Cá nhân thấy cả tin bán lẫn tin thu mua nổi bật (xen kẽ); doanh nghiệp chỉ
+ * khám phá tin bán.
+ */
+const interleavePosts = (firstPosts, secondPosts) => {
+  const merged = [];
+  const length = Math.max(firstPosts.length, secondPosts.length);
+
+  for (let index = 0; index < length; index += 1) {
+    if (firstPosts[index]) merged.push(firstPosts[index]);
+    if (secondPosts[index]) merged.push(secondPosts[index]);
+  }
+
+  return merged;
+};
+
+const getFulfilledItems = (result) =>
+  result.status === "fulfilled" && Array.isArray(result.value)
+    ? result.value
+    : [];
 
 const LoadingCards = ({ count }) => {
   return Array.from({ length: count }, (_, index) => (
@@ -177,6 +199,7 @@ const Homepage = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
+  const [featuredPosts, setFeaturedPosts] = useState([]);
   const [discoveryState, setDiscoveryState] = useState({
     status: "idle",
     items: [],
@@ -221,6 +244,32 @@ const Homepage = () => {
       controller.abort();
     };
   }, [requestVersion]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    Promise.allSettled([
+      postApi.getFeatured("sell", { signal: controller.signal }),
+      isBusinessUser
+        ? Promise.resolve([])
+        : postApi.getFeatured("buy", { signal: controller.signal }),
+    ]).then(([sellResult, buyResult]) => {
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      setFeaturedPosts(
+        interleavePosts(
+          getFulfilledItems(sellResult),
+          getFulfilledItems(buyResult),
+        )
+          .filter(isActivePost)
+          .slice(0, FEATURED_POST_LIMIT),
+      );
+    });
+
+    return () => controller.abort();
+  }, [isBusinessUser, requestVersion]);
 
   useEffect(() => {
     if (!isBusinessUser) {
@@ -437,6 +486,31 @@ const Homepage = () => {
               Thử lại
             </button>
           </div>
+        )}
+
+        {featuredPosts.length > 0 && (
+          <section className="pb-12">
+            <SectionHeader
+              eyebrow="Gói VIP"
+              title="Tin nổi bật"
+              description="Tin của thành viên đang dùng gói trả phí, được ưu tiên hiển thị trên HomeCycle."
+              to={
+                isBusinessUser
+                  ? "/tin-dang-ban?view=marketplace"
+                  : "/search?showFilter=1"
+              }
+            />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {featuredPosts.map((post) => (
+                <ProductCard
+                  key={post.postId}
+                  data={post}
+                  variant={hasPostType(post, "Buy") ? "business-buy" : "personal-sell"}
+                  onBeforeOpen={handlePostOpen}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {isBusinessUser && discoveryState.status === "surveyRequired" && (

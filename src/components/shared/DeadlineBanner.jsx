@@ -38,9 +38,8 @@ export default function DeadlineBanner({
     >
       <div className="flex items-center gap-2">
         <span
-          className={`material-symbols-outlined ${
-            compact ? "text-[16px]" : "text-[20px]"
-          }`}
+          className="material-symbols-outlined"
+          style={{ fontSize: compact ? 16 : 20 }}
           aria-hidden="true"
         >
           {isExpired ? "error" : "schedule"}
@@ -87,7 +86,11 @@ export function DeadlineChip({
     <span
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold tabular-nums ${TONE_CLASSES[tone]} ${className}`}
     >
-      <span className="material-symbols-outlined text-[14px]" aria-hidden="true">
+      <span
+        className="material-symbols-outlined"
+        style={{ fontSize: 14 }}
+        aria-hidden="true"
+      >
         {isExpired ? "error" : "schedule"}
       </span>
       {isExpired ? expiredText : `${label} ${formatRemainingTime(remainingMs)}`}
