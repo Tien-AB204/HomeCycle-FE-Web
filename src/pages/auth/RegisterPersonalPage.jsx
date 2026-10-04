@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import AddressPickerField from "../../components/shared/AddressPickerField";
 import BankPickerField from "../../components/shared/BankPickerField";
+import IdentityScanPanel from "../../components/shared/IdentityScanPanel";
 import SensitiveField from "../../components/shared/SensitiveField";
 import authApi from "../../services/apis/authApi";
+import { IDENTITY_SCAN_TARGETS } from "../../services/apis/identityScanApi";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import { decodeJwtPayload } from "../../utils/authUtils";
 import {
@@ -1693,6 +1695,36 @@ const RegisterPersonalPage = () => {
           policyError={uploadRules.error}
             onChange={handleFileChange}
             description="Hỗ trợ JPG, PNG hoặc WEBP; tối đa 5MB."
+          />
+
+          <IdentityScanPanel
+            target={
+              registrationToken
+                ? IDENTITY_SCAN_TARGETS.REGISTER
+                : ""
+            }
+            registrationToken={registrationToken}
+            frontFile={form.frontIdCardFile}
+            backFile={form.backIdCardFile}
+            disabled={isLoading}
+            onResult={(result) => {
+              setForm((currentForm) => ({
+                ...currentForm,
+                representativeCode:
+                  result.identityNumber ||
+                  currentForm.representativeCode,
+                representativeName:
+                  result.fullName ||
+                  currentForm.representativeName,
+                representativeDob:
+                  result.dateOfBirth ||
+                  currentForm.representativeDob,
+                representativeAddress:
+                  result.address ||
+                  currentForm.representativeAddress,
+              }));
+              setError("");
+            }}
           />
 
           <hr className="border-border" />

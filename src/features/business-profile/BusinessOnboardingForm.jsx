@@ -1,8 +1,10 @@
 import { useState } from "react";
 import AddressPickerField from "../../components/shared/AddressPickerField";
 import BankPickerField from "../../components/shared/BankPickerField";
+import IdentityScanPanel from "../../components/shared/IdentityScanPanel";
 import SensitiveField from "../../components/shared/SensitiveField";
 import businessProfileApi from "../../services/apis/businessProfileApi";
+import { IDENTITY_SCAN_TARGETS } from "../../services/apis/identityScanApi";
 import {
   FULL_NAME_MAX_LENGTH,
   validateFullName,
@@ -238,6 +240,23 @@ export default function BusinessOnboardingForm({
           : nextIdentityName,
     }));
 
+    setError("");
+  };
+
+  const handleScanResult = (result) => {
+    if (result.fullName) {
+      handleIdentityNameChange(result.fullName);
+    }
+
+    setForm((current) => ({
+      ...current,
+      identityNumber:
+        result.identityNumber || current.identityNumber,
+      identityDob:
+        result.dateOfBirth || current.identityDob,
+      identityAddress:
+        result.address || current.identityAddress,
+    }));
     setError("");
   };
 
@@ -800,6 +819,15 @@ export default function BusinessOnboardingForm({
                   null,
               )
             }
+          />
+        </div>
+        <div className="mt-4">
+          <IdentityScanPanel
+            target={IDENTITY_SCAN_TARGETS.BUSINESS}
+            frontFile={form.cccdFront}
+            backFile={form.cccdBack}
+            disabled={isSubmitting}
+            onResult={handleScanResult}
           />
         </div>
       </OnboardingSection>

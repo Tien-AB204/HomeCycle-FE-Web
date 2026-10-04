@@ -4,6 +4,8 @@ import { useAuth } from "../../hooks/useAuth";
 import { userService } from "../../services/userService";
 import AvatarUploader from "../../features/profile/AvatarUploader";
 import SensitiveField from "../../components/shared/SensitiveField";
+import IdentityScanPanel from "../../components/shared/IdentityScanPanel";
+import { IDENTITY_SCAN_TARGETS } from "../../services/apis/identityScanApi";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import {
   getSafeValidationMessage,
@@ -1186,6 +1188,30 @@ export default function UserProfilePage() {
                       previewUrl={identityPreviews.back}
                     />
                   </div>
+
+                  <IdentityScanPanel
+                    target={IDENTITY_SCAN_TARGETS.PERSONAL}
+                    frontFile={identityForm.frontIdCardFile}
+                    backFile={identityForm.backIdCardFile}
+                    disabled={isSavingIdentity}
+                    onResult={(result) =>
+                      setIdentityForm((currentForm) => ({
+                        ...currentForm,
+                        representativeCode:
+                          result.identityNumber ||
+                          currentForm.representativeCode,
+                        representativeName:
+                          result.fullName ||
+                          currentForm.representativeName,
+                        representativeDob:
+                          result.dateOfBirth ||
+                          currentForm.representativeDob,
+                        representativeAddress:
+                          result.address ||
+                          currentForm.representativeAddress,
+                      }))
+                    }
+                  />
 
                   <div className="flex justify-end gap-3 border-t pt-5">
                     <button
