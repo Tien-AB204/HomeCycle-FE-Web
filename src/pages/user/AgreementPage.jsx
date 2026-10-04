@@ -27,6 +27,10 @@ import {
   getSafeValidationMessage,
 } from "../../utils/safeErrorMessage";
 import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
+import {
+  downloadAgreementPdf,
+  getAgreementPdfErrorMessage,
+} from "../../utils/agreementPdf";
 
 const PENDING_AGREEMENT_KEY = "homecycle:pending-payment-agreement-id";
 
@@ -110,6 +114,7 @@ const AgreementPage = () => {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState("");
   const [transactionContext, setTransactionContext] = useState({
     negotiation: null,
@@ -655,6 +660,26 @@ const AgreementPage = () => {
   const canEdit = Boolean(preview?.canEdit) && agreement?.agreementStatus === AGREEMENT_STATUS.PENDING;
   const canRequestEdit = agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
   const canPay = buyerAwaitingPayment;
+  // Chỉ thỏa thuận đã thanh toán mới có bản PDF.
+  const canDownloadPdf =
+    agreement?.agreementStatus === AGREEMENT_STATUS.CONFIRMED;
+
+  const handleDownloadPdf = async () => {
+    if (isDownloadingPdf || !agreement?.agreementId) {
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    setError("");
+
+    try {
+      await downloadAgreementPdf(agreement.agreementId);
+    } catch (downloadError) {
+      setError(getAgreementPdfErrorMessage(downloadError));
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   const quotedAmount =
     Number(paymentQuote.data?.amountToPay);
@@ -752,6 +777,23 @@ const AgreementPage = () => {
         )}
 
         <div className="mt-5 flex flex-wrap justify-end gap-3 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+          {canDownloadPdf && (
+            <button
+              type="button"
+              onClick={() => void handleDownloadPdf()}
+              disabled={isDownloadingPdf}
+              className="inline-flex items-center gap-2 rounded-lg border border-primary px-5 py-3 text-sm font-black text-primary hover:bg-primary/10 disabled:opacity-50"
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 18 }}
+                aria-hidden="true"
+              >
+                picture_as_pdf
+              </span>
+              {isDownloadingPdf ? "Đang tải PDF..." : "Tải hợp đồng PDF"}
+            </button>
+          )}
           {canEdit && <button type="button" onClick={() => setEditing(true)} className="rounded-lg border border-primary px-5 py-3 text-sm font-black text-primary hover:bg-primary/10">Chỉnh sửa thỏa thuận</button>}
           {preview?.canConfirm && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("accept", () => agreementApi.accept(agreement.agreementId, agreement?.agreementDetails?.revision), "Bạn đã xác nhận thỏa thuận.")} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:opacity-50">{busy === "accept" ? "Đang xác nhận..." : "Xác nhận thỏa thuận"}</button>}
           {canRequestEdit && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("request-edit", () => agreementApi.requestEdit(agreement.agreementId), "Đã mở lại thỏa thuận. Hai bên cần xác nhận lại sau khi chỉnh sửa.")} className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-black text-warning hover:bg-warning/20 disabled:opacity-50">Yêu cầu chỉnh sửa</button>}

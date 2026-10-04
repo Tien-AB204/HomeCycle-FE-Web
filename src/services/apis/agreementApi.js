@@ -126,6 +126,23 @@ export const agreementApi = {
   },
 
   /*
+   * PDF hợp đồng đã thanh toán; Backend không trả đường dẫn lưu trữ trực
+   * tiếp nên phải tải qua API có xác thực.
+   */
+  downloadPdf: async (agreementId) => {
+    const id = normalizeIdentifier(
+      agreementId,
+      "Không tìm thấy mã thỏa thuận.",
+    );
+
+    return axiosClient.get(`/agreements/${encodeURIComponent(id)}/pdf`, {
+      responseType: "blob",
+      timeout: 60000,
+      skipGlobalErrorPage: true,
+    });
+  },
+
+  /*
    * Ngày dự kiến giao của GHN, không cần tính phí trước. Chỉ cần quận/phường
    * người nhận; điểm gửi và thông số kiện giúp ước tính sát hơn.
    */
