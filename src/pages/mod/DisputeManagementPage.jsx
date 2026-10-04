@@ -680,6 +680,16 @@ const getActionFlag = (
   );
 };
 
+const LIST_COLLAPSED_KEY = "homecycle.disputeListCollapsed";
+
+const readListCollapsed = () => {
+  try {
+    return window.localStorage.getItem(LIST_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
 const DisputeManagementPage = ({
   initialTargetType,
   api = moderatorDisputeApi,
@@ -751,6 +761,8 @@ const DisputeManagementPage = ({
 
   const [sidebarWidth, setSidebarWidth] =
     useState(420);
+  const [listCollapsed, setListCollapsed] =
+    useState(readListCollapsed);
   const [isResizing, setIsResizing] =
     useState(false);
   const resizeSessionRef = useRef(null);
@@ -1097,6 +1109,19 @@ const DisputeManagementPage = ({
     };
   }, [isResizing]);
 
+  const toggleListCollapsed = (nextCollapsed) => {
+    setListCollapsed(nextCollapsed);
+
+    try {
+      window.localStorage.setItem(
+        LIST_COLLAPSED_KEY,
+        nextCollapsed ? "1" : "0",
+      );
+    } catch {
+      // Không lưu được thì chỉ giữ trong phiên hiện tại.
+    }
+  };
+
   const startResizing = (event) => {
     event.preventDefault();
 
@@ -1297,55 +1322,6 @@ const DisputeManagementPage = ({
     [disputes, monthFilter, sortOption],
   );
 
-  const renderUserCard = (
-    title,
-    user,
-  ) => {
-    if (!user) {
-      return (
-        <div className="rounded-xl border border-dashed border-border bg-background p-4 text-sm text-textLight">
-          {title}: Không có dữ liệu
-        </div>
-      );
-    }
-
-    return (
-      <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-        <p className="mb-3 text-xs font-bold uppercase tracking-wide text-textLight">
-          {title}
-        </p>
-
-        <div className="flex items-center gap-3">
-          <Avatar
-            src={user.avatarUrl}
-            alt={user.username || title}
-            className="h-11 w-11 border border-border"
-          />
-
-          <div className="min-w-0">
-            <p className="truncate font-bold text-text">
-              {user.username ||
-                "Chưa có"}
-            </p>
-
-            <p className="truncate text-xs text-textLight">
-              Mã:{" "}
-              {user.userId ||
-                "Chưa có"}
-            </p>
-
-            <p className="mt-1 text-xs text-textLight">
-              Vai trò:{" "}
-              {getRoleLabel(
-                user.role,
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderMediaGallery = (
     title,
     description,
@@ -1537,6 +1513,128 @@ const DisputeManagementPage = ({
     canReject ||
     canVerifyReturn;
 
+  // Chia phản hồi theo từng bên để đối chiếu; phản hồi không thuộc bên nào hiển thị riêng.
+  const senderUserId = detail?.sender?.userId;
+  const targetUserId = detail?.targetUser?.userId;
+  const senderResponses = disputeResponses.filter(
+    (response) =>
+      senderUserId &&
+      response.responder?.userId === senderUserId,
+  );
+  const targetResponses = disputeResponses.filter(
+    (response) =>
+      targetUserId &&
+      response.responder?.userId === targetUserId,
+  );
+  const otherResponses = disputeResponses.filter(
+    (response) =>
+      !senderResponses.includes(response) &&
+      !targetResponses.includes(response),
+  );
+
+  const renderThumbs = (mediaItems) =>
+    mediaItems.length === 0 ? null : (
+      <Image.PreviewGroup>
+        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+          {mediaItems.map((media) => (
+            <Image
+              key={media.key}
+              src={media.url}
+              alt={media.fileName}
+              className="h-20 w-full rounded-lg object-cover"
+              width="100%"
+            />
+          ))}
+        </div>
+      </Image.PreviewGroup>
+    );
+
+  const renderResponse = (response, showResponder = false) => {
+    const typeMeta =
+      RESPONSE_TYPE_META[normalizeKey(response.responseType)] || {
+        label: "Phản hồi",
+        color: "#547B7D",
+        background: "rgba(84,123,125,0.10)",
+      };
+
+    return (
+      <div
+        key={response.disputeResponseId}
+        className="rounded-xl border border-border bg-background p-3"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-xs text-textLight">
+            {showResponder
+              ? `${response.responder?.username || "Chưa có"} (${getRoleLabel(response.responder?.role)}) · `
+              : ""}
+            {formatDateTime(response.createdAt)}
+          </span>
+
+          <Tag
+            className="m-0"
+            style={{
+              color: typeMeta.color,
+              background: typeMeta.background,
+              borderColor: typeMeta.color,
+            }}
+          >
+            {typeMeta.label}
+          </Tag>
+        </div>
+
+        <p className="mt-2 whitespace-pre-wrap text-sm text-text">
+          {response.content || "Không có nội dung"}
+        </p>
+
+        {renderThumbs(normalizeMediaItems(response.evidenceImages))}
+      </div>
+    );
+  };
+
+  const renderPartyHeader = (label, user, accentClassName) => (
+    <div className="flex items-center gap-3">
+      {user ? (
+        <Avatar
+          src={user.avatarUrl}
+          alt={user.username || label}
+          className="h-11 w-11 border border-border"
+        />
+      ) : (
+        <span
+          className="material-symbols-outlined flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[22px] text-primary"
+          aria-hidden="true"
+        >
+          smart_toy
+        </span>
+      )}
+
+      <div className="min-w-0">
+        <p className={`text-[11px] font-black uppercase tracking-[0.14em] ${accentClassName}`}>
+          {label}
+        </p>
+        <p className="truncate font-bold text-text">
+          {user ? user.username || "Chưa có" : "Hệ thống HomeCycle"}
+        </p>
+        <p className="truncate text-xs text-textLight" title={user?.userId}>
+          {user
+            ? `${getRoleLabel(user.role)} · ${user.userId || "Chưa có mã"}`
+            : isSystemOrigin(detail?.origin)
+              ? `Tự động tạo: ${getMappedLabel(DISPUTE_ORIGIN_LABELS, detail?.origin)}`
+              : "Tranh chấp được hệ thống tạo tự động"}
+        </p>
+      </div>
+    </div>
+  );
+
+  const renderPartyBlock = (blockTitle, children) => (
+    <div className="mt-4 border-t border-border pt-3">
+      <p className="text-xs font-bold uppercase tracking-wide text-textLight">
+        {blockTitle}
+      </p>
+      {children}
+    </div>
+  );
+
   const modalTitle = {
     claim: "Tiếp nhận tranh chấp",
     resolve: isPostTarget
@@ -1565,6 +1663,29 @@ const DisputeManagementPage = ({
   return (
     <>
       <div className="flex h-[calc(100vh-72px)] min-h-0 overflow-hidden bg-background text-text">
+        {listCollapsed ? (
+          <aside className="flex w-14 shrink-0 flex-col items-center gap-3 border-r border-border bg-white py-4">
+            <button
+              type="button"
+              onClick={() => toggleListCollapsed(false)}
+              title="Mở danh sách"
+              aria-label="Mở danh sách tranh chấp"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-textLight transition hover:border-primary hover:text-primary"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                keyboard_double_arrow_right
+              </span>
+            </button>
+
+            <span className="rounded-full bg-[rgba(84,123,125,0.10)] px-2 py-1 text-xs font-black text-primary">
+              {totalCount}
+            </span>
+
+            <span className="rotate-180 text-xs font-bold text-textLight [writing-mode:vertical-rl]">
+              {title}
+            </span>
+          </aside>
+        ) : (
         <section
           style={{
             width: `${sidebarWidth}px`,
@@ -1583,8 +1704,22 @@ const DisputeManagementPage = ({
                 </h1>
               </div>
 
-              <div className="rounded-full bg-[rgba(84,123,125,0.10)] px-3 py-1 text-xs font-black text-primary">
-                {totalCount}
+              <div className="flex shrink-0 items-center gap-2">
+                <div className="rounded-full bg-[rgba(84,123,125,0.10)] px-3 py-1 text-xs font-black text-primary">
+                  {totalCount}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => toggleListCollapsed(true)}
+                  title="Thu gọn danh sách"
+                  aria-label="Thu gọn danh sách tranh chấp"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-textLight transition hover:border-primary hover:text-primary"
+                >
+                  <span className="material-symbols-outlined text-[18px]">
+                    keyboard_double_arrow_left
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -1672,7 +1807,7 @@ const DisputeManagementPage = ({
               />
             )}
 
-            <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
               <Button
                 type="link"
                 onClick={clearFilters}
@@ -1681,7 +1816,7 @@ const DisputeManagementPage = ({
                 Xóa bộ lọc
               </Button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center justify-end gap-2">
                 <ListSortDropdown
                   value={sortOption}
                   onChange={setSortOption}
@@ -1701,6 +1836,8 @@ const DisputeManagementPage = ({
                   icon={
                     <ReloadOutlined />
                   }
+                  title="Làm mới"
+                  aria-label="Làm mới danh sách"
                   onClick={() => {
                     void refreshSelected();
                   }}
@@ -1708,9 +1845,7 @@ const DisputeManagementPage = ({
                     loadingList ||
                     loadingDetail
                   }
-                >
-                  Làm mới
-                </Button>
+                />
               </div>
             </div>
           </div>
@@ -1871,6 +2006,7 @@ const DisputeManagementPage = ({
 
           <div className="border-t border-border p-3">
             <Pagination
+              className="flex flex-wrap items-center justify-center gap-y-2"
               current={pageNumber}
               pageSize={pageSize}
               total={totalCount}
@@ -1888,7 +2024,7 @@ const DisputeManagementPage = ({
                 );
               }}
               showTotal={(total) =>
-                `Tổng ${total} tranh chấp`
+                `${total} tranh chấp`
               }
             />
           </div>
@@ -1908,8 +2044,9 @@ const DisputeManagementPage = ({
             }`}
           />
         </section>
+        )}
 
-        <section className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-background/60">
+        <section className="@container min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-background/60">
           {!selectedDisputeId ? (
             <div className="flex h-full items-center justify-center p-8">
               <Empty description="Chọn một tranh chấp để xem chi tiết" />
@@ -1943,14 +2080,10 @@ const DisputeManagementPage = ({
               />
             </div>
           ) : detail ? (
-            <div className="mx-auto w-full max-w-6xl p-5">
-              <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-textLight">
-                    Chi tiết tranh chấp
-                  </p>
-
-                  <h2 className="mt-1 break-all text-xl font-black text-text">
+            <div className="mx-auto w-full max-w-[1400px] p-5">
+              <div className="sticky top-0 z-20 -mx-5 -mt-5 mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-white/95 px-5 py-3 shadow-sm backdrop-blur">
+                <div className="flex min-w-0 items-center gap-3">
+                  <h2 className="truncate text-lg font-black text-text">
                     {order?.orderCode ||
                       post?.productName ||
                       (isReviewTarget
@@ -1963,22 +2096,97 @@ const DisputeManagementPage = ({
                             detail.disputeId,
                           ).slice(0, 8)}`)}
                   </h2>
+
+                  <Tag
+                    className="m-0 shrink-0"
+                    style={{
+                      color:
+                        detailStatus.color,
+                      background:
+                        detailStatus.background,
+                      borderColor:
+                        detailStatus.color,
+                    }}
+                  >
+                    {
+                      detailStatus.label
+                    }
+                  </Tag>
+
+                  {loadingDetail && (
+                    <Spin size="small" />
+                  )}
                 </div>
 
-                <Tag
-                  style={{
-                    color:
-                      detailStatus.color,
-                    background:
-                      detailStatus.background,
-                    borderColor:
-                      detailStatus.color,
-                  }}
-                >
-                  {
-                    detailStatus.label
-                  }
-                </Tag>
+                {!readOnly &&
+                  (hasModeratorAction ? (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {canClaim && (
+                        <Button
+                          type="primary"
+                          onClick={() =>
+                            openActionModal(
+                              "claim",
+                            )
+                          }
+                        >
+                          Tiếp nhận tranh chấp
+                        </Button>
+                      )}
+
+                      {canResolve && (
+                        <Button
+                          type="primary"
+                          onClick={() =>
+                            openActionModal(
+                              "resolve",
+                            )
+                          }
+                        >
+                          {isContentTarget
+                            ? "Xác nhận vi phạm"
+                            : "Đưa ra kết luận"}
+                        </Button>
+                      )}
+
+                      {canReject && (
+                        <Button
+                          onClick={() =>
+                            openActionModal(
+                              "reject",
+                            )
+                          }
+                          style={{
+                            borderColor:
+                              "#7A1012",
+                            color:
+                              "#7A1012",
+                          }}
+                        >
+                          {isContentTarget
+                            ? "Từ chối báo cáo"
+                            : "Từ chối tranh chấp"}
+                        </Button>
+                      )}
+
+                      {canVerifyReturn && (
+                        <Button
+                          type="primary"
+                          onClick={() =>
+                            openActionModal(
+                              "verify-return",
+                            )
+                          }
+                        >
+                          Xác minh hoàn trả
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-textLight">
+                      Không có thao tác kiểm duyệt ở trạng thái này
+                    </span>
+                  ))}
               </div>
 
               {actionFeedback && (
@@ -2000,136 +2208,176 @@ const DisputeManagementPage = ({
                 />
               )}
 
-              {!readOnly && (
-              <div className="mb-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                <div>
                   <h3 className="text-base font-black text-text">
-                    Thao tác kiểm duyệt
+                    Đối chiếu hai bên
                   </h3>
-
-                  {loadingDetail && (
-                    <Spin size="small" />
-                  )}
+                  <p className="mt-0.5 text-xs text-textLight">
+                    Trình bày, bằng chứng và phản hồi của mỗi bên đặt cạnh nhau để đánh giá.
+                  </p>
                 </div>
 
-                {hasModeratorAction ? (
-                  <div className="flex flex-wrap gap-2">
-                    {canClaim && (
-                      <Button
-                        type="primary"
-                        onClick={() =>
-                          openActionModal(
-                            "claim",
-                          )
-                        }
-                      >
-                        Tiếp nhận tranh chấp
-                      </Button>
-                    )}
-
-                    {canResolve && (
-                      <Button
-                        type="primary"
-                        onClick={() =>
-                          openActionModal(
-                            "resolve",
-                          )
-                        }
-                      >
-                        {isContentTarget
-                          ? "Xác nhận vi phạm"
-                          : "Đưa ra kết luận"}
-                      </Button>
-                    )}
-
-                    {canReject && (
-                      <Button
-                        onClick={() =>
-                          openActionModal(
-                            "reject",
-                          )
-                        }
-                        style={{
-                          borderColor:
-                            "#7A1012",
-                          color:
-                            "#7A1012",
-                        }}
-                      >
-                        {isContentTarget
-                          ? "Từ chối báo cáo"
-                          : "Từ chối tranh chấp"}
-                      </Button>
-                    )}
-
-                    {canVerifyReturn && (
-                      <Button
-                        type="primary"
-                        onClick={() =>
-                          openActionModal(
-                            "verify-return",
-                          )
-                        }
-                      >
-                        Xác minh hoàn trả
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-textLight">
-                    Hiện không có thao tác kiểm duyệt nào được hệ thống cho phép đối với trạng thái này.
-                  </p>
-                )}
+                <span className="text-xs font-bold text-textLight">
+                  {getCategoryLabel(detail.category)}
+                </span>
               </div>
-              )}
 
-              <div className="grid gap-4 md:grid-cols-2">
-                {detail.sender ? (
-                  renderUserCard(
-                    "Người gửi",
+              <div className="grid items-start gap-4 @2xl:grid-cols-2">
+                <section className="min-w-0 rounded-2xl border border-border border-t-4 border-t-primary bg-white p-4 shadow-sm">
+                  {renderPartyHeader(
+                    isContentTarget
+                      ? "Người báo cáo"
+                      : "Bên khiếu nại",
                     detail.sender,
-                  )
-                ) : (
-                  <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wide text-textLight">
-                      Người gửi
+                    "text-primary",
+                  )}
+
+                  {renderPartyBlock(
+                    "Trình bày",
+                    <>
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-text">
+                        {detail.description ||
+                          "Không có mô tả"}
+                      </p>
+
+                      {hasValue(detail.proposedResolutionOutcome) && (
+                        <p className="mt-2 text-xs font-semibold text-primary">
+                          Đề xuất:{" "}
+                          {getResolutionOutcomeLabel(
+                            detail.proposedResolutionOutcome,
+                          )}
+                        </p>
+                      )}
+                    </>,
+                  )}
+
+                  {renderPartyBlock(
+                    `Bằng chứng (${evidenceImages.length})`,
+                    evidenceImages.length === 0 ? (
+                      <p className="mt-1 text-sm text-textLight">
+                        Không có ảnh bằng chứng
+                      </p>
+                    ) : (
+                      renderThumbs(evidenceImages)
+                    ),
+                  )}
+
+                  {senderResponses.length > 0 &&
+                    renderPartyBlock(
+                      "Phản hồi thêm",
+                      <div className="mt-2 space-y-2">
+                        {senderResponses.map((response) =>
+                          renderResponse(response),
+                        )}
+                      </div>,
+                    )}
+                </section>
+
+                <section className="min-w-0 rounded-2xl border border-border border-t-4 border-t-[#9A6418] bg-white p-4 shadow-sm">
+                  {detail.targetUser ? (
+                    renderPartyHeader(
+                      isPostTarget
+                        ? "Chủ bài đăng"
+                        : isReviewTarget
+                          ? "Người bị báo cáo"
+                          : "Bên bị khiếu nại",
+                      detail.targetUser,
+                      "text-[#9A6418]",
+                    )
+                  ) : (
+                    <p className="text-sm text-textLight">
+                      Không có dữ liệu bên bị khiếu nại
                     </p>
+                  )}
 
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="material-symbols-outlined flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-background text-[22px] text-primary"
-                        aria-hidden="true"
-                      >
-                        smart_toy
-                      </span>
-
-                      <div className="min-w-0">
-                        <p className="font-bold text-text">
-                          Hệ thống HomeCycle
+                  {isPostTarget &&
+                    renderPartyBlock(
+                      "Bài đăng bị báo cáo",
+                      post ? (
+                        <>
+                          <p className="mt-1 font-bold text-text">
+                            {post.productName || "Chưa có tên"}
+                          </p>
+                          <p className="text-xs text-textLight">
+                            {getPostTypeLabel(post.postType)} ·{" "}
+                            {formatMoney(post.basePrice)} ·{" "}
+                            {getContentStatusLabel(
+                              POST_STATUS_LABELS,
+                              post.status,
+                            )}
+                          </p>
+                          <p className="mt-2 line-clamp-6 whitespace-pre-wrap text-sm leading-6 text-text">
+                            {post.description || "Không có mô tả"}
+                          </p>
+                          {renderThumbs(postImages)}
+                        </>
+                      ) : (
+                        <p className="mt-1 text-sm text-textLight">
+                          Bài đăng gốc hiện không còn khả dụng.
                         </p>
+                      ),
+                    )}
 
-                        <p className="mt-1 text-xs text-textLight">
-                          {isSystemOrigin(detail.origin)
-                            ? `Tự động tạo: ${getMappedLabel(
-                                DISPUTE_ORIGIN_LABELS,
-                                detail.origin,
-                              )}`
-                            : "Tranh chấp được hệ thống tạo tự động"}
+                  {isReviewTarget &&
+                    renderPartyBlock(
+                      "Đánh giá bị báo cáo",
+                      review ? (
+                        <>
+                          <p className="mt-1 text-sm font-bold text-text">
+                            {review.rating === null ||
+                            review.rating === undefined
+                              ? "Chưa có số sao"
+                              : `${review.rating} / 5 sao`}
+                          </p>
+                          <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-text">
+                            {review.comment || "Không có nội dung"}
+                          </p>
+                          {renderThumbs(reviewImages)}
+                        </>
+                      ) : (
+                        <p className="mt-1 text-sm text-textLight">
+                          Đánh giá gốc hiện không còn khả dụng.
                         </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                      ),
+                    )}
 
-                {renderUserCard(
-                  isPostTarget
-                    ? "Chủ bài đăng / Người bị báo cáo"
-                    : isReviewTarget
-                      ? "Người bị báo cáo"
-                      : "Người bị khiếu nại",
-                  detail.targetUser,
-                )}
+                  {(isOrderTarget || targetResponses.length > 0) &&
+                    renderPartyBlock(
+                      `Phản hồi (${targetResponses.length})`,
+                      targetResponses.length === 0 ? (
+                        <p className="mt-1 text-sm text-textLight">
+                          {isAwaitingResponse
+                            ? `Đang chờ phản hồi${
+                                detail.responseDeadlineAt
+                                  ? ` đến ${formatDateTime(detail.responseDeadlineAt)}`
+                                  : ""
+                              }.`
+                            : "Bên này chưa gửi phản hồi."}
+                        </p>
+                      ) : (
+                        <div className="mt-2 space-y-2">
+                          {targetResponses.map((response) =>
+                            renderResponse(response),
+                          )}
+                        </div>
+                      ),
+                    )}
+                </section>
               </div>
+
+              {otherResponses.length > 0 && (
+                <div className="mt-4 rounded-2xl border border-border bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-black text-text">
+                    Phản hồi khác
+                  </h3>
+                  <div className="mt-2 space-y-2">
+                    {otherResponses.map((response) =>
+                      renderResponse(response, true),
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
                 <h3 className="mb-4 text-base font-black text-text">
@@ -2268,16 +2516,6 @@ const DisputeManagementPage = ({
                   ) : null}
 
                   <Descriptions.Item
-                    label="Mô tả của người báo cáo"
-                    span={2}
-                  >
-                    <span className="whitespace-pre-wrap">
-                      {detail.description ||
-                        "Không có mô tả"}
-                    </span>
-                  </Descriptions.Item>
-
-                  <Descriptions.Item
                     label="Ghi chú kiểm duyệt"
                     span={2}
                   >
@@ -2343,107 +2581,6 @@ const DisputeManagementPage = ({
                       );
                     })}
                   </ol>
-                </div>
-              )}
-
-              {(isOrderTarget || disputeResponses.length > 0) && (
-                <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-base font-black text-text">
-                        Phản hồi của các bên
-                      </h3>
-                      <p className="mt-1 text-xs text-textLight">
-                        Chấp nhận, phản biện hoặc trình bày của các bên trước khi kiểm duyệt viên ra quyết định.
-                      </p>
-                    </div>
-
-                    <span className="text-xs font-bold text-textLight">
-                      {disputeResponses.length} phản hồi
-                    </span>
-                  </div>
-
-                  {disputeResponses.length === 0 ? (
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description="Chưa có phản hồi nào"
-                    />
-                  ) : (
-                    <div className="space-y-4">
-                      {disputeResponses.map((response) => {
-                        const typeMeta =
-                          RESPONSE_TYPE_META[
-                            normalizeKey(response.responseType)
-                          ] || {
-                            label: "Phản hồi",
-                            color: "#547B7D",
-                            background: "rgba(84,123,125,0.10)",
-                          };
-                        const responseImages =
-                          normalizeMediaItems(
-                            response.evidenceImages,
-                          );
-
-                        return (
-                          <div
-                            key={response.disputeResponseId}
-                            className="rounded-xl border border-border bg-background p-4"
-                          >
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <div className="flex min-w-0 items-center gap-3">
-                                <Avatar
-                                  src={response.responder?.avatarUrl}
-                                  alt={response.responder?.username || "Người phản hồi"}
-                                  className="h-9 w-9 border border-border"
-                                />
-
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-bold text-text">
-                                    {response.responder?.username || "Chưa có"}
-                                  </p>
-                                  <p className="text-xs text-textLight">
-                                    {getRoleLabel(response.responder?.role)} ·{" "}
-                                    {formatDateTime(response.createdAt)}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <Tag
-                                className="m-0"
-                                style={{
-                                  color: typeMeta.color,
-                                  background: typeMeta.background,
-                                  borderColor: typeMeta.color,
-                                }}
-                              >
-                                {typeMeta.label}
-                              </Tag>
-                            </div>
-
-                            <p className="mt-3 whitespace-pre-wrap text-sm text-text">
-                              {response.content || "Không có nội dung"}
-                            </p>
-
-                            {responseImages.length > 0 && (
-                              <Image.PreviewGroup>
-                                <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-6">
-                                  {responseImages.map((media) => (
-                                    <Image
-                                      key={media.key}
-                                      src={media.url}
-                                      alt={media.fileName}
-                                      className="h-24 w-full rounded-lg object-cover"
-                                      width="100%"
-                                    />
-                                  ))}
-                                </div>
-                              </Image.PreviewGroup>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -2599,15 +2736,6 @@ const DisputeManagementPage = ({
                 </>
               )}
 
-              {isPostTarget && !post && (
-                <Alert
-                  className="mt-6"
-                  type="warning"
-                  showIcon
-                  message="Bài đăng gốc hiện không còn khả dụng. Thông tin báo cáo vẫn được giữ nguyên."
-                />
-              )}
-
               {post && (
                 <>
                   <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
@@ -2675,22 +2803,7 @@ const DisputeManagementPage = ({
                     </Descriptions>
                   </div>
 
-                  {renderMediaGallery(
-                    "Ảnh bài đăng gốc",
-                    "Hình ảnh thuộc nội dung bài đăng được báo cáo.",
-                    postImages,
-                    "Bài đăng gốc không có ảnh",
-                  )}
                 </>
-              )}
-
-              {isReviewTarget && !review && (
-                <Alert
-                  className="mt-6"
-                  type="warning"
-                  showIcon
-                  message="Đánh giá gốc hiện không còn khả dụng. Thông tin báo cáo vẫn được giữ nguyên."
-                />
               )}
 
               {review && (
@@ -2765,12 +2878,6 @@ const DisputeManagementPage = ({
                     </Descriptions>
                   </div>
 
-                  {renderMediaGallery(
-                    "Ảnh đánh giá gốc",
-                    "Hình ảnh thuộc đánh giá được báo cáo.",
-                    reviewImages,
-                    "Đánh giá gốc không có ảnh",
-                  )}
                 </>
               )}
 
@@ -2916,12 +3023,6 @@ const DisputeManagementPage = ({
                 </>
               )}
 
-              {renderMediaGallery(
-                "Ảnh bằng chứng của người báo cáo",
-                "Hình ảnh do người gửi báo cáo cung cấp, tách biệt với ảnh của nội dung gốc.",
-                evidenceImages,
-                "Không có ảnh bằng chứng từ người báo cáo",
-              )}
             </div>
           ) : null}
         </section>
