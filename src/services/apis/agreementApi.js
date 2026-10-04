@@ -124,6 +124,24 @@ export const agreementApi = {
 
     return response;
   },
+
+  /*
+   * Ngày dự kiến giao của GHN, không cần tính phí trước. Chỉ cần quận/phường
+   * người nhận; điểm gửi và thông số kiện giúp ước tính sát hơn.
+   */
+  getGhnLeadtime: async (negotiationId, payload, { signal } = {}) => {
+    const id = normalizeIdentifier(
+      negotiationId,
+      "Không tìm thấy mã phiên thương lượng để lấy ngày giao GHN.",
+    );
+
+    return axiosClient.post(
+      `/agreements/negotiations/${encodeURIComponent(id)}/ghn-leadtime`,
+      payload,
+      { signal, skipGlobalErrorPage: true },
+    );
+  },
+
   getPendingPayment: async ({ pageNumber = 1, pageSize = 10, signal } = {}) => {
     const response = await axiosClient.get("/agreements/pending-payment", {
       params: { PageNumber: pageNumber, PageSize: pageSize },
