@@ -29,7 +29,6 @@ import DisputeResponseModal from "../../features/disputes/DisputeResponseModal";
 import { useAuth } from "../../hooks/useAuth";
 import { useDeadlineCountdown } from "../../hooks/useDeadlineCountdown";
 import { getUserId } from "../../utils/authUtils";
-import { formatDateTime } from "../../utils/formatter";
 
 const normalizeKey = (value) =>
   String(value ?? "").replace(/[\s_-]/g, "").toLowerCase();
@@ -620,7 +619,7 @@ const DisputeDetailPage = () => {
           countdown={responseCountdown}
           label="Thời hạn phản hồi còn lại"
           expiredText="Đã hết thời hạn phản hồi."
-          note={`Hạn phản hồi: ${formatDateTime(responseDeadline)}`}
+          note={`Hạn phản hồi: ${formatDate(responseDeadline)}`}
         />
       )}
 
@@ -793,7 +792,7 @@ const DisputeDetailPage = () => {
                             {item?.responder?.username || "Người dùng HomeCycle"}
                           </p>
                           <p className="text-xs text-textLight">
-                            {formatDateTime(item?.createdAt)}
+                            {formatDate(item?.createdAt)}
                           </p>
                         </div>
                         <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-black text-primary">
