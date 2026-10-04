@@ -343,13 +343,13 @@ const DATA_ALERTS = [
     field: "overdueReleaseOrders",
     label: "Đơn đã hoàn tất nhưng tiền chưa được chuyển",
     severity: "warning",
-    description: "Đã hết thời gian khiếu nại, không còn tranh chấp nhưng tiền vẫn đang tạm giữ.",
+    description: "Đã hết thời gian khiếu nại, không còn tranh chấp nhưng tiền vẫn nằm trong Order_Escrow.",
   },
   {
     field: "completedOrdersMissingReleaseDeadline",
     label: "Đơn hoàn tất chưa có mốc chuyển tiền",
     severity: "warning",
-    description: "Tiền vẫn đang tạm giữ nhưng đơn chưa có thời điểm kết thúc khiếu nại.",
+    description: "Tiền vẫn nằm trong Order_Escrow nhưng đơn chưa có thời điểm kết thúc khiếu nại.",
   },
   {
     field: "negativeWalletCount",
@@ -372,9 +372,9 @@ const hasAlert = (metric, countOnly) =>
 const INTEGRITY_CHECKS = [
   { field: "walletBalanceMismatchCount", label: "Ví lệch giữa số dư và sổ cái" },
   { field: "completedTransactionWithoutLedgerCount", label: "Giao dịch hoàn tất thiếu bút toán sổ cái" },
-  { field: "completedOrderPaymentWithoutEscrowPostingCount", label: "Thanh toán đơn hoàn tất chưa ghi vào ví tạm giữ" },
-  { field: "legacyOrderHoldCount", label: "Khoản tạm giữ theo cách cũ còn tồn" },
-  { field: "negativeOrderEscrowPositionCount", label: "Đơn có số dư tạm giữ âm" },
+  { field: "completedOrderPaymentWithoutEscrowPostingCount", label: "Thanh toán đơn hoàn tất chưa ghi vào Order_Escrow" },
+  { field: "legacyOrderHoldCount", label: "Tiền đơn hàng còn nằm trong ví người dùng theo cách cũ" },
+  { field: "negativeOrderEscrowPositionCount", label: "Đơn có số tiền đang giữ bị âm" },
   { field: "duplicatePayoutOrderCount", label: "Đơn bị chuyển tiền cho người bán nhiều lần" },
   { field: "overRefundedOrderCount", label: "Đơn bị hoàn tiền vượt số đã thanh toán" },
   { field: "payOsSuccessAccountingAnomalyCount", label: "Thanh toán PayOS thành công chưa được ghi nhận nội bộ" },
@@ -399,7 +399,7 @@ function IntegrityStatus({ integrity }) {
         <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
           verified
         </span>
-        Sổ sách khớp: số dư ví, sổ cái và ví tạm giữ đơn hàng đều cân bằng.
+        Sổ sách khớp: số dư ví, sổ cái và ví giữ tiền đơn hàng (Order_Escrow) đều cân bằng.
       </div>
     );
   }
@@ -416,7 +416,7 @@ function IntegrityStatus({ integrity }) {
       <ul className="mt-2 space-y-1 text-sm text-text">
         {escrowUnbalanced && (
           <li>
-            Ví tạm giữ đơn hàng{" "}
+            Ví giữ tiền đơn hàng (Order_Escrow){" "}
             {integrity.orderEscrowWalletExists === false
               ? "chưa được tạo"
               : `lệch ${formatMoney(escrowDifference)} so với sổ cái`}
@@ -947,12 +947,12 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền của người dùng đang tạm giữ"
+              label="Tiền tạm giữ trong ví người dùng"
               value={formatMoney(
                 position
                   ?.userFundsHeld,
               )}
-              hint="Tổng số dư tạm giữ trong ví Cá nhân và Doanh nghiệp, gồm mọi lý do tạm giữ (đơn hàng, chờ rút...)."
+              hint="Tiền bị khóa trong ví Cá nhân và Doanh nghiệp, ví dụ đang chờ rút. Tiền của đơn hàng không nằm ở đây."
               loading={
                 mainLoading
               }
@@ -960,12 +960,12 @@ export default function AdminFinanceDashboardPage() {
             />
 
             <MetricCard
-              label="Tiền tạm giữ gắn với đơn hàng"
+              label="Tiền đơn hàng HomeCycle đang giữ"
               value={formatMoney(
                 position
                   ?.orderEscrowHeld,
               )}
-              hint="Phần tiền tạm giữ được xác định từ các giao dịch ví có tham chiếu đến đơn hàng; là một phần trong tổng tiền đang tạm giữ, không phải khoản riêng."
+              hint="Số dư ví Order_Escrow: tiền thanh toán của các đơn mà nền tảng đang giữ hộ, chưa hoàn cho người mua hay chuyển cho người bán. Không thuộc ví người dùng."
               loading={
                 mainLoading
               }
@@ -977,17 +977,7 @@ export default function AdminFinanceDashboardPage() {
                 position
                   ?.systemWalletBalance,
               )}
-              hint={
-                mainLoading
-                  ? ""
-                  : `Bao gồm số dư khả dụng ${formatMoney(
-                      position
-                        ?.systemWalletAvailableBalance,
-                    )} và tạm giữ ${formatMoney(
-                      position
-                        ?.systemWalletHoldBalance,
-                    )} của các ví do HomeCycle quản lý.`
-              }
+              hint="Tổng số dư các ví do HomeCycle quản lý: quỹ phí vận chuyển GHN, doanh thu nền tảng và ví giữ tiền đơn hàng (Order_Escrow)."
               loading={
                 mainLoading
               }
@@ -1420,7 +1410,7 @@ export default function AdminFinanceDashboardPage() {
                     "PayoutRelease",
                   ),
                 )}
-                hint="Tiền chuyển từ ví tạm giữ sang ví người bán bên trong HomeCycle trong kỳ; không phải tiền ra khỏi nền tảng."
+                hint="Tiền chuyển từ ví giữ tiền đơn hàng (Order_Escrow) sang ví người bán trong kỳ; không phải tiền ra khỏi nền tảng."
                 loading={
                   mainLoading
                 }
@@ -1497,9 +1487,17 @@ export default function AdminFinanceDashboardPage() {
             }
           />
         ) : (
-          <div className="space-y-4">
-            <IntegrityStatus integrity={health?.integrity} />
+          <div className="space-y-5">
+            <div>
+              <h4 className="mb-2 text-sm font-black text-text">Toàn vẹn sổ sách</h4>
+              {health?.integrity ? (
+                <IntegrityStatus integrity={health.integrity} />
+              ) : (
+                <p className="text-sm text-textLight">Chưa có dữ liệu kiểm tra sổ sách.</p>
+              )}
+            </div>
 
+            <h4 className="text-sm font-black text-text">Vận hành</h4>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               <HealthCard
                 label="Yêu cầu rút tiền đang chờ"
@@ -1516,7 +1514,7 @@ export default function AdminFinanceDashboardPage() {
               />
 
               <HealthCard
-                label="Tiền đang tạm giữ do tranh chấp"
+                label="Tiền đơn hàng đang giữ do tranh chấp"
                 metric={health?.activeDisputeHeldFunds}
                 severity="info"
                 description="Tiền của đơn đang có tranh chấp chưa giải quyết."

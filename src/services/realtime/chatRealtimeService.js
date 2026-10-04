@@ -49,6 +49,8 @@ export const CHAT_HUB_EVENTS = Object.freeze([
   "CartUpdated",
   // Group Order
   "OrderTrackingUpdated",
+  // Tài chính: Backend tự gửi tới user liên quan và nhóm Moderator/Admin theo role.
+  "FinanceUpdated",
 ]);
 
 /*

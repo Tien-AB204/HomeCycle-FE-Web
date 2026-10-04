@@ -96,6 +96,75 @@ export const PAYMENT_METHOD_LABELS = Object.freeze({
   Unknown: "Chưa xác định",
 });
 
+export const PAYMENT_STATUS_LABELS = Object.freeze({
+  0: "Chờ thanh toán",
+  1: "Đã thanh toán",
+  2: "Thất bại",
+  3: "Đã hoàn tiền",
+  4: "Hoàn tiền một phần",
+  5: "Đã hết hạn",
+  6: "Đã hủy",
+  Pending: "Chờ thanh toán",
+  Completed: "Đã thanh toán",
+  Failed: "Thất bại",
+  Refunded: "Đã hoàn tiền",
+  PartiallyRefunded: "Hoàn tiền một phần",
+  Expired: "Đã hết hạn",
+  Cancelled: "Đã hủy",
+});
+
+export const PAYMENT_TYPE_LABELS = Object.freeze({
+  1: "Đặt cọc",
+  2: "Thanh toán toàn bộ",
+  3: "Gói đăng ký",
+  Deposit: "Đặt cọc",
+  Full_Payment: "Thanh toán toàn bộ",
+  Subscription: "Gói đăng ký",
+});
+
+export const PAYMENT_TRANSACTION_STATUS_LABELS = Object.freeze({
+  0: "Đang chờ",
+  1: "Thành công",
+  2: "Đã hủy",
+  3: "Thất bại",
+  4: "Đã hết hạn",
+  Pending: "Đang chờ",
+  Success: "Thành công",
+  Cancelled: "Đã hủy",
+  Failed: "Thất bại",
+  Expired: "Đã hết hạn",
+});
+
+export const ORDER_STATUS_LABELS = Object.freeze({
+  0: "Chờ xử lý",
+  1: "Đang xử lý",
+  2: "Hoàn tất",
+  3: "Đã hủy",
+  4: "Đang tranh chấp",
+  5: "Đã hoàn trả",
+  Pending: "Chờ xử lý",
+  Processing: "Đang xử lý",
+  Completed: "Hoàn tất",
+  Cancelled: "Đã hủy",
+  Disputing: "Đang tranh chấp",
+  Returned: "Đã hoàn trả",
+});
+
+export const FINANCE_STATUS_TONES = Object.freeze({
+  success: "border-success/30 bg-success/10 text-success",
+  warning: "border-warning/30 bg-warning/10 text-warning",
+  error: "border-error/30 bg-error/10 text-error",
+  neutral: "border-border bg-background text-textLight",
+});
+
+export const getPaymentStatusTone = (status) => {
+  const key = String(status ?? "").toLowerCase();
+  if (key === "1" || key === "completed") return FINANCE_STATUS_TONES.success;
+  if (key === "0" || key === "pending") return FINANCE_STATUS_TONES.warning;
+  if (["2", "5", "6", "failed", "expired", "cancelled"].includes(key)) return FINANCE_STATUS_TONES.error;
+  return FINANCE_STATUS_TONES.neutral;
+};
+
 export const LEDGER_DIRECTION_LABELS = Object.freeze({
   0: "Vào",
   1: "Ra",
@@ -173,3 +242,15 @@ export const TRANSACTION_STATUS_OPTIONS = Object.freeze(
     .filter(([value]) => Number.isNaN(Number(value)))
     .map(([value, label]) => ({ value, label })),
 );
+
+const toOptions = (labels) =>
+  Object.freeze(
+    Object.entries(labels)
+      .filter(([value]) => Number.isNaN(Number(value)))
+      .map(([value, label]) => ({ value, label })),
+  );
+
+export const PAYMENT_STATUS_OPTIONS = toOptions(PAYMENT_STATUS_LABELS);
+export const PAYMENT_TYPE_OPTIONS = toOptions(PAYMENT_TYPE_LABELS);
+export const PAYMENT_METHOD_OPTIONS = toOptions(PAYMENT_METHOD_LABELS);
+export const ORDER_STATUS_OPTIONS = toOptions(ORDER_STATUS_LABELS);

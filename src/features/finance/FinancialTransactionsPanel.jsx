@@ -1,5 +1,6 @@
 import { Alert, Empty, Select, Table, Tag } from "antd";
 import { useEffect, useMemo, useState } from "react";
+import useFinanceUpdates, { hasItems } from "../../hooks/useFinanceUpdates";
 import financeOperationsApi from "../../services/apis/financeOperationsApi";
 import FinancialPartyDisplay from "./FinancialPartyDisplay";
 import FinancialTransactionDrawer from "./FinancialTransactionDrawer";
@@ -35,7 +36,11 @@ const toIsoBoundary = (value, endOfDay = false) => {
 const isCanceled = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 
-export default function FinancialTransactionsPanel({ admin = false }) {
+export default function FinancialTransactionsPanel({
+  admin = false,
+  paymentId,
+  compact = false,
+}) {
   const [filters, setFilters] = useState({
     transactionType: "",
     referenceType: "",
@@ -48,6 +53,13 @@ export default function FinancialTransactionsPanel({ admin = false }) {
   const [sortOption, setSortOption] = useState("newest");
   const [monthFilter, setMonthFilter] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  const [refreshVersion, setRefreshVersion] = useState(0);
+
+  useFinanceUpdates((payload) => {
+    if (payload.reconnected || hasItems(payload.financeTransactions)) {
+      setRefreshVersion((current) => current + 1);
+    }
+  });
   const [state, setState] = useState({
     loading: true,
     items: [],
@@ -63,6 +75,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
     financeOperationsApi
       .getTransactions({
         ...filters,
+        paymentId,
         fromDate: toIsoBoundary(filters.fromDate),
         toDate: toIsoBoundary(filters.toDate, true),
         pageNumber,
@@ -87,7 +100,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
         });
       });
     return () => controller.abort();
-  }, [filters, pageNumber, pageSize]);
+  }, [filters, pageNumber, pageSize, paymentId, refreshVersion]);
 
   const sortedItems = useMemo(
     () =>
@@ -120,7 +133,12 @@ export default function FinancialTransactionsPanel({ admin = false }) {
       {
         title: "Từ",
         dataIndex: "from",
-        render: (party) => <FinancialPartyDisplay party={party} />,
+        render: (party, item) => (
+          <FinancialPartyDisplay
+            party={party}
+            externalSource={item.fromWalletId ? undefined : item.paymentMethod}
+          />
+        ),
       },
       {
         title: "Đến",
@@ -189,13 +207,16 @@ export default function FinancialTransactionsPanel({ admin = false }) {
 
   return (
     <div className="space-y-4">
+      {!compact && (
       <div>
         <h2 className="text-lg font-black text-text">Lịch sử giao dịch</h2>
         <p className="mt-1 text-sm text-textLight">
           Mỗi dòng là một giao dịch ví hoặc thanh toán được HomeCycle ghi nhận. Bấm vào tham chiếu để xem chi tiết và các thay đổi số dư liên quan.
         </p>
       </div>
+      )}
 
+      {!compact && (
       <div
         className={
           "grid gap-3 md:grid-cols-3 " +
@@ -224,6 +245,7 @@ export default function FinancialTransactionsPanel({ admin = false }) {
           </>
         )}
       </div>
+      )}
 
       {state.error && <Alert type="error" showIcon message={state.error} />}
       <Table

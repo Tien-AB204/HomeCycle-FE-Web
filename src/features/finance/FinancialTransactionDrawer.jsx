@@ -92,7 +92,7 @@ export default function FinancialTransactionDrawer({ transactionId, onClose }) {
           <section className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-background/60 p-4">
               <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-primary">Từ</h3>
-              <FinancialPartyDisplay party={detail.from} detailed />
+              <FinancialPartyDisplay party={detail.from} detailed externalSource={detail.fromWalletId ? undefined : detail.paymentMethod} />
             </div>
             <div className="rounded-xl border border-border bg-background/60 p-4">
               <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-primary">Đến</h3>

@@ -27,6 +27,8 @@ import { getDeliveryMethodLabel } from "../../constants/agreements";
 import { getAppointmentStatusMeta } from "../../constants/appointments";
 import moderatorOrderApi from "../../services/apis/moderatorOrderApi";
 import FinancialTransactionsPanel from "../../features/finance/FinancialTransactionsPanel";
+import OrderEscrowsPanel from "../../features/finance/OrderEscrowsPanel";
+import PaymentManagementPanel from "../../features/finance/PaymentManagementPanel";
 import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import {
@@ -1241,12 +1243,15 @@ export const OrderManagementContent = ({
 
 const TransactionOrderManagementPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") === "finance" ? "finance" : "orders";
+  const requestedTab = searchParams.get("tab");
+  const activeTab = ["finance", "payments", "escrows"].includes(requestedTab)
+    ? requestedTab
+    : "orders";
 
   const changeTab = (tab) => {
     const next = new URLSearchParams(searchParams);
-    if (tab === "finance") next.set("tab", "finance");
-    else next.delete("tab");
+    if (tab === "orders") next.delete("tab");
+    else next.set("tab", tab);
     setSearchParams(next);
   };
 
@@ -1261,7 +1266,9 @@ const TransactionOrderManagementPage = () => {
       <div className="mt-6 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-5">
         <Tabs activeKey={activeTab} onChange={changeTab} items={[
           { key: "orders", label: "Đơn hàng", children: activeTab === "orders" ? <OrderManagementContent /> : null },
+          { key: "payments", label: "Thanh toán", children: activeTab === "payments" ? <PaymentManagementPanel /> : null },
           { key: "finance", label: "Giao dịch tài chính", children: activeTab === "finance" ? <FinancialTransactionsPanel /> : null },
+          { key: "escrows", label: "Tiền đơn hàng đang giữ", children: activeTab === "escrows" ? <OrderEscrowsPanel /> : null },
         ]} />
       </div>
     </section>

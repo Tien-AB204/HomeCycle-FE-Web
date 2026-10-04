@@ -3,6 +3,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import FinancialPartyDisplay from "../../features/finance/FinancialPartyDisplay";
 import FinancialTransactionsPanel from "../../features/finance/FinancialTransactionsPanel";
+import OrderEscrowsPanel from "../../features/finance/OrderEscrowsPanel";
+import PaymentManagementPanel from "../../features/finance/PaymentManagementPanel";
+import useFinanceUpdates, { hasItems } from "../../hooks/useFinanceUpdates";
 import {
   formatFinanceCurrency,
   getFinanceLabel,
@@ -13,7 +16,7 @@ import {
 } from "../../features/finance/financePresentation";
 import financeOperationsApi from "../../services/apis/financeOperationsApi";
 
-const VALID_TABS = new Set(["funds", "holds", "transactions"]);
+const VALID_TABS = new Set(["funds", "payments", "transactions", "escrows", "holds"]);
 const isCanceled = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 
@@ -28,6 +31,12 @@ const SummaryCard = ({ label, value, description }) => (
 function FundsPanel() {
   const [version, setVersion] = useState(0);
   const [state, setState] = useState({ loading: true, data: null, error: "" });
+
+  useFinanceUpdates((payload) => {
+    if (payload.reconnected || hasItems(payload.wallets)) {
+      setVersion((current) => current + 1);
+    }
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -154,7 +163,7 @@ function HoldsPanel() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <div><h2 className="text-lg font-black text-text">Các khoản tiền đang tạm giữ</h2><p className="mt-1 text-sm text-textLight">Phần tiền trong ví tạm thời chưa thể sử dụng vì quy trình liên quan (đơn hàng, yêu cầu rút tiền...) chưa hoàn tất. Chỉ hiển thị các khoản còn số dư tạm giữ lớn hơn 0; tiền đang tạm giữ không mặc nhiên là bất thường.</p></div>
+        <div><h2 className="text-lg font-black text-text">Các khoản tiền đang tạm giữ trong ví người dùng</h2><p className="mt-1 text-sm text-textLight">Tiền trong ví người dùng tạm thời chưa dùng được, ví dụ đang chờ rút. Tiền của đơn hàng không nằm ở đây mà ở tab "Tiền đơn hàng đang giữ".</p></div>
         <Button onClick={load}>Làm mới</Button>
       </div>
       {state.error && <Alert type="error" showIcon message={state.error} />}
@@ -179,13 +188,15 @@ export default function FinanceOperationsPage() {
       <header className="rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)]">
         <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">TÀI CHÍNH</p>
         <h1 className="mt-2 text-2xl font-black sm:text-3xl">Ví & giao dịch</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">Theo dõi số dư ví, tiền đang tạm giữ và lịch sử giao dịch của HomeCycle.</p>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">Theo dõi số dư ví, thanh toán, giao dịch và tiền đơn hàng HomeCycle đang giữ.</p>
       </header>
       <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
         <Tabs activeKey={activeTab} onChange={changeTab} items={[
           { key: "funds", label: "Số dư & ví hệ thống", children: activeTab === "funds" ? <FundsPanel /> : null },
-          { key: "holds", label: "Tiền đang tạm giữ", children: activeTab === "holds" ? <HoldsPanel /> : null },
+          { key: "payments", label: "Thanh toán", children: activeTab === "payments" ? <PaymentManagementPanel /> : null },
           { key: "transactions", label: "Lịch sử giao dịch", children: activeTab === "transactions" ? <FinancialTransactionsPanel admin /> : null },
+          { key: "escrows", label: "Tiền đơn hàng đang giữ", children: activeTab === "escrows" ? <OrderEscrowsPanel /> : null },
+          { key: "holds", label: "Tạm giữ trong ví người dùng", children: activeTab === "holds" ? <HoldsPanel /> : null },
         ]} />
       </div>
     </section>
