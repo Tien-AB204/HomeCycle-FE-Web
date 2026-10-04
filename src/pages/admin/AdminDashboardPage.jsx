@@ -354,7 +354,7 @@ export default function AdminDashboardPage() {
           role="status"
           className="rounded-2xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-semibold text-text"
         >
-          {formatNumber(missingAmountCount)} đơn hoàn tất trong kỳ chưa có tổng tiền nên chưa được tính vào GMV.
+          {formatNumber(missingAmountCount)} đơn hoàn tất trong kỳ chưa có tổng tiền nên chưa được tính vào giá trị giao dịch.
         </div>
       )}
 
@@ -384,11 +384,11 @@ export default function AdminDashboardPage() {
             loading={loading}
           />
           <KpiCard
-            label="GMV"
+            label="Giá trị giao dịch"
             metric={kpis?.completedGmv}
             formatter={formatMoney}
             loading={loading}
-            tip="Tổng giá trị đơn hoàn tất trong kỳ, gồm phí vận chuyển."
+            tip="Tổng giá trị các đơn hoàn tất trong kỳ (GMV), gồm phí vận chuyển; không phải doanh thu của HomeCycle."
           />
           <KpiCard
             label="Doanh thu nền tảng"
@@ -490,11 +490,11 @@ export default function AdminDashboardPage() {
             />
 
             <DashboardLineChart
-              title="GMV và doanh thu theo kỳ"
-              description="GMV của đơn hoàn tất và doanh thu phí gói đăng ký."
+              title="Giá trị giao dịch và doanh thu theo kỳ"
+              description="Giá trị đơn hoàn tất và doanh thu phí gói đăng ký."
               rows={moneySeries}
               series={[
-                { key: "gmv", label: "GMV", className: "text-primary" },
+                { key: "gmv", label: "Giá trị giao dịch", className: "text-primary" },
                 { key: "revenue", label: "Doanh thu", className: "text-success" },
               ]}
               valueFormatter={formatMoney}
@@ -516,10 +516,10 @@ export default function AdminDashboardPage() {
 
             <section className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-6">
               <h3 className="text-lg font-black text-text">
-                Danh mục dẫn đầu theo GMV
+                Danh mục có giá trị giao dịch cao nhất
               </h3>
               <p className="mt-1 text-sm text-textLight">
-                Tối đa 5 danh mục có GMV cao nhất trong kỳ.
+                Tối đa 5 danh mục, tính theo giá trị đơn hoàn tất trong kỳ.
               </p>
 
               {topCategories.length === 0 ? (
