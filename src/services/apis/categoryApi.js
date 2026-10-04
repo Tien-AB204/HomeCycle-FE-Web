@@ -52,6 +52,28 @@ export const categoryApi = {
     return normalizePagination(data, pageNumber, pageSize);
   },
 
+  /*
+   * Danh mục đang hoạt động cho bộ lọc phía người dùng (API công khai).
+   */
+  getActive: async ({ signal } = {}) => {
+    const response = await axiosClient.get("/categories/active", {
+      params: {
+        PageNumber: 1,
+        PageSize: 100,
+      },
+      signal,
+    });
+
+    const data = ensureSuccessfulResponse(
+      response,
+      "Không thể tải danh sách danh mục.",
+    );
+
+    return normalizePagination(data, 1, 100).items.filter(
+      (category) => category?.categoryId && category.isActive !== false,
+    );
+  },
+
   search: async ({
     keyword = "",
     isActive,

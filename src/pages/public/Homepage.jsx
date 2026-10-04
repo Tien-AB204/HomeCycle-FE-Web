@@ -7,6 +7,10 @@ import {
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import ProductCard from "../../components/shared/ProductCard";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
+import {
+  CATEGORY_BACKEND_IDS,
+  MAIN_CATEGORIES,
+} from "../../constants/filterOptions";
 import { normalizePostType } from "../../constants/marketplace";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
@@ -34,18 +38,21 @@ const PERSONAL_POST_LIMIT = 4;
 const CATEGORIES = [
   {
     name: "Điện máy",
+    categoryId: CATEGORY_BACKEND_IDS[MAIN_CATEGORIES.ELECTRONIC],
     description: "Thiết bị nhà bếp và điện gia dụng",
     icon: ThunderboltOutlined,
     className: "border border-border bg-white text-success",
   },
   {
     name: "Nội thất",
+    categoryId: CATEGORY_BACKEND_IDS[MAIN_CATEGORIES.APPLIANCE],
     description: "Bàn ghế, giường tủ cho mọi không gian",
     icon: AppstoreOutlined,
     className: "border border-border bg-white text-warning",
   },
   {
     name: "Đồ sinh hoạt",
+    categoryId: CATEGORY_BACKEND_IDS[MAIN_CATEGORIES.HOUSEHOLD],
     description: "Đồ dùng tiện ích cho gia đình",
     icon: HomeOutlined,
     className: "border border-border bg-white text-primary",
@@ -407,7 +414,7 @@ const Homepage = () => {
               return (
                 <Link
                   key={category.name}
-                  to={`/search?keyword=${encodeURIComponent(category.name)}&showFilter=1`}
+                  to={`/search?categoryId=${encodeURIComponent(category.categoryId)}&showFilter=1`}
                   className={`group flex items-center gap-4 rounded-lg p-4 transition hover:border-primary ${category.className}`}
                 >
                   <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/75 text-3xl shadow-sm transition group-hover:scale-105" aria-hidden="true">
