@@ -35,9 +35,8 @@ import RoleRoute from "./RoleRoute";
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
 import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
-import AdminAppointmentHistoryPage from "../pages/admin/AdminAppointmentHistoryPage";
 import AdminDisputeHistoryPage from "../pages/admin/AdminDisputeHistoryPage";
-import AdminOrderHistoryPage from "../pages/admin/AdminOrderHistoryPage";
+import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
 import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
 import AdminReportedPostPage from "../pages/admin/AdminReportedPostPage";
 import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
@@ -316,12 +315,12 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/orders/history"
-            element={<AdminOrderHistoryPage />}
+            element={<Navigate to="/admin/dashboard/orders?tab=history" replace />}
           />
 
           <Route
             path="dashboard/appointments/history"
-            element={<AdminAppointmentHistoryPage />}
+            element={<Navigate to="/admin/dashboard/orders?tab=history&kind=appointments" replace />}
           />
 
           <Route
@@ -338,16 +337,12 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/orders"
-            element={
-              <AdminDashboardModulePage dashboard="orders" />
-            }
+            element={<AdminOrdersAppointmentsPage />}
           />
 
           <Route
             path="dashboard/appointments"
-            element={
-              <AdminDashboardModulePage dashboard="appointments" />
-            }
+            element={<Navigate to="/admin/dashboard/orders" replace />}
           />
 
           <Route

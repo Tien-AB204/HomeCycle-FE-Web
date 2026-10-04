@@ -20,20 +20,17 @@ const ADMIN_NAV_GROUPS = [
         icon: "payments",
       },
       {
-        label: "Đơn hàng",
+        label: "Đơn hàng & lịch hẹn",
         path: "/admin/dashboard/orders",
+        matchPaths: ["/admin/dashboard/appointments"],
         icon: "inventory_2",
-      },
-      {
-        label: "Lịch hẹn",
-        path: "/admin/dashboard/appointments",
-        icon: "event",
       },
       {
         label: "Tranh chấp",
         path: "/admin/dashboard/disputes",
         matchPaths: ["/admin/dispute-categories"],
         icon: "gavel",
+        child: true,
       },
       {
         label: "Người dùng",

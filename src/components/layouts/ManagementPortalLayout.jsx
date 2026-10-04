@@ -211,7 +211,9 @@ export default function ManagementPortalLayout({
                         "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition",
                         desktopSidebarCollapsed
                           ? "lg:justify-center lg:px-2"
-                          : "",
+                          : item.child
+                            ? "ml-6 py-2 text-[13px]"
+                            : "",
                         active
                           ? "bg-white text-primary shadow-[0_8px_22px_rgba(23,40,48,0.12)]"
                           : "text-white/70 hover:bg-white/10 hover:text-white",
@@ -219,7 +221,7 @@ export default function ManagementPortalLayout({
                     }
                   >
                     <span
-                      className="material-symbols-outlined shrink-0 text-[21px]"
+                      className={`material-symbols-outlined shrink-0 ${item.child && !desktopSidebarCollapsed ? "text-[18px]" : "text-[21px]"}`}
                       aria-hidden="true"
                     >
                       {item.icon}
