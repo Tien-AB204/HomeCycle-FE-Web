@@ -370,6 +370,34 @@ const adminDashboardApi = {
       skipGlobalErrorPage: true,
     }),
 
+  // Giám sát bài đăng: response trả trực tiếp, không có lớp data bao ngoài.
+  getListingMonitorOverview: async (filters = {}, { signal } = {}) =>
+    axiosClient.get("/admin/dashboard/listings/overview", {
+      params: cleanParams(filters),
+      signal,
+      skipGlobalErrorPage: true,
+    }),
+
+  getListingMonitorItems: async (params = {}, { signal } = {}) =>
+    axiosClient.get("/admin/dashboard/listings/items", {
+      params: cleanParams(params),
+      signal,
+      skipGlobalErrorPage: true,
+    }),
+
+  getListingMonitorDetail: async (postId, { signal } = {}) => {
+    const id = String(postId || "").trim();
+
+    if (!id) {
+      throw new Error("Không tìm thấy mã bài đăng.");
+    }
+
+    return axiosClient.get(
+      `/admin/dashboard/listings/items/${encodeURIComponent(id)}`,
+      { signal, skipGlobalErrorPage: true },
+    );
+  },
+
   getUserActivity: async ({ signal } = {}) =>
     axiosClient.get("/admin/dashboard/users/activity", {
       signal,

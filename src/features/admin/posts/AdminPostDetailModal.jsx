@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
+import adminDashboardApi from "../../../services/apis/adminDashboardApi";
 import adminPostApi from "../../../services/apis/adminPostApi";
 import EvidenceImage from "../../../components/shared/EvidenceImage";
 import { getSafeProblemDetail } from "../../../utils/safeErrorMessage";
+import {
+  OWNER_ROLE_LABELS,
+  USER_STATUS_LABELS,
+  VERIFICATION_STATUS_LABELS,
+  formatListingDateTime,
+  formatListingPrice,
+  getLabel,
+} from "./listingMonitorPresentation";
 
 const STATUS_META = {
   draft: {
@@ -166,6 +175,113 @@ const getAttributeValue = (attribute) => {
     : String(value);
 };
 
+const formatCount = (value) =>
+  value === null || value === undefined
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(value);
+
+/*
+ * Người đăng và báo cáo lấy từ API giám sát của Admin; vẫn hiển thị khi API
+ * chi tiết công khai lỗi (ví dụ bài đã xóa). owner có thể null.
+ */
+function OwnerReportSection({ state }) {
+  if (state.loading) {
+    return (
+      <section className="rounded-xl border border-border p-5 text-sm font-semibold text-textLight">
+        Đang tải thông tin người đăng và báo cáo...
+      </section>
+    );
+  }
+
+  if (state.error || !state.data) {
+    return (
+      <section className="rounded-xl border border-border p-5 text-sm text-textLight">
+        Chưa tải được thông tin người đăng và báo cáo.
+      </section>
+    );
+  }
+
+  const listing = state.data.listing || {};
+  const owner = state.data.owner;
+
+  return (
+    <section className="rounded-xl border border-border p-5">
+      <h3 className="font-bold text-text">Người đăng & báo cáo</h3>
+      <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-4 rounded-xl bg-background p-4 sm:grid-cols-4">
+        <DetailRow
+          label="Báo cáo chưa xử lý"
+          value={formatCount(listing.openReportCount)}
+          emphasize
+        />
+        <DetailRow
+          label="Tổng báo cáo"
+          value={formatCount(listing.totalReportCount)}
+        />
+        <DetailRow
+          label="Còn lại"
+          value={formatCount(listing.remainingQuantity)}
+        />
+        <DetailRow
+          label="Hết hạn"
+          value={
+            listing.isExpired
+              ? `Đã hết hạn (${formatListingDateTime(listing.expiryDate)})`
+              : formatListingDateTime(listing.expiryDate)
+          }
+        />
+      </dl>
+
+      {!owner ? (
+        <p className="mt-4 text-sm text-textLight">
+          Không tìm thấy thông tin người đăng.
+        </p>
+      ) : (
+        <dl className="mt-4 grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          <DetailRow
+            label="Người đăng"
+            value={owner.profileName || owner.username || "—"}
+            emphasize
+          />
+          <DetailRow label="Tên đăng nhập" value={owner.username || "—"} />
+          <DetailRow
+            label="Email"
+            value={
+              owner.email
+                ? `${owner.email}${owner.isEmailVerified ? " (đã xác minh)" : " (chưa xác minh)"}`
+                : "—"
+            }
+          />
+          <DetailRow label="Số điện thoại" value={owner.phoneNumber || "—"} />
+          <DetailRow
+            label="Vai trò"
+            value={getLabel(OWNER_ROLE_LABELS, owner.role, "—")}
+          />
+          <DetailRow
+            label="Trạng thái tài khoản"
+            value={getLabel(USER_STATUS_LABELS, owner.status, "—")}
+          />
+          <DetailRow
+            label="Hồ sơ doanh nghiệp"
+            value={getLabel(VERIFICATION_STATUS_LABELS, owner.businessProfileStatus)}
+          />
+          <DetailRow
+            label="Xác minh cá nhân"
+            value={getLabel(VERIFICATION_STATUS_LABELS, owner.personalVerificationStatus)}
+          />
+          <DetailRow
+            label="Xác minh lúc"
+            value={formatListingDateTime(owner.verifiedAt)}
+          />
+          <DetailRow
+            label="Điểm uy tín"
+            value={formatCount(owner.reputationScore)}
+          />
+        </dl>
+      )}
+    </section>
+  );
+}
+
 const DetailRow = ({ label, value, emphasize = false }) => (
   <div className="min-w-0">
     <dt className="text-xs font-semibold uppercase tracking-wide text-textLight">
@@ -192,6 +308,11 @@ export default function AdminPostDetailModal({
     error: "",
   });
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [monitorState, setMonitorState] = useState({
+    postId: "",
+    data: null,
+    error: false,
+  });
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -236,7 +357,31 @@ export default function AdminPostDetailModal({
     };
   }, [postId]);
 
+  useEffect(() => {
+    if (!postId) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    adminDashboardApi
+      .getListingMonitorDetail(postId, { signal: controller.signal })
+      .then((data) => setMonitorState({ postId, data, error: false }))
+      .catch((error) => {
+        if (isCanceledRequest(error)) return;
+        setMonitorState({ postId, data: null, error: true });
+      });
+
+    return () => controller.abort();
+  }, [postId]);
+
   const isLoading = detailState.postId !== postId;
+  const ownerReportState = {
+    loading: monitorState.postId !== postId,
+    data: monitorState.data,
+    error: monitorState.error,
+  };
+  const monitorListing = monitorState.data?.listing;
   const post = detailState.post;
   const statusMeta = getStatusMeta(post?.status || postSummary?.status);
   const medias = Array.isArray(post?.medias) ? post.medias : [];
@@ -401,10 +546,16 @@ export default function AdminPostDetailModal({
 
                   <div>
                     <p className="text-sm font-semibold text-textLight">
-                      {isBuyPost ? "Giá thu mua dự kiến" : "Giá"}
+                      {isBuyPost ? "Khoảng giá thu mua" : "Giá"}
                     </p>
                     <p className="mt-1 text-3xl font-black text-text">
-                      {formatCurrency(post.basePrice)}
+                      {isBuyPost || isSellPost
+                        ? formatListingPrice({
+                            ...post,
+                            ...monitorListing,
+                            postType: isBuyPost ? "Buy" : "Sell",
+                          })
+                        : formatCurrency(post.basePrice)}
                     </p>
                   </div>
 
@@ -543,6 +694,12 @@ export default function AdminPostDetailModal({
                   </dl>
                 </section>
               )}
+            </div>
+          )}
+
+          {!isLoading && (
+            <div className={post && !detailState.error ? "mt-6" : "mt-4"}>
+              <OwnerReportSection state={ownerReportState} />
             </div>
           )}
         </div>

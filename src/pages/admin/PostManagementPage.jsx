@@ -1,284 +1,148 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AdminSectionTabs from "../../components/admin/AdminSectionTabs";
 import { POST_SECTION_TABS } from "../../constants/adminSections";
 import AdminPostDetailModal from "../../features/admin/posts/AdminPostDetailModal";
-import adminPostApi from "../../services/apis/adminPostApi";
-import PostThumbnail from "../../components/shared/PostThumbnail";
+import ListingMonitorFilters from "../../features/admin/posts/ListingMonitorFilters";
+import {
+  EMPTY_LISTING_FILTERS,
+  formatListingDateTime,
+  formatListingPrice,
+  getListingStatusLabel,
+} from "../../features/admin/posts/listingMonitorPresentation";
+import adminDashboardApi from "../../services/apis/adminDashboardApi";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 10;
 
-const POST_TYPE_OPTIONS = [
-  { value: "", label: "Tất cả loại tin" },
+const LIST_TYPE_TABS = [
   { value: "Sell", label: "Tin đăng bán" },
   { value: "Buy", label: "Tin thu mua" },
 ];
 
-const STATUS_OPTIONS = [
-  { value: "", label: "Tất cả trạng thái" },
-  { value: "Draft", label: "Bản nháp" },
-  { value: "Active", label: "Đang hoạt động" },
-  { value: "Suspended", label: "Đã đình chỉ" },
-  { value: "Closed", label: "Đã đóng" },
-  { value: "Deleted", label: "Đã xóa" },
+const SORT_OPTIONS = [
+  { value: "Newest", label: "Mới nhất" },
+  { value: "MostOpenReports", label: "Nhiều báo cáo chưa xử lý" },
 ];
 
-const STATUS_META = {
-  draft: {
-    label: "Bản nháp",
-    className: "border-border bg-textLight/10 text-textLight",
-  },
-  active: {
-    label: "Đang hoạt động",
-    className: "border-success/20 bg-success/10 text-success",
-  },
-  suspended: {
-    label: "Đã đình chỉ",
-    className: "border-warning/20 bg-warning/10 text-warning",
-  },
-  closed: {
-    label: "Đã đóng",
-    className: "border-border bg-background text-textLight",
-  },
-  deleted: {
-    label: "Đã xóa",
-    className: "border-error/20 bg-error/10 text-error",
-  },
+const STATUS_CLASS = {
+  Active: "border-success/20 bg-success/10 text-success",
+  Suspended: "border-warning/20 bg-warning/10 text-warning",
+  Closed: "border-border bg-background text-textLight",
+  Deleted: "border-error/20 bg-error/10 text-error",
 };
 
-const normalizeValue = (value) =>
-  String(value || "").trim().toLowerCase();
-
-const getStatusMeta = (status) =>
-  STATUS_META[normalizeValue(status)] || {
-    label: "Chưa xác định",
-    className: "border-border bg-background text-textLight",
-  };
-
-/*
- * PostType của Backend có thể null: chỉ "Buy"/"Sell" được gán nhãn; trống
- * hiển thị "—", giá trị lạ hiển thị "Chưa xác định". Không suy ra Sell.
- */
-const POST_TYPE_META = {
-  buy: {
-    label: "Tin thu mua",
-    className: "border-success/30 bg-success/10 text-success",
-  },
-  sell: {
-    label: "Tin đăng bán",
-    className: "border-primary/30 bg-primary/10 text-primary",
-  },
-};
-
-const getPostTypeMeta = (postType) => {
-  const key = normalizeValue(postType);
-
-  if (!key) {
-    return {
-      label: "—",
-      className: "border-border bg-background text-textLight",
-    };
-  }
-
-  return (
-    POST_TYPE_META[key] || {
-      label: "Chưa xác định",
-      className: "border-border bg-background text-textLight",
-    }
-  );
-};
-
-const formatCurrency = (value) => {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
-
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount)) {
-    return "—";
-  }
-
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(amount);
-};
-
-const formatQuantity = (value) => {
-  if (value === null || value === undefined || value === "") {
-    return "—";
-  }
-
-  const quantity = Number(value);
-  return Number.isFinite(quantity)
-    ? new Intl.NumberFormat("vi-VN").format(quantity)
-    : "—";
-};
-
-const formatDate = (value) => {
-  if (!value) {
-    return "—";
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
-};
+const formatQuantity = (value) =>
+  value === null || value === undefined || value === ""
+    ? "—"
+    : new Intl.NumberFormat("vi-VN").format(value);
 
 const getErrorMessage = (error) => {
   const responseData = error?.response?.data;
 
   if (error?.response?.status === 403) {
-    return "Phiên quản trị hiện tại không có quyền thực hiện thao tác này. Vui lòng đăng nhập lại hoặc kiểm tra quyền tài khoản.";
+    return "Phiên quản trị hiện tại không có quyền xem danh sách này. Vui lòng đăng nhập lại hoặc kiểm tra quyền tài khoản.";
   }
 
   return (
     getSafeProblemDetail(responseData?.error?.message) ||
     getSafeProblemDetail(responseData?.message) ||
     getSafeProblemDetail(responseData?.title) ||
-    "Không thể thực hiện yêu cầu quản lý bài đăng."
+    "Không thể tải danh sách bài đăng."
   );
 };
 
 const isCanceledRequest = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 
-const getThumbnailUrl = (post) => {
-  const medias = Array.isArray(post?.medias) ? post.medias : [];
+function StatusBadge({ status }) {
+  return (
+    <span
+      className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${
+        STATUS_CLASS[status] || "border-border bg-background text-textLight"
+      }`}
+    >
+      {getListingStatusLabel(status)}
+    </span>
+  );
+}
 
-  return medias.find((media) => media?.url)?.url || "";
-};
-
-const matchesPageFilters = (post, filters) => {
-  const keyword = normalizeValue(filters.keyword);
-  const postType = normalizeValue(filters.postType);
-  const status = normalizeValue(filters.status);
-
-  if (postType && normalizeValue(post?.postType) !== postType) {
-    return false;
+function ReportNote({ item }) {
+  if (!item.openReportCount) {
+    return item.totalReportCount ? (
+      <p className="mt-1 text-xs text-textLight">
+        {formatQuantity(item.totalReportCount)} báo cáo đã xử lý
+      </p>
+    ) : null;
   }
 
-  if (status && normalizeValue(post?.status) !== status) {
-    return false;
-  }
+  return (
+    <p className="mt-1 text-xs font-bold text-error">
+      {formatQuantity(item.openReportCount)} báo cáo chưa xử lý
+    </p>
+  );
+}
 
-  if (!keyword) {
-    return true;
-  }
-
-  return [
-    post?.productName,
-    post?.productTypeName,
-    post?.categoryName,
-    post?.brandName,
-    post?.description,
-    post?.ownerId,
-    post?.postId,
-    post?.city,
-    post?.ward,
-  ].some((value) => normalizeValue(value).includes(keyword));
-};
-
-const Badge = ({ meta }) => (
-  <span
-    className={`inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.className}`}
-  >
-    {meta.label}
-  </span>
-);
+function ExpiryCell({ item }) {
+  return (
+    <>
+      <span>{formatListingDateTime(item.expiryDate)}</span>
+      {item.isExpired && (
+        <span className="mt-1 block text-xs font-bold text-error">Đã hết hạn</span>
+      )}
+    </>
+  );
+}
 
 export default function PostManagementPage() {
+  const [listType, setListType] = useState("Sell");
+  const [filters, setFilters] = useState({ ...EMPTY_LISTING_FILTERS });
+  const [sortBy, setSortBy] = useState("Newest");
   const [pageNumber, setPageNumber] = useState(1);
   const [requestVersion, setRequestVersion] = useState(0);
-  const requestKey = String(requestVersion);
-  const [listState, setListState] = useState({
-    requestKey: "",
-    error: "",
-    result: null,
-  });
-  const [keyword, setKeyword] = useState("");
-  const [postTypeFilter, setPostTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [listState, setListState] = useState({ loading: true, error: "", result: null });
   const [selectedPost, setSelectedPost] = useState(null);
+
+  const handleFiltersChange = useCallback((next) => {
+    setFilters(next);
+    setPageNumber(1);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    let isActive = true;
+    void Promise.resolve().then(() =>
+      setListState((current) => ({ ...current, loading: true, error: "" })),
+    );
 
-    adminPostApi
-      .getAllForManagement({ signal: controller.signal })
-      .then((result) => {
-        if (!isActive) {
-          return;
-        }
-
-        setListState({ requestKey, error: "", result });
-      })
+    adminDashboardApi
+      .getListingMonitorItems(
+        {
+          ...filters,
+          PostType: listType,
+          SortBy: sortBy,
+          PageNumber: pageNumber,
+          PageSize: PAGE_SIZE,
+        },
+        { signal: controller.signal },
+      )
+      .then((result) => setListState({ loading: false, error: "", result }))
       .catch((error) => {
-        if (!isActive || isCanceledRequest(error)) {
-          return;
-        }
-
-        setListState({
-          requestKey,
-          error: getErrorMessage(error),
-          result: null,
-        });
+        if (isCanceledRequest(error)) return;
+        setListState({ loading: false, error: getErrorMessage(error), result: null });
       });
 
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
-  }, [requestKey]);
+    return () => controller.abort();
+  }, [filters, listType, sortBy, pageNumber, requestVersion]);
 
-  const isLoading = listState.requestKey !== requestKey;
-  const posts = useMemo(
-    () =>
-      Array.isArray(listState.result?.items)
-        ? listState.result.items
-        : [],
-    [listState.result],
-  );
-  const filteredPosts = useMemo(
-    () =>
-      posts.filter((post) =>
-        matchesPageFilters(post, {
-          keyword,
-          postType: postTypeFilter,
-          status: statusFilter,
-        }),
-      ),
-    [keyword, postTypeFilter, posts, statusFilter],
-  );
-  const totalFilteredPages = Math.max(
-    1,
-    Math.ceil(filteredPosts.length / PAGE_SIZE),
-  );
-  const visiblePosts = useMemo(() => {
-    const startIndex = (pageNumber - 1) * PAGE_SIZE;
+  const items = Array.isArray(listState.result?.items) ? listState.result.items : [];
+  const totalCount = listState.result?.totalCount ?? 0;
+  const totalPages = Math.max(1, listState.result?.totalPages || 1);
+  const isBuy = listType === "Buy";
 
-    return filteredPosts.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [filteredPosts, pageNumber]);
-  const hasFilters = Boolean(
-    keyword.trim() || postTypeFilter || statusFilter,
-  );
-
-  const resetFilters = () => {
-    setKeyword("");
-    setPostTypeFilter("");
-    setStatusFilter("");
+  const changeListType = (nextType) => {
+    if (nextType === listType) return;
+    setListType(nextType);
     setPageNumber(1);
+    setSelectedPost(null);
   };
 
   return (
@@ -289,331 +153,199 @@ export default function PostManagementPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
           Quản trị nội dung
         </p>
-        <h1 className="mt-1 text-2xl font-bold text-text">
-          Quản lý bài đăng
-        </h1>
+        <h1 className="mt-1 text-2xl font-bold text-text">Quản lý bài đăng</h1>
         <p className="mt-1 text-sm text-textLight">
-          Tra cứu bài đăng bán và tin thu mua ở chế độ chỉ xem. Việc xử lý nội dung thuộc Trung tâm kiểm duyệt.
+          Theo dõi bài đăng bán và tin thu mua ở chế độ chỉ xem (không gồm bản nháp). Việc xử lý nội dung thuộc Trung tâm kiểm duyệt.
         </p>
       </header>
 
-      <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_190px_190px_auto]">
-          <label className="relative block">
-            <span className="sr-only">Lọc nhanh bài đăng trong trang</span>
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-textLight">
-              search
-            </span>
-            <input
-              type="search"
-              value={keyword}
-              onChange={(event) => {
-                setKeyword(event.target.value);
-                setPageNumber(1);
-              }}
-              placeholder="Tên sản phẩm, mã bài, mã chủ sở hữu..."
-              className="w-full rounded-lg border border-border py-2.5 pl-10 pr-3 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-            />
-          </label>
-
-          <select
-            value={postTypeFilter}
-            onChange={(event) => {
-              setPostTypeFilter(event.target.value);
-              setPageNumber(1);
-            }}
-            aria-label="Lọc theo loại bài đăng"
-            className="rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-          >
-            {POST_TYPE_OPTIONS.map((option) => (
-              <option key={option.value || "all"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={statusFilter}
-            onChange={(event) => {
-              setStatusFilter(event.target.value);
-              setPageNumber(1);
-            }}
-            aria-label="Lọc theo trạng thái bài đăng"
-            className="rounded-lg border border-border px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option.value || "all"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={resetFilters}
-            disabled={!hasFilters}
-            className="rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-textLight transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Xóa bộ lọc
-          </button>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div role="tablist" aria-label="Loại tin" className="inline-flex rounded-xl border border-border bg-white p-1 shadow-sm">
+          {LIST_TYPE_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              role="tab"
+              aria-selected={listType === tab.value}
+              onClick={() => changeListType(tab.value)}
+              className={`rounded-lg px-4 py-2 text-sm font-bold transition ${
+                listType === tab.value ? "bg-primary text-white" : "text-textLight hover:bg-background"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
+
+        <label className="flex items-center gap-2 text-sm text-textLight">
+          Sắp xếp
+          <select
+            value={sortBy}
+            onChange={(event) => {
+              setSortBy(event.target.value);
+              setPageNumber(1);
+            }}
+            className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text outline-none focus:border-primary"
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
+      <ListingMonitorFilters value={filters} onChange={handleFiltersChange} />
 
-      {isLoading && (
-        <div
-          role="status"
-          className="flex min-h-64 items-center justify-center rounded-xl border border-border bg-white text-primary shadow-sm"
-        >
-          <span className="material-symbols-outlined animate-spin text-3xl">
-            refresh
-          </span>
-          <span className="ml-3 text-sm font-semibold">
-            Đang tải toàn bộ danh sách bài đăng...
-          </span>
-        </div>
-      )}
-
-      {!isLoading && listState.error && (
-        <div
-          role="alert"
-          className="rounded-xl border border-error/20 bg-error/10 p-8 text-center"
-        >
-          <h2 className="font-bold text-error">
-            Không thể tải danh sách bài đăng
-          </h2>
+      {listState.error && (
+        <div role="alert" className="rounded-xl border border-error/20 bg-error/10 p-8 text-center">
+          <h2 className="font-bold text-error">Không thể tải danh sách bài đăng</h2>
           <p className="mt-2 text-sm text-error">{listState.error}</p>
           <button
             type="button"
-            onClick={() =>
-              setRequestVersion((currentVersion) => currentVersion + 1)
-            }
-            className="mt-4 rounded-lg bg-error px-4 py-2 text-sm font-semibold text-white transition hover:bg-error"
+            onClick={() => setRequestVersion((current) => current + 1)}
+            className="mt-4 rounded-lg bg-error px-4 py-2 text-sm font-semibold text-white"
           >
             Thử lại
           </button>
         </div>
       )}
 
-      {!isLoading && !listState.error && filteredPosts.length === 0 && (
-        <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center shadow-sm">
-          <span className="material-symbols-outlined text-5xl text-border">
-            inventory_2
-          </span>
-          <h2 className="mt-3 font-bold text-text">
-            Không tìm thấy bài đăng
-          </h2>
-          <p className="mt-1 text-sm text-textLight">
-            {hasFilters
-              ? "Không có bài đăng nào trong hệ thống phù hợp bộ lọc."
-              : "Hệ thống chưa có bài đăng nào trong trang này."}
-          </p>
-          {hasFilters && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-bold text-text hover:bg-background"
-            >
-              Xóa bộ lọc
-            </button>
-          )}
+      {listState.loading && !listState.result && !listState.error && (
+        <div role="status" className="flex min-h-64 items-center justify-center rounded-xl border border-border bg-white text-primary shadow-sm">
+          <span className="material-symbols-outlined animate-spin text-3xl">refresh</span>
+          <span className="ml-3 text-sm font-semibold">Đang tải danh sách bài đăng...</span>
         </div>
       )}
 
-      {!isLoading && !listState.error && visiblePosts.length > 0 && (
-        <>
+      {!listState.error && listState.result && items.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-white p-10 text-center shadow-sm">
+          <span className="material-symbols-outlined text-5xl text-border">inventory_2</span>
+          <h2 className="mt-3 font-bold text-text">Không tìm thấy bài đăng</h2>
+          <p className="mt-1 text-sm text-textLight">Không có bài đăng nào phù hợp bộ lọc hiện tại.</p>
+        </div>
+      )}
+
+      {!listState.error && items.length > 0 && (
+        <div className={listState.loading ? "opacity-60 transition" : "transition"}>
           <div className="hidden overflow-x-auto rounded-xl border border-border bg-white shadow-sm md:block">
             <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-sm">
               <colgroup>
-                <col className="w-[31%]" />
+                <col className="w-[30%]" />
+                <col className="w-[15%]" />
+                <col className="w-[8%]" />
+                <col className="w-[12%]" />
                 <col className="w-[12%]" />
                 <col className="w-[13%]" />
-                <col className="w-[11%]" />
-                <col className="w-[11%]" />
                 <col className="w-[10%]" />
-                <col className="w-[12%]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-border bg-background text-xs uppercase tracking-wide text-textLight">
                   <th className="px-4 py-3 font-semibold">Bài đăng</th>
-                  <th className="px-4 py-3 font-semibold">Loại tin</th>
-                  <th className="px-4 py-3 font-semibold">Giá</th>
+                  <th className="px-4 py-3 font-semibold">{isBuy ? "Khoảng giá mua" : "Giá bán"}</th>
                   <th className="px-4 py-3 font-semibold">Số lượng</th>
                   <th className="px-4 py-3 font-semibold">Trạng thái</th>
                   <th className="px-4 py-3 font-semibold">Ngày tạo</th>
-                  <th className="px-4 py-3 text-right font-semibold">
-                    Thao tác
-                  </th>
+                  <th className="px-4 py-3 font-semibold">Ngày hết hạn</th>
+                  <th className="px-4 py-3 text-right font-semibold">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {visiblePosts.map((post) => {
-                  const thumbnailUrl = getThumbnailUrl(post);
-                  const statusMeta = getStatusMeta(post.status);
-                  const postTypeMeta = getPostTypeMeta(post.postType);
-                  const isBuyPost = normalizeValue(post.postType) === "buy";
-
-                  return (
-                    <tr
-                      key={post.postId}
-                      className="transition hover:bg-background/70"
-                    >
-                      <td className="px-4 py-4">
-                        <div className="flex min-w-0 items-center gap-3">
-                          {/*
-                           * Tin thu mua (Buy) không có ảnh sản phẩm thật -
-                           * không hiển thị ảnh/placeholder/vùng dự trữ nào,
-                           * kể cả khi Backend còn trả dữ liệu media cũ.
-                           */}
-                          {!isBuyPost && (
-                            <PostThumbnail
-                              src={thumbnailUrl}
-                              className="h-14 w-16 shrink-0 rounded-lg"
-                            />
-                          )}
-                          <div className="min-w-0">
-                            <p className="line-clamp-2 font-bold leading-5 text-text">
-                              {post.productName || "Bài đăng chưa có tên"}
-                            </p>
-                            <p
-                              title={post.ownerId}
-                              className="mt-1 truncate text-xs text-textLight"
-                            >
-                              Mã chủ sở hữu: {post.ownerId || "—"}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge meta={postTypeMeta} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 font-bold text-text">
-                        {formatCurrency(post.basePrice)}
-                      </td>
-                      <td className="px-4 py-4 text-textLight">
-                        {formatQuantity(post.remainingQuantity)}/
-                        {formatQuantity(post.quantity)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <Badge meta={statusMeta} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-4 text-textLight">
-                        {formatDate(post.createdAt)}
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setSelectedPost(post)}
-                            title="Xem chi tiết"
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-textLight transition hover:border-primary hover:bg-primary/5 hover:text-primary"
-                          >
-                            <span className="material-symbols-outlined text-[19px]">
-                              visibility
-                            </span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {items.map((item) => (
+                  <tr key={item.postId} className="align-top transition hover:bg-background/70">
+                    <td className="px-4 py-4">
+                      <p className="line-clamp-2 font-bold leading-5 text-text">
+                        {item.productName || "Bài đăng chưa có tên"}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-textLight">
+                        {item.categoryName || "Chưa có danh mục"} · {item.ownerName || "Không rõ người đăng"}
+                      </p>
+                      <p title={item.postId} className="mt-0.5 truncate text-[11px] text-textLight">
+                        Mã bài: {item.postId}
+                      </p>
+                      <ReportNote item={item} />
+                    </td>
+                    <td className="px-4 py-4 font-bold text-text">{formatListingPrice(item)}</td>
+                    <td className="px-4 py-4 text-textLight">{formatQuantity(item.quantity)}</td>
+                    <td className="px-4 py-4"><StatusBadge status={item.status} /></td>
+                    <td className="px-4 py-4 text-textLight">{formatListingDateTime(item.createdAt)}</td>
+                    <td className="px-4 py-4 text-textLight"><ExpiryCell item={item} /></td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedPost(item)}
+                          title="Xem chi tiết"
+                          className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-textLight transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+                        >
+                          <span className="material-symbols-outlined text-[19px]">visibility</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
 
           <div className="space-y-3 md:hidden">
-            {visiblePosts.map((post) => {
-              const thumbnailUrl = getThumbnailUrl(post);
-              const statusMeta = getStatusMeta(post.status);
-              const postTypeMeta = getPostTypeMeta(post.postType);
-              const isBuyPost = normalizeValue(post.postType) === "buy";
-
-              return (
-                <article
-                  key={post.postId}
-                  className="rounded-xl border border-border bg-white p-4 shadow-sm"
+            {items.map((item) => (
+              <article key={item.postId} className="rounded-xl border border-border bg-white p-4 shadow-sm">
+                <h2 className="line-clamp-2 font-bold text-text">
+                  {item.productName || "Bài đăng chưa có tên"}
+                </h2>
+                <p className="mt-1 text-xs text-textLight">
+                  {item.categoryName || "Chưa có danh mục"} · {item.ownerName || "Không rõ người đăng"}
+                </p>
+                <ReportNote item={item} />
+                <p className="mt-2 font-bold text-text">{formatListingPrice(item)}</p>
+                <div className="mt-2"><StatusBadge status={item.status} /></div>
+                <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs">
+                  <div>
+                    <dt className="text-textLight">Ngày tạo</dt>
+                    <dd className="mt-1 font-semibold text-text">{formatListingDateTime(item.createdAt)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-textLight">Ngày hết hạn</dt>
+                    <dd className="mt-1 font-semibold text-text"><ExpiryCell item={item} /></dd>
+                  </div>
+                </dl>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPost(item)}
+                  className="mt-4 w-full rounded-lg border border-primary px-3 py-2.5 text-sm font-bold text-primary"
                 >
-                  <div className="flex gap-3">
-                    {/*
-                     * Tin thu mua (Buy) không có ảnh sản phẩm thật - không
-                     * hiển thị ảnh/placeholder/vùng dự trữ nào, kể cả khi
-                     * Backend còn trả dữ liệu media cũ.
-                     */}
-                    {!isBuyPost && (
-                      <PostThumbnail
-                        src={thumbnailUrl}
-                        className="h-20 w-24 shrink-0 rounded-lg"
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <h2 className="line-clamp-2 font-bold text-text">
-                        {post.productName || "Bài đăng chưa có tên"}
-                      </h2>
-                      <p className="mt-1 font-bold text-text">
-                        {formatCurrency(post.basePrice)}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <Badge meta={postTypeMeta} />
-                        <Badge meta={statusMeta} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4 text-xs">
-                    <div>
-                      <dt className="text-textLight">Số lượng còn lại</dt>
-                      <dd className="mt-1 font-semibold text-text">
-                        {formatQuantity(post.remainingQuantity)}/
-                        {formatQuantity(post.quantity)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-textLight">Ngày tạo</dt>
-                      <dd className="mt-1 font-semibold text-text">
-                        {formatDate(post.createdAt)}
-                      </dd>
-                    </div>
-                  </dl>
-
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedPost(post)}
-                      className="w-full rounded-lg border border-primary px-3 py-2.5 text-sm font-bold text-primary"
-                    >
-                      Xem chi tiết
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+                  Xem chi tiết
+                </button>
+              </article>
+            ))}
           </div>
 
-          <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 shadow-sm sm:flex-row">
+          <div className="mt-6 flex flex-col items-center justify-between gap-3 rounded-xl border border-border bg-white px-4 py-3 shadow-sm sm:flex-row">
             <p className="text-sm text-textLight">
-              Trang {pageNumber} / {totalFilteredPages} · Hiển thị{" "}
-              {filteredPosts.length}/{posts.length} bài đăng
+              Trang {pageNumber} / {totalPages} · {formatQuantity(totalCount)} bài đăng
             </p>
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setPageNumber((currentPage) => currentPage - 1)}
-                disabled={pageNumber <= 1}
+                onClick={() => setPageNumber((current) => current - 1)}
+                disabled={pageNumber <= 1 || listState.loading}
                 className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang trước
               </button>
               <button
                 type="button"
-                onClick={() => setPageNumber((currentPage) => currentPage + 1)}
-                disabled={pageNumber >= totalFilteredPages}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setPageNumber((current) => current + 1)}
+                disabled={pageNumber >= totalPages || listState.loading}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Trang sau
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {selectedPost && (
@@ -622,7 +354,6 @@ export default function PostManagementPage() {
           onClose={() => setSelectedPost(null)}
         />
       )}
-
     </section>
   );
 }
