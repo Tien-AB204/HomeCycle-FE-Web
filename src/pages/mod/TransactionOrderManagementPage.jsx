@@ -124,6 +124,21 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
+const hasDetailValue = (value) =>
+  value !== null &&
+  value !== undefined &&
+  !(typeof value === "string" && value.trim() === "");
+
+// Dòng thông tin trong chi tiết đơn: không có dữ liệu thì ẩn hẳn, không hiện "—".
+const DetailLine = ({ label, value, format = (item) => item, separator = ": " }) =>
+  hasDetailValue(value) ? (
+    <span>
+      {label}
+      {separator}
+      {format(value)}
+    </span>
+  ) : null;
+
 const PAYMENT_METHOD_LABELS = {
   PayOS: "PayOS",
   Internal_Wallet: "Ví nội bộ HomeCycle",
@@ -888,9 +903,11 @@ export const OrderManagementContent = ({
                   <p className="mt-1 font-bold text-text">
                     {detail.productName || "Sản phẩm HomeCycle"}
                   </p>
-                  <p className="mt-1 text-xs text-textLight">
-                    Số lượng: {detail.quantity ?? "—"}
-                  </p>
+                  {hasDetailValue(detail.quantity) && (
+                    <p className="mt-1 text-xs text-textLight">
+                      Số lượng: {detail.quantity}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex flex-col items-end gap-1">
@@ -900,27 +917,22 @@ export const OrderManagementContent = ({
               </div>
 
               <div className="mt-3 grid gap-2 text-xs text-textLight sm:grid-cols-2">
-                <span>
-                  Giá gốc: {formatCurrency(detail.originalTotalAmount)}
-                </span>
-                <span>
-                  Tổng tiền: {formatCurrency(detail.finalTotalAmount)}
-                </span>
-                <span>Đã trả: {formatCurrency(detail.amountPaid)}</span>
-                <span>Còn lại: {formatCurrency(detail.amountRemaining)}</span>
-                <span>Phí vận chuyển: {formatCurrency(detail.shippingFee)}</span>
-                <span>
-                  Phương thức giao nhận:{" "}
-                  {getDeliveryMethodLabel(detail.deliveryMethod)}
-                </span>
+                <DetailLine label="Giá gốc" value={detail.originalTotalAmount} format={formatCurrency} />
+                <DetailLine label="Tổng tiền" value={detail.finalTotalAmount} format={formatCurrency} />
+                <DetailLine label="Đã trả" value={detail.amountPaid} format={formatCurrency} />
+                <DetailLine label="Còn lại" value={detail.amountRemaining} format={formatCurrency} />
+                <DetailLine label="Phí vận chuyển" value={detail.shippingFee} format={formatCurrency} />
+                <DetailLine
+                  label="Phương thức giao nhận"
+                  value={detail.deliveryMethod}
+                  format={getDeliveryMethodLabel}
+                />
               </div>
 
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-textLight">
-                <span>Tạo lúc {formatDateTime(detail.createdAt)}</span>
-                <span>Cập nhật {formatDateTime(detail.updatedAt)}</span>
-                {detail.completedAt && (
-                  <span>Hoàn tất {formatDateTime(detail.completedAt)}</span>
-                )}
+                <DetailLine label="Tạo lúc" separator=" " value={detail.createdAt} format={formatDateTime} />
+                <DetailLine label="Cập nhật" separator=" " value={detail.updatedAt} format={formatDateTime} />
+                <DetailLine label="Hoàn tất" separator=" " value={detail.completedAt} format={formatDateTime} />
               </div>
             </div>
 
@@ -930,7 +942,7 @@ export const OrderManagementContent = ({
                   Người mua
                 </p>
                 <p className="mt-2 font-bold text-text">
-                  {detail.buyer?.username || "—"}
+                  {detail.buyer?.username || "Không có thông tin"}
                 </p>
                 {detail.buyer?.phoneNumber && (
                   <p className="text-xs text-textLight">
@@ -944,7 +956,7 @@ export const OrderManagementContent = ({
                   Người bán
                 </p>
                 <p className="mt-2 font-bold text-text">
-                  {detail.seller?.username || "—"}
+                  {detail.seller?.username || "Không có thông tin"}
                 </p>
                 {detail.seller?.phoneNumber && (
                   <p className="text-xs text-textLight">
@@ -960,18 +972,18 @@ export const OrderManagementContent = ({
                   Thanh toán
                 </p>
                 <div className="mt-2 grid gap-2 text-xs text-textLight sm:grid-cols-2">
-                  <span>
-                    Phương thức:{" "}
-                    {getPaymentMethodLabel(detail.payment.paymentMethod)}
-                  </span>
-                  <span>
-                    Trạng thái:{" "}
-                    {getPaymentStatusMeta(detail.payment.paymentStatus).label}
-                  </span>
-                  <span>Số tiền: {formatCurrency(detail.payment.amount)}</span>
-                  <span>
-                    Thanh toán lúc: {formatDateTime(detail.payment.paidAt)}
-                  </span>
+                  <DetailLine
+                    label="Phương thức"
+                    value={detail.payment.paymentMethod}
+                    format={getPaymentMethodLabel}
+                  />
+                  <DetailLine
+                    label="Trạng thái"
+                    value={detail.payment.paymentStatus}
+                    format={(value) => getPaymentStatusMeta(value).label}
+                  />
+                  <DetailLine label="Số tiền" value={detail.payment.amount} format={formatCurrency} />
+                  <DetailLine label="Thanh toán lúc" value={detail.payment.paidAt} format={formatDateTime} />
                 </div>
               </div>
             )}
@@ -992,16 +1004,9 @@ export const OrderManagementContent = ({
                   </Tag>
                 </div>
                 <div className="mt-2 grid gap-2 text-xs text-textLight sm:grid-cols-2">
-                  <span>
-                    Sẵn sàng giao:{" "}
-                    {formatDateTime(detail.shipment.sellerReadyAt)}
-                  </span>
-                  <span>
-                    Đã lấy hàng: {formatDateTime(detail.shipment.pickedUpAt)}
-                  </span>
-                  <span>
-                    Đã giao hàng: {formatDateTime(detail.shipment.deliveredAt)}
-                  </span>
+                  <DetailLine label="Sẵn sàng giao" value={detail.shipment.sellerReadyAt} format={formatDateTime} />
+                  <DetailLine label="Đã lấy hàng" value={detail.shipment.pickedUpAt} format={formatDateTime} />
+                  <DetailLine label="Đã giao hàng" value={detail.shipment.deliveredAt} format={formatDateTime} />
                 </div>
               </div>
             )}
@@ -1034,9 +1039,11 @@ export const OrderManagementContent = ({
                             }
                           </Tag>
                         </div>
-                        <p className="mt-1">
-                          Dự kiến: {formatDateTime(appointment.scheduledAt)}
-                        </p>
+                        {hasDetailValue(appointment.scheduledAt) && (
+                          <p className="mt-1">
+                            Dự kiến: {formatDateTime(appointment.scheduledAt)}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1102,9 +1109,11 @@ export const OrderManagementContent = ({
                 <p className="text-xs font-black uppercase tracking-wide text-primary">
                   Hủy đơn
                 </p>
-                <p className="mt-2 text-xs text-textLight">
-                  Hủy lúc {formatDateTime(detail.cancellation.cancelledAt)}
-                </p>
+                {hasDetailValue(detail.cancellation.cancelledAt) && (
+                  <p className="mt-2 text-xs text-textLight">
+                    Hủy lúc {formatDateTime(detail.cancellation.cancelledAt)}
+                  </p>
+                )}
                 {detail.cancellation.reason && (
                   <p className="mt-1 text-xs text-error">
                     Lý do: {detail.cancellation.reason}
@@ -1123,32 +1132,16 @@ export const OrderManagementContent = ({
                   Hoàn tất / Trả hàng
                 </p>
                 <div className="mt-2 grid gap-2 text-xs text-textLight sm:grid-cols-2">
-                  {detail.completionSource && (
-                    <span>
-                      Nguồn hoàn tất:{" "}
-                      {getCompletionSourceLabel(detail.completionSource)}
-                    </span>
-                  )}
-                  <span>
-                    Người bán bàn giao:{" "}
-                    {formatDateTime(detail.sellerHandoverConfirmedAt)}
-                  </span>
-                  <span>
-                    Người mua nhận hàng:{" "}
-                    {formatDateTime(detail.buyerReceivedConfirmedAt)}
-                  </span>
-                  <span>
-                    Người mua trả hàng:{" "}
-                    {formatDateTime(detail.buyerReturnConfirmedAt)}
-                  </span>
-                  <span>
-                    Người bán nhận lại:{" "}
-                    {formatDateTime(detail.sellerReturnReceivedAt)}
-                  </span>
-                  <span>
-                    Hạn trả hàng: {formatDateTime(detail.returnDueAt)}
-                  </span>
-                  <span>Đã trả hàng: {formatDateTime(detail.returnedAt)}</span>
+                  <DetailLine
+                    label="Nguồn hoàn tất"
+                    value={getCompletionSourceLabel(detail.completionSource)}
+                  />
+                  <DetailLine label="Người bán bàn giao" value={detail.sellerHandoverConfirmedAt} format={formatDateTime} />
+                  <DetailLine label="Người mua nhận hàng" value={detail.buyerReceivedConfirmedAt} format={formatDateTime} />
+                  <DetailLine label="Người mua trả hàng" value={detail.buyerReturnConfirmedAt} format={formatDateTime} />
+                  <DetailLine label="Người bán nhận lại" value={detail.sellerReturnReceivedAt} format={formatDateTime} />
+                  <DetailLine label="Hạn trả hàng" value={detail.returnDueAt} format={formatDateTime} />
+                  <DetailLine label="Đã trả hàng" value={detail.returnedAt} format={formatDateTime} />
                 </div>
               </div>
             )}
