@@ -14,6 +14,9 @@ const TARGET_TYPE_LABELS = {
   Appointment: "Lịch hẹn",
 };
 
+// Lịch hẹn chỉ giữ nhãn cho dữ liệu cũ; Backend không tạo được tranh chấp cho Lịch hẹn.
+const FILTERABLE_TARGET_TYPES = ["Order", "Post", "Review"];
+
 const getTargetTypeLabel = (value) =>
   TARGET_TYPE_LABELS[value] || "Chưa xác định";
 
@@ -329,9 +332,9 @@ export default function DisputeCategoryPage() {
               className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:w-64"
             >
               <option value="all">Tất cả đối tượng</option>
-              {Object.entries(TARGET_TYPE_LABELS).map(([value, label]) => (
+              {FILTERABLE_TARGET_TYPES.map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {getTargetTypeLabel(value)}
                 </option>
               ))}
             </select>

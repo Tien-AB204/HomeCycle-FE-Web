@@ -3,11 +3,11 @@ import {
   useState,
 } from "react";
 
+// Backend chỉ xử lý tranh chấp cho Đơn hàng, Bài đăng và Đánh giá (không có handler Lịch hẹn).
 const TARGET_TYPE_OPTIONS = [
   { value: "Order", label: "Đơn hàng" },
   { value: "Review", label: "Đánh giá" },
   { value: "Post", label: "Bài đăng" },
-  { value: "Appointment", label: "Lịch hẹn" },
 ];
 
 const CODE_PATTERN = /^[A-Za-z][A-Za-z0-9_]*$/;
