@@ -64,6 +64,8 @@ export default function DisputeCategoryPage() {
   const [requestVersion, setRequestVersion] = useState(0);
 
   const [statusFilter, setStatusFilter] = useState("active");
+  // Danh sách ngắn nên lọc "Áp dụng cho" ngay trên dữ liệu đã tải.
+  const [targetFilter, setTargetFilter] = useState("all");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -120,6 +122,15 @@ export default function DisputeCategoryPage() {
       controller.abort();
     };
   }, [statusFilter, requestVersion]);
+
+  const visibleCategories =
+    targetFilter === "all"
+      ? categories
+      : categories.filter(
+          (category) =>
+            Array.isArray(category.targetTypes) &&
+            category.targetTypes.includes(targetFilter),
+        );
 
   const refresh = () => {
     setRequestVersion((current) => current + 1);
@@ -263,7 +274,7 @@ export default function DisputeCategoryPage() {
           </h2>
 
           <p className="mt-1 text-sm text-textLight">
-            Quản lý {categories.length} danh mục nguyên nhân tranh chấp trên hệ thống.
+            Quản lý {visibleCategories.length} danh mục nguyên nhân tranh chấp trên hệ thống.
           </p>
         </div>
 
@@ -282,23 +293,50 @@ export default function DisputeCategoryPage() {
       </div>
 
       <section className="mb-6 rounded-lg border border-border bg-background p-4">
-        <label
-          htmlFor="dispute-category-status-filter"
-          className="mb-1.5 block text-sm font-medium text-text"
-        >
-          Trạng thái
-        </label>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div>
+            <label
+              htmlFor="dispute-category-status-filter"
+              className="mb-1.5 block text-sm font-medium text-text"
+            >
+              Trạng thái
+            </label>
 
-        <select
-          id="dispute-category-status-filter"
-          value={statusFilter}
-          onChange={handleStatusFilterChange}
-          className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:w-64"
-        >
-          <option value="all">Tất cả trạng thái</option>
-          <option value="active">Đang hoạt động</option>
-          <option value="inactive">Đã tắt</option>
-        </select>
+            <select
+              id="dispute-category-status-filter"
+              value={statusFilter}
+              onChange={handleStatusFilterChange}
+              className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:w-64"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="active">Đang hoạt động</option>
+              <option value="inactive">Đã tắt</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="dispute-category-target-filter"
+              className="mb-1.5 block text-sm font-medium text-text"
+            >
+              Áp dụng cho
+            </label>
+
+            <select
+              id="dispute-category-target-filter"
+              value={targetFilter}
+              onChange={(event) => setTargetFilter(event.target.value)}
+              className="w-full rounded-md border border-border bg-white px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:w-64"
+            >
+              <option value="all">Tất cả đối tượng</option>
+              {Object.entries(TARGET_TYPE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <p className="mt-2 text-xs text-textLight">
           Danh mục đã tắt vẫn được giữ lại để hiển thị đúng dữ liệu tranh chấp lịch sử, chỉ không còn dùng được cho tranh chấp mới.
@@ -389,8 +427,8 @@ export default function DisputeCategoryPage() {
                     </div>
                   </td>
                 </tr>
-              ) : categories.length > 0 ? (
-                categories.map((category) => {
+              ) : visibleCategories.length > 0 ? (
+                visibleCategories.map((category) => {
                   const isUpdatingStatus =
                     updatingStatusId === category.disputeCategoryId;
 
@@ -492,7 +530,7 @@ export default function DisputeCategoryPage() {
               ) : (
                 <tr>
                   <td colSpan={7} className="p-10 text-center text-textLight">
-                    {statusFilter === "all"
+                    {statusFilter === "all" && targetFilter === "all"
                       ? "Chưa có danh mục tranh chấp nào."
                       : "Không có danh mục nào phù hợp với bộ lọc."}
                   </td>
