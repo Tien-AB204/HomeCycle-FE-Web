@@ -134,6 +134,9 @@ export default function ProductTypePage() {
   const [isDeleting, setIsDeleting] =
     useState(false);
 
+  const [restoringProductTypeId, setRestoringProductTypeId] =
+    useState("");
+
   const [deleteError, setDeleteError] =
     useState("");
 
@@ -636,6 +639,38 @@ export default function ProductTypePage() {
       }
     };
 
+  // Backend chỉ ẩn (IsActive = false), nên hiện lại bằng cách cập nhật IsActive = true.
+  const handleRestoreProductType = async (productType) => {
+    if (
+      restoringProductTypeId ||
+      isDeleting ||
+      isLoadingProductTypeDetails
+    ) {
+      return;
+    }
+
+    setRestoringProductTypeId(productType.productTypeId);
+    setActionError("");
+    setSuccessMessage("");
+
+    try {
+      await productTypeApi.update(productType.productTypeId, {
+        productTypeName: productType.productTypeName,
+        description: productType.description,
+        isActive: true,
+      });
+
+      setSuccessMessage(
+        `Đã hiện lại loại sản phẩm "${productType.productTypeName}".`,
+      );
+      refreshCurrentPage();
+    } catch (requestError) {
+      setActionError(getErrorMessage(requestError));
+    } finally {
+      setRestoringProductTypeId("");
+    }
+  };
+
   const handleOpenDeleteDialog = (
     productType,
   ) => {
@@ -684,7 +719,7 @@ export default function ProductTypePage() {
       );
 
       setSuccessMessage(
-        `Đã xóa/ẩn loại sản phẩm "${productTypeName}" thành công.`,
+        `Đã ẩn loại sản phẩm "${productTypeName}".`,
       );
 
       setActionError("");
@@ -1286,25 +1321,60 @@ export default function ProductTypePage() {
                           </span>
                         </button>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleOpenDeleteDialog(
-                              productType,
-                            )
-                          }
-                          disabled={
-                            isDeleting ||
-                            isLoadingProductTypeDetails
-                          }
-                          title="Xóa hoặc ẩn loại sản phẩm"
-                          aria-label={`Xóa hoặc ẩn ${productType.productTypeName}`}
-                          className="rounded-md p-1.5 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <span className="material-symbols-outlined text-[18px]">
-                            visibility_off
-                          </span>
-                        </button>
+                        {productType.isActive ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleOpenDeleteDialog(
+                                productType,
+                              )
+                            }
+                            disabled={
+                              isDeleting ||
+                              isLoadingProductTypeDetails ||
+                              Boolean(restoringProductTypeId)
+                            }
+                            title="Ẩn loại sản phẩm"
+                            aria-label={`Ẩn ${productType.productTypeName}`}
+                            className="rounded-md p-1.5 text-error transition hover:bg-error/10 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <span className="material-symbols-outlined text-[18px]">
+                              visibility_off
+                            </span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              void handleRestoreProductType(
+                                productType,
+                              );
+                            }}
+                            disabled={
+                              isDeleting ||
+                              isLoadingProductTypeDetails ||
+                              Boolean(restoringProductTypeId)
+                            }
+                            title="Hiện lại loại sản phẩm"
+                            aria-label={`Hiện lại ${productType.productTypeName}`}
+                            className="rounded-md p-1.5 text-success transition hover:bg-success/10 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <span
+                              className={[
+                                "material-symbols-outlined text-[18px]",
+                                restoringProductTypeId ===
+                                productType.productTypeId
+                                  ? "animate-spin"
+                                  : "",
+                              ].join(" ")}
+                            >
+                              {restoringProductTypeId ===
+                              productType.productTypeId
+                                ? "refresh"
+                                : "visibility"}
+                            </span>
+                          </button>
+                        )}
                         </div>
                       </td>
                     </tr>
@@ -1421,15 +1491,15 @@ export default function ProductTypePage() {
                 id="delete-product-type-title"
                 className="text-lg font-bold text-text"
               >
-                Xác nhận xóa/ẩn loại sản phẩm
+                Ẩn loại sản phẩm
               </h3>
 
               <p
                 id="delete-product-type-description"
                 className="mt-3 text-sm leading-6 text-textLight"
               >
-                Bạn có chắc chắn muốn xóa hoặc
-                ẩn loại sản phẩm{" "}
+                Bạn có chắc chắn muốn ẩn loại sản
+                phẩm{" "}
                 <strong className="text-text">
                   “
                   {
@@ -1441,9 +1511,9 @@ export default function ProductTypePage() {
               </p>
 
               <p className="mt-2 text-xs text-textLight">
-                Loại sản phẩm có thể không còn
-                xuất hiện trong danh sách sau
-                thao tác này.
+                Loại sản phẩm sẽ chuyển sang
+                trạng thái "Đang ẩn" và có thể hiện
+                lại bất cứ lúc nào.
               </p>
 
               {deleteError && (
@@ -1482,7 +1552,7 @@ export default function ProductTypePage() {
 
                 {isDeleting
                   ? "Đang xử lý..."
-                  : "Xác nhận xóa/ẩn"}
+                  : "Ẩn loại sản phẩm"}
               </button>
             </div>
           </div>
