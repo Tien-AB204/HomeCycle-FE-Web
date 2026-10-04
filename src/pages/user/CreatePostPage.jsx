@@ -10,6 +10,8 @@ import {
   useParams,
 } from "react-router-dom";
 import DynamicAttributeFields from "../../features/posts/DynamicAttributeFields";
+import AiPriceSuggestionPanel from "../../features/posts/AiPriceSuggestionPanel";
+import { buildAiPricingContext } from "../../features/posts/aiPriceSuggestion";
 import DraftSupplierSuggestionPanel from "../../features/posts/DraftSupplierSuggestionPanel";
 import MediaUploadField from "../../features/posts/MediaUploadField";
 import PostAddressFields from "../../features/posts/PostAddressFields";
@@ -1058,6 +1060,13 @@ const CreatePostPage = () => {
     !isLoadingAttributes &&
     !attributeLoadError;
 
+  const aiPricingContext = buildAiPricingContext({
+    form,
+    attributeValues: buildAttributeValues(attributes, attributeValues),
+    missingRequiredAttribute: !requiredAttributesReady,
+    isLoadingAttributes,
+  });
+
   const supplierDraftPayload = {
     categoryId: form.categoryId || null,
     productTypeId: form.productTypeId || null,
@@ -1532,6 +1541,14 @@ const CreatePostPage = () => {
               </label>
             )}
           </div>
+
+          {!isBuyPost && !isEditing && (
+            <AiPriceSuggestionPanel
+              context={aiPricingContext}
+              onApply={(price) => updateField("price", price)}
+              disabled={isSubmitting}
+            />
+          )}
 
           {!isBuyPost && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
