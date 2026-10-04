@@ -36,6 +36,7 @@ import {
 } from "../../features/search/searchFilters";
 import { useSearchFilterOptions } from "../../features/search/useSearchFilterOptions";
 import { useAuth } from "../../hooks/useAuth";
+import { useDiscoveryPreferences } from "../../hooks/useDiscoveryPreferences";
 import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
 import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
@@ -46,6 +47,7 @@ import {
   normalizeBusinessSurvey,
 } from "../../utils/businessRecommendationUtils";
 import { getUserId, normalizeRole } from "../../utils/authUtils";
+import { filterDiscoveryPosts } from "../../utils/discoveryPosts";
 import {
   getBusinessSurveySnapshot,
   isFreshBusinessSurveySnapshot,
@@ -229,6 +231,10 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
 
   const isBusinessUser =
     normalizeRole(user?.role) === ROLES.BUSINESS;
+  const {
+    showOwnPostsInDiscovery,
+    setShowOwnPostsInDiscovery,
+  } = useDiscoveryPreferences();
 
   const [filters, setFilters] = useState(() => {
     if (restoredSearchState?.filters) {
@@ -578,7 +584,11 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
   const sortedPosts = useMemo(
     () => {
       if (!recommendationMode) {
-        return sourceResult?.items || [];
+        return filterDiscoveryPosts(
+          sourceResult?.items,
+          businessUserId,
+          showOwnPostsInDiscovery,
+        );
       }
 
       const startIndex = (pageNumber - 1) * PAGE_SIZE;
@@ -588,7 +598,14 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
         startIndex + PAGE_SIZE,
       );
     },
-    [pageNumber, recommendationMode, sortMode, sourceResult?.items],
+    [
+      businessUserId,
+      pageNumber,
+      recommendationMode,
+      showOwnPostsInDiscovery,
+      sortMode,
+      sourceResult?.items,
+    ],
   );
 
   const result = useMemo(() => {
@@ -773,7 +790,28 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             onChange={handleFiltersChange}
             onReset={handleResetFilters}
             showPostTypeFilter={!fixedPostType && !isBusinessUser}
-          />
+          >
+            {businessUserId && !recommendationMode && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={showOwnPostsInDiscovery}
+                  onChange={(event) =>
+                    setShowOwnPostsInDiscovery(event.target.checked)
+                  }
+                  className="mt-0.5 h-4 w-4 accent-primary"
+                />
+                <span>
+                  <span className="block text-sm font-bold text-text">
+                    Hiện tin đăng của tôi
+                  </span>
+                  <span className="block text-xs leading-5 text-textLight">
+                    Áp dụng cho trang chủ và kết quả tìm kiếm.
+                  </span>
+                </span>
+              </label>
+            )}
+          </SearchFilterPanel>
         )}
 
         <section className="min-w-0 flex-1">

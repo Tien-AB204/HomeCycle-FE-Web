@@ -14,9 +14,11 @@ import {
 import { normalizePostType } from "../../constants/marketplace";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
+import { useDiscoveryPreferences } from "../../hooks/useDiscoveryPreferences";
 import postApi from "../../services/apis/postApi";
-import { normalizeRole } from "../../utils/authUtils";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
 import { BUSINESS_DISCOVERY_REFRESH_EVENT } from "../../utils/businessDiscoveryEvents";
+import { filterDiscoveryPosts } from "../../utils/discoveryPosts";
 import {
   isPostCatalogStorageEvent,
   POST_CATALOG_CHANGED_EVENT,
@@ -210,6 +212,8 @@ const Homepage = () => {
   const [requestVersion, setRequestVersion] = useState(0);
   const normalizedRole = normalizeRole(user?.role);
   const isBusinessUser = isAuthenticated && normalizedRole === ROLES.BUSINESS;
+  const currentUserId = isAuthenticated ? getUserId(user) : "";
+  const { showOwnPostsInDiscovery } = useDiscoveryPreferences();
   useEffect(() => {
     const controller = new AbortController();
     let isActive = true;
@@ -355,20 +359,35 @@ const Homepage = () => {
     };
   }, [isBusinessUser, requestVersion]);
 
+  const discoveryPosts = useMemo(
+    () => filterDiscoveryPosts(posts, currentUserId, showOwnPostsInDiscovery),
+    [currentUserId, posts, showOwnPostsInDiscovery],
+  );
+
+  const visibleFeaturedPosts = useMemo(
+    () =>
+      filterDiscoveryPosts(
+        featuredPosts,
+        currentUserId,
+        showOwnPostsInDiscovery,
+      ),
+    [currentUserId, featuredPosts, showOwnPostsInDiscovery],
+  );
+
   const buyPosts = useMemo(
     () =>
-      posts
+      discoveryPosts
         .filter((post) => isActivePost(post) && hasPostType(post, "Buy"))
         .slice(0, BUSINESS_POST_LIMIT),
-    [posts],
+    [discoveryPosts],
   );
 
   const personalPosts = useMemo(
     () =>
-      posts
+      discoveryPosts
         .filter((post) => isActivePost(post) && hasPostType(post, "Sell"))
         .slice(0, PERSONAL_POST_LIMIT),
-    [posts],
+    [discoveryPosts],
   );
 
   const recommendedPosts = discoveryState.items;
@@ -488,7 +507,7 @@ const Homepage = () => {
           </div>
         )}
 
-        {featuredPosts.length > 0 && (
+        {visibleFeaturedPosts.length > 0 && (
           <section className="pb-12">
             <SectionHeader
               eyebrow="Gói VIP"
@@ -501,7 +520,7 @@ const Homepage = () => {
               }
             />
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {featuredPosts.map((post) => (
+              {visibleFeaturedPosts.map((post) => (
                 <ProductCard
                   key={post.postId}
                   data={post}
