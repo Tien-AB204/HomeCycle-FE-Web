@@ -8,12 +8,6 @@ export const APPOINTMENT_SECTION_TABS = Object.freeze([
   { label: "Lịch sử lịch hẹn", path: "/admin/dashboard/appointments/history" },
 ]);
 
-export const POST_SECTION_TABS = Object.freeze([
-  { label: "Tổng quan", path: "/admin/dashboard/posts", exact: true },
-  { label: "Danh sách bài đăng", path: "/admin/posts", exact: true },
-  { label: "Bài đăng bị báo cáo", path: "/admin/posts/reported" },
-]);
-
 export const BUSINESS_SECTION_TABS = Object.freeze([
   { label: "Tổng quan", path: "/admin/dashboard/businesses/overview", exact: true },
   { label: "Nhu cầu khảo sát", path: "/admin/dashboard/businesses/demand" },

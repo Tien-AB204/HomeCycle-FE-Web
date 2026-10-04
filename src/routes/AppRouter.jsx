@@ -38,14 +38,12 @@ import AdminOverviewPage from "../pages/admin/AdminOverviewPage";
 import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
 import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
 import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
-import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
-import AdminReportedPostPage from "../pages/admin/AdminReportedPostPage";
+import AdminPostsPage from "../pages/admin/AdminPostsPage";
 import AdminUsersPage from "../pages/admin/AdminUsersPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
 import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
-import PostManagementPage from "../pages/admin/PostManagementPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
 import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
@@ -316,7 +314,7 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/posts"
-            element={<AdminPostOverviewPage />}
+            element={<AdminPostsPage />}
           />
 
           <Route
@@ -388,11 +386,11 @@ const AppRouter = () => {
 
           <Route path="users" element={<LegacyUsersRedirect />} />
 
-          <Route path="posts" element={<PostManagementPage />} />
+          <Route path="posts" element={<Navigate to="/admin/dashboard/posts?tab=list" replace />} />
 
           <Route
             path="posts/reported"
-            element={<AdminReportedPostPage />}
+            element={<Navigate to="/admin/dashboard/posts?tab=reports" replace />}
           />
 
           <Route
