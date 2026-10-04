@@ -3,7 +3,12 @@ import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import SubscriptionAnalyticsPanel from "../../features/admin/subscriptions/SubscriptionAnalyticsPanel";
 import adminSubscriptionPackageApi from "../../services/apis/adminSubscriptionPackageApi";
 
+const TARGET_ROLE_PERSONAL = 1;
 const TARGET_ROLE_BUSINESS = 2;
+// Backend chỉ chấp nhận gói Cá nhân 30 ngày với đúng 50 lượt AI gợi ý giá mỗi ngày.
+const PERSONAL_DURATION_DAYS = 30;
+const PERSONAL_AI_PRICE_KEY = "ai.price_suggestion.daily_count";
+const PERSONAL_AI_PRICE_DAILY_COUNT = 50;
 const MAX_DURATION_DAYS = 3650;
 
 const PAGE_VIEWS = [
@@ -107,11 +112,32 @@ const getTargetRoleLabel = (role) =>
   TARGET_ROLE_LABELS[normalizeTargetRole(role)] ||
   "Không xác định";
 
-const definitionSupportsBusiness = (definition) =>
+const definitionSupportsRole = (definition, targetRole) =>
   Array.isArray(definition?.targetRoles) &&
   definition.targetRoles.some(
-    (role) => normalizeTargetRole(role) === "Business",
+    (role) => normalizeTargetRole(role) === targetRole,
   );
+
+const createPersonalEntitlementRows = () => [
+  {
+    key: PERSONAL_AI_PRICE_KEY,
+    numericValue: String(PERSONAL_AI_PRICE_DAILY_COUNT),
+    booleanValue: false,
+    isUnlimited: false,
+  },
+];
+
+function PersonalPackageNotice() {
+  return (
+    <div className="rounded-xl border border-primary/15 bg-primary/[0.04] px-4 py-3 text-sm leading-6 text-text">
+      <p className="font-bold">Quyền lợi gói Cá nhân</p>
+      <p className="mt-1 text-textLight">
+        Cố định {PERSONAL_AI_PRICE_DAILY_COUNT} lượt AI gợi ý giá mỗi ngày,
+        thời hạn {PERSONAL_DURATION_DAYS} ngày theo quy định của hệ thống.
+      </p>
+    </div>
+  );
+}
 
 const buildDefinitionLookup = (definitions) => {
   const lookup = new Map();
@@ -152,6 +178,7 @@ const formatDateTime = (value) => {
 };
 
 const createEmptyCreateForm = () => ({
+  targetRole: "Business",
   code: "",
   name: "",
   description: "",
@@ -169,7 +196,7 @@ const createEntitlementRow = (definition) => ({
 
 const validatePackageFields = (
   form,
-  { requireCode },
+  { requireCode, targetRole = "Business" },
 ) => {
   let code;
 
@@ -248,6 +275,15 @@ const validatePackageFields = (
     return {
       error:
         "Vui lòng nhập thời hạn hợp lệ (số nguyên từ 1 đến 3650 ngày).",
+    };
+  }
+
+  if (
+    targetRole === "Personal" &&
+    duration !== PERSONAL_DURATION_DAYS
+  ) {
+    return {
+      error: `Gói Cá nhân phải có thời hạn ${PERSONAL_DURATION_DAYS} ngày.`,
     };
   }
 
@@ -736,7 +772,7 @@ function CreatePackageModal({
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-textLight">
-              Gói mới áp dụng cho tài khoản doanh nghiệp.
+              Chọn vai trò áp dụng để hiện đúng thời hạn và quyền lợi được phép.
             </p>
           </div>
 
@@ -775,12 +811,30 @@ function CreatePackageModal({
 
             <label className="block text-sm font-bold text-text">
               Vai trò áp dụng
-              <input
-                type="text"
-                value="Doanh nghiệp"
-                disabled
-                className="mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-textLight outline-none"
-              />
+              <select
+                value={form.targetRole}
+                disabled={busy}
+                onChange={(event) => {
+                  const targetRole = event.target.value;
+
+                  onChangeForm({
+                    ...form,
+                    targetRole,
+                    duration:
+                      targetRole === "Personal"
+                        ? String(PERSONAL_DURATION_DAYS)
+                        : "",
+                    entitlementRows:
+                      targetRole === "Personal"
+                        ? createPersonalEntitlementRows()
+                        : [],
+                  });
+                }}
+                className="mt-1.5 w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:bg-background"
+              >
+                <option value="Business">Doanh nghiệp</option>
+                <option value="Personal">Cá nhân</option>
+              </select>
             </label>
           </div>
 
@@ -842,7 +896,7 @@ function CreatePackageModal({
               <input
                 type="number"
                 value={form.duration}
-                disabled={busy}
+                disabled={busy || form.targetRole === "Personal"}
                 min="1"
                 max={MAX_DURATION_DAYS}
                 step="1"
@@ -857,19 +911,23 @@ function CreatePackageModal({
             </label>
           </div>
 
-          <EntitlementEditor
-            rows={form.entitlementRows}
-            onChangeRows={(rows) =>
-              onChangeForm({
-                ...form,
-                entitlementRows: rows,
-              })
-            }
-            definitions={definitions}
-            disabled={busy}
-            definitionsLoading={definitionsLoading}
-            definitionsError={definitionsError}
-          />
+          {form.targetRole === "Personal" ? (
+            <PersonalPackageNotice />
+          ) : (
+            <EntitlementEditor
+              rows={form.entitlementRows}
+              onChangeRows={(rows) =>
+                onChangeForm({
+                  ...form,
+                  entitlementRows: rows,
+                })
+              }
+              definitions={definitions}
+              disabled={busy}
+              definitionsLoading={definitionsLoading}
+              definitionsError={definitionsError}
+            />
+          )}
         </div>
 
         {error && (
@@ -926,6 +984,8 @@ function PackageDetailDrawer({
   onSubmit,
 }) {
   const detail = detailState.data;
+  const isPersonalPackage =
+    normalizeTargetRole(detail?.targetRole) === "Personal";
 
   return (
     <div
@@ -1089,7 +1149,7 @@ function PackageDetailDrawer({
                     <input
                       type="number"
                       value={editForm.duration}
-                      disabled={busy}
+                      disabled={busy || isPersonalPackage}
                       min="1"
                       max={MAX_DURATION_DAYS}
                       step="1"
@@ -1105,23 +1165,27 @@ function PackageDetailDrawer({
                   </label>
                 </div>
 
-                <EntitlementEditor
-                  rows={editForm.entitlementRows}
-                  onChangeRows={(rows) =>
-                    onChangeEditForm({
-                      ...editForm,
-                      entitlementRows: rows,
-                    })
-                  }
-                  definitions={definitions}
-                  disabled={busy}
-                  definitionsLoading={
-                    definitionsLoading
-                  }
-                  definitionsError={
-                    definitionsError
-                  }
-                />
+                {isPersonalPackage ? (
+                  <PersonalPackageNotice />
+                ) : (
+                  <EntitlementEditor
+                    rows={editForm.entitlementRows}
+                    onChangeRows={(rows) =>
+                      onChangeEditForm({
+                        ...editForm,
+                        entitlementRows: rows,
+                      })
+                    }
+                    definitions={definitions}
+                    disabled={busy}
+                    definitionsLoading={
+                      definitionsLoading
+                    }
+                    definitionsError={
+                      definitionsError
+                    }
+                  />
+                )}
 
                 {notice && (
                   <div
@@ -1199,7 +1263,7 @@ export default function SubscriptionPackagePage() {
     useState("all");
 
   const [targetRoleFilter, setTargetRoleFilter] =
-    useState(String(TARGET_ROLE_BUSINESS));
+    useState("");
 
   const [requestVersion, setRequestVersion] =
     useState(0);
@@ -1253,16 +1317,16 @@ export default function SubscriptionPackagePage() {
 
   const businessDefinitions = useMemo(
     () =>
-      entitlementDefinitions.filter(
-        definitionSupportsBusiness,
+      entitlementDefinitions.filter((definition) =>
+        definitionSupportsRole(definition, "Business"),
       ),
     [entitlementDefinitions],
   );
 
   const definitionLookup = useMemo(
     () =>
-      buildDefinitionLookup(businessDefinitions),
-    [businessDefinitions],
+      buildDefinitionLookup(entitlementDefinitions),
+    [entitlementDefinitions],
   );
 
   useEffect(() => {
@@ -1495,7 +1559,10 @@ export default function SubscriptionPackagePage() {
 
     const fieldsResult = validatePackageFields(
       createForm,
-      { requireCode: true },
+      {
+        requireCode: true,
+        targetRole: createForm.targetRole,
+      },
     );
 
     if (fieldsResult.error) {
@@ -1527,7 +1594,10 @@ export default function SubscriptionPackagePage() {
               fieldsResult.description || null,
             price: fieldsResult.price,
             duration: fieldsResult.duration,
-            targetRole: TARGET_ROLE_BUSINESS,
+            targetRole:
+              createForm.targetRole === "Personal"
+                ? TARGET_ROLE_PERSONAL
+                : TARGET_ROLE_BUSINESS,
             entitlements:
               entitlementsResult.entitlements,
           },
@@ -1591,7 +1661,10 @@ export default function SubscriptionPackagePage() {
 
     const fieldsResult = validatePackageFields(
       editForm,
-      { requireCode: false },
+      {
+        requireCode: false,
+        targetRole: normalizeTargetRole(detail.targetRole),
+      },
     );
 
     if (fieldsResult.error) {
@@ -1803,7 +1876,7 @@ export default function SubscriptionPackagePage() {
         </h1>
 
         <p className="mt-1 text-sm text-textLight">
-          Quản lý các gói dịch vụ và quyền lợi áp dụng cho tài khoản doanh nghiệp.
+          Quản lý các gói dịch vụ và quyền lợi cho tài khoản Doanh nghiệp và Cá nhân.
         </p>
       </header>
 
@@ -1879,6 +1952,13 @@ export default function SubscriptionPackagePage() {
                 )}
               >
                 Doanh nghiệp
+              </option>
+              <option
+                value={String(
+                  TARGET_ROLE_PERSONAL,
+                )}
+              >
+                Cá nhân
               </option>
             </select>
           </label>
