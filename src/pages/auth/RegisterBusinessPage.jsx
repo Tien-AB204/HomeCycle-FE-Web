@@ -16,7 +16,10 @@ import {
   validateEmail,
   validatePassword as validatePasswordValue,
 } from "../../utils/formValidation";
-import { getSafeValidationMessage } from "../../utils/safeErrorMessage";
+import {
+  getSafeProblemDetail,
+  getSafeValidationMessage,
+} from "../../utils/safeErrorMessage";
 
 const STEPS = {
   EMAIL: "EMAIL",
@@ -34,9 +37,12 @@ const getApiErrorMessage = (
     getSafeValidationMessage(
       error?.response?.data?.errors,
     ) ||
-    error?.response?.data?.message ||
-    error?.response?.data?.error
-      ?.message ||
+    getSafeProblemDetail(
+      error?.response?.data?.error?.message,
+    ) ||
+    getSafeProblemDetail(
+      error?.response?.data?.message,
+    ) ||
     fallbackMessage
   );
 };
@@ -235,7 +241,7 @@ const RegisterBusinessPage = () => {
       );
 
       setSuccessMessage(
-        response?.message ||
+        getSafeProblemDetail(response?.message) ||
           "Mã OTP đã được gửi đến email của bạn.",
       );
 
@@ -287,7 +293,7 @@ const RegisterBusinessPage = () => {
       );
 
       setSuccessMessage(
-        response?.message ||
+        getSafeProblemDetail(response?.message) ||
           "Mã OTP mới đã được gửi.",
       );
     } catch (resendError) {
@@ -336,7 +342,7 @@ const RegisterBusinessPage = () => {
         !response?.registrationToken
       ) {
         throw new Error(
-          response?.message ||
+          getSafeProblemDetail(response?.message) ||
             "Không nhận được registration token từ máy chủ.",
         );
       }
@@ -346,7 +352,7 @@ const RegisterBusinessPage = () => {
       );
 
       setSuccessMessage(
-        response?.message ||
+        getSafeProblemDetail(response?.message) ||
           "Email đã được xác thực thành công.",
       );
 
@@ -424,8 +430,8 @@ const RegisterBusinessPage = () => {
         response?.success === false
       ) {
         throw new Error(
-          response?.message ||
-            response?.error?.message ||
+          getSafeProblemDetail(response?.message) ||
+            getSafeProblemDetail(response?.error?.message) ||
             "Đăng ký tài khoản doanh nghiệp thất bại.",
         );
       }
@@ -480,8 +486,8 @@ const RegisterBusinessPage = () => {
         state: {
           registrationSuccess: true,
           message:
-            response?.message ||
-            responseData?.message ||
+            getSafeProblemDetail(response?.message) ||
+            getSafeProblemDetail(responseData?.message) ||
             "Đăng ký tài khoản doanh nghiệp thành công.",
         },
       });

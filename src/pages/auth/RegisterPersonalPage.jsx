@@ -5,6 +5,8 @@ import BankPickerField from "../../components/shared/BankPickerField";
 import IdentityScanPanel from "../../components/shared/IdentityScanPanel";
 import SensitiveField from "../../components/shared/SensitiveField";
 import authApi from "../../services/apis/authApi";
+import { getApiErrorMessage } from "../../utils/apiError";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 import { IDENTITY_SCAN_TARGETS } from "../../services/apis/identityScanApi";
 import publicPlatformPolicyApi from "../../services/apis/publicPlatformPolicyApi";
 import { decodeJwtPayload } from "../../utils/authUtils";
@@ -100,16 +102,6 @@ const readRegisterPersonalDraft = () => {
   }
 };
 
-const getApiErrorMessage = (
-  error,
-  fallbackMessage,
-) => {
-  return (
-    error?.response?.data?.message ||
-    error?.response?.data?.error?.message ||
-    fallbackMessage
-  );
-};
 
 
 const TextInput = ({
@@ -577,7 +569,7 @@ const RegisterPersonalPage = () => {
         RESEND_COOLDOWN_SECONDS,
       );
       setSuccessMessage(
-        response?.message ||
+        getSafeProblemDetail(response?.message) ||
           "Mã OTP đã được gửi đến email của bạn.",
       );
       setStep(STEPS.OTP);
@@ -619,7 +611,7 @@ const RegisterPersonalPage = () => {
         RESEND_COOLDOWN_SECONDS,
       );
       setSuccessMessage(
-        response?.message ||
+        getSafeProblemDetail(response?.message) ||
           "Mã OTP mới đã được gửi.",
       );
     } catch (resendError) {
@@ -661,7 +653,7 @@ const RegisterPersonalPage = () => {
         !response?.registrationToken
       ) {
         throw new Error(
-          response?.message ||
+          getSafeProblemDetail(response?.message) ||
             "Không nhận được registration token từ máy chủ.",
         );
       }
@@ -670,7 +662,7 @@ const RegisterPersonalPage = () => {
         response.registrationToken,
       );
       setSuccessMessage(
-        response.message ||
+        getSafeProblemDetail(response?.message) ||
           "Email đã được xác thực thành công.",
       );
       setStep(STEPS.BASIC);
@@ -1098,7 +1090,7 @@ const RegisterPersonalPage = () => {
 
       if (response?.success === false) {
         throw new Error(
-          response?.message ||
+          getSafeProblemDetail(response?.message) ||
             "Đăng ký tài khoản thất bại.",
         );
       }
@@ -1107,7 +1099,7 @@ const RegisterPersonalPage = () => {
         response?.data?.user || null,
       );
       setSuccessMessage(
-        response?.message ||
+        getSafeProblemDetail(response?.message) ||
           "Đăng ký tài khoản cá nhân thành công.",
       );
       window.sessionStorage.removeItem(

@@ -9,6 +9,7 @@ import { useAuth } from "../../hooks/useAuth";
 import authApi from "../../services/apis/authApi";
 import { decodeJwtPayload, getHomePathByRole, normalizeRole } from "../../utils/authUtils";
 import { ROLES } from "../../constants/roles";
+import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 import {
   EMAIL_MAX_LENGTH,
   PASSWORD_MAX_LENGTH,
@@ -418,9 +419,12 @@ const LoginPage = () => {
 
       const status = error?.response?.status;
       const nextErrorMessage =
-        error?.response?.data?.message ||
-        error?.response?.data?.error
-          ?.message ||
+        getSafeProblemDetail(
+          error?.response?.data?.error?.message,
+        ) ||
+        getSafeProblemDetail(
+          error?.response?.data?.message,
+        ) ||
         "Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.";
 
       if (error?.response && Number(status) < 500) {
