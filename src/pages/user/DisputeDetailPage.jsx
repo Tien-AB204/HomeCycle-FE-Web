@@ -23,7 +23,53 @@ import {
   normalizePostType,
 } from "../../constants/marketplace";
 import disputeApi from "../../services/apis/disputeApi";
+import DeadlineBanner from "../../components/shared/DeadlineBanner";
 import EvidenceImage from "../../components/shared/EvidenceImage";
+import DisputeResponseModal from "../../features/disputes/DisputeResponseModal";
+import { useAuth } from "../../hooks/useAuth";
+import { useDeadlineCountdown } from "../../hooks/useDeadlineCountdown";
+import { getUserId } from "../../utils/authUtils";
+
+const normalizeKey = (value) =>
+  String(value ?? "").replace(/[\s_-]/g, "").toLowerCase();
+
+const OUTCOME_LABELS = {
+  1: "Có lợi cho người mua",
+  buyerfavored: "Có lợi cho người mua",
+  2: "Có lợi cho người bán",
+  sellerfavored: "Có lợi cho người bán",
+  3: "Xác nhận có vi phạm",
+  violationconfirmed: "Xác nhận có vi phạm",
+  4: "Không có vi phạm",
+  noviolation: "Không có vi phạm",
+};
+
+const RESOLUTION_SOURCE_LABELS = {
+  1: "Hai bên tự thống nhất",
+  mutualagreement: "Hai bên tự thống nhất",
+  2: "Kiểm duyệt viên quyết định",
+  moderatordecision: "Kiểm duyệt viên quyết định",
+  3: "Hệ thống tự đóng",
+  systemautoclosed: "Hệ thống tự đóng",
+};
+
+const RESPONSE_TYPE_META = {
+  1: { label: "Đồng ý", icon: "check_circle" },
+  accept: { label: "Đồng ý", icon: "check_circle" },
+  2: { label: "Phản biện", icon: "forum" },
+  rebut: { label: "Phản biện", icon: "forum" },
+  3: { label: "Tường trình", icon: "description" },
+  statement: { label: "Tường trình", icon: "description" },
+};
+
+const RESPONSE_SUCCESS_MESSAGES = {
+  accept: "Bạn đã đồng ý. Tranh chấp được giải quyết theo đề xuất.",
+  rebut: "Đã gửi phản biện. Tranh chấp được chuyển cho kiểm duyệt viên.",
+  statement: "Đã gửi tường trình.",
+};
+
+const isAwaitingResponseStatus = (status) =>
+  ["6", "awaitingresponse"].includes(normalizeKey(status));
 
 const formatDate = (value) => {
   if (!value) {
@@ -169,6 +215,27 @@ const MediaGallery = ({ title, description, items }) => (
   </section>
 );
 
+const MediaThumbnails = ({ items }) => (
+  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+    {items.map((image) => (
+      <a
+        key={image.key}
+        href={image.url}
+        target="_blank"
+        rel="noreferrer"
+        className="overflow-hidden rounded-lg border border-border bg-background"
+      >
+        <EvidenceImage
+          src={image.url}
+          alt={image.fileName}
+          bordered={false}
+          className="h-20 w-full"
+        />
+      </a>
+    ))}
+  </div>
+);
+
 /*
  * Chỉ dùng HTTP status / mã lỗi ổn định của Backend để chọn thông báo.
  * Không hiển thị message thô từ Backend/Axios ra giao diện.
@@ -214,6 +281,8 @@ const DetailRow = ({
 
 const DisputeDetailPage = () => {
   const { disputeId } = useParams();
+  const { user } = useAuth();
+  const currentUserId = normalizeKey(getUserId(user));
 
   const [state, setState] = useState({
     loading: true,
@@ -223,6 +292,8 @@ const DisputeDetailPage = () => {
 
   const [isClosing, setIsClosing] = useState(false);
   const [closeError, setCloseError] = useState("");
+  const [responseMode, setResponseMode] = useState(null);
+  const [actionMessage, setActionMessage] = useState("");
 
   const loadDetail = useCallback(
     async (signal) => {
@@ -263,6 +334,28 @@ const DisputeDetailPage = () => {
       controller.abort();
     };
   }, [loadDetail]);
+
+  /*
+   * Hạn phản hồi do Backend chốt cho từng tranh chấp; hết hạn thì tải lại
+   * để lấy trạng thái mới.
+   */
+  const responseDeadline = isAwaitingResponseStatus(state.detail?.status)
+    ? state.detail?.responseDeadlineAt
+    : null;
+  const responseCountdown = useDeadlineCountdown(responseDeadline, () =>
+    void loadDetail(),
+  );
+
+  const handleResponseSubmitted = (nextDetail, mode) => {
+    setResponseMode(null);
+
+    if (nextDetail?.disputeId) {
+      setState({ loading: false, detail: nextDetail, error: "" });
+    }
+
+    setActionMessage(RESPONSE_SUCCESS_MESSAGES[mode] || "Đã gửi phản hồi.");
+    void loadDetail();
+  };
 
   const handleClose = async () => {
     const confirmed = window.confirm(
@@ -401,6 +494,30 @@ const DisputeDetailPage = () => {
     dispute.actions?.canCloseDispute,
   );
 
+  const isSender =
+    Boolean(currentUserId) &&
+    normalizeKey(dispute.sender?.userId) === currentUserId;
+  const responses = Array.isArray(dispute.responses)
+    ? dispute.responses
+    : [];
+  const canAccept = dispute.actions?.canAccept === true;
+  const canRebut = dispute.actions?.canRebut === true;
+  // Backend chỉ nhận một phản hồi mỗi người nhưng cờ tường trình chưa loại người đã gửi.
+  const hasResponded =
+    Boolean(currentUserId) &&
+    responses.some(
+      (item) => normalizeKey(item?.responder?.userId) === currentUserId,
+    );
+  const canSubmitStatement =
+    dispute.actions?.canSubmitStatement === true && !hasResponded;
+  const hasResponseActions = canAccept || canRebut || canSubmitStatement;
+  const proposedOutcomeLabel =
+    OUTCOME_LABELS[normalizeKey(dispute.proposedResolutionOutcome)] || "";
+  const outcomeLabel =
+    OUTCOME_LABELS[normalizeKey(dispute.resolutionOutcome)] || "";
+  const resolutionSourceLabel =
+    RESOLUTION_SOURCE_LABELS[normalizeKey(dispute.resolutionSource)] || "";
+
   const backTarget =
     targetType === DISPUTE_TARGET_TYPE.ORDER && order?.orderId
       ? {
@@ -487,6 +604,25 @@ const DisputeDetailPage = () => {
         </div>
       )}
 
+      {actionMessage && (
+        <div
+          role="status"
+          className="mt-4 rounded-xl border border-success/30 bg-success/10 p-3 text-sm font-semibold text-success"
+        >
+          {actionMessage}
+        </div>
+      )}
+
+      {responseDeadline && (
+        <DeadlineBanner
+          className="mt-4"
+          countdown={responseCountdown}
+          label="Thời hạn phản hồi còn lại"
+          expiredText="Đã hết thời hạn phản hồi."
+          note={`Hạn phản hồi: ${formatDate(responseDeadline)}`}
+        />
+      )}
+
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]">
         <div className="space-y-5">
           <section className="rounded-xl border border-border bg-white px-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
@@ -539,7 +675,7 @@ const DisputeDetailPage = () => {
 
             <div className="border-t border-border py-5">
               <p className="text-xs font-black uppercase tracking-wide text-textLight">
-                Mô tả bạn đã gửi
+                {isSender ? "Mô tả bạn đã gửi" : "Mô tả của bên khiếu nại"}
               </p>
 
               <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-text">
@@ -547,6 +683,19 @@ const DisputeDetailPage = () => {
                   "Không có mô tả."}
               </p>
             </div>
+
+            {(outcomeLabel || resolutionSourceLabel) && (
+              <dl className="divide-y divide-border border-t border-border">
+                {outcomeLabel && (
+                  <DetailRow label="Kết luận">{outcomeLabel}</DetailRow>
+                )}
+                {resolutionSourceLabel && (
+                  <DetailRow label="Cách giải quyết">
+                    {resolutionSourceLabel}
+                  </DetailRow>
+                )}
+              </dl>
+            )}
 
             {dispute.moderatorNote && (
               <div className="border-t border-border py-5">
@@ -562,6 +711,117 @@ const DisputeDetailPage = () => {
               </div>
             )}
           </section>
+
+          {hasResponseActions && (
+            <section className="rounded-xl border border-primary/25 bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+              <h2 className="font-black text-text">Phản hồi của bạn</h2>
+              {canAccept && proposedOutcomeLabel && (
+                <p className="mt-2 text-sm text-text">
+                  Bên khiếu nại đề xuất:{" "}
+                  <span className="font-bold">
+                    {proposedOutcomeLabel.toLowerCase()}
+                  </span>
+                  .
+                </p>
+              )}
+              <p className="mt-1 text-sm leading-6 text-textLight">
+                {canSubmitStatement && !canAccept && !canRebut
+                  ? "Bạn có thể gửi tường trình về sự cố lịch hẹn để kiểm duyệt viên xem xét."
+                  : canAccept
+                    ? "Đồng ý thì tranh chấp được giải quyết ngay theo đề xuất trên. Phản biện thì tranh chấp được chuyển cho kiểm duyệt viên."
+                    : "Phản biện thì tranh chấp được chuyển cho kiểm duyệt viên xem xét."}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {canAccept && (
+                  <button
+                    type="button"
+                    onClick={() => setResponseMode("accept")}
+                    className="rounded-xl bg-primary px-5 py-2.5 text-sm font-black text-white transition hover:bg-primary/90"
+                  >
+                    Đồng ý
+                  </button>
+                )}
+                {canRebut && (
+                  <button
+                    type="button"
+                    onClick={() => setResponseMode("rebut")}
+                    className="rounded-xl border border-primary bg-white px-5 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10"
+                  >
+                    Phản biện
+                  </button>
+                )}
+                {canSubmitStatement && (
+                  <button
+                    type="button"
+                    onClick={() => setResponseMode("statement")}
+                    className="rounded-xl border border-primary bg-white px-5 py-2.5 text-sm font-black text-primary transition hover:bg-primary/10"
+                  >
+                    Gửi tường trình
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
+
+          {responses.length > 0 && (
+            <section className="rounded-xl border border-border bg-white px-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]">
+              <div className="border-b border-border py-4">
+                <h2 className="font-black text-text">
+                  Phản hồi của các bên
+                </h2>
+              </div>
+              <ul className="divide-y divide-border">
+                {responses.map((item, index) => {
+                  const typeMeta =
+                    RESPONSE_TYPE_META[normalizeKey(item?.responseType)] || {
+                      label: "Phản hồi",
+                      icon: "chat",
+                    };
+                  const responseImages = normalizeMediaItems(
+                    item?.evidenceImages,
+                  );
+
+                  return (
+                    <li
+                      key={item?.disputeResponseId || `response-${index}`}
+                      className="py-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-black text-text">
+                            {item?.responder?.username || "Người dùng HomeCycle"}
+                          </p>
+                          <p className="text-xs text-textLight">
+                            {formatDate(item?.createdAt)}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-black text-primary">
+                          <span
+                            className="material-symbols-outlined"
+                            style={{ fontSize: 14 }}
+                            aria-hidden="true"
+                          >
+                            {typeMeta.icon}
+                          </span>
+                          {typeMeta.label}
+                        </span>
+                      </div>
+                      {item?.content && (
+                        <p className="mt-2 whitespace-pre-wrap rounded-xl bg-background px-4 py-3 text-sm leading-6 text-text">
+                          {item.content}
+                        </p>
+                      )}
+                      {responseImages.length > 0 && (
+                        <div className="mt-3">
+                          <MediaThumbnails items={responseImages} />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
 
           {post && (
             <>
@@ -669,8 +929,16 @@ const DisputeDetailPage = () => {
           )}
 
           <MediaGallery
-            title="Ảnh bằng chứng bạn đã gửi"
-            description="Hình ảnh bạn cung cấp khi tạo tranh chấp hoặc báo cáo, tách biệt với nội dung gốc."
+            title={
+              isSender
+                ? "Ảnh bằng chứng bạn đã gửi"
+                : "Ảnh bằng chứng của bên khiếu nại"
+            }
+            description={
+              isSender
+                ? "Hình ảnh bạn cung cấp khi tạo tranh chấp hoặc báo cáo, tách biệt với nội dung gốc."
+                : "Hình ảnh bên khiếu nại cung cấp khi tạo tranh chấp, tách biệt với nội dung gốc."
+            }
             items={evidenceImages}
           />
         </div>
@@ -801,6 +1069,12 @@ const DisputeDetailPage = () => {
           )}
         </aside>
       </div>
+      <DisputeResponseModal
+        disputeId={disputeId}
+        mode={responseMode}
+        onClose={() => setResponseMode(null)}
+        onSubmitted={handleResponseSubmitted}
+      />
     </section>
   );
 };

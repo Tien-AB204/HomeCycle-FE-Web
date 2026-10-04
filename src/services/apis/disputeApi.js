@@ -273,6 +273,40 @@ export const disputeApi = {
     );
   },
 
+  /*
+   * Bên bị khiếu nại phản hồi: Accept = 1, Rebut = 2, Statement = 3.
+   * Backend trả lại chi tiết tranh chấp sau khi phản hồi.
+   */
+  respond: async (disputeId, { responseType, content, evidenceImages = [] }) => {
+    const id = normalizeIdentifier(
+      disputeId,
+      "Không tìm thấy mã tranh chấp.",
+    );
+    const formData = new FormData();
+
+    formData.append("ResponseType", String(responseType));
+
+    if (content) {
+      formData.append("Content", content);
+    }
+
+    evidenceImages.forEach((file) => {
+      formData.append("EvidenceImages", file);
+    });
+
+    const response = await axiosClient.post(
+      `/disputes/${encodeURIComponent(id)}/response`,
+      formData,
+      {
+        // Backend tải ảnh lên trước khi trả kết quả.
+        timeout: 60000,
+        skipGlobalErrorPage: true,
+      },
+    );
+
+    return unwrap(response);
+  },
+
   getById: async (disputeId, { signal } = {}) => {
     const id = normalizeIdentifier(
       disputeId,

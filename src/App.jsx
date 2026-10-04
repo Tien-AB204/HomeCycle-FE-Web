@@ -8,6 +8,7 @@ import { ChatRealtimeProvider } from './contexts/ChatRealtimeProvider';
 import { NotificationProvider } from './contexts/NotificationProvider';
 import ApiErrorRedirect from './components/shared/ApiErrorRedirect';
 import NotificationToast from './components/shared/NotificationToast';
+import OfferUpdateAlertHost from './components/shared/OfferUpdateAlertHost';
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
             <ChatRealtimeProvider>
               <NotificationProvider>
                 <NotificationToast />
+                <OfferUpdateAlertHost />
                 <AppRouter />
               </NotificationProvider>
             </ChatRealtimeProvider>

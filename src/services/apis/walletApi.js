@@ -263,6 +263,64 @@ export const walletApi = {
     return wallet;
   },
 
+  /*
+   * Lịch sử giao dịch ví: mỗi WalletTransaction một dòng (khác sổ cái, nơi
+   * một giao dịch có thể sinh nhiều bút toán).
+   */
+  getTransactions: async ({ pageNumber = 1, pageSize = 10, signal } = {}) => {
+    const page = normalizePositiveInteger(pageNumber, 1);
+    const size = Math.min(100, normalizePositiveInteger(pageSize, 10));
+    const response = await axiosClient.get("/wallet/me/transactions", {
+      params: { PageNumber: page, PageSize: size },
+      signal,
+      skipGlobalErrorPage: true,
+    });
+    const data = response?.data ?? response;
+
+    return {
+      items: Array.isArray(data?.items) ? data.items : [],
+      pageNumber: data?.pageNumber ?? page,
+      totalCount: data?.totalCount ?? 0,
+      totalPages: data?.totalPages ?? 0,
+      hasPreviousPage: Boolean(data?.hasPreviousPage),
+      hasNextPage: Boolean(data?.hasNextPage),
+    };
+  },
+
+  /*
+   * Chi tiết giao dịch kèm balanceImpacts (số dư trước/sau theo từng loại).
+   */
+  getTransactionById: async (walletTransactionId, { signal } = {}) => {
+    const id = String(walletTransactionId || "").trim();
+
+    if (!id) {
+      throw new Error("Không tìm thấy mã giao dịch ví.");
+    }
+
+    const response = await axiosClient.get(
+      `/wallet/me/transactions/${encodeURIComponent(id)}`,
+      { signal, skipGlobalErrorPage: true },
+    );
+
+    return response?.data ?? response;
+  },
+
+  /*
+   * Tiền đơn hàng nền tảng đang giữ cho người bán, chưa vào số dư khả dụng.
+   */
+  getPendingSettlements: async ({ signal } = {}) => {
+    const response = await axiosClient.get("/wallet/me/pending-settlements", {
+      signal,
+      skipGlobalErrorPage: true,
+    });
+    const data = response?.data ?? response;
+
+    return {
+      totalPendingAmount: Number(data?.totalPendingAmount) || 0,
+      items: Array.isArray(data?.items) ? data.items : [],
+    };
+  },
+
   getLedger: async ({
     pageNumber = 1,
     pageSize = 10,

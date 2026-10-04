@@ -88,6 +88,23 @@ const inspectionFormApi = {
     );
   },
 
+  /*
+   * Người mua cá nhân chấp nhận tình trạng sản phẩm mà không làm checklist;
+   * Backend tạo biên bản ở chế độ QuickAccept.
+   */
+  quickAccept: async (appointmentId) => {
+    const id = normalizeIdentifier(
+      appointmentId,
+      "Không tìm thấy mã lịch kiểm định.",
+    );
+
+    return axiosClient.post(
+      `/inspection-forms/appointment/${encodeURIComponent(id)}/quick-accept`,
+      undefined,
+      { skipGlobalErrorPage: true },
+    );
+  },
+
   collectNow: async (
     inspectionFormId,
     expectedRevision,

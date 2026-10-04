@@ -7,7 +7,12 @@ import {
 } from "../../constants/agreements";
 import AgreementForm from "../../features/agreements/AgreementForm";
 import AgreementSummary from "../../features/agreements/AgreementSummary";
+import HighValueWarning from "../../components/shared/HighValueWarning";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
+import {
+  getContractTotal,
+  isHighValueWithoutInspection,
+} from "../../utils/highValue";
 import agreementApi from "../../services/apis/agreementApi";
 import negotiationApi from "../../services/apis/negotiationApi";
 import orderApi from "../../services/apis/orderApi";
@@ -27,6 +32,10 @@ import {
   getSafeValidationMessage,
 } from "../../utils/safeErrorMessage";
 import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
+import {
+  downloadAgreementPdf,
+  getAgreementPdfErrorMessage,
+} from "../../utils/agreementPdf";
 
 const PENDING_AGREEMENT_KEY = "homecycle:pending-payment-agreement-id";
 
@@ -110,6 +119,8 @@ const AgreementPage = () => {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [highValueAck, setHighValueAck] = useState({ key: "", value: false });
   const [paymentStatus, setPaymentStatus] = useState("");
   const [transactionContext, setTransactionContext] = useState({
     negotiation: null,
@@ -655,6 +666,45 @@ const AgreementPage = () => {
   const canEdit = Boolean(preview?.canEdit) && agreement?.agreementStatus === AGREEMENT_STATUS.PENDING;
   const canRequestEdit = agreement?.agreementStatus === AGREEMENT_STATUS.AWAITING_PAYMENT;
   const canPay = buyerAwaitingPayment;
+  /*
+   * BR-49: thỏa thuận không kiểm định trên 3.000.000 đ phải cảnh báo; người
+   * mua xác nhận "đã hiểu" trước khi đồng ý. Xác nhận gắn với đúng phiên bản
+   * nội dung nên tự bỏ khi thỏa thuận được sửa.
+   */
+  const isHighValueContract = Boolean(agreement) &&
+    isHighValueWithoutInspection(
+      agreement.finalPrice,
+      agreement.quantity || 1,
+      agreement.agreementType === AGREEMENT_TYPE.INSPECTION,
+    );
+  const requiresHighValueAck =
+    isHighValueContract &&
+    Boolean(preview?.canConfirm) &&
+    String(preview?.userRole || "").toLowerCase() === "buyer";
+  const highValueAckKey = `${agreement?.agreementId || ""}:${agreement?.agreementDetails?.revision || 1}`;
+  const highValueAcknowledged =
+    highValueAck.key === highValueAckKey && highValueAck.value;
+
+  // Chỉ thỏa thuận đã thanh toán mới có bản PDF.
+  const canDownloadPdf =
+    agreement?.agreementStatus === AGREEMENT_STATUS.CONFIRMED;
+
+  const handleDownloadPdf = async () => {
+    if (isDownloadingPdf || !agreement?.agreementId) {
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    setError("");
+
+    try {
+      await downloadAgreementPdf(agreement.agreementId);
+    } catch (downloadError) {
+      setError(getAgreementPdfErrorMessage(downloadError));
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   const quotedAmount =
     Number(paymentQuote.data?.amountToPay);
@@ -745,6 +795,24 @@ const AgreementPage = () => {
       {agreement && !editing && <>
         <AgreementSummary agreement={agreement} />
 
+        {isHighValueContract && (
+          <HighValueWarning
+            className="mt-5"
+            totalAmount={getContractTotal(agreement.finalPrice, agreement.quantity || 1)}
+            acknowledged={highValueAcknowledged}
+            onToggleAcknowledge={
+              requiresHighValueAck
+                ? () =>
+                    setHighValueAck({
+                      key: highValueAckKey,
+                      value: !highValueAcknowledged,
+                    })
+                : undefined
+            }
+            disabled={Boolean(busy)}
+          />
+        )}
+
         {agreement.agreementType === AGREEMENT_TYPE.INSPECTION && agreement.agreementStatus === AGREEMENT_STATUS.CONFIRMED && (
           <div className="mt-5 rounded-xl border border-primary/30 bg-primary/10 p-4 text-sm leading-6 text-primary">
             Thỏa thuận có lịch kiểm định. Bạn có thể theo dõi lịch và check-in tại mục <Link to="/lich-hen" className="font-black underline">Lịch hẹn</Link>. Chức năng ghi nhận kết quả đạt/không đạt sẽ được bổ sung khi backend cung cấp API.
@@ -752,8 +820,25 @@ const AgreementPage = () => {
         )}
 
         <div className="mt-5 flex flex-wrap justify-end gap-3 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)]">
+          {canDownloadPdf && (
+            <button
+              type="button"
+              onClick={() => void handleDownloadPdf()}
+              disabled={isDownloadingPdf}
+              className="inline-flex items-center gap-2 rounded-lg border border-primary px-5 py-3 text-sm font-black text-primary hover:bg-primary/10 disabled:opacity-50"
+            >
+              <span
+                className="material-symbols-outlined"
+                style={{ fontSize: 18 }}
+                aria-hidden="true"
+              >
+                picture_as_pdf
+              </span>
+              {isDownloadingPdf ? "Đang tải PDF..." : "Tải hợp đồng PDF"}
+            </button>
+          )}
           {canEdit && <button type="button" onClick={() => setEditing(true)} className="rounded-lg border border-primary px-5 py-3 text-sm font-black text-primary hover:bg-primary/10">Chỉnh sửa thỏa thuận</button>}
-          {preview?.canConfirm && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("accept", () => agreementApi.accept(agreement.agreementId, agreement?.agreementDetails?.revision), "Bạn đã xác nhận thỏa thuận.")} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:opacity-50">{busy === "accept" ? "Đang xác nhận..." : "Xác nhận thỏa thuận"}</button>}
+          {preview?.canConfirm && <button type="button" disabled={Boolean(busy) || (requiresHighValueAck && !highValueAcknowledged)} title={requiresHighValueAck && !highValueAcknowledged ? "Hãy xác nhận đã hiểu cảnh báo hàng giá trị cao" : undefined} onClick={() => runAction("accept", () => agreementApi.accept(agreement.agreementId, agreement?.agreementDetails?.revision), "Bạn đã xác nhận thỏa thuận.")} className="rounded-lg bg-primary px-5 py-3 text-sm font-black text-white hover:bg-primary/90 disabled:opacity-50">{busy === "accept" ? "Đang xác nhận..." : "Xác nhận thỏa thuận"}</button>}
           {canRequestEdit && <button type="button" disabled={Boolean(busy)} onClick={() => runAction("request-edit", () => agreementApi.requestEdit(agreement.agreementId), "Đã mở lại thỏa thuận. Hai bên cần xác nhận lại sau khi chỉnh sửa.")} className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-3 text-sm font-black text-warning hover:bg-warning/20 disabled:opacity-50">Yêu cầu chỉnh sửa</button>}
         </div>
 
