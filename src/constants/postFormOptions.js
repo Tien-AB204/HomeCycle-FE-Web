@@ -57,9 +57,3 @@ export const DELIVERY_METHOD_OPTIONS = Object.freeze([
   { value: "BuyerPickUp", label: "Người mua đến lấy" },
   { value: "Unknown", label: "Thỏa thuận vận chuyển" },
 ]);
-
-export const PRIORITY_LEVEL_OPTIONS = Object.freeze([
-  { value: "Low", label: "Thấp" },
-  { value: "Medium", label: "Trung bình" },
-  { value: "High", label: "Cao" },
-]);

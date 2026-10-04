@@ -4,6 +4,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
+import PriorityBadge from "./PriorityBadge";
 
 const CONDITION_MAP = {
   good_working: "Hoạt động tốt",
@@ -178,6 +179,8 @@ const ProductCard = ({
             </div>
           )}
 
+          <PriorityBadge post={data} className="absolute left-3 top-3" />
+
           <span className="absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] truncate rounded-full bg-white/90 px-2.5 py-1 text-[9px] font-extrabold text-textLight shadow-sm backdrop-blur">
             {type}
           </span>
@@ -190,6 +193,7 @@ const ProductCard = ({
             <span className="rounded-full bg-primary px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-white">
               Đang tìm mua
             </span>
+            <PriorityBadge post={data} />
             <span className="rounded-full bg-background px-2.5 py-1 text-[9px] font-extrabold text-textLight">
               {type}
             </span>

@@ -7,12 +7,18 @@ import {
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import ProductCard from "../../components/shared/ProductCard";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
+import {
+  CATEGORY_BACKEND_IDS,
+  MAIN_CATEGORIES,
+} from "../../constants/filterOptions";
 import { normalizePostType } from "../../constants/marketplace";
 import { ROLES } from "../../constants/roles";
 import { useAuth } from "../../hooks/useAuth";
+import { useDiscoveryPreferences } from "../../hooks/useDiscoveryPreferences";
 import postApi from "../../services/apis/postApi";
-import { normalizeRole } from "../../utils/authUtils";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
 import { BUSINESS_DISCOVERY_REFRESH_EVENT } from "../../utils/businessDiscoveryEvents";
+import { filterDiscoveryPosts } from "../../utils/discoveryPosts";
 import {
   isPostCatalogStorageEvent,
   POST_CATALOG_CHANGED_EVENT,
@@ -29,23 +35,27 @@ import {
 
 const HOME_PAGE_SIZE = 100;
 const BUSINESS_POST_LIMIT = 4;
+const FEATURED_POST_LIMIT = 8;
 const PERSONAL_POST_LIMIT = 4;
 
 const CATEGORIES = [
   {
     name: "Điện máy",
+    categoryId: CATEGORY_BACKEND_IDS[MAIN_CATEGORIES.ELECTRONIC],
     description: "Thiết bị nhà bếp và điện gia dụng",
     icon: ThunderboltOutlined,
     className: "border border-border bg-white text-success",
   },
   {
     name: "Nội thất",
+    categoryId: CATEGORY_BACKEND_IDS[MAIN_CATEGORIES.APPLIANCE],
     description: "Bàn ghế, giường tủ cho mọi không gian",
     icon: AppstoreOutlined,
     className: "border border-border bg-white text-warning",
   },
   {
     name: "Đồ sinh hoạt",
+    categoryId: CATEGORY_BACKEND_IDS[MAIN_CATEGORIES.HOUSEHOLD],
     description: "Đồ dùng tiện ích cho gia đình",
     icon: HomeOutlined,
     className: "border border-border bg-white text-primary",
@@ -87,6 +97,27 @@ const hasPostType = (post, postType) => {
     ) === normalizedPostType
   );
 };
+
+/*
+ * Cá nhân thấy cả tin bán lẫn tin thu mua nổi bật (xen kẽ); doanh nghiệp chỉ
+ * khám phá tin bán.
+ */
+const interleavePosts = (firstPosts, secondPosts) => {
+  const merged = [];
+  const length = Math.max(firstPosts.length, secondPosts.length);
+
+  for (let index = 0; index < length; index += 1) {
+    if (firstPosts[index]) merged.push(firstPosts[index]);
+    if (secondPosts[index]) merged.push(secondPosts[index]);
+  }
+
+  return merged;
+};
+
+const getFulfilledItems = (result) =>
+  result.status === "fulfilled" && Array.isArray(result.value)
+    ? result.value
+    : [];
 
 const LoadingCards = ({ count }) => {
   return Array.from({ length: count }, (_, index) => (
@@ -170,6 +201,7 @@ const Homepage = () => {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState([]);
+  const [featuredPosts, setFeaturedPosts] = useState([]);
   const [discoveryState, setDiscoveryState] = useState({
     status: "idle",
     items: [],
@@ -180,6 +212,8 @@ const Homepage = () => {
   const [requestVersion, setRequestVersion] = useState(0);
   const normalizedRole = normalizeRole(user?.role);
   const isBusinessUser = isAuthenticated && normalizedRole === ROLES.BUSINESS;
+  const currentUserId = isAuthenticated ? getUserId(user) : "";
+  const { showOwnPostsInDiscovery } = useDiscoveryPreferences();
   useEffect(() => {
     const controller = new AbortController();
     let isActive = true;
@@ -214,6 +248,32 @@ const Homepage = () => {
       controller.abort();
     };
   }, [requestVersion]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    Promise.allSettled([
+      postApi.getFeatured("sell", { signal: controller.signal }),
+      isBusinessUser
+        ? Promise.resolve([])
+        : postApi.getFeatured("buy", { signal: controller.signal }),
+    ]).then(([sellResult, buyResult]) => {
+      if (controller.signal.aborted) {
+        return;
+      }
+
+      setFeaturedPosts(
+        interleavePosts(
+          getFulfilledItems(sellResult),
+          getFulfilledItems(buyResult),
+        )
+          .filter(isActivePost)
+          .slice(0, FEATURED_POST_LIMIT),
+      );
+    });
+
+    return () => controller.abort();
+  }, [isBusinessUser, requestVersion]);
 
   useEffect(() => {
     if (!isBusinessUser) {
@@ -299,20 +359,35 @@ const Homepage = () => {
     };
   }, [isBusinessUser, requestVersion]);
 
+  const discoveryPosts = useMemo(
+    () => filterDiscoveryPosts(posts, currentUserId, showOwnPostsInDiscovery),
+    [currentUserId, posts, showOwnPostsInDiscovery],
+  );
+
+  const visibleFeaturedPosts = useMemo(
+    () =>
+      filterDiscoveryPosts(
+        featuredPosts,
+        currentUserId,
+        showOwnPostsInDiscovery,
+      ),
+    [currentUserId, featuredPosts, showOwnPostsInDiscovery],
+  );
+
   const buyPosts = useMemo(
     () =>
-      posts
+      discoveryPosts
         .filter((post) => isActivePost(post) && hasPostType(post, "Buy"))
         .slice(0, BUSINESS_POST_LIMIT),
-    [posts],
+    [discoveryPosts],
   );
 
   const personalPosts = useMemo(
     () =>
-      posts
+      discoveryPosts
         .filter((post) => isActivePost(post) && hasPostType(post, "Sell"))
         .slice(0, PERSONAL_POST_LIMIT),
-    [posts],
+    [discoveryPosts],
   );
 
   const recommendedPosts = discoveryState.items;
@@ -407,7 +482,7 @@ const Homepage = () => {
               return (
                 <Link
                   key={category.name}
-                  to={`/search?keyword=${encodeURIComponent(category.name)}&showFilter=1`}
+                  to={`/search?categoryId=${encodeURIComponent(category.categoryId)}&showFilter=1`}
                   className={`group flex items-center gap-4 rounded-lg p-4 transition hover:border-primary ${category.className}`}
                 >
                   <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/75 text-3xl shadow-sm transition group-hover:scale-105" aria-hidden="true">
@@ -430,6 +505,31 @@ const Homepage = () => {
               Thử lại
             </button>
           </div>
+        )}
+
+        {visibleFeaturedPosts.length > 0 && (
+          <section className="pb-12">
+            <SectionHeader
+              eyebrow="Gói VIP"
+              title="Tin nổi bật"
+              description="Tin của thành viên đang dùng gói trả phí, được ưu tiên hiển thị trên HomeCycle."
+              to={
+                isBusinessUser
+                  ? "/tin-dang-ban?view=marketplace"
+                  : "/search?showFilter=1"
+              }
+            />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {visibleFeaturedPosts.map((post) => (
+                <ProductCard
+                  key={post.postId}
+                  data={post}
+                  variant={hasPostType(post, "Buy") ? "business-buy" : "personal-sell"}
+                  onBeforeOpen={handlePostOpen}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {isBusinessUser && discoveryState.status === "surveyRequired" && (

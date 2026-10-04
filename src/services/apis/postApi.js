@@ -99,7 +99,6 @@ const appendAttributeValues = (formData, fieldName, attributeValues) => {
 };
 
 const appendCommonPostFields = (formData, postData) => {
-  appendFormValue(formData, "PriorityLevel", postData.priorityLevel);
   appendFormValue(formData, "Quantity", postData.quantity);
   appendFormValue(formData, "City", postData.city);
   appendFormValue(formData, "StreetAddress", postData.streetAddress);
@@ -204,9 +203,6 @@ const createBuyPayload = (postData) => {
 
     city:
       normalizeText(postData.city) || null,
-
-    priorityLevel:
-      normalizeText(postData.priorityLevel) || null,
 
     priceFrom:
       typeof postData.priceFrom === "number" &&
@@ -771,6 +767,29 @@ export const postApi = {
     const data = unwrapResponse(response, "Không thể tải danh sách bài đăng.");
 
     return normalizePagination(data, normalizedPageNumber, normalizedPageSize);
+  },
+
+  /*
+   * Tin nổi bật: Backend chọn tin của chủ tin đang có gói trả phí còn hạn.
+   */
+  getFeatured: async (postType, { signal } = {}) => {
+    const type = String(postType || "").trim().toLowerCase();
+
+    if (type !== "sell" && type !== "buy") {
+      throw new Error("Loại tin nổi bật không hợp lệ.");
+    }
+
+    const response = await axiosClient.get(`/posts/featured/${type}`, {
+      signal,
+      skipGlobalErrorPage: true,
+    });
+    const data = unwrapResponse(response, "Không thể tải tin nổi bật.");
+
+    return Array.isArray(data)
+      ? data
+      : Array.isArray(data?.items)
+        ? data.items
+        : [];
   },
 
   discoverBusiness: async ({
