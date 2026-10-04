@@ -1,3 +1,4 @@
+import ChartScrollArea from "./ChartScrollArea";
 const toFiniteNumber = (value) => {
   if (value === null || value === undefined || value === "") {
     return null;
@@ -240,7 +241,7 @@ export function FinanceCashFlowChart({
         </div>
       </div>
 
-      <div className="mt-5 overflow-x-auto">
+      <ChartScrollArea scrollKey={safeRows} className="mt-5">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="h-[340px]"
@@ -395,7 +396,7 @@ export function FinanceCashFlowChart({
             ),
           )}
         </svg>
-      </div>
+      </ChartScrollArea>
     </section>
   );
 }

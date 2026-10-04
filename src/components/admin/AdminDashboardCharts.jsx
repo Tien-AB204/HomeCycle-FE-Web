@@ -1,3 +1,4 @@
+import ChartScrollArea from "./ChartScrollArea";
 const TONES = [
   "text-primary",
   "text-success",
@@ -375,7 +376,7 @@ export function DashboardColumnChart({
           {emptyState}
         </div>
       ) : (
-        <div className="mt-6 overflow-x-auto pb-2">
+        <ChartScrollArea scrollKey={safeRows} className="mt-6 pb-2">
           <div
             className="flex h-72 items-end gap-4 border-b border-border px-3 pt-8"
             style={{
@@ -444,7 +445,7 @@ export function DashboardColumnChart({
               },
             )}
           </div>
-        </div>
+        </ChartScrollArea>
       )}
     </section>
   );
@@ -789,7 +790,7 @@ export function DashboardLineChart({
         </div>
       </div>
 
-      <div className="mt-5 overflow-x-auto">
+      <ChartScrollArea scrollKey={safeRows} className="mt-5">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="h-[320px]"
@@ -1028,7 +1029,7 @@ export function DashboardLineChart({
             },
           )}
         </svg>
-      </div>
+      </ChartScrollArea>
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import ChartScrollArea from "../../components/admin/ChartScrollArea";
 import {
   useEffect,
   useMemo,
@@ -592,7 +593,7 @@ const RegistrationLineChart = ({
   ];
 
   return (
-    <div className="overflow-x-auto">
+    <ChartScrollArea scrollKey={rows}>
       <svg
         viewBox={`0 0 ${chart.width} ${chart.height}`}
         className="h-[300px] min-w-[720px] w-full"
@@ -752,7 +753,7 @@ const RegistrationLineChart = ({
           },
         )}
       </svg>
-    </div>
+    </ChartScrollArea>
   );
 };
 
