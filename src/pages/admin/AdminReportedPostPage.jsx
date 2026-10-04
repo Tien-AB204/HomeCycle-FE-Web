@@ -202,7 +202,7 @@ export default function AdminReportedPostPage() {
   const openOwner = (ownerId) => {
     const id = String(ownerId || "").trim();
     if (!id) return;
-    navigate(`/admin/users?userId=${encodeURIComponent(id)}`);
+    navigate(`/admin/dashboard/users?tab=list&userId=${encodeURIComponent(id)}`);
   };
 
   const openCase = (disputeId) => {

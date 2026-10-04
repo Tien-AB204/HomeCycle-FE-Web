@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 // Layouts
 import AdminLayout from "../components/layouts/AdminLayout";
@@ -39,7 +39,7 @@ import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
 import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
 import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
 import AdminReportedPostPage from "../pages/admin/AdminReportedPostPage";
-import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
+import AdminUsersPage from "../pages/admin/AdminUsersPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
@@ -48,7 +48,6 @@ import PostManagementPage from "../pages/admin/PostManagementPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
 import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
-import UserManagementPage from "../pages/admin/UserManagementPage";
 import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 import GhnWebhookTestConsolePage from "../pages/demo/GhnWebhookTestConsolePage";
 
@@ -83,6 +82,13 @@ const isGhnWebhookDemoEnabled =
   String(import.meta.env.VITE_ENABLE_GHN_WEBHOOK_SIMULATOR || "")
     .trim()
     .toLowerCase() === "true";
+
+// Đường dẫn cũ /admin/users?userId=... vẫn mở đúng tài khoản trong tab danh sách.
+function LegacyUsersRedirect() {
+  const params = new URLSearchParams(useLocation().search);
+  params.set("tab", "list");
+  return <Navigate to={`/admin/dashboard/users?${params}`} replace />;
+}
 
 const AppRouter = () => {
   return (
@@ -304,7 +310,7 @@ const AppRouter = () => {
 
           <Route
             path="dashboard/users"
-            element={<AdminUserDashboardPage />}
+            element={<AdminUsersPage />}
           />
 
           <Route
@@ -379,7 +385,7 @@ const AppRouter = () => {
             element={<ProductTypeAttributePage />}
           />
 
-          <Route path="users" element={<UserManagementPage />} />
+          <Route path="users" element={<LegacyUsersRedirect />} />
 
           <Route path="posts" element={<PostManagementPage />} />
 
