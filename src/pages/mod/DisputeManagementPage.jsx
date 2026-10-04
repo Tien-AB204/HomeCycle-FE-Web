@@ -18,6 +18,7 @@ import {
   Radio,
   Select,
   Spin,
+  Tabs,
   Tag,
 } from "antd";
 import {
@@ -1354,7 +1355,7 @@ const DisputeManagementPage = ({
         />
       ) : (
         <Image.PreviewGroup>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
             {mediaItems.map((media) => (
               <div
                 key={media.key}
@@ -1363,8 +1364,8 @@ const DisputeManagementPage = ({
                 <Image
                   src={media.url}
                   alt={media.fileName}
-                  className="h-40 w-full object-cover"
-                  width="100%"
+                  rootClassName="block"
+                  style={{ height: 140, width: "100%", objectFit: "cover" }}
                 />
 
                 <div className="p-2">
@@ -1535,14 +1536,14 @@ const DisputeManagementPage = ({
   const renderThumbs = (mediaItems) =>
     mediaItems.length === 0 ? null : (
       <Image.PreviewGroup>
-        <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
+        <div className="mt-2 grid grid-cols-[repeat(auto-fill,minmax(88px,1fr))] gap-2">
           {mediaItems.map((media) => (
             <Image
               key={media.key}
               src={media.url}
               alt={media.fileName}
-              className="h-20 w-full rounded-lg object-cover"
-              width="100%"
+              rootClassName="block overflow-hidden rounded-lg border border-border"
+              style={{ height: 88, width: "100%", objectFit: "cover" }}
             />
           ))}
         </div>
@@ -2049,7 +2050,13 @@ const DisputeManagementPage = ({
         <section className="@container min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-background/60">
           {!selectedDisputeId ? (
             <div className="flex h-full items-center justify-center p-8">
-              <Empty description="Chọn một tranh chấp để xem chi tiết" />
+              <Empty description="Chọn một tranh chấp để xem chi tiết">
+                {listCollapsed && (
+                  <Button onClick={() => toggleListCollapsed(false)}>
+                    Mở danh sách tranh chấp
+                  </Button>
+                )}
+              </Empty>
             </div>
           ) : loadingDetail &&
             !detail ? (
@@ -2080,7 +2087,7 @@ const DisputeManagementPage = ({
               />
             </div>
           ) : detail ? (
-            <div className="mx-auto w-full max-w-[1400px] p-5">
+            <div className="mx-auto w-full max-w-[1600px] p-5">
               <div className="sticky top-0 z-20 -mx-5 -mt-5 mb-5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-white/95 px-5 py-3 shadow-sm backdrop-blur">
                 <div className="flex min-w-0 items-center gap-3">
                   <h2 className="truncate text-lg font-black text-text">
@@ -2208,6 +2215,8 @@ const DisputeManagementPage = ({
                 />
               )}
 
+              <div className="grid items-start gap-5 @5xl:grid-cols-[minmax(0,1fr)_300px]">
+              <div className="min-w-0">
               <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
                 <div>
                   <h3 className="text-base font-black text-text">
@@ -2218,9 +2227,6 @@ const DisputeManagementPage = ({
                   </p>
                 </div>
 
-                <span className="text-xs font-bold text-textLight">
-                  {getCategoryLabel(detail.category)}
-                </span>
               </div>
 
               <div className="grid items-start gap-4 @2xl:grid-cols-2">
@@ -2379,9 +2385,497 @@ const DisputeManagementPage = ({
                 </div>
               )}
 
-              <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+              <Tabs
+                key={detail.disputeId}
+                className="mt-6"
+                items={[
+                  order && {
+                    key: "order",
+                    label: "Đơn hàng & hoàn trả",
+                    children: (
+                      <>
+              {order && (
+                <>
+                  <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Thông tin đơn hàng liên quan
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Mã đơn hàng">
+                        {order.orderCode ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mã định danh đơn hàng">
+                        {order.orderId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Sản phẩm">
+                        {order.productName ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Số lượng">
+                        {order.quantity ??
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Tổng tiền">
+                        {formatMoney(
+                          order.finalTotalAmount,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái đơn">
+                        {getOrderStatusLabel(
+                          order.orderStatus,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái thanh toán">
+                        {getPaymentStatusLabel(
+                          order.paymentStatus,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Hạn tạo tranh chấp">
+                        {formatDateTime(
+                          order.disputeDeadlineUtc,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item
+                        label="Hình thức giao hàng"
+                        span={2}
+                      >
+                        {hasValue(order.deliveryMethod)
+                          ? getDeliveryMethodLabel(
+                              order.deliveryMethod,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người bán xác nhận đã giao">
+                        {formatDateTime(
+                          order.sellerHandoverConfirmedAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người mua xác nhận đã nhận">
+                        {formatDateTime(
+                          order.buyerReceivedConfirmedAt,
+                        )}
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Tiến trình hoàn trả
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Người mua xác nhận đã trả hàng">
+                        {formatDateTime(
+                          order.buyerReturnConfirmedAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người bán xác nhận đã nhận lại hàng">
+                        {formatDateTime(
+                          order.sellerReturnReceivedAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Hạn phản hồi hoàn trả">
+                        {formatDateTime(
+                          order.returnDueAt,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Thời gian hoàn trả hoàn tất">
+                        {formatDateTime(
+                          order.returnedAt,
+                        )}
+                      </Descriptions.Item>
+                    </Descriptions>
+
+                    {normalizeEnumValue(
+                      detail.status,
+                      "status",
+                    ) === 5 &&
+                      order.returnDueAt && (
+                        <Alert
+                          className="mt-4"
+                          type="warning"
+                          showIcon
+                          message={`Đang chờ quy trình hoàn trả. Mốc hiện tại: ${formatDateTime(
+                            order.returnDueAt,
+                          )}.`}
+                        />
+                      )}
+                  </div>
+                </>
+              )}
+
+                      </>
+                    ),
+                  },
+                  appointmentContext && {
+                    key: "appointment",
+                    label: "Lịch hẹn",
+                    children: (
+                      <>
+              {appointmentContext && (
+                <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+                  <h3 className="mb-4 text-base font-black text-text">
+                    Lịch hẹn liên quan
+                  </h3>
+
+                  <Descriptions
+                    bordered
+                    column={{
+                      xs: 1,
+                      sm: 1,
+                      md: 2,
+                    }}
+                    size="small"
+                  >
+                    <Descriptions.Item label="Loại lịch">
+                      {getMappedLabel(
+                        APPOINTMENT_TYPE_LABELS,
+                        appointmentContext.appointmentType,
+                      )}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Trạng thái lịch">
+                      {hasValue(appointmentContext.appointmentStatus)
+                        ? getAppointmentStatusMeta(
+                            appointmentContext.appointmentStatus,
+                          ).label
+                        : "Chưa có"}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Thời gian hẹn">
+                      {formatDateTime(appointmentContext.scheduledAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Mốc tính trễ">
+                      {formatDateTime(appointmentContext.lateThresholdAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Người mua check-in">
+                      {formatDateTime(appointmentContext.buyerCheckAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Người bán check-in">
+                      {formatDateTime(appointmentContext.sellerCheckAt)}
+                    </Descriptions.Item>
+
+                    <Descriptions.Item label="Địa điểm" span={2}>
+                      {appointmentContext.location || "Chưa có"}
+                    </Descriptions.Item>
+                  </Descriptions>
+                </div>
+              )}
+
+                      </>
+                    ),
+                  },
+                  inspectionContext && {
+                    key: "inspection",
+                    label: "Kiểm định",
+                    children: (
+                      <>
+              {inspectionContext && (
+                <>
+                  <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Biên bản kiểm định liên quan
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Hình thức">
+                        {getMappedLabel(
+                          INSPECTION_MODE_LABELS,
+                          inspectionContext.inspectionMode,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái biên bản">
+                        {hasValue(inspectionContext.inspectionStatus)
+                          ? getInspectionStatusLabel(
+                              inspectionContext.inspectionStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Tình trạng vận hành">
+                        {hasValue(inspectionContext.operatingStatus)
+                          ? getOperatingStatusLabel(
+                              inspectionContext.operatingStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ngoại quan">
+                        {hasValue(inspectionContext.appearanceStatus)
+                          ? getAppearanceStatusLabel(
+                              inspectionContext.appearanceStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Phụ kiện">
+                        {hasValue(inspectionContext.partsStatus)
+                          ? getPartsStatusLabel(
+                              inspectionContext.partsStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mức khớp mô tả">
+                        {hasValue(inspectionContext.matchStatus)
+                          ? getMatchStatusLabel(
+                              inspectionContext.matchStatus,
+                            )
+                          : "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Kết luận">
+                        {getInspectionConclusionLabel(
+                          inspectionContext.conclusion,
+                        ) || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Thời điểm gửi biên bản">
+                        {formatDateTime(inspectionContext.submittedAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người bán quyết định lúc">
+                        {formatDateTime(inspectionContext.sellerDecisionAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Lý do của người bán">
+                        {inspectionContext.sellerDecisionReason || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ghi chú kiểm định" span={2}>
+                        <span className="whitespace-pre-wrap">
+                          {inspectionContext.inspectorNotes || "Chưa có ghi chú"}
+                        </span>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+
+                  {inspectionImages.length > 0 &&
+                    renderMediaGallery(
+                      "Ảnh trong biên bản kiểm định",
+                      "Hình ảnh được ghi nhận khi kiểm định sản phẩm.",
+                      inspectionImages,
+                      "Không có ảnh kiểm định",
+                    )}
+                </>
+              )}
+
+                      </>
+                    ),
+                  },
+                  post && {
+                    key: "post",
+                    label: "Bài đăng gốc",
+                    children: (
+                      <>
+              {post && (
+                <>
+                  <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Bài đăng gốc
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Mã bài đăng">
+                        {post.postId ||
+                          detail.target?.targetId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mã chủ bài đăng">
+                        {post.ownerId ||
+                          detail.targetUser?.userId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Tên sản phẩm">
+                        {post.productName || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Loại tin">
+                        {getPostTypeLabel(post.postType)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Giá cơ bản">
+                        {formatMoney(post.basePrice)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái bài đăng">
+                        {getContentStatusLabel(
+                          POST_STATUS_LABELS,
+                          post.status,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ngày đăng">
+                        {formatDateTime(post.createdAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Cập nhật bài đăng">
+                        {formatDateTime(post.updatedAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item
+                        label="Mô tả bài đăng"
+                        span={2}
+                      >
+                        <span className="whitespace-pre-wrap">
+                          {post.description ||
+                            "Không có mô tả"}
+                        </span>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+
+                </>
+              )}
+
+                      </>
+                    ),
+                  },
+                  review && {
+                    key: "review",
+                    label: "Đánh giá gốc",
+                    children: (
+                      <>
+              {review && (
+                <>
+                  <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+                    <h3 className="mb-4 text-base font-black text-text">
+                      Đánh giá gốc
+                    </h3>
+
+                    <Descriptions
+                      bordered
+                      column={{
+                        xs: 1,
+                        sm: 1,
+                        md: 2,
+                      }}
+                      size="small"
+                    >
+                      <Descriptions.Item label="Mã đánh giá">
+                        {review.reviewId ||
+                          detail.target?.targetId ||
+                          "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Mã đơn hàng liên quan">
+                        {review.orderId || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người đánh giá">
+                        {review.reviewerUsername
+                          ? `${review.reviewerUsername} (${review.reviewerId || "chưa có mã"})`
+                          : review.reviewerId || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Người được đánh giá">
+                        {review.revieweeUsername
+                          ? `${review.revieweeUsername} (${review.revieweeId || "chưa có mã"})`
+                          : review.revieweeId || "Chưa có"}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Số sao">
+                        {review.rating === null ||
+                        review.rating === undefined
+                          ? "Chưa có"
+                          : `${review.rating} / 5 sao`}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Trạng thái đánh giá">
+                        {getContentStatusLabel(
+                          REVIEW_STATUS_LABELS,
+                          review.status,
+                        )}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Ngày đánh giá">
+                        {formatDateTime(review.createdAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item label="Cập nhật đánh giá">
+                        {formatDateTime(review.updatedAt)}
+                      </Descriptions.Item>
+
+                      <Descriptions.Item
+                        label="Nội dung đánh giá"
+                        span={2}
+                      >
+                        <span className="whitespace-pre-wrap">
+                          {review.comment ||
+                            "Không có nội dung"}
+                        </span>
+                      </Descriptions.Item>
+                    </Descriptions>
+                  </div>
+
+                </>
+              )}
+
+                      </>
+                    ),
+                  },
+                  {
+                    key: "info",
+                    label: "Mã & mốc thời gian",
+                    children: (
+                      <>
+              <div className="rounded-2xl border border-border bg-white p-5 shadow-sm">
                 <h3 className="mb-4 text-base font-black text-text">
-                  Thông tin tranh chấp
+                  Mã và mốc thời gian
                 </h3>
 
                 <Descriptions
@@ -2526,502 +3020,130 @@ const DisputeManagementPage = ({
                   </Descriptions.Item>
                 </Descriptions>
 
-                {isAwaitingResponse && (
-                  <Alert
-                    className="mt-4"
-                    type="info"
-                    showIcon
-                    message={`Đang chờ bên bị khiếu nại phản hồi${
-                      detail.responseDeadlineAt
-                        ? ` đến ${formatDateTime(detail.responseDeadlineAt)}`
-                        : ""
-                    }. Tranh chấp chỉ chuyển sang kiểm duyệt viên khi bên kia phản biện hoặc hết thời hạn phản hồi.`}
-                  />
-                )}
               </div>
 
-              {timelineSteps.length > 0 && (
-                <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                  <h3 className="mb-4 text-base font-black text-text">
-                    Tiến trình tranh chấp
+                      </>
+                    ),
+                  },
+                ].filter(Boolean)}
+              />
+              </div>
+
+              <aside className="min-w-0 space-y-4 @5xl:sticky @5xl:top-[72px]">
+                <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                  <h3 className="text-sm font-black text-text">
+                    Tóm tắt
                   </h3>
 
-                  <ol className="space-y-4">
-                    {timelineSteps.map((step, index) => {
-                      // Backend ghi hạn phản hồi dạng ISO trong mô tả; hiển thị lại theo giờ Việt Nam.
-                      const stepDescription =
-                        step.code === "response_window_opened" &&
+                  <dl className="mt-3 space-y-2.5 text-sm">
+                    {[
+                      ["Lý do", getCategoryLabel(detail.category)],
+                      [
+                        "Đối tượng",
+                        optionLabel(
+                          TARGET_TYPE_OPTIONS,
+                          detail.target?.targetType ?? detail.targetType,
+                          "targetType",
+                        ),
+                      ],
+                      [
+                        "Kết quả",
+                        getDisputeResolutionLabel(
+                          detail.resolutionOutcome,
+                          detail.target?.targetType,
+                          detail.status,
+                        ),
+                      ],
+                      hasValue(detail.resolutionSource) && [
+                        "Hình thức",
+                        getMappedLabel(
+                          RESOLUTION_SOURCE_LABELS,
+                          detail.resolutionSource,
+                        ),
+                      ],
+                      [
+                        "Ngày gửi",
+                        formatDateTime(detail.createdAt ?? timestamps.createdAt),
+                      ],
+                      hasValue(detail.responseDeadlineAt) && [
+                        "Hạn phản hồi",
+                        formatDateTime(detail.responseDeadlineAt),
+                      ],
+                      hasValue(detail.resolvedAt ?? timestamps.resolvedAt) && [
+                        "Giải quyết lúc",
+                        formatDateTime(detail.resolvedAt ?? timestamps.resolvedAt),
+                      ],
+                    ]
+                      .filter(Boolean)
+                      .map(([label, value]) => (
+                        <div key={label} className="flex justify-between gap-3">
+                          <dt className="shrink-0 text-textLight">{label}</dt>
+                          <dd className="text-right font-semibold text-text">{value}</dd>
+                        </div>
+                      ))}
+                  </dl>
+
+                  {detail.moderatorNote && (
+                    <div className="mt-3 rounded-xl bg-background p-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-textLight">
+                        Ghi chú kiểm duyệt
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-text">
+                        {detail.moderatorNote}
+                      </p>
+                    </div>
+                  )}
+
+                  {isAwaitingResponse && (
+                    <Alert
+                      className="mt-3"
+                      type="info"
+                      showIcon
+                      message={`Đang chờ bên bị khiếu nại phản hồi${
                         detail.responseDeadlineAt
-                          ? `Hạn phản hồi: ${formatDateTime(detail.responseDeadlineAt)}`
-                          : step.description;
+                          ? ` đến ${formatDateTime(detail.responseDeadlineAt)}`
+                          : ""
+                      }. Tranh chấp chỉ chuyển sang kiểm duyệt viên khi bên kia phản biện hoặc hết thời hạn phản hồi.`}
+                    />
+                  )}
+                </section>
 
-                      return (
-                        <li
-                          key={`${step.code}-${index}`}
-                          className="flex gap-3"
-                        >
-                          <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" />
+                {timelineSteps.length > 0 && (
+                  <section className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+                    <h3 className="text-sm font-black text-text">
+                      Tiến trình
+                    </h3>
 
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-text">
+                    <ol className="mt-3 space-y-3 border-l border-border pl-4">
+                      {timelineSteps.map((step, index) => {
+                        // Backend ghi hạn phản hồi dạng ISO trong mô tả; hiển thị lại theo giờ Việt Nam.
+                        const stepDescription =
+                          step.code === "response_window_opened" &&
+                          detail.responseDeadlineAt
+                            ? `Hạn phản hồi: ${formatDateTime(detail.responseDeadlineAt)}`
+                            : step.description;
+
+                        return (
+                          <li
+                            key={`${step.code}-${index}`}
+                            className="relative"
+                            title={stepDescription || undefined}
+                          >
+                            <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+                            <p className="text-sm font-bold leading-5 text-text">
                               {step.title || step.code}
                             </p>
-
-                            {stepDescription && (
-                              <p className="mt-0.5 text-xs leading-5 text-textLight">
-                                {stepDescription}
-                              </p>
-                            )}
-
-                            <p className="mt-0.5 text-xs font-semibold text-textLight">
+                            <p className="text-xs text-textLight">
                               {formatDateTime(step.occurredAt)}
                             </p>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ol>
-                </div>
-              )}
-
-              {appointmentContext && (
-                <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                  <h3 className="mb-4 text-base font-black text-text">
-                    Lịch hẹn liên quan
-                  </h3>
-
-                  <Descriptions
-                    bordered
-                    column={{
-                      xs: 1,
-                      sm: 1,
-                      md: 2,
-                    }}
-                    size="small"
-                  >
-                    <Descriptions.Item label="Loại lịch">
-                      {getMappedLabel(
-                        APPOINTMENT_TYPE_LABELS,
-                        appointmentContext.appointmentType,
-                      )}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Trạng thái lịch">
-                      {hasValue(appointmentContext.appointmentStatus)
-                        ? getAppointmentStatusMeta(
-                            appointmentContext.appointmentStatus,
-                          ).label
-                        : "Chưa có"}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Thời gian hẹn">
-                      {formatDateTime(appointmentContext.scheduledAt)}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Mốc tính trễ">
-                      {formatDateTime(appointmentContext.lateThresholdAt)}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Người mua check-in">
-                      {formatDateTime(appointmentContext.buyerCheckAt)}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Người bán check-in">
-                      {formatDateTime(appointmentContext.sellerCheckAt)}
-                    </Descriptions.Item>
-
-                    <Descriptions.Item label="Địa điểm" span={2}>
-                      {appointmentContext.location || "Chưa có"}
-                    </Descriptions.Item>
-                  </Descriptions>
-                </div>
-              )}
-
-              {inspectionContext && (
-                <>
-                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-base font-black text-text">
-                      Biên bản kiểm định liên quan
-                    </h3>
-
-                    <Descriptions
-                      bordered
-                      column={{
-                        xs: 1,
-                        sm: 1,
-                        md: 2,
-                      }}
-                      size="small"
-                    >
-                      <Descriptions.Item label="Hình thức">
-                        {getMappedLabel(
-                          INSPECTION_MODE_LABELS,
-                          inspectionContext.inspectionMode,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Trạng thái biên bản">
-                        {hasValue(inspectionContext.inspectionStatus)
-                          ? getInspectionStatusLabel(
-                              inspectionContext.inspectionStatus,
-                            )
-                          : "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Tình trạng vận hành">
-                        {hasValue(inspectionContext.operatingStatus)
-                          ? getOperatingStatusLabel(
-                              inspectionContext.operatingStatus,
-                            )
-                          : "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Ngoại quan">
-                        {hasValue(inspectionContext.appearanceStatus)
-                          ? getAppearanceStatusLabel(
-                              inspectionContext.appearanceStatus,
-                            )
-                          : "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Phụ kiện">
-                        {hasValue(inspectionContext.partsStatus)
-                          ? getPartsStatusLabel(
-                              inspectionContext.partsStatus,
-                            )
-                          : "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Mức khớp mô tả">
-                        {hasValue(inspectionContext.matchStatus)
-                          ? getMatchStatusLabel(
-                              inspectionContext.matchStatus,
-                            )
-                          : "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Kết luận">
-                        {getInspectionConclusionLabel(
-                          inspectionContext.conclusion,
-                        ) || "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Thời điểm gửi biên bản">
-                        {formatDateTime(inspectionContext.submittedAt)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Người bán quyết định lúc">
-                        {formatDateTime(inspectionContext.sellerDecisionAt)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Lý do của người bán">
-                        {inspectionContext.sellerDecisionReason || "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Ghi chú kiểm định" span={2}>
-                        <span className="whitespace-pre-wrap">
-                          {inspectionContext.inspectorNotes || "Chưa có ghi chú"}
-                        </span>
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </div>
-
-                  {inspectionImages.length > 0 &&
-                    renderMediaGallery(
-                      "Ảnh trong biên bản kiểm định",
-                      "Hình ảnh được ghi nhận khi kiểm định sản phẩm.",
-                      inspectionImages,
-                      "Không có ảnh kiểm định",
-                    )}
-                </>
-              )}
-
-              {post && (
-                <>
-                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-base font-black text-text">
-                      Bài đăng gốc
-                    </h3>
-
-                    <Descriptions
-                      bordered
-                      column={{
-                        xs: 1,
-                        sm: 1,
-                        md: 2,
-                      }}
-                      size="small"
-                    >
-                      <Descriptions.Item label="Mã bài đăng">
-                        {post.postId ||
-                          detail.target?.targetId ||
-                          "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Mã chủ bài đăng">
-                        {post.ownerId ||
-                          detail.targetUser?.userId ||
-                          "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Tên sản phẩm">
-                        {post.productName || "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Loại tin">
-                        {getPostTypeLabel(post.postType)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Giá cơ bản">
-                        {formatMoney(post.basePrice)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Trạng thái bài đăng">
-                        {getContentStatusLabel(
-                          POST_STATUS_LABELS,
-                          post.status,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Ngày đăng">
-                        {formatDateTime(post.createdAt)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Cập nhật bài đăng">
-                        {formatDateTime(post.updatedAt)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item
-                        label="Mô tả bài đăng"
-                        span={2}
-                      >
-                        <span className="whitespace-pre-wrap">
-                          {post.description ||
-                            "Không có mô tả"}
-                        </span>
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </div>
-
-                </>
-              )}
-
-              {review && (
-                <>
-                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-base font-black text-text">
-                      Đánh giá gốc
-                    </h3>
-
-                    <Descriptions
-                      bordered
-                      column={{
-                        xs: 1,
-                        sm: 1,
-                        md: 2,
-                      }}
-                      size="small"
-                    >
-                      <Descriptions.Item label="Mã đánh giá">
-                        {review.reviewId ||
-                          detail.target?.targetId ||
-                          "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Mã đơn hàng liên quan">
-                        {review.orderId || "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Người đánh giá">
-                        {review.reviewerUsername
-                          ? `${review.reviewerUsername} (${review.reviewerId || "chưa có mã"})`
-                          : review.reviewerId || "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Người được đánh giá">
-                        {review.revieweeUsername
-                          ? `${review.revieweeUsername} (${review.revieweeId || "chưa có mã"})`
-                          : review.revieweeId || "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Số sao">
-                        {review.rating === null ||
-                        review.rating === undefined
-                          ? "Chưa có"
-                          : `${review.rating} / 5 sao`}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Trạng thái đánh giá">
-                        {getContentStatusLabel(
-                          REVIEW_STATUS_LABELS,
-                          review.status,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Ngày đánh giá">
-                        {formatDateTime(review.createdAt)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Cập nhật đánh giá">
-                        {formatDateTime(review.updatedAt)}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item
-                        label="Nội dung đánh giá"
-                        span={2}
-                      >
-                        <span className="whitespace-pre-wrap">
-                          {review.comment ||
-                            "Không có nội dung"}
-                        </span>
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </div>
-
-                </>
-              )}
-
-              {order && (
-                <>
-                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-base font-black text-text">
-                      Thông tin đơn hàng liên quan
-                    </h3>
-
-                    <Descriptions
-                      bordered
-                      column={{
-                        xs: 1,
-                        sm: 1,
-                        md: 2,
-                      }}
-                      size="small"
-                    >
-                      <Descriptions.Item label="Mã đơn hàng">
-                        {order.orderCode ||
-                          "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Mã định danh đơn hàng">
-                        {order.orderId ||
-                          "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Sản phẩm">
-                        {order.productName ||
-                          "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Số lượng">
-                        {order.quantity ??
-                          "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Tổng tiền">
-                        {formatMoney(
-                          order.finalTotalAmount,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Trạng thái đơn">
-                        {getOrderStatusLabel(
-                          order.orderStatus,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Trạng thái thanh toán">
-                        {getPaymentStatusLabel(
-                          order.paymentStatus,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Hạn tạo tranh chấp">
-                        {formatDateTime(
-                          order.disputeDeadlineUtc,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item
-                        label="Hình thức giao hàng"
-                        span={2}
-                      >
-                        {hasValue(order.deliveryMethod)
-                          ? getDeliveryMethodLabel(
-                              order.deliveryMethod,
-                            )
-                          : "Chưa có"}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Người bán xác nhận đã giao">
-                        {formatDateTime(
-                          order.sellerHandoverConfirmedAt,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Người mua xác nhận đã nhận">
-                        {formatDateTime(
-                          order.buyerReceivedConfirmedAt,
-                        )}
-                      </Descriptions.Item>
-                    </Descriptions>
-                  </div>
-
-                  <div className="mt-6 rounded-2xl border border-border bg-white p-5 shadow-sm">
-                    <h3 className="mb-4 text-base font-black text-text">
-                      Tiến trình hoàn trả
-                    </h3>
-
-                    <Descriptions
-                      bordered
-                      column={{
-                        xs: 1,
-                        sm: 1,
-                        md: 2,
-                      }}
-                      size="small"
-                    >
-                      <Descriptions.Item label="Người mua xác nhận đã trả hàng">
-                        {formatDateTime(
-                          order.buyerReturnConfirmedAt,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Người bán xác nhận đã nhận lại hàng">
-                        {formatDateTime(
-                          order.sellerReturnReceivedAt,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Hạn phản hồi hoàn trả">
-                        {formatDateTime(
-                          order.returnDueAt,
-                        )}
-                      </Descriptions.Item>
-
-                      <Descriptions.Item label="Thời gian hoàn trả hoàn tất">
-                        {formatDateTime(
-                          order.returnedAt,
-                        )}
-                      </Descriptions.Item>
-                    </Descriptions>
-
-                    {normalizeEnumValue(
-                      detail.status,
-                      "status",
-                    ) === 5 &&
-                      order.returnDueAt && (
-                        <Alert
-                          className="mt-4"
-                          type="warning"
-                          showIcon
-                          message={`Đang chờ quy trình hoàn trả. Mốc hiện tại: ${formatDateTime(
-                            order.returnDueAt,
-                          )}.`}
-                        />
-                      )}
-                  </div>
-                </>
-              )}
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  </section>
+                )}
+              </aside>
+              </div>
 
             </div>
           ) : null}
