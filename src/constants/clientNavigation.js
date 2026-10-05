@@ -46,7 +46,8 @@ export const isClientItemActive = (item, location, role) => {
   return pathname === item.path || (!item.exact && pathname.startsWith(`${item.path}/`));
 };
 
-export const getClientPage = (location, role) => {
+// userId: trang đánh giá chỉ thuộc khu quản lý khi là đánh giá của chính mình.
+export const getClientPage = (location, role, userId = "") => {
   const matched = getClientNavigation(role).flatMap((group) => group.items)
     .find((item) => isClientItemActive(item, location, role));
   if (matched) return matched;
@@ -55,6 +56,8 @@ export const getClientPage = (location, role) => {
     { name: "Giỏ hàng", path: "/gio-hang" },
     { name: "Hộp thư", path: "/hop-thu" },
     { name: "Thông báo", path: "/thong-bao" },
-    { name: "Đánh giá", path: "/danh-gia" },
+    ...(userId
+      ? [{ name: "Đánh giá", path: `/danh-gia/nguoi-dung/${encodeURIComponent(userId)}`, exact: true }]
+      : []),
   ].find((item) => isClientItemActive(item, location, role));
 };
