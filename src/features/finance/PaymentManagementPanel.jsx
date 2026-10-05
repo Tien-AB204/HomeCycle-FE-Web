@@ -42,7 +42,7 @@ const StatusTag = ({ status }) => (
   </Tag>
 );
 
-function PaymentDetailDrawer({ paymentId, onClose }) {
+export function PaymentDetailDrawer({ paymentId, onClose }) {
   const [state, setState] = useState({ loading: false, data: null, error: "" });
 
   useEffect(() => {

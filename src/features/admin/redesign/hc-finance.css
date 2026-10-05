@@ -254,43 +254,6 @@
   color: var(--muted);
 }
 
-.hc-finance .payment-strip {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 13px;
-  margin-top: 15px;
-}
-
-.hc-finance .payment-card {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  padding: 15px 17px;
-  min-width: 0;
-}
-
-.hc-finance .payment-card:nth-child(2) {
-  background: #f5f8fc;
-}
-
-.hc-finance .payment-card:nth-child(3) {
-  background: #f9f5f5;
-}
-
-.hc-finance .payment-label {
-  font-size: 12px;
-  font-weight: 650;
-  margin: 0;
-}
-
-.hc-finance .payment-value {
-  display: block;
-  font-size: 23px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  margin: 7px 0;
-}
-
 .hc-finance .legend {
   display: flex;
   gap: 18px;
@@ -472,37 +435,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.hc-finance .ghn-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.hc-finance .ghn-stats > div {
-  padding: 13px 15px;
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--teal);
-  border-radius: 9px;
-  background: #edf6f3;
-}
-
-.hc-finance .ghn-stats > div:nth-child(2) {
-  background: #fff4eb;
-  border-top-color: #b67a2c;
-}
-
-.hc-finance .ghn-stats > div:nth-child(3) {
-  background: #eef4fc;
-  border-top-color: #527eaf;
-}
-
-.hc-finance .ghn-stats strong {
-  display: block;
-  margin-top: 5px;
-  font-size: 23px;
-  font-variant-numeric: tabular-nums;
-}
-
 @media (max-width: 1150px) {
   .hc-finance .payment-analysis {
     grid-template-columns: 1fr;
@@ -517,13 +449,6 @@
   .hc-finance .financial-kpis,
   .hc-finance .kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 700px) {
-  .hc-finance .payment-strip,
-  .hc-finance .ghn-stats {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -543,5 +468,78 @@
 
   .hc-finance .finance-barrow .bar-track {
     grid-column: 1 / 3;
+  }
+}
+
+/* Tab tra cứu: thanh toán, lịch sử giao dịch, tiền đơn giữ, tạm giữ */
+.hc-finance .tabs button {
+  white-space: normal;
+}
+
+.hc-finance .payment-analysis {
+  margin-bottom: 18px;
+}
+
+.hc-finance .summaryrow small {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.hc-finance .status-tag {
+  display: inline-block;
+  background: #e9f4ef;
+  color: #28705e;
+  padding: 4px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.hc-finance .status-tag.warning {
+  background: #fff1df;
+  color: #956315;
+}
+
+.hc-finance .jump-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.hc-finance .jump-links button {
+  font-size: 12px;
+}
+
+.hc-finance .record-dialog {
+  max-width: 520px;
+}
+
+.hc-finance .record-dialog .modalhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.hc-finance .record-dialog .modalhead h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.hc-finance .record-dialog .summaryrow {
+  gap: 20px;
+}
+
+.hc-finance .record-dialog .summaryrow strong {
+  text-align: right;
+  word-break: break-word;
+}
+
+@media (max-width: 700px) {
+  .hc-finance .tabs button {
+    flex: 1 1 145px;
   }
 }

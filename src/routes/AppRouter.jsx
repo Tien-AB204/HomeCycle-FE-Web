@@ -36,6 +36,7 @@ import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminBusinessSurveyPage from "../pages/admin/AdminBusinessSurveyPage";
 import AdminOverviewPage from "../pages/admin/AdminOverviewPage";
 import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
+import { getFinanceTabPath } from "../features/admin/finance/financeLookup";
 import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
 import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
 import AdminPostsPage from "../pages/admin/AdminPostsPage";
@@ -47,7 +48,6 @@ import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
 import AdminSubscriptionsPage from "../pages/admin/AdminSubscriptionsPage";
-import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 import GhnWebhookTestConsolePage from "../pages/demo/GhnWebhookTestConsolePage";
 
 // Business Pages
@@ -89,6 +89,13 @@ function LegacyUsersRedirect() {
   const params = new URLSearchParams(useLocation().search);
   params.set("tab", "list");
   return <Navigate to={`/admin/dashboard/users?${params}`} replace />;
+}
+
+// Trang "Ví & giao dịch" cũ đã gộp vào Tài chính & ví; link cũ mở đúng tab tương ứng.
+function LegacyFinanceRedirect({ tab }) {
+  const { search } = useLocation();
+  const requested = tab || new URLSearchParams(search).get("tab");
+  return <Navigate to={getFinanceTabPath(requested)} replace />;
 }
 
 const AppRouter = () => {
@@ -400,19 +407,13 @@ const AppRouter = () => {
             element={<Navigate to="/admin/dashboard/posts?tab=reports" replace />}
           />
 
-          <Route
-            path="finance-management"
-            element={<FinanceOperationsPage />}
-          />
+          <Route path="finance-management" element={<LegacyFinanceRedirect />} />
 
-          <Route
-            path="system-wallet"
-            element={<Navigate to="/admin/finance-management?tab=funds" replace />}
-          />
+          <Route path="system-wallet" element={<LegacyFinanceRedirect tab="funds" />} />
 
           <Route
             path="finance-operations"
-            element={<Navigate to="/admin/finance-management?tab=transactions" replace />}
+            element={<LegacyFinanceRedirect tab="transactions" />}
           />
 
           <Route path="policies" element={<PlatformPolicyPage />} />
