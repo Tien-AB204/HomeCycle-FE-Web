@@ -15,6 +15,7 @@ import {
   WALLET_TYPE_LABELS,
 } from "../../features/finance/financePresentation";
 import financeOperationsApi from "../../services/apis/financeOperationsApi";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const VALID_TABS = new Set(["funds", "payments", "transactions", "escrows", "holds"]);
 const isCanceled = (error) =>
@@ -184,12 +185,13 @@ export default function FinanceOperationsPage() {
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <header className="rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">TÀI CHÍNH</p>
-        <h1 className="mt-2 text-2xl font-black sm:text-3xl">Ví & giao dịch</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">Theo dõi số dư ví, thanh toán, giao dịch và tiền đơn hàng HomeCycle đang giữ.</p>
-      </header>
+    <section className="hc-portal-page flex flex-col gap-6">
+      <PortalPageHeader
+        className="hc-page-head-flush"
+        title="Ví & giao dịch"
+        description="Theo dõi số dư ví, thanh toán, giao dịch và tiền đơn hàng HomeCycle đang giữ."
+      />
+
       <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
         <Tabs activeKey={activeTab} onChange={changeTab} items={[
           { key: "funds", label: "Số dư & ví hệ thống", children: activeTab === "funds" ? <FundsPanel /> : null },

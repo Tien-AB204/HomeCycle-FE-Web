@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 import Avatar from "../shared/Avatar";
 import NotificationBell from "../shared/NotificationBell";
 import { isNavItemActive } from "../../utils/pathMatch";
+import "./portal-theme.css";
 
 const getDisplayName = (user, fallbackName) =>
   user?.email || user?.fullName || user?.username || fallbackName;
@@ -28,7 +29,7 @@ export default function ManagementPortalLayout({
   openMenuAriaLabel,
   closeMenuAriaLabel,
   notificationsPath,
-  contentClassName = "",
+  contentClassName = "hc-portal-theme",
   badges = {},
 }) {
   const { user, logout } = useAuth();

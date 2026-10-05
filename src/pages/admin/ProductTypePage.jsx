@@ -817,14 +817,14 @@ export default function ProductTypePage() {
   };
 
   return (
-    <div className="m-6 rounded-xl border border-border bg-white p-6 shadow-sm">
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="hc-portal-page">
+      <div className="hc-page-head">
         <div>
-          <h2 className="text-xl font-bold text-text">
+          <h1>
             Loại sản phẩm & Thuộc tính
-          </h2>
+          </h1>
 
-          <p className="mt-1 text-sm text-textLight">
+          <p>
             {hasAppliedFilters
               ? `Tìm thấy ${pagination.totalCount} loại sản phẩm phù hợp`
               : `Quản lý ${pagination.totalCount} loại sản phẩm hiện có trên hệ thống`}
@@ -845,7 +845,7 @@ export default function ProductTypePage() {
               ? "Chưa tải được danh sách danh mục"
               : "Thêm loại sản phẩm mới"
           }
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">
             add
@@ -854,6 +854,8 @@ export default function ProductTypePage() {
           Thêm loại SP mới
         </button>
       </div>
+
+      <div className="hc-portal-card">
 
       <div className="mb-6 rounded-lg border border-border bg-background p-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(180px,1fr)_minmax(160px,0.8fr)_auto]">
@@ -1558,6 +1560,7 @@ export default function ProductTypePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

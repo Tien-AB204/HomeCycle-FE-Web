@@ -21,6 +21,7 @@ import {
   DISPUTE_SECTION_TABS,
   ORDER_SECTION_TABS,
 } from "../../constants/adminSections";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const GROUP_OPTIONS = [
   { value: "Day", label: "Mỗi ngày" },
@@ -3434,7 +3435,7 @@ export default function AdminDashboardModulePage({
   };
 
   return (
-    <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
+    <section className="hc-portal-page space-y-6">
       {dashboard === "disputes" && (
         <AdminSectionTabs
           ariaLabel="Khu vực Tranh chấp"
@@ -3464,53 +3465,24 @@ export default function AdminDashboardModulePage({
         />
       )}
 
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
-        <div className="pointer-events-none absolute -right-12 -top-24 h-56 w-56 rounded-full border-[38px] border-white/5" />
-
-        <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">
-              {config.eyebrow}
-            </p>
-
-            <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-              {config.title}
-            </h2>
-
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-              {config.description}
-            </p>
-
-            {!loading &&
-              data?.generatedAtUtc && (
-                <p className="mt-3 text-xs font-semibold text-white/60">
-                  Cập nhật lúc{" "}
-                  {formatDateTime(
-                    data.generatedAtUtc,
-                  )}
-                </p>
-              )}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                setRequestVersion(
-                  (current) =>
-                    current + 1,
-                )
-              }
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-black text-white backdrop-blur transition hover:bg-white/15"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                refresh
-              </span>
-              Làm mới
-            </button>
-          </div>
-        </div>
-      </div>
+      <PortalPageHeader
+        title={config.title}
+        description={
+          !loading && data?.generatedAtUtc
+            ? `${config.description} Cập nhật lúc ${formatDateTime(data.generatedAtUtc)}.`
+            : config.description
+        }
+        actions={
+          <button
+            type="button"
+            onClick={() => setRequestVersion((current) => current + 1)}
+            className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-semibold text-text transition hover:bg-background"
+          >
+            <span className="material-symbols-outlined text-[18px]">refresh</span>
+            Làm mới
+          </button>
+        }
+      />
 
       <form
         onSubmit={applyFilters}

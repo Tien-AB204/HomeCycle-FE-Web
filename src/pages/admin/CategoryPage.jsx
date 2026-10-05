@@ -423,14 +423,14 @@ export default function CategoryPage() {
   const hasFilters = Boolean(debouncedSearchTerm) || statusFilter !== "all";
 
   return (
-    <div className="m-6 rounded-xl border border-border bg-white p-6 shadow-sm">
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="hc-portal-page">
+      <div className="hc-page-head">
         <div>
-          <h2 className="text-xl font-bold text-text">
+          <h1>
             Danh sách danh mục
-          </h2>
+          </h1>
 
-          <p className="mt-1 text-sm text-textLight">
+          <p>
             {hasFilters
               ? `Tìm thấy ${pagination.totalCount} danh mục`
               : `Quản lý ${pagination.totalCount} danh mục hiện có trên hệ thống`}
@@ -441,12 +441,14 @@ export default function CategoryPage() {
           type="button"
           onClick={handleOpenCreateModal}
           disabled={Boolean(deletingCategoryId)}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
           Thêm danh mục mới
         </button>
       </div>
+
+      <div className="hc-portal-card">
 
       <div className="mb-6 flex flex-col gap-3 md:flex-row">
         <div className="relative flex-1">
@@ -729,6 +731,7 @@ export default function CategoryPage() {
         onCancel={handleCloseStatusConfirmation}
         onConfirm={handleChangeCategoryStatus}
       />
+      </div>
     </div>
   );
 }

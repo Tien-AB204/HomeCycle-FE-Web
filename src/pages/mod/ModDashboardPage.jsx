@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import ListingDashboardPanel from "../../features/dashboard/ListingDashboardPanel";
 import moderatorListingApi from "../../services/apis/moderatorListingApi";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const MODERATOR_AREAS = [
   {
@@ -65,25 +66,12 @@ export default function ModDashboardPage() {
   const navigate = useNavigate();
 
   return (
-    <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
-      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
-        <div className="pointer-events-none absolute -right-10 -top-24 h-56 w-56 rounded-full border-[38px] border-white/5" />
-
-        <div className="relative">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">
-            Khu vực kiểm duyệt
-          </p>
-
-          <h1 className="mt-2 text-2xl font-black sm:text-3xl">
-            Trung tâm kiểm duyệt
-          </h1>
-
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-            Truy cập các nghiệp vụ kiểm duyệt theo đúng dữ liệu và quy trình của
-            từng màn chức năng.
-          </p>
-        </div>
-      </header>
+    <section className="hc-portal-page space-y-6">
+      <PortalPageHeader
+        className="hc-page-head-flush"
+        title="Trung tâm kiểm duyệt"
+        description="Truy cập các nghiệp vụ kiểm duyệt theo đúng dữ liệu và quy trình của từng màn chức năng."
+      />
 
       <section className="space-y-4">
         <div>

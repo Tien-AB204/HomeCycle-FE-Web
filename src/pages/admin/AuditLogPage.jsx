@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import adminAuditLogApi from "../../services/apis/adminAuditLogApi";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
@@ -633,20 +634,12 @@ export default function AuditLogPage() {
   const detail = detailState.data;
 
   return (
-    <section className="space-y-6 p-4 sm:p-6">
-      <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-          Vận hành hệ thống
-        </p>
-
-        <h1 className="mt-1 text-2xl font-bold text-text">
-          Nhật ký hệ thống
-        </h1>
-
-        <p className="mt-1 text-sm text-textLight">
-          Theo dõi các sự kiện bảo mật, quản trị và vận hành đã được hệ thống ghi nhận.
-        </p>
-      </header>
+    <section className="hc-portal-page space-y-6">
+      <PortalPageHeader
+        className="hc-page-head-flush"
+        title="Nhật ký hệ thống"
+        description="Theo dõi các sự kiện bảo mật, quản trị và vận hành đã được hệ thống ghi nhận."
+      />
 
       <div className="rounded-xl border border-border bg-white p-4 shadow-sm">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -27,6 +27,7 @@ import {
   filterItemsByMonth,
   sortItemsByDate,
 } from "../../utils/sortListItems";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const { RangePicker } = DatePicker;
 
@@ -178,7 +179,6 @@ const getLabelFromMap = (map, value, fallback = "Chưa xác định") => {
 
 const AppointmentMonitoringPage = ({
   api = moderatorAppointmentApi,
-  eyebrow = "Trung tâm kiểm duyệt",
   title = "Theo dõi lịch hẹn",
   description = "Theo dõi thống nhất lịch hẹn kiểm định và thu gom trên toàn hệ thống.",
 } = {}) => {
@@ -581,18 +581,12 @@ const AppointmentMonitoringPage = ({
   const form = inspectionFormState.data;
 
   return (
-    <section className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-6 lg:px-8">
-      <div className="overflow-hidden rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_50px_rgba(23,40,48,0.14)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/65">
-          {eyebrow}
-        </p>
-
-        <h1 className="mt-2 text-3xl font-black">{title}</h1>
-
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
-          {description}
-        </p>
-      </div>
+    <section className="hc-portal-page">
+      <PortalPageHeader
+        className="hc-page-head-flush"
+        title={title}
+        description={description}
+      />
 
       <div className="mt-6 flex flex-wrap items-end gap-3 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
         <div className="min-w-[220px] flex-1">

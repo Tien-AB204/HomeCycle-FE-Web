@@ -37,6 +37,7 @@ import {
 } from "../../utils/sortListItems";
 import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
 import { isOrderEscrowEvent } from "../../hooks/useFinanceUpdates";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const { RangePicker } = DatePicker;
 
@@ -1247,12 +1248,12 @@ const TransactionOrderManagementPage = () => {
   };
 
   return (
-    <section className="mx-auto w-full max-w-[1600px] px-4 py-7 sm:px-6 lg:px-8">
-      <header className="overflow-hidden rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_50px_rgba(23,40,48,0.14)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/65">Trung tâm kiểm duyệt</p>
-        <h1 className="mt-2 text-3xl font-black">Giao dịch &amp; đơn hàng</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">Theo dõi đơn hàng và tra cứu giao dịch tài chính liên quan trên toàn hệ thống.</p>
-      </header>
+    <section className="hc-portal-page">
+      <PortalPageHeader
+        className="hc-page-head-flush"
+        title="Giao dịch & đơn hàng"
+        description="Theo dõi đơn hàng và tra cứu giao dịch tài chính liên quan trên toàn hệ thống."
+      />
 
       <div className="mt-6 rounded-2xl border border-border bg-white p-4 shadow-[0_10px_28px_rgba(24,63,65,0.05)] sm:p-5">
         <Tabs activeKey={activeTab} onChange={changeTab} items={[

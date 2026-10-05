@@ -7,6 +7,7 @@ import {
   getSafeProblemDetail,
   getSafeValidationMessage,
 } from "../../utils/safeErrorMessage";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const POLICY_TABS = [
   {
@@ -1392,25 +1393,12 @@ export default function PlatformPolicyPage() {
 
   return (
     <>
-      <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
-          <div className="pointer-events-none absolute -right-12 -top-24 h-56 w-56 rounded-full border-[38px] border-white/5" />
-
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">
-            Cấu hình nền tảng
-          </p>
-
-          <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-            Chính sách hệ thống
-          </h2>
-
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-            Quản lý chính sách tranh chấp, đánh giá,
-            uy tín, lịch hẹn, tải tệp, thanh toán, rút
-            tiền, đơn hàng và lịch sử phiên bản theo
-            máy chủ HomeCycle.
-          </p>
-        </div>
+      <section className="hc-portal-page space-y-6">
+        <PortalPageHeader
+          className="hc-page-head-flush"
+          title="Chính sách hệ thống"
+          description="Quản lý chính sách tranh chấp, đánh giá, uy tín, lịch hẹn, tải tệp, thanh toán, rút tiền, đơn hàng và lịch sử phiên bản theo máy chủ HomeCycle."
+        />
 
         {error && (
           <div

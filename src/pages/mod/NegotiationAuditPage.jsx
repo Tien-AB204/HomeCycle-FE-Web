@@ -13,6 +13,7 @@ import {
   filterItemsByMonth,
   sortItemsByDate,
 } from "../../utils/sortListItems";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const LIST_PAGE_SIZE = 10;
 const MESSAGE_PAGE_SIZE = 50;
@@ -294,12 +295,12 @@ export default function NegotiationAuditPage() {
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <header className="rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">Trung tâm kiểm duyệt</p>
-        <h1 className="mt-2 text-2xl font-black sm:text-3xl">Lịch sử thương lượng</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">Tra cứu nội dung thương lượng của các đơn hàng đã phát sinh tranh chấp. Màn hình chỉ dùng để điều tra và không cho phép thay đổi dữ liệu.</p>
-      </header>
+    <section className="hc-portal-page flex flex-col gap-6">
+      <PortalPageHeader
+        className="hc-page-head-flush"
+        title="Lịch sử thương lượng"
+        description="Tra cứu nội dung thương lượng của các đơn hàng đã phát sinh tranh chấp. Màn hình chỉ dùng để điều tra và không cho phép thay đổi dữ liệu."
+      />
 
       <div className="rounded-2xl border border-border bg-white p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex flex-col gap-3 sm:flex-row">

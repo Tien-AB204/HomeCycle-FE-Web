@@ -1,5 +1,4 @@
 import ManagementPortalLayout from "./ManagementPortalLayout";
-import "./mod-theme.css";
 import useModQueueCounts from "./useModQueueCounts";
 
 const MOD_NAV_GROUPS = [
@@ -81,7 +80,6 @@ export default function ModLayout() {
       openMenuAriaLabel="Mở menu kiểm duyệt"
       closeMenuAriaLabel="Đóng menu kiểm duyệt"
       notificationsPath="/mod/notifications"
-      contentClassName="hc-mod-theme"
       badges={queueCounts}
     />
   );
