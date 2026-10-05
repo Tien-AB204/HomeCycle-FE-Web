@@ -6,17 +6,25 @@
 const normalize = (value) =>
   String(value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("vi-VN");
 
+// So theo từng đoạn giữa các dấu phẩy, không so chuỗi con: "Phường 1" khác
+// "Phường 10", "Quận 1" khác "Quận 10".
+const toSegments = (text) =>
+  String(text || "")
+    .split(",")
+    .map(normalize)
+    .filter(Boolean);
+
 export const joinAddressParts = (parts) => {
   const result = [];
+  const seen = new Set();
 
   (Array.isArray(parts) ? parts : []).forEach((part) => {
     const text = String(part || "").trim();
-    if (!text) return;
-
-    const key = normalize(text);
-    if (result.some((existing) => normalize(existing).includes(key))) return;
+    const segments = toSegments(text);
+    if (!segments.length || segments.every((segment) => seen.has(segment))) return;
 
     result.push(text);
+    segments.forEach((segment) => seen.add(segment));
   });
 
   return result.join(", ");

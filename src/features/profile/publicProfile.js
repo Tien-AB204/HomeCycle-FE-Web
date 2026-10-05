@@ -1,3 +1,5 @@
+import { joinAddressParts } from "../../utils/addressText.js";
+
 /*
  * Hồ sơ công khai: GET /auth/users/{userId}/profile.
  * Backend trả thẳng đối tượng, không có role: loại hồ sơ suy ra từ các trường
@@ -93,20 +95,8 @@ export const getBusinessModelLabel = (value) => {
  * Địa chỉ chính là businessAddress; phường và tỉnh/thành chỉ nối thêm khi
  * chưa có trong địa chỉ để không lặp lại.
  */
-export const composeBusinessAddress = (profile) => {
-  const parts = [];
-
-  [profile?.businessAddress, profile?.ward, profile?.city].forEach((value) => {
-    const text = String(value || "").trim();
-    if (!text) return;
-    const included = parts.some((part) =>
-      part.toLowerCase().includes(text.toLowerCase()),
-    );
-    if (!included) parts.push(text);
-  });
-
-  return parts.join(", ");
-};
+export const composeBusinessAddress = (profile) =>
+  joinAddressParts([profile?.businessAddress, profile?.ward, profile?.city]);
 
 export const formatStarRating = (value) =>
   Number.isFinite(value) && value > 0 ? `★ ${value.toFixed(1)}` : "Chưa có đánh giá";

@@ -18,6 +18,17 @@ test("joining skips parts already in the street address", () => {
   );
 });
 
+test("numbered wards and districts are not mistaken for each other", () => {
+  assert.equal(
+    joinAddressParts(["12 Lê Lợi, Phường 10", "Phường 1", "Quận 1"]),
+    "12 Lê Lợi, Phường 10, Phường 1, Quận 1",
+  );
+  assert.equal(
+    dedupeAddressText("5 Hai Bà Trưng, Phường 1, Quận 10, Phường 1"),
+    "5 Hai Bà Trưng, Phường 1, Quận 10",
+  );
+});
+
 test("stored addresses drop repeated segments", () => {
   assert.equal(
     dedupeAddressText(
