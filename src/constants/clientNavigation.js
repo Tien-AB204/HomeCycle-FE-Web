@@ -29,6 +29,8 @@ export const getClientNavigation = (role) => [
   { name: "Tài khoản", items: [
     { name: "Hồ sơ", path: "/ho-so", icon: "person" },
     { name: "Gói VIP", path: "/goi-dang-ky", icon: "workspace_premium" },
+    { name: "Hướng dẫn", path: "/huong-dan", icon: "help" },
+    { name: "Chính sách", path: "/chinh-sach", icon: "policy" },
   ] },
 ];
 

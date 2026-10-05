@@ -13,7 +13,6 @@ import {
   getNegotiationStatusMeta,
   getProposalStatusMeta,
   isProposalMessage,
-  MESSAGE_TYPE,
   NEGOTIATION_STATUS,
 } from "../../constants/negotiations";
 import Avatar from "../../components/shared/Avatar";
@@ -23,13 +22,25 @@ import { useAuth } from "../../hooks/useAuth";
 import messageApi, {
   normalizeMessage,
 } from "../../services/apis/messageApi";
-import agreementApi from "../../services/apis/agreementApi";
 import negotiationApi from "../../services/apis/negotiationApi";
 import conversationApi from "../../services/apis/conversationApi";
 import postApi from "../../services/apis/postApi";
 import { CHAT_REALTIME_STATUS } from "../../services/realtime/chatRealtimeService";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import { getUserId } from "../../utils/authUtils";
+import DeadlineBanner from "../../components/shared/DeadlineBanner";
+import { useDeadlineCountdown } from "../../hooks/useDeadlineCountdown";
+import ChatAgreementCard from "../../features/negotiation/ChatAgreementCard";
+import ChatSystemMessage from "../../features/negotiation/ChatSystemMessage";
+import useNegotiationCommerce from "../../features/negotiation/useNegotiationCommerce";
+import {
+  getAgreementCardTitle,
+  getNegotiationSessionState,
+  getPartnerUserId,
+  isAgreementMessage,
+  isPaymentCompletedText,
+  isSystemMessage,
+} from "../../features/negotiation/negotiationSession";
 import {
   getNegotiationChangedFields,
   getPostChangedFields,
@@ -278,6 +289,7 @@ const ProposalMessage = ({
   actionBusy,
   onAccept,
   onReject,
+  deadline = null,
 }) => {
   const statusMeta = getProposalStatusMeta(message.offerStatus);
 
@@ -323,6 +335,8 @@ const ProposalMessage = ({
           {message.messageContent}
         </p>
       )}
+
+      {deadline}
 
       {canRespond && (
         <div className="mt-3 flex flex-wrap gap-2 border-t border-border/30 pt-3">
@@ -418,7 +432,7 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
   const [successMessage, setSuccessMessage] = useState("");
   const [pendingConfirmation, setPendingConfirmation] = useState(null);
   const [staleWarning, setStaleWarning] = useState(null);
-  const [agreementPreview, setAgreementPreview] = useState(null);
+  const [commerceVersion, setCommerceVersion] = useState(0);
   const [counterForm, setCounterForm] = useState({
     offerPrice: "",
     offerQuantity: "1",
@@ -451,6 +465,35 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
     shouldScrollToBottomRef.current = true;
     setRequestVersion((currentVersion) => currentVersion + 1);
   }, []);
+
+  /*
+   * Tải lại trạng thái phiên và hợp đồng mà không che khung chat: dùng khi
+   * có tin hệ thống/hợp đồng mới hoặc khi hạn phiên vừa hết.
+   */
+  const refreshSessionQuietly = useCallback(async () => {
+    try {
+      const latestNegotiation = await negotiationApi.getById(negotiationId);
+
+      setRequestState((currentState) =>
+        currentState.negotiation
+          ? {
+              ...currentState,
+              negotiation: {
+                ...latestNegotiation,
+                messages: mergeMessages(
+                  currentState.negotiation.messages || [],
+                  latestNegotiation.messages || [],
+                ),
+              },
+            }
+          : currentState,
+      );
+    } catch {
+      // Lần tải đầy đủ kế tiếp sẽ đồng bộ lại trạng thái phiên.
+    }
+
+    setCommerceVersion((currentVersion) => currentVersion + 1);
+  }, [negotiationId]);
 
   const updateMessages = useCallback((incomingMessages) => {
     setRequestState((currentState) => {
@@ -662,6 +705,10 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
       shouldScrollToBottomRef.current = true;
       updateMessages([message]);
 
+      if (isSystemMessage(message) || isAgreementMessage(message)) {
+        void refreshSessionQuietly();
+      }
+
       if (message.senderId !== currentUserId) {
         void markRoomAsRead();
       }
@@ -722,6 +769,7 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
     markRoomAsRead,
     negotiationId,
     refreshRoom,
+    refreshSessionQuietly,
     subscribe,
     updateMessages,
   ]);
@@ -781,13 +829,32 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
   const statusMeta = getNegotiationStatusMeta(
     negotiation?.negotiationStatus,
   );
-  const isOpen =
-    negotiation?.negotiationStatus === NEGOTIATION_STATUS.OPEN;
   const negotiationStatus = negotiation?.negotiationStatus;
-  const canSendText = [
-    NEGOTIATION_STATUS.OPEN,
-    NEGOTIATION_STATUS.AGREED,
-  ].includes(negotiation?.negotiationStatus);
+  const commerce = useNegotiationCommerce(
+    negotiationId,
+    negotiationStatus,
+    `${requestVersion}.${commerceVersion}`,
+  );
+  const agreementPreview = commerce.preview;
+  const session = getNegotiationSessionState({
+    negotiation,
+    agreementPreview,
+    agreement: commerce.agreement,
+  });
+  const handleDeadlinePassed = useCallback(() => {
+    void refreshSessionQuietly();
+  }, [refreshSessionQuietly]);
+  const negotiationCountdown = useDeadlineCountdown(
+    session.negotiationDeadline,
+    handleDeadlinePassed,
+  );
+  const paymentCountdown = useDeadlineCountdown(
+    session.paymentDeadline,
+    handleDeadlinePassed,
+  );
+  const isOpen = session.isOpen && !negotiationCountdown.isExpired;
+  const canSendText = session.canSendText && !negotiationCountdown.isExpired;
+  const partnerUserId = getPartnerUserId(negotiation, currentUserId);
   const messages = sortMessages(negotiation?.messages || []);
 
   const latestPendingProposal =
@@ -804,21 +871,56 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
     REALTIME_STATUS_META[realtimeStatus] ||
     REALTIME_STATUS_META[CHAT_REALTIME_STATUS.DISCONNECTED];
 
-  useEffect(() => {
-    if (!negotiationId || !negotiationStatus || negotiationStatus === NEGOTIATION_STATUS.OPEN) {
-      return undefined;
+  /*
+   * Mốc hợp đồng: dòng hệ thống trước, thẻ hợp đồng ngay sau. Tin thanh toán
+   * thành công cũng kèm một thẻ "đã thanh toán" có lối tắt tới đơn/lịch hẹn.
+   */
+  const timelineItems = [];
+  messages.forEach((message) => {
+    const key = String(message.messageId);
+    // Hộp thư gộp nhiều phiên: thẻ hợp đồng chỉ gắn với phiên đang mở.
+    const hasCurrentAgreement =
+      Boolean(commerce.agreement) &&
+      (!message.negotiationId || message.negotiationId === negotiationId);
+
+    if (isAgreementMessage(message)) {
+      if (!hasCurrentAgreement) {
+        timelineItems.push({ kind: "agreement-fallback", key, message });
+        return;
+      }
+
+      timelineItems.push({
+        kind: "system",
+        key,
+        message,
+        fallback: "Cập nhật hợp đồng giao dịch.",
+      });
+      timelineItems.push({
+        kind: "agreement",
+        key: `card-${key}`,
+        title: getAgreementCardTitle(message.messageContent),
+      });
+      return;
     }
 
-    const controller = new AbortController();
-    agreementApi
-      .getPreview(negotiationId, { signal: controller.signal })
-      .then(setAgreementPreview)
-      .catch((previewError) => {
-        if (!isCanceledRequest(previewError)) setAgreementPreview(null);
-      });
+    if (isSystemMessage(message)) {
+      timelineItems.push({ kind: "system", key, message });
 
-    return () => controller.abort();
-  }, [negotiationId, negotiationStatus, requestVersion]);
+      if (hasCurrentAgreement && isPaymentCompletedText(message.messageContent)) {
+        timelineItems.push({
+          kind: "agreement",
+          key: `paid-card-${key}`,
+          title: getAgreementCardTitle("", { isPaid: true }),
+        });
+      }
+      return;
+    }
+
+    timelineItems.push({ kind: "message", key, message });
+  });
+  const latestAgreementCardKey = timelineItems
+    .filter((item) => item.kind === "agreement")
+    .at(-1)?.key;
 
   useEffect(() => {
     if (!shouldScrollToBottomRef.current) {
@@ -1260,7 +1362,17 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
               />
               <div className="min-w-0">
                 <h1 className="truncate text-base font-black text-text">
-                  {summary?.otherPartyName || "Phòng thương lượng"}
+                  {partnerUserId ? (
+                    <Link
+                      to={`/nguoi-dung/${encodeURIComponent(partnerUserId)}`}
+                      title="Xem hồ sơ đối tác"
+                      className="hover:text-primary hover:underline"
+                    >
+                      {summary?.otherPartyName || "Đối tác giao dịch"}
+                    </Link>
+                  ) : (
+                    summary?.otherPartyName || "Phòng thương lượng"
+                  )}
                 </h1>
                 {realtimeStatusMeta.label && (
                   <p className="mt-1 inline-flex items-center gap-1.5 text-[11px] font-semibold text-textLight">
@@ -1324,30 +1436,78 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
                   </div>
                 )}
 
-                {messages.length === 0 ? (
+                {timelineItems.length === 0 ? (
                   <div className="py-14 text-center text-sm font-semibold text-textLight">
                     Chưa có nội dung trao đổi.
                   </div>
                 ) : (
-                  messages.map((message) => {
+                  timelineItems.map((item) => {
+                    if (item.kind === "system") {
+                      return (
+                        <ChatSystemMessage
+                          key={item.key}
+                          text={item.message.messageContent}
+                          createdAt={item.message.createdAt}
+                          fallback={item.fallback}
+                        />
+                      );
+                    }
+
+                    if (item.kind === "agreement") {
+                      return (
+                        <ChatAgreementCard
+                          key={item.key}
+                          title={item.title}
+                          agreement={commerce.agreement}
+                          negotiationId={negotiationId}
+                          isLatest={item.key === latestAgreementCardKey}
+                          isPaid={session.isPaidAgreement}
+                          orderId={commerce.orderId}
+                          appointmentId={commerce.appointmentId}
+                          session={session}
+                          paymentCountdown={paymentCountdown}
+                        />
+                      );
+                    }
+
+                    const { message } = item;
                     const isMine = String(message.senderId) === currentUserId;
+
+                    if (item.kind === "agreement-fallback") {
+                      return (
+                        <AgreementMessage
+                          key={item.key}
+                          message={message}
+                          negotiationId={message.negotiationId || negotiationId}
+                          isMine={isMine}
+                        />
+                      );
+                    }
+
+                    if (!isProposalMessage(message.messageType)) {
+                      return (
+                        <TextMessage
+                          key={item.key}
+                          message={message}
+                          isMine={isMine}
+                        />
+                      );
+                    }
+
                     const canRespond = Boolean(
                       isOpen &&
                         message.negotiationId === negotiationId &&
                         !isMine &&
                         String(message.offerStatus).toLowerCase() === "pending",
                     );
+                    const isLatestPending =
+                      session.isOpen &&
+                      String(message.messageId) ===
+                        String(latestPendingProposal?.messageId);
 
-                    return message.messageType === MESSAGE_TYPE.AGREEMENT ? (
-                      <AgreementMessage
-                        key={message.messageId}
-                        message={message}
-                        negotiationId={message.negotiationId || negotiationId}
-                        isMine={isMine}
-                      />
-                    ) : isProposalMessage(message.messageType) ? (
+                    return (
                       <ProposalMessage
-                        key={message.messageId}
+                        key={item.key}
                         message={message}
                         isMine={isMine}
                         canRespond={canRespond}
@@ -1358,20 +1518,47 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
                         onReject={(messageId) =>
                           runProposalAction("reject", messageId)
                         }
-                      />
-                    ) : (
-                      <TextMessage
-                        key={message.messageId}
-                        message={message}
-                        isMine={isMine}
+                        deadline={
+                          isLatestPending && (
+                            <DeadlineBanner
+                              className="mt-3"
+                              countdown={negotiationCountdown}
+                              label="Phiên hết hạn nếu không có hoạt động sau"
+                              expiredText="Phiên thương lượng đã hết thời gian."
+                              note="Mỗi tin nhắn hoặc đề xuất mới sẽ tính lại thời gian."
+                            />
+                          )
+                        }
                       />
                     );
                   })
                 )}
+                {session.isEnded && (
+                  <ChatSystemMessage text={session.endedText} />
+                )}
                 <div ref={messagesEndRef} aria-hidden="true" />
               </div>
 
+              {!session.isEnded && (
               <div className="hc-chat-composer border-t border-border bg-white p-3.5">
+                {session.negotiationDeadline ? (
+                  <DeadlineBanner
+                    compact
+                    className="mb-3"
+                    countdown={negotiationCountdown}
+                    label={session.isAgreedWithoutAgreement ? "Hạn tạo hợp đồng" : "Phiên còn"}
+                    expiredText="Phiên thương lượng đã hết thời gian."
+                  />
+                ) : session.paymentDeadline ? (
+                  <DeadlineBanner
+                    compact
+                    className="mb-3"
+                    countdown={paymentCountdown}
+                    label="Hạn xác nhận & thanh toán"
+                    expiredText="Thỏa thuận đã hết thời gian."
+                  />
+                ) : null}
+
                 {messageError && (
                   <p
                     role="alert"
@@ -1415,7 +1602,9 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
                   </form>
                 ) : (
                   <p className="rounded-xl bg-background p-4 text-center text-sm font-semibold text-textLight">
-                    Phiên hiện ở chế độ chỉ đọc.
+                    {session.isMessagingLocked
+                      ? "Không thể nhắn tin trong lúc chờ hai bên xác nhận hợp đồng."
+                      : "Phiên hiện ở chế độ chỉ đọc."}
                   </p>
                 )}
 
@@ -1498,6 +1687,7 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
                   </div>
                 )}
               </div>
+              )}
             </div>
 
             <aside className="border-t border-border bg-white p-4 lg:border-l lg:border-t-0">

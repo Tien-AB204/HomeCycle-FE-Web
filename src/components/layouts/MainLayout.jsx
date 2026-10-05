@@ -155,7 +155,7 @@ const MainLayout = () => {
         </div>
       ) : <div id="hc-content" tabIndex={-1} className="hc-market-content"><Outlet /></div>}
 
-      <footer className="hc-footer"><Link to="/">HomeCycle</Link><span>Cho đồ vật một vòng đời mới.</span><nav aria-label="Liên kết cuối trang"><Link to="/tin-dang-ban?view=marketplace">Tin đăng bán</Link><Link to="/tin-thu-mua?view=marketplace">Tin thu mua</Link></nav><span>© 2026 HomeCycle</span></footer>
+      <footer className="hc-footer"><Link to="/">HomeCycle</Link><span>Cho đồ vật một vòng đời mới.</span><nav aria-label="Liên kết cuối trang"><Link to="/tin-dang-ban?view=marketplace">Tin đăng bán</Link><Link to="/tin-thu-mua?view=marketplace">Tin thu mua</Link><Link to="/huong-dan">Hướng dẫn</Link><Link to="/chinh-sach">Chính sách</Link></nav><span>© 2026 HomeCycle</span></footer>
     </div>
   );
 };

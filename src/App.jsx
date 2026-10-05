@@ -9,6 +9,7 @@ import { NotificationProvider } from './contexts/NotificationProvider';
 import ApiErrorRedirect from './components/shared/ApiErrorRedirect';
 import NotificationToast from './components/shared/NotificationToast';
 import OfferUpdateAlertHost from './components/shared/OfferUpdateAlertHost';
+import OnboardingGuideHost from './components/shared/OnboardingGuideHost';
 
 const App = () => {
   return (
@@ -30,6 +31,7 @@ const App = () => {
               <NotificationProvider>
                 <NotificationToast />
                 <OfferUpdateAlertHost />
+                <OnboardingGuideHost />
                 <AppRouter />
               </NotificationProvider>
             </ChatRealtimeProvider>
