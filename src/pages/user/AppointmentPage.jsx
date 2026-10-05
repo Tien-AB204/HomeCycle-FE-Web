@@ -8,7 +8,7 @@ import {
 } from "../../constants/appointments";
 import { getDeliveryMethodLabel } from "../../constants/agreements";
 import { ROLES } from "../../constants/roles";
-import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
+import BusinessAppointmentOverview from "../../features/appointments/BusinessAppointmentOverview";
 import InspectionFormPanel from "../../features/appointments/InspectionFormPanel";
 import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
@@ -903,37 +903,11 @@ const AppointmentPage = () => {
   if (isBusiness) {
     return (
       <>
-        <BusinessAppointmentCalendar
+        {/* Lọc và tìm kiếm chạy trên danh sách đã tải để số liệu luôn tính trên toàn bộ lịch. */}
+        <BusinessAppointmentOverview
           items={state.items}
           loading={state.loading}
           error={state.error}
-          keyword={keyword}
-          appliedKeyword={appliedKeyword}
-          status={status}
-          onKeywordChange={setKeyword}
-          onSearch={(nextKeyword) =>
-            changeFilter(
-              setAppliedKeyword,
-              nextKeyword,
-            )
-          }
-          onStatusChange={(nextStatus) =>
-            changeFilter(
-              setStatus,
-              nextStatus,
-            )
-          }
-          onReset={() => {
-            setState((current) => ({
-              ...current,
-              loading: true,
-              error: "",
-            }));
-            setKeyword("");
-            setAppliedKeyword("");
-            setStatus("");
-            setPageNumber(1);
-          }}
           onOpenDetail={openDetail}
         />
 

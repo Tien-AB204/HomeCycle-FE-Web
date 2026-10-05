@@ -83,7 +83,7 @@ export const GUIDE_SLIDES = Object.freeze({
       title: "Thanh toán và đối soát",
       description: "Thanh toán qua ví HomeCycle, theo dõi đơn và lịch sử giao dịch rõ ràng.",
       points: [
-        "Xem đơn hàng ở mục Đơn hàng, hiệu quả ở mục Hiệu quả thu mua",
+        "Theo dõi đơn hàng, lịch hẹn và số dư ở các mục Đơn hàng, Lịch hẹn, Ví",
         "Có vấn đề thì mở tranh chấp để được hỗ trợ",
       ],
     },
