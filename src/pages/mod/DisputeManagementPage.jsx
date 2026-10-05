@@ -2037,7 +2037,7 @@ const DisputeManagementPage = ({
 
               </div>
 
-              <div className="grid items-start gap-4 @2xl:grid-cols-2">
+              <div className="grid gap-4 @2xl:grid-cols-2">
                 <section className="min-w-0 rounded-2xl border border-border border-t-4 border-t-primary bg-white p-4 shadow-sm">
                   {renderPartyHeader(
                     isContentTarget
