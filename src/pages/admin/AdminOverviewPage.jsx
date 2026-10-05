@@ -71,6 +71,8 @@ export default function AdminOverviewPage() {
   const [periodData, setPeriodData] = useState({ loading: true, overview: null, customers: [], error: "" });
   const [basis, setBasis] = useState(null);
   const period = useMemo(() => completedPeriod(periodDays), [periodDays]);
+  // Chưa tải xong thì hiện "—" thay vì số 0 dễ hiểu nhầm là hệ thống trống.
+  const metricValue = (value) => (snapshot.loading ? "—" : num(value));
 
   useEffect(() => {
     const controller = new AbortController();
@@ -81,7 +83,9 @@ export default function AdminOverviewPage() {
       adminDashboardApi.getOrders({ signal }).catch(() => null),
       adminDashboardApi.getAppointments({ signal }).catch(() => null),
     ])
-      .then(([users, listings, orders, appointments]) =>
+      .then(([users, listings, orders, appointments]) => {
+        // Lượt tải đã hủy (rời trang, StrictMode chạy lại) trả về toàn null: không được coi là lỗi.
+        if (signal.aborted) return;
         setSnapshot({
           loading: false,
           users,
@@ -89,8 +93,8 @@ export default function AdminOverviewPage() {
           orders,
           appointments,
           error: users || listings || orders || appointments ? "" : "Không thể tải quy mô hiện tại.",
-        }),
-      )
+        });
+      })
       .catch((error) => {
         if (!isCanceled(error)) setSnapshot((current) => ({ ...current, loading: false, error: "Không thể tải quy mô hiện tại." }));
       });
@@ -107,6 +111,7 @@ export default function AdminOverviewPage() {
       adminDashboardApi.getRegistrationTrend({ role: "Business", days: periodDays, forecastDays: 7, signal }).catch(() => null),
     ])
       .then(([overview, personal, business]) => {
+        if (signal.aborted) return;
         const customers = [personal, business]
           .flatMap((trend) => (Array.isArray(trend?.dailyRegistrations) ? trend.dailyRegistrations : []))
           .map((item) => ({ date: String(item.date).slice(0, 10), count: Number(item.count) || 0 }));
@@ -192,34 +197,34 @@ export default function AdminOverviewPage() {
           <div className="stats">
             <article className="metric">
               <p className="label">Tổng tài khoản</p>
-              <div className="value">{num(totalAccounts)}</div>
+              <div className="value">{metricValue(totalAccounts)}</div>
               <p className="caption">Cá nhân, Doanh nghiệp, Kiểm duyệt viên, Admin</p>
             </article>
             <article className="metric blue">
               <p className="label">Tổng bài đã đăng</p>
-              <div className="value">{num(postTotal)}</div>
+              <div className="value">{metricValue(postTotal)}</div>
               <p className="caption">{num(sell)} tin bán · {num(buy)} tin mua</p>
             </article>
             <article className="metric">
               <p className="label">Tổng đơn hàng</p>
-              <div className="value">{num(totalOrders)}</div>
+              <div className="value">{metricValue(totalOrders)}</div>
               <p className="caption">Tất cả trạng thái</p>
             </article>
             <article className="metric blue">
               <p className="label">Lịch hẹn hiệu lực</p>
-              <div className="value">{num(effectiveAppointments)}</div>
+              <div className="value">{metricValue(effectiveAppointments)}</div>
               <p className="caption">Kiểm định và thu gom</p>
             </article>
           </div>
           <div className="stats operation-stats">
             <article className="metric">
               <p className="label">Đơn đang hoạt động</p>
-              <div className="value">{num(orders?.activeOrderCount)}</div>
+              <div className="value">{metricValue(orders?.activeOrderCount)}</div>
               <p className="caption">Chờ xử lý, đang xử lý hoặc có tranh chấp</p>
             </article>
             <article className="metric blue">
               <p className="label">Lịch hẹn hôm nay</p>
-              <div className="value">{num(appointments?.todayCount)}</div>
+              <div className="value">{metricValue(appointments?.todayCount)}</div>
               <p className="caption">Kiểm định và thu gom trong ngày</p>
             </article>
           </div>

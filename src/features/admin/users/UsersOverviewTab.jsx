@@ -185,7 +185,10 @@ export default function UsersOverviewTab() {
       adminDashboardApi.getUserOverview({ role: "Personal", signal }).catch(() => null),
       adminDashboardApi.getUserOverview({ role: "Business", signal }).catch(() => null),
     ])
-      .then(([all, personal, business]) => setState({ loading: false, all, personal, business, error: "" }))
+      .then(([all, personal, business]) => {
+        if (signal.aborted) return;
+        setState({ loading: false, all, personal, business, error: "" });
+      })
       .catch((error) => {
         if (!isCanceled(error)) setState((current) => ({ ...current, loading: false, error: "Không thể tải thống kê người dùng." }));
       });
