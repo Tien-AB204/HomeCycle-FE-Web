@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input, Button, Spin, Descriptions, Empty, Tag, Alert } from "antd";
 import {
   SearchOutlined,
@@ -19,6 +19,8 @@ import {
 import { useLocation } from "react-router-dom";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
+import useStoredFlag from "../../hooks/useStoredFlag";
+import CollapsibleListPanel from "../../components/mod/CollapsibleListPanel";
 import {
   getNeighborId,
   getNextAfterReview,
@@ -28,13 +30,6 @@ import {
 
 const LIST_COLLAPSED_KEY = "hc.mod.verification.listCollapsed";
 
-const readListCollapsed = () => {
-  try {
-    return window.localStorage.getItem(LIST_COLLAPSED_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
 
 const VerificationPage = () => {
   const location = useLocation();
@@ -56,66 +51,8 @@ const VerificationPage = () => {
   const [monthFilter, setMonthFilter] = useState("");
   const debouncedKeyword = useDebounce(searchKeyword, 500);
 
-  // --- STATE RESIZABLE CỘT TRÁI ---
-  const [sidebarWidth, setSidebarWidth] = useState(380);
-  const [isResizing, setIsResizing] = useState(false);
-  const resizeSessionRef = useRef(null);
-
   // Thu gọn danh sách để phần chi tiết rộng hơn; nhớ lựa chọn cho lần sau.
-  const [listCollapsed, setListCollapsed] = useState(readListCollapsed);
-
-  const toggleList = (collapsed) => {
-    setListCollapsed(collapsed);
-    try {
-      window.localStorage.setItem(LIST_COLLAPSED_KEY, collapsed ? "1" : "0");
-    } catch {
-      // Không lưu được thì chỉ áp dụng cho lần xem này.
-    }
-  };
-
-  const startResizing = (e) => {
-    e.preventDefault();
-
-    resizeSessionRef.current = {
-      startX: e.clientX,
-      startWidth: sidebarWidth,
-    };
-
-    setIsResizing(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const session = resizeSessionRef.current;
-
-      if (!isResizing || !session) return;
-
-      const delta =
-        e.clientX - session.startX;
-
-      const newWidth =
-        session.startWidth + delta;
-
-      if (newWidth >= 300 && newWidth <= 600) {
-        setSidebarWidth(newWidth);
-      }
-    };
-
-    const handleMouseUp = () => {
-      resizeSessionRef.current = null;
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing]);
+  const [listCollapsed, setListCollapsed] = useStoredFlag(LIST_COLLAPSED_KEY);
 
   // Chi tiết
   const [selectedProfileId, setSelectedProfileId] = useState(null);
@@ -475,40 +412,16 @@ const VerificationPage = () => {
   return (
     <div className="flex h-[calc(100vh-72px)] min-h-0 bg-white text-text font-sans overflow-hidden">
       {/* CỘT TRÁI */}
-      {listCollapsed ? (
-        <div className="flex w-[52px] shrink-0 flex-col items-center gap-3 border-r border-border bg-background/60 pb-4 pt-14">
-          <button
-            type="button"
-            onClick={() => toggleList(false)}
-            aria-label="Mở danh sách hồ sơ chờ duyệt"
-            title="Mở danh sách"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-white text-textLight transition hover:border-primary/40 hover:text-primary"
-          >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-              chevron_right
-            </span>
-          </button>
-          {/* Không dùng chữ dọc: biểu tượng + số, tên đầy đủ hiện khi rê chuột. */}
-          <div
-            className="flex flex-col items-center gap-1 text-textLight"
-            title="Hồ sơ chờ duyệt"
-            aria-label={`${monthFilteredProfiles.length} hồ sơ chờ duyệt`}
-          >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-              fact_check
-            </span>
-            {!loadingList && (
-              <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-bold text-warning">
-                {monthFilteredProfiles.length}
-              </span>
-            )}
-          </div>
-        </div>
-      ) : (
-      <div
-        style={{ width: `${sidebarWidth}px` }}
-        className="min-h-0 border-r border-border flex flex-col shrink-0 bg-background/60 relative select-none"
+      <CollapsibleListPanel
+        collapsed={listCollapsed}
+        onCollapsedChange={setListCollapsed}
+        title="Hồ sơ chờ duyệt"
+        icon="fact_check"
+        count={loadingList ? null : monthFilteredProfiles.length}
+        className="bg-background/60"
       >
+        {({ collapseButton }) => (
+        <>
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold flex items-center gap-2">
@@ -519,17 +432,7 @@ const VerificationPage = () => {
                 </span>
               )}
             </h2>
-            <button
-              type="button"
-              onClick={() => toggleList(true)}
-              aria-label="Thu gọn danh sách hồ sơ"
-              title="Thu gọn danh sách"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-textLight transition hover:bg-white hover:text-primary"
-            >
-              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-                chevron_left
-              </span>
-            </button>
+            {collapseButton}
           </div>
           <div className="flex border-b border-border mb-4">
             <button
@@ -618,13 +521,9 @@ const VerificationPage = () => {
           )}
         </div>
 
-        <div
-          onMouseDown={startResizing}
-          className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-20 hover:bg-success ${isResizing ? "bg-success" : "bg-transparent"}`}
-          title="Kéo để thay đổi kích thước"
-        />
-      </div>
-      )}
+        </>
+        )}
+      </CollapsibleListPanel>
 
       {/* CỘT PHẢI */}
       <div className="min-h-0 min-w-0 flex-1 flex flex-col relative bg-white overflow-hidden">
