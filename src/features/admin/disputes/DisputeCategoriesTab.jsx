@@ -225,7 +225,7 @@ export default function DisputeCategoriesTab({ categories, loading, error, onRel
         <div className="tablewrap">
           <table>
             <thead>
-              <tr><th>Mã</th><th>Tên</th><th>Mô tả</th><th>Áp dụng cho</th><th>Trạng thái</th><th>Cập nhật</th><th>Thao tác</th></tr>
+              <tr><th>Mã</th><th>Tên</th><th>Mô tả</th><th>Áp dụng cho</th><th>Trạng thái</th><th>Cập nhật</th><th className="right">Thao tác</th></tr>
             </thead>
             <tbody>
               {loading ? (
@@ -252,16 +252,18 @@ export default function DisputeCategoriesTab({ categories, loading, error, onRel
                     </td>
                     <td className="category-date">{formatDateTime(category.updatedAt || category.createdAt)}</td>
                     <td>
-                      <div className="actions">
-                        <button type="button" className="category-action" title="Sửa" aria-label={`Sửa ${category.name}`} onClick={() => setEditing(category)}>✎</button>
+                      <div className="category-actions">
+                        <button type="button" className="category-action" title="Sửa" aria-label={`Sửa ${category.name}`} onClick={() => setEditing(category)}>
+                          <span className="material-symbols-outlined" aria-hidden="true">edit</span>
+                        </button>
                         <button
                           type="button"
-                          className="category-action state"
+                          className={`category-action ${category.isActive ? "off" : "on"}`}
                           title={category.isActive ? "Ngừng sử dụng" : "Kích hoạt"}
                           aria-label={`${category.isActive ? "Ngừng sử dụng" : "Kích hoạt"} ${category.name}`}
                           onClick={() => setStateTarget(category)}
                         >
-                          {category.isActive ? "◉" : "○"}
+                          <span className="material-symbols-outlined" aria-hidden="true">{category.isActive ? "visibility_off" : "visibility"}</span>
                         </button>
                       </div>
                     </td>

@@ -110,3 +110,13 @@
 .hc-page-head.hc-page-head-flush {
   margin-bottom: 0;
 }
+
+/* Mật độ ô bảng giống bảng ở các trang mới (.hc-admin). */
+.hc-portal-theme thead th {
+  padding: 12px;
+}
+
+.hc-portal-theme tbody td {
+  padding: 13px 12px;
+  font-size: 12px;
+}

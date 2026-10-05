@@ -234,16 +234,40 @@
   white-space: nowrap;
 }
 
-.hc-disputes .category-action {
-  border: 0;
-  background: transparent;
-  font-size: 19px;
-  padding: 3px 7px;
-  color: var(--teal);
+.hc-disputes .category-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
 }
 
-.hc-disputes .category-action.state {
+/* Cùng kiểu nút icon với bảng ở các trang Danh mục/Thương hiệu. */
+.hc-disputes .tablewrap button.category-action {
+  border: 0;
+  background: transparent;
+  padding: 6px;
+  border-radius: 6px;
+  color: var(--teal);
+  line-height: 0;
+}
+
+.hc-disputes .tablewrap button.category-action:hover {
+  background: var(--soft);
+}
+
+.hc-disputes .tablewrap button.category-action.off {
   color: var(--red);
+}
+
+.hc-disputes .tablewrap button.category-action.on {
+  color: var(--green);
+}
+
+.hc-disputes .category-action .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.hc-disputes th.right {
+  text-align: right;
 }
 
 /* Cấu hình giá trị */
