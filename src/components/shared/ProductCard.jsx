@@ -4,6 +4,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
+import Avatar from "./Avatar";
 import PriorityBadge from "./PriorityBadge";
 
 const CONDITION_MAP = {
@@ -82,6 +83,11 @@ const ProductCard = ({
       data.owner?.fullName ||
       "",
   ).trim();
+  const ownerAvatarUrl =
+    data.avatarUrl ||
+    data.ownerAvatarUrl ||
+    data.owner?.avatarUrl ||
+    "";
   const conditionLabel =
     CONDITION_MAP[data.condition] || data.conditionName || data.productTypeName || "Đã qua sử dụng";
   const logisticsLabel =
@@ -201,7 +207,7 @@ const ProductCard = ({
         )}
         {ownerName && (
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-textLight">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background text-[10px] text-success" aria-hidden="true">✓</span>
+            <Avatar src={ownerAvatarUrl} alt="" className="h-5 w-5" />
             <span className="truncate">{ownerName}</span>
           </div>
         )}
