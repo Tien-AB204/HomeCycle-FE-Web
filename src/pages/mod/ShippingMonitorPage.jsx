@@ -158,9 +158,9 @@ function ShipmentDetail({ orderId, listKey }) {
 
           <div className="detail-section">
             <h3>Các mốc vận chuyển đã ghi nhận</h3>
-            <ul className="timeline">
-              {steps.map(([title, time]) => (
-                <li key={title} className={time ? "" : "pending"}>
+            <ul className="ship-steps">
+              {steps.map(([title, time], index) => (
+                <li key={title} className={time ? (steps[index + 1]?.[1] ? "done linked" : "done") : ""}>
                   {title}
                   <small>{formatTime(time) || "Chưa có mốc ghi nhận"}</small>
                 </li>
