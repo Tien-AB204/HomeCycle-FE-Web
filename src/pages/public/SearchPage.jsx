@@ -626,6 +626,22 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
     };
   }, [pageNumber, recommendationMode, sourceResult]);
 
+  /*
+   * Tin của chính mình bị lọc ở trình duyệt (Backend chưa có tham số loại
+   * trừ) nên tổng của Backend vẫn tính các tin đó. Một trang thì trừ đúng
+   * số đã ẩn; nhiều trang thì ghi rõ số tin đã ẩn ở trang này.
+   */
+  const hiddenOwnPostCount = recommendationMode
+    ? 0
+    : Math.max(
+        0,
+        (sourceResult?.items?.length || 0) - sortedPosts.length,
+      );
+  const isSingleResultPage = (result?.totalPages || 0) <= 1;
+  const displayedResultCount = isSingleResultPage
+    ? Math.max(0, (result?.totalCount || 0) - hiddenOwnPostCount)
+    : result?.totalCount || 0;
+
   const handlePostOpen = useCallback(
     async (post) => {
       if (recommendationMode && !recommendationSurvey) {
@@ -835,7 +851,12 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
             <div className="flex flex-col gap-2 sm:items-end">
               {!isLoading && result && (
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-                  {result.totalCount} kết quả
+                  {displayedResultCount} kết quả
+                  {hiddenOwnPostCount > 0 && !isSingleResultPage && (
+                    <span className="font-semibold text-primary/70">
+                      {" "}· đã ẩn {hiddenOwnPostCount} tin của bạn ở trang này
+                    </span>
+                  )}
                 </span>
               )}
               <label className="flex items-center gap-2">
