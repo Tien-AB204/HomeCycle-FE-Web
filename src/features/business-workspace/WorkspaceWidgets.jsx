@@ -183,7 +183,7 @@ export function WorkspacePanel({ title, description, aside, children, id }) {
   return (
     <section
       id={id}
-      className="min-w-0 scroll-mt-24 rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]"
+      className="min-w-0 scroll-mt-56 rounded-2xl border border-border bg-white p-5 shadow-[0_8px_24px_rgba(23,40,48,0.04)]"
     >
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>

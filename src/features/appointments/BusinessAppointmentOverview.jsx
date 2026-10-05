@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   APPOINTMENT_PERSPECTIVE,
   APPOINTMENT_STATUS,
@@ -33,6 +33,7 @@ import {
 
 const PAGE_SIZE = 10;
 const LIST_ID = "business-appointment-list";
+const DAY_PANEL_ID = "business-selected-day";
 const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 
 const TYPE_OPTIONS = [
@@ -90,6 +91,17 @@ const TYPE_COLORS = {
   collection: "bg-[#B45309] text-white",
 };
 
+// Màn rộng: khung "Lịch ngày" nằm cạnh lịch nên không cần cuộn; màn hẹp thì đưa khung lên đầu.
+const revealDayPanel = () => {
+  const panel = document.getElementById(DAY_PANEL_ID);
+  if (!panel) return;
+
+  const { top, bottom } = panel.getBoundingClientRect();
+  if (top < 0 || bottom > window.innerHeight) {
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+};
+
 const getTypeColor = (item) =>
   isInspection(item) ? TYPE_COLORS.inspection : TYPE_COLORS.collection;
 
@@ -140,57 +152,6 @@ const DayAppointmentList = ({ items, onOpenDetail }) =>
     </div>
   );
 
-function DayAppointmentsModal({ dayKey, items, onClose, onOpenDetail }) {
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#172830]/45 p-4"
-      onClick={onClose}
-    >
-      <section
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="day-appointments-title"
-        onClick={(event) => event.stopPropagation()}
-        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-[0_28px_80px_rgba(23,40,48,0.28)]"
-      >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <h2 id="day-appointments-title" className="text-lg font-black text-text">
-              Lịch ngày {formatDayKey(dayKey)}
-            </h2>
-            <p className="mt-0.5 text-xs text-textLight">{items.length} lịch hẹn</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Đóng"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-background text-textLight transition hover:text-primary"
-          >
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
-              close
-            </span>
-          </button>
-        </div>
-        <DayAppointmentList
-          items={items}
-          onOpenDetail={(item) => {
-            onClose();
-            onOpenDetail(item);
-          }}
-        />
-      </section>
-    </div>
-  );
-}
-
 export default function BusinessAppointmentOverview({
   items,
   loading,
@@ -202,7 +163,6 @@ export default function BusinessAppointmentOverview({
   const [type, setType] = useState("all");
   const [monthCursor, setMonthCursor] = useState(() => parseDayKey(todayKey));
   const [selectedDay, setSelectedDay] = useState(todayKey);
-  const [modalDay, setModalDay] = useState("");
   const [scope, setScope] = useState(APPOINTMENT_SCOPE.ALL);
   const [status, setStatus] = useState("");
   const [keyword, setKeyword] = useState("");
@@ -442,7 +402,7 @@ export default function BusinessAppointmentOverview({
                           type="button"
                           onClick={() => {
                             setSelectedDay(dayKey);
-                            setModalDay(dayKey);
+                            revealDayPanel();
                           }}
                           aria-label={`Xem tất cả ${dayItems.length} lịch ngày ${formatDayKey(dayKey)}`}
                           className="mx-1.5 mb-1.5 hidden rounded-md bg-background px-1.5 py-0.5 text-left text-[10px] font-black text-primary transition hover:bg-primary/10 sm:block"
@@ -481,6 +441,7 @@ export default function BusinessAppointmentOverview({
                 />
               </WorkspacePanel>
               <WorkspacePanel
+                id={DAY_PANEL_ID}
                 title={`Lịch ngày ${formatDayKey(selectedDay)}`}
                 description="Chọn ngày khác trên lịch tháng để xem"
               >
@@ -674,15 +635,6 @@ export default function BusinessAppointmentOverview({
             </div>
           </WorkspacePanel>
         </>
-      )}
-
-      {modalDay && (
-        <DayAppointmentsModal
-          dayKey={modalDay}
-          items={byDay.get(modalDay) || []}
-          onClose={() => setModalDay("")}
-          onOpenDetail={onOpenDetail}
-        />
       )}
     </section>
   );
