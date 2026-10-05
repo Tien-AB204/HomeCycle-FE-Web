@@ -30,7 +30,7 @@ const ORDER_STATUS_OPTIONS = Object.freeze([
 ]);
 
 const formatCurrency = (value) =>
-  `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
+  `${Number(value || 0).toLocaleString("vi-VN")} đ`;
 
 const getErrorMessage = (error) => {
   const responseData =
