@@ -855,6 +855,20 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
   const isOpen = session.isOpen && !negotiationCountdown.isExpired;
   const canSendText = session.canSendText && !negotiationCountdown.isExpired;
   const partnerUserId = getPartnerUserId(negotiation, currentUserId);
+  /*
+   * Backend giữ phiên ở AgreementPending cả sau khi hợp đồng đã thanh toán,
+   * bị hủy hoặc hết hạn, và chỉ chuyển Expired khi job chạy; nhãn ở đầu
+   * khung chat lấy theo trạng thái hợp đồng và đồng hồ để khớp nội dung.
+   */
+  const headerStatusMeta = session.isPaidAgreement
+    ? { label: "Đã thanh toán", className: "border-success/30 bg-success/10 text-success" }
+    : session.isAgreementCancelled
+      ? { label: "Hợp đồng đã hủy", className: "border-error/30 bg-error/10 text-error" }
+      : session.isAgreementExpired ||
+          (session.negotiationDeadline && negotiationCountdown.isExpired) ||
+          (session.paymentDeadline && paymentCountdown.isExpired)
+        ? { label: "Đã hết hạn", className: "border-warning/30 bg-warning/10 text-warning" }
+        : statusMeta;
   const messages = sortMessages(negotiation?.messages || []);
 
   const latestPendingProposal =
@@ -1386,8 +1400,8 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-0">
-              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${statusMeta.className}`}>
-                {statusMeta.label}
+              <span className={`rounded-full border px-3 py-1 text-xs font-bold ${headerStatusMeta.className}`}>
+                {headerStatusMeta.label}
               </span>
               {onOpenSessions && <button type="button" onClick={onOpenSessions} className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-xs font-bold text-primary hover:bg-primary/10">
                 <span className="material-symbols-outlined text-lg" aria-hidden="true">layers</span>
