@@ -5,6 +5,7 @@ import { formatCurrency, formatDateTime } from "../../utils/formatter";
 import {
   getAmountSign,
   getBalanceTypeLabel,
+  getImpactFlow,
   getTransactionStatusLabel,
   getTransactionTitle,
   getTransactionTypeInfo,
@@ -85,6 +86,24 @@ export default function WalletTransactionsPanel({ refreshKey = 0 }) {
   const [details, setDetails] = useState({});
   const requestKey = `${pageNumber}-${refreshKey}`;
 
+  const loadDetail = useCallback(async (id) => {
+    setDetails((current) =>
+      current[id]?.data ? current : { ...current, [id]: { loading: true } },
+    );
+
+    try {
+      const data = await walletApi.getTransactionById(id);
+      setDetails((current) => ({ ...current, [id]: { data } }));
+    } catch (error) {
+      setDetails((current) => ({
+        ...current,
+        [id]: {
+          error: getApiErrorMessage(error, "Không thể tải chi tiết giao dịch."),
+        },
+      }));
+    }
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -94,7 +113,21 @@ export default function WalletTransactionsPanel({ refreshKey = 0 }) {
         pageSize: PAGE_SIZE,
         signal: controller.signal,
       })
-      .then((result) => setState({ key: requestKey, result, error: "" }))
+      .then((result) => {
+        setState({ key: requestKey, result, error: "" });
+
+        /*
+         * Loại giao dịch không cho biết tiền vào hay ra ví của mình: tải
+         * chi tiết để dòng thu gọn hiện đúng dấu như khi mở ra.
+         */
+        result.items
+          .filter(
+            (item) =>
+              item.walletTransactionId &&
+              getTransactionTypeInfo(item.transactionType).flow === "none",
+          )
+          .forEach((item) => void loadDetail(String(item.walletTransactionId)));
+      })
       .catch((error) => {
         if (isCanceledRequest(error) || controller.signal.aborted) {
           return;
@@ -111,23 +144,7 @@ export default function WalletTransactionsPanel({ refreshKey = 0 }) {
       });
 
     return () => controller.abort();
-  }, [pageNumber, requestKey]);
-
-  const loadDetail = useCallback(async (id) => {
-    setDetails((current) => ({ ...current, [id]: { loading: true } }));
-
-    try {
-      const data = await walletApi.getTransactionById(id);
-      setDetails((current) => ({ ...current, [id]: { data } }));
-    } catch (error) {
-      setDetails((current) => ({
-        ...current,
-        [id]: {
-          error: getApiErrorMessage(error, "Không thể tải chi tiết giao dịch."),
-        },
-      }));
-    }
-  }, []);
+  }, [loadDetail, pageNumber, requestKey]);
 
   const toggle = (id) => {
     if (!id) {
@@ -191,6 +208,10 @@ export default function WalletTransactionsPanel({ refreshKey = 0 }) {
           {items.map((item, index) => {
             const id = String(item.walletTransactionId || "");
             const typeInfo = getTransactionTypeInfo(item.transactionType);
+            const flow =
+              typeInfo.flow === "none" && details[id]?.data
+                ? getImpactFlow(details[id].data.balanceImpacts)
+                : typeInfo.flow;
             const amount = Math.abs(Number(item.amount || 0));
             const isExpanded = Boolean(id) && expandedId === id;
 
@@ -218,9 +239,9 @@ export default function WalletTransactionsPanel({ refreshKey = 0 }) {
                     </p>
                   </div>
                   <p
-                    className={`shrink-0 text-base font-black ${FLOW_CLASS[typeInfo.flow]}`}
+                    className={`shrink-0 text-base font-black ${FLOW_CLASS[flow]}`}
                   >
-                    {getAmountSign(typeInfo.flow)}
+                    {getAmountSign(flow)}
                     {formatCurrency(amount)}
                   </p>
                   <span
