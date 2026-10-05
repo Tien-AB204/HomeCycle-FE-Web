@@ -20,6 +20,7 @@ import {
   ShoppingOutlined,
 } from "@ant-design/icons";
 import { ROLES } from "../../constants/roles";
+import Avatar from "../../components/shared/Avatar";
 import PostThumbnail from "../../components/shared/PostThumbnail";
 import { PriorityNotice } from "../../components/shared/PriorityBadge";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
@@ -1196,6 +1197,17 @@ const PostDetailPage = ({ ownerMode = false }) => {
                 {post.productTypeName} ·{" "}
                 {post.brandName}
               </p>
+
+              {!ownerMode && post.ownerId && (
+                <Link
+                  to={`/nguoi-dung/${encodeURIComponent(post.ownerId)}`}
+                  title="Xem hồ sơ người đăng"
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-white py-1.5 pl-1.5 pr-3 text-sm font-bold text-text transition hover:border-primary/40 hover:text-primary"
+                >
+                  <Avatar src={post.avatarUrl} alt="" className="h-7 w-7" />
+                  {post.ownerName || "Người đăng"}
+                </Link>
+              )}
 
               <PriorityNotice post={post} className="mt-3" />
 

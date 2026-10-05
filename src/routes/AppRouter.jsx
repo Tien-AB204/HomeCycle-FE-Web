@@ -75,6 +75,7 @@ import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
 import ClientEntryRoute from "./ClientEntryRoute";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
+import PublicProfilePage from "../pages/user/PublicProfilePage";
 import SubscriptionPage from "../pages/user/SubscriptionPage";
 
 const isGhnWebhookDemoEnabled =
@@ -187,6 +188,8 @@ const AppRouter = () => {
             path="/danh-gia/nguoi-dung/:userId"
             element={<ReceivedReviewsPage />}
           />
+
+          <Route path="/nguoi-dung/:userId" element={<PublicProfilePage />} />
 
           <Route
             path="/thuong-luong/:negotiationId"

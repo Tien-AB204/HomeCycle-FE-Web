@@ -95,6 +95,13 @@ const ReceivedReviewsPage = () => {
           <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">Uy tín giao dịch</p>
           <h1 className="mt-1 text-2xl font-black text-text sm:text-3xl">Đánh giá người dùng nhận được</h1>
           <p className="mt-1.5 text-sm text-textLight">Tham khảo trải nghiệm từ các giao dịch đã hoàn tất trên HomeCycle.</p>
+          <Link
+            to={`/nguoi-dung/${encodeURIComponent(userId)}`}
+            className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-primary hover:underline"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">person</span>
+            Xem hồ sơ người dùng
+          </Link>
         </div>
         {items.length > 0 && (
           <div className="rounded-xl border border-border bg-white px-4 py-3 shadow-sm">

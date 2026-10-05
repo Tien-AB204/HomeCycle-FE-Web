@@ -1364,7 +1364,7 @@ const NegotiationRoomPage = ({ sessionId, conversationId, participant, embedded 
                 <h1 className="truncate text-base font-black text-text">
                   {partnerUserId ? (
                     <Link
-                      to={`/danh-gia/nguoi-dung/${encodeURIComponent(partnerUserId)}`}
+                      to={`/nguoi-dung/${encodeURIComponent(partnerUserId)}`}
                       title="Xem hồ sơ đối tác"
                       className="hover:text-primary hover:underline"
                     >
