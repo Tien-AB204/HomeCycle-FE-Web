@@ -60,14 +60,8 @@ const ADMIN_NAV_GROUPS = [
       {
         label: "Tài chính & ví",
         path: "/admin/dashboard/finance",
-        matchPaths: ["/admin/dashboard/payments"],
+        matchPaths: ["/admin/dashboard/payments", "/admin/finance-management"],
         icon: "account_balance",
-      },
-      {
-        label: "Ví & giao dịch",
-        path: "/admin/finance-management",
-        icon: "receipt_long",
-        child: true,
       },
     ],
   },

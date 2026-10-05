@@ -3,7 +3,6 @@ import adminDashboardApi from "../../../services/apis/adminDashboardApi";
 import { TRANSACTION_TYPE_LABELS } from "../../finance/financePresentation";
 import {
   completedPeriod,
-  countOf,
   formatDayKey,
   shiftDayKey,
 } from "../operations/operationsPresentation";
@@ -26,18 +25,6 @@ const MOVEMENT_LABELS = {
   PayoutReleaseNormal: "Giải ngân cho người bán",
   PayoutReleaseAfterDispute: "Giải ngân sau tranh chấp",
 };
-
-const PAYMENT_METHOD_NAMES = { PayOS: "PayOS", Internal_Wallet: "Ví nội bộ", Unknown: "Chưa xác định", Unspecified: "Chưa xác định" };
-
-const PAYMENT_STATES = [
-  ["Pending", "Chờ thanh toán", "var(--amber)"],
-  ["Completed", "Đã hoàn tất", "#2f7b64"],
-  ["Failed", "Thất bại", "var(--red)"],
-  ["Refunded", "Đã hoàn tiền", "var(--blue)"],
-  ["PartiallyRefunded", "Hoàn tiền một phần", "var(--teal)"],
-  ["Expired", "Đã hết hạn", "#8a969d"],
-  ["Cancelled", "Đã hủy", "var(--red)"],
-];
 
 function FlowChart({ series }) {
   const boxRef = useRef(null);
@@ -121,7 +108,7 @@ function AmountBars({ rows }) {
 export default function FinanceActivityTab() {
   const [periodDays, setPeriodDays] = useState(30);
   const [groupBy, setGroupBy] = useState("Week");
-  const [state, setState] = useState({ loading: true, error: "", overview: null, cashFlow: null, revenue: null, payments: null });
+  const [state, setState] = useState({ loading: true, error: "", overview: null, cashFlow: null, revenue: null });
   const period = useMemo(() => completedPeriod(periodDays), [periodDays]);
 
   useEffect(() => {
@@ -133,10 +120,9 @@ export default function FinanceActivityTab() {
       adminDashboardApi.getFinanceOverview(params),
       adminDashboardApi.getFinanceCashFlow({ ...params, groupBy }),
       adminDashboardApi.getFinanceRevenue(params),
-      adminDashboardApi.getPayments({ signal }).catch(() => null),
     ])
-      .then(([overview, cashFlow, revenue, payments]) =>
-        setState({ loading: false, error: "", overview, cashFlow, revenue, payments }),
+      .then(([overview, cashFlow, revenue]) =>
+        setState({ loading: false, error: "", overview, cashFlow, revenue }),
       )
       .catch((error) => {
         if (isCanceled(error)) return;
@@ -151,20 +137,6 @@ export default function FinanceActivityTab() {
   const series = Array.isArray(state.cashFlow?.series) ? state.cashFlow.series : [];
   const totalRevenue = Number(state.revenue?.totalRevenue) || 0;
   const revenuePayOs = Number(inflowSources.find((item) => item.key === "SubscriptionPayment")?.amount) || 0;
-  const methods = Array.isArray(state.payments?.paymentMethodPerformance) ? state.payments.paymentMethodPerformance : [];
-  const statusDistribution = state.payments?.currentStatusDistribution;
-  const paymentTotal = PAYMENT_STATES.reduce((sum, [key]) => sum + countOf(statusDistribution, key), 0);
-
-  const donutStops = PAYMENT_STATES.reduce(
-    (result, [key, , color]) => {
-      const count = countOf(statusDistribution, key);
-      if (!count || !paymentTotal) return result;
-      const to = result.angle + (count / paymentTotal) * 360;
-      return { angle: to, stops: [...result.stops, `${color} ${result.angle}deg ${to}deg`] };
-    },
-    { angle: 0, stops: [] },
-  ).stops;
-
   return (
     <section>
       <div className="section-title">
@@ -208,24 +180,6 @@ export default function FinanceActivityTab() {
         ))}
       </div>
 
-      <div className="payment-strip">
-        <article className="payment-card">
-          <p className="payment-label">Thanh toán thành công</p>
-          <strong className="payment-value">{money(activity.processedPaymentAmount)}</strong>
-          <p className="muted">Tổng thanh toán thành công qua PayOS và ví nội bộ trong kỳ; gồm khoản sau đó đã hoàn tiền.</p>
-        </article>
-        <article className="payment-card">
-          <p className="payment-label">Hoàn tiền vào ví</p>
-          <strong className="payment-value">{money(activity.refundedAmount)}</strong>
-          <p className="muted">Tiền hoàn cho người mua vào ví HomeCycle trong kỳ. Đây là dịch chuyển nội bộ.</p>
-        </article>
-        <article className="payment-card">
-          <p className="payment-label">Thanh toán thất bại</p>
-          <strong className="payment-value">{money(activity.createdFailedPaymentAmount)}</strong>
-          <p className="muted">Giá trị yêu cầu thanh toán tạo trong kỳ và hiện có trạng thái thất bại; không phải tiền đã chi.</p>
-        </article>
-      </div>
-
       <div className="split">
         <section className="panel">
           <div className="panel-title">
@@ -253,70 +207,6 @@ export default function FinanceActivityTab() {
           <div className="summaryrow"><span>Thanh toán gói bằng ví</span><strong>{money(Math.max(totalRevenue - revenuePayOs, 0))}</strong></div>
           <div className="notice-warn">Không tính phí GHN, ký quỹ đơn, tiền người dùng hoặc GMV vào doanh thu nền tảng.</div>
           <p className="footnote">Tiền vào/ra và doanh thu có phạm vi khác nhau; không cộng chúng thành tổng thu nhập.</p>
-        </section>
-      </div>
-
-      <div className="split payment-analysis">
-        <section className="panel">
-          <div className="panel-title">
-            <div>
-              <h2>Thanh toán theo phương thức</h2>
-              <p className="muted">Toàn bộ thanh toán hiện có · không phụ thuộc kỳ báo cáo</p>
-            </div>
-          </div>
-          <div className="tablewrap">
-            <table>
-              <thead>
-                <tr><th>Phương thức</th><th className="num">Tổng</th><th className="num">Đã thanh toán</th><th className="num">Thất bại</th><th className="num">Tỷ lệ</th></tr>
-              </thead>
-              <tbody>
-                {methods.length === 0 ? (
-                  <tr><td colSpan={5} className="empty">Chưa có thanh toán.</td></tr>
-                ) : (
-                  methods.map((item) => (
-                    <tr key={item.method}>
-                      <td><strong>{PAYMENT_METHOD_NAMES[item.method] || item.method}</strong></td>
-                      <td className="num">{item.totalCount}</td>
-                      <td className="num">{item.paidCount}</td>
-                      <td className="num">{item.failedCount}</td>
-                      <td className="num">{item.successRate === null || item.successRate === undefined ? "—" : `${formatCompact(item.successRate)}%`}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          <p className="footnote">Tỷ lệ = đã thanh toán / (đã thanh toán + thất bại). “Đã thanh toán” gồm khoản có thời điểm thanh toán, kể cả sau đó hoàn tiền.</p>
-        </section>
-        <section className="panel">
-          <div className="panel-title">
-            <div>
-              <h2>Thanh toán theo trạng thái</h2>
-              <p className="muted">Trạng thái hiện tại · không phụ thuộc kỳ báo cáo</p>
-            </div>
-          </div>
-          <div className="payment-donut-layout">
-            <div
-              className="payment-donut"
-              role="img"
-              aria-label={`${paymentTotal} thanh toán`}
-              style={{ background: donutStops.length ? `conic-gradient(${donutStops.join(",")})` : "#edf1f3" }}
-            >
-              <div><strong>{paymentTotal}</strong><span>thanh toán</span></div>
-            </div>
-            <div className="payment-state-list">
-              {PAYMENT_STATES.map(([key, label, color]) => {
-                const count = countOf(statusDistribution, key);
-                return (
-                  <div key={key}>
-                    <span><i style={{ background: color }} />{label}</span>
-                    <strong>{count}</strong>
-                    <small>{paymentTotal ? `${formatCompact((count / paymentTotal) * 100)}%` : "0%"}</small>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </section>
       </div>
 
