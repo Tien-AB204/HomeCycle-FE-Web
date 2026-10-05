@@ -686,7 +686,6 @@ const DisputeManagementPage = ({
   initialTargetType,
   api = moderatorDisputeApi,
   readOnly = false,
-  eyebrow = "Kiểm duyệt",
   title = "Quản lý tranh chấp",
 } = {}) => {
   const location = useLocation();
@@ -1548,15 +1547,9 @@ const DisputeManagementPage = ({
           <>
           <div className="border-b border-border p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-primary">
-                  {eyebrow}
-                </p>
-
-                <h1 className="text-xl font-black text-text">
-                  {title}
-                </h1>
-              </div>
+              <h1 className="text-xl font-black text-text">
+                {title}
+              </h1>
 
               <div className="flex shrink-0 items-center gap-2">
                 <div className="rounded-full bg-textLight/10 px-3 py-1 text-xs font-black text-primary">
