@@ -10,6 +10,8 @@ import {
   useParams,
 } from "react-router-dom";
 import DynamicAttributeFields from "../../features/posts/DynamicAttributeFields";
+import AiPriceSuggestionPanel from "../../features/posts/AiPriceSuggestionPanel";
+import { buildAiPricingContext } from "../../features/posts/aiPriceSuggestion";
 import DraftSupplierSuggestionPanel from "../../features/posts/DraftSupplierSuggestionPanel";
 import MediaUploadField from "../../features/posts/MediaUploadField";
 import PostAddressFields from "../../features/posts/PostAddressFields";
@@ -18,7 +20,6 @@ import {
   DAMAGE_LEVEL_OPTIONS,
   DELIVERY_METHOD_OPTIONS,
   FUNCTIONALITY_OPTIONS,
-  PRIORITY_LEVEL_OPTIONS,
   SPACE_USAGE_OPTIONS,
 } from "../../constants/postFormOptions";
 import {
@@ -94,7 +95,6 @@ const createInitialForm = () => ({
   quantity: "1",
   description: "",
   detailDescription: "",
-  priorityLevel: "Low",
   deliveryMethod: "Unknown",
   city: "",
   ward: "",
@@ -146,7 +146,6 @@ const createFormFromPost = (post) => {
     quantity: toFormString(post?.quantity, "1"),
     description: post?.description || "",
     detailDescription: product.detailDescription || "",
-    priorityLevel: post?.priorityLevel || "Low",
     deliveryMethod: post?.deliveryMethod || "Unknown",
     city: post?.city || "",
     ward: post?.ward || "",
@@ -1061,6 +1060,13 @@ const CreatePostPage = () => {
     !isLoadingAttributes &&
     !attributeLoadError;
 
+  const aiPricingContext = buildAiPricingContext({
+    form,
+    attributeValues: buildAttributeValues(attributes, attributeValues),
+    missingRequiredAttribute: !requiredAttributesReady,
+    isLoadingAttributes,
+  });
+
   const supplierDraftPayload = {
     categoryId: form.categoryId || null,
     productTypeId: form.productTypeId || null,
@@ -1398,27 +1404,6 @@ const CreatePostPage = () => {
               <FieldError message={fieldErrors.quantity} />
             </label>
 
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-text">
-                Độ ưu tiên
-              </span>
-              <select
-                value={form.priorityLevel}
-                onChange={(event) =>
-                  updateField("priorityLevel", event.target.value)
-                }
-                disabled={isSubmitting}
-                className={inputClassName}
-              >
-                {PRIORITY_LEVEL_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <FieldError message={fieldErrors.priorityLevel} />
-            </label>
-
             {!isBuyPost && (
               <label className="block">
                 <span className="mb-1.5 block text-sm font-semibold text-text">
@@ -1556,6 +1541,14 @@ const CreatePostPage = () => {
               </label>
             )}
           </div>
+
+          {!isBuyPost && !isEditing && (
+            <AiPriceSuggestionPanel
+              context={aiPricingContext}
+              onApply={(price) => updateField("price", price)}
+              disabled={isSubmitting}
+            />
+          )}
 
           {!isBuyPost && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

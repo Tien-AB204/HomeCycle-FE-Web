@@ -22,6 +22,8 @@ import {
   validateGhnCollectionInfo,
 } from "../appointments/ghnCollectionUtils";
 import AddressSelector from "./AddressSelector";
+import { useGhnLeadtime } from "./useGhnLeadtime";
+import { formatDate as formatDay } from "../../utils/formatter";
 
 const toDateTimeLocal = (value) => {
   if (!value) return "";
@@ -1180,6 +1182,28 @@ const AgreementForm = ({
     Array.isArray(ghnInfo?.items) &&
     ghnInfo.items.length > 1;
 
+  const ghnLeadtime = useGhnLeadtime({
+    enabled: isGhn,
+    negotiationId: negotiationId || agreement?.negotiationId,
+    agreementType: values.agreementType,
+    deliveryMethod: values.deliveryMethod,
+    ghnInfo,
+  });
+  // Kết quả tính phí cũng có ngày dự kiến; ưu tiên nó khi đã tính phí.
+  const ghnExpectedDeliveryAt =
+    ghnPreview?.expectedDeliveryAt ||
+    ghnLeadtime.data?.expectedDeliveryAt ||
+    "";
+  const leadtimeFrom = ghnLeadtime.data?.fromEstimateDate;
+  const leadtimeTo = ghnLeadtime.data?.toEstimateDate;
+  const leadtimeRange =
+    !ghnPreview?.expectedDeliveryAt &&
+    leadtimeFrom &&
+    leadtimeTo &&
+    formatDay(leadtimeFrom) !== formatDay(leadtimeTo)
+      ? ` (khoảng ${formatDay(leadtimeFrom)} – ${formatDay(leadtimeTo)})`
+      : "";
+
   if (
     requiresFullPaymentForGhn &&
     values.paymentType !== PAYMENT_TYPE.FULL_PAYMENT
@@ -1626,6 +1650,33 @@ const AgreementForm = ({
                     ? "Đang tính phí..."
                     : "Tính phí GHN"}
                 </button>
+              </div>
+
+              <div className="mt-3 flex items-start gap-2 rounded-xl border border-warning/25 bg-white px-4 py-3 text-sm text-text">
+                <span
+                  className="material-symbols-outlined text-primary"
+                  style={{ fontSize: 18 }}
+                  aria-hidden="true"
+                >
+                  event
+                </span>
+                <p className="leading-6">
+                  {ghnExpectedDeliveryAt ? (
+                    <>
+                      Dự kiến giao:{" "}
+                      <span className="font-black text-primary">
+                        {formatDay(ghnExpectedDeliveryAt)}
+                      </span>
+                      {leadtimeRange}
+                    </>
+                  ) : ghnLeadtime.isLoading ? (
+                    "Đang lấy ngày dự kiến giao từ GHN..."
+                  ) : !ghnLeadtime.hasReceiverArea ? (
+                    "Chọn Quận/Huyện và Phường/Xã người nhận để xem ngày dự kiến giao."
+                  ) : (
+                    ghnLeadtime.error || "Chưa có ngày dự kiến giao từ GHN."
+                  )}
+                </p>
               </div>
 
               {hasMultipleGhnParcels && (

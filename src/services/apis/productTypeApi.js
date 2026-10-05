@@ -137,7 +137,50 @@ const normalizeAttributes = (
   );
 };
 
+const normalizeFilterableAttribute = (attribute) => {
+  const options = normalizeOptions(attribute?.options).filter(
+    (option) => option?.optionId && option?.optionValue,
+  );
+
+  if (!attribute?.attributeId || !attribute?.attributeName || !options.length) {
+    return null;
+  }
+
+  return {
+    attributeId: attribute.attributeId,
+    attributeName: attribute.attributeName,
+    unit: attribute.unit?.trim() || "",
+    options,
+  };
+};
+
 export const productTypeApi = {
+  /*
+   * Thuộc tính được cấu hình làm bộ lọc (IsFilterable) của một loại sản
+   * phẩm; chỉ giữ thuộc tính có lựa chọn vì Backend lọc theo optionId.
+   */
+  getFilterableAttributes: async (productTypeId, { signal } = {}) => {
+    const id = String(productTypeId || "").trim();
+
+    if (!id) {
+      throw new Error("Không tìm thấy mã loại sản phẩm.");
+    }
+
+    const response = await axiosClient.get(
+      `/product-types/${encodeURIComponent(id)}/filterable-attributes`,
+      { signal },
+    );
+
+    const attributes = ensureSuccessfulResponse(
+      response,
+      "Không thể tải bộ lọc của loại sản phẩm.",
+    );
+
+    return Array.isArray(attributes)
+      ? attributes.map(normalizeFilterableAttribute).filter(Boolean)
+      : [];
+  },
+
   getAll: async ({
     pageNumber = DEFAULT_PAGE_NUMBER,
     pageSize = DEFAULT_PAGE_SIZE,

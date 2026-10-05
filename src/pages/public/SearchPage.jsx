@@ -20,25 +20,34 @@ import {
 import ProductCard from "../../components/shared/ProductCard";
 import StaleDataWarningModal from "../../components/shared/StaleDataWarningModal";
 import {
-  CATEGORY_BACKEND_IDS,
-  MAIN_CATEGORIES,
-} from "../../constants/filterOptions";
-import {
   MARKETPLACE_POST_TYPES,
   normalizePostType,
 } from "../../constants/marketplace";
+import { ROLES } from "../../constants/roles";
+import SearchFilterPanel from "../../features/search/SearchFilterPanel";
+import {
+  buildSearchCriteria,
+  countActiveFilters,
+  createInitialFilters,
+  DEFAULT_SORT_MODE,
+  isSortMode,
+  restoreFilters,
+  SEARCH_SORT_OPTIONS,
+} from "../../features/search/searchFilters";
+import { useSearchFilterOptions } from "../../features/search/useSearchFilterOptions";
 import { useAuth } from "../../hooks/useAuth";
+import { useDiscoveryPreferences } from "../../hooks/useDiscoveryPreferences";
 import businessRecommendationApi from "../../services/apis/businessRecommendationApi";
 import businessProfileApi from "../../services/apis/businessProfileApi";
 import postApi from "../../services/apis/postApi";
-import productTypeApi from "../../services/apis/productTypeApi";
 import {
   getBusinessRecommendationMismatchMessage,
   getBusinessRecommendations,
   hasCompletedBusinessSurvey,
   normalizeBusinessSurvey,
 } from "../../utils/businessRecommendationUtils";
-import { getUserId } from "../../utils/authUtils";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
+import { filterDiscoveryPosts } from "../../utils/discoveryPosts";
 import {
   getBusinessSurveySnapshot,
   isFreshBusinessSurveySnapshot,
@@ -58,77 +67,6 @@ import {
 } from "../../utils/safeErrorMessage";
 
 const PAGE_SIZE = 9;
-
-const CATEGORY_OPTIONS = [
-  {
-    value:
-      CATEGORY_BACKEND_IDS[
-        MAIN_CATEGORIES.APPLIANCE
-      ],
-    label: "Đồ nội thất",
-  },
-  {
-    value:
-      CATEGORY_BACKEND_IDS[
-        MAIN_CATEGORIES.ELECTRONIC
-      ],
-    label: "Điện máy",
-  },
-  {
-    value:
-      CATEGORY_BACKEND_IDS[
-        MAIN_CATEGORIES.HOUSEHOLD
-      ],
-    label: "Đồ sinh hoạt",
-  },
-];
-
-const DELIVERY_OPTIONS = [
-  {
-    value: "GhnDelivery",
-    label: "Giao hàng GHN",
-  },
-  {
-    value: "Unknown",
-    label: "Thỏa thuận vận chuyển",
-  },
-];
-
-const PRIORITY_OPTIONS = [
-  { value: "Low", label: "Thấp" },
-  { value: "Medium", label: "Trung bình" },
-  { value: "High", label: "Cao" },
-];
-
-const SORT_OPTIONS = [
-  {
-    value: "newest",
-    label: "Mới nhất",
-  },
-  {
-    value: "oldest",
-    label: "Cũ nhất",
-  },
-  {
-    value: "price-ascending",
-    label: "Giá tăng dần",
-  },
-  {
-    value: "price-descending",
-    label: "Giá giảm dần",
-  },
-];
-
-const createInitialFilters = () => ({
-  postType: "",
-  categoryId: "",
-  productTypeId: "",
-  minPrice: "",
-  maxPrice: "",
-  city: "",
-  deliveryMethod: "",
-  priorityLevel: "",
-});
 
 const isCanceledRequest = (error) => {
   return (
@@ -182,18 +120,6 @@ const getErrorMessage = (error) => {
     ) ||
     "Không thể tìm kiếm bài đăng."
   );
-};
-
-const parseOptionalNumber = (value) => {
-  if (value === "" || value == null) {
-    return undefined;
-  }
-
-  const parsedValue = Number(value);
-
-  return Number.isFinite(parsedValue)
-    ? parsedValue
-    : undefined;
 };
 
 const getPostTimestamp = (post) => {
@@ -303,12 +229,31 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
     ? searchParams.get("showFilter") === "1"
     : Boolean(fixedPostType);
 
-  const [filters, setFilters] = useState(
-    () => ({
+  const isBusinessUser =
+    normalizeRole(user?.role) === ROLES.BUSINESS;
+  const {
+    showOwnPostsInDiscovery,
+    setShowOwnPostsInDiscovery,
+  } = useDiscoveryPreferences();
+
+  const [filters, setFilters] = useState(() => {
+    if (restoredSearchState?.filters) {
+      return restoreFilters(restoredSearchState.filters);
+    }
+
+    /*
+     * Trang chủ mở tìm kiếm theo danh mục qua ?categoryId=.
+     */
+    const categoryId = searchParams.get("categoryId")?.trim() || "";
+
+    return {
       ...createInitialFilters(),
-      ...(restoredSearchState?.filters || {}),
-    }),
-  );
+      categoryId,
+      productTypeId: categoryId
+        ? searchParams.get("productTypeId")?.trim() || ""
+        : "",
+    };
+  });
   const [pageNumber, setPageNumber] =
     useState(() => {
       const restoredPage = Number(
@@ -321,56 +266,38 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
         : 1;
     });
   const [sortMode, setSortMode] =
-    useState(() => {
-      const restoredSort =
-        restoredSearchState?.sortMode;
+    useState(() =>
+      isSortMode(restoredSearchState?.sortMode)
+        ? restoredSearchState.sortMode
+        : DEFAULT_SORT_MODE,
+    );
+  const filterOptions = useSearchFilterOptions({
+    categoryId: filters.categoryId,
+    productTypeId: filters.productTypeId,
+  });
 
-      return SORT_OPTIONS.some(
-        (option) =>
-          option.value === restoredSort,
-      )
-        ? restoredSort
-        : "newest";
-    });
-  const [productTypes, setProductTypes] =
-    useState([]);
-  const [isLoadingProductTypes, setIsLoadingProductTypes] =
-    useState(false);
+  /*
+   * Chế độ đề xuất tải một lần tối đa 100 tin rồi tự sắp xếp và phân trang,
+   * nên chỉ tìm kiếm thường mới gửi kiểu sắp xếp lên Backend.
+   */
+  const backendSortMode = recommendationMode
+    ? DEFAULT_SORT_MODE
+    : sortMode;
 
   const searchCriteria = useMemo(
-    () => ({
-      keyword,
-      postType:
-        fixedPostTypeValue ||
-        filters.postType,
-      categoryId: filters.categoryId,
-      productTypeId:
-        filters.productTypeId,
-      minPrice: parseOptionalNumber(
-        filters.minPrice,
-      ),
-      maxPrice: parseOptionalNumber(
-        filters.maxPrice,
-      ),
-      city: filters.city,
-      deliveryMethod:
-        filters.deliveryMethod,
-      priorityLevel:
-        filters.priorityLevel,
-      onlyAvailable: true,
-      sortBy: "Newest",
-      attributeFilters: [],
-    }),
+    () =>
+      buildSearchCriteria({
+        filters,
+        keyword,
+        fixedPostType: fixedPostTypeValue,
+        isBusinessUser,
+        sortMode: backendSortMode,
+      }),
     [
-      filters.categoryId,
-      filters.city,
-      filters.deliveryMethod,
-      filters.maxPrice,
-      filters.minPrice,
-      filters.postType,
-      filters.priorityLevel,
-      filters.productTypeId,
+      backendSortMode,
+      filters,
       fixedPostTypeValue,
+      isBusinessUser,
       keyword,
     ],
   );
@@ -632,52 +559,6 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
     recommendationRequestPayload,
   ]);
 
-  useEffect(() => {
-    if (!filters.categoryId) {
-      return undefined;
-    }
-
-    const controller = new AbortController();
-    let isActive = true;
-
-    productTypeApi
-      .getByCategory(
-        filters.categoryId,
-        {
-          signal: controller.signal,
-        },
-      )
-      .then((items) => {
-        if (!isActive) {
-          return;
-        }
-
-        setProductTypes(
-          items.filter(
-            (item) =>
-              item?.isActive !== false,
-          ),
-        );
-        setIsLoadingProductTypes(false);
-      })
-      .catch((requestError) => {
-        if (
-          !isActive ||
-          isCanceledRequest(requestError)
-        ) {
-          return;
-        }
-
-        setProductTypes([]);
-        setIsLoadingProductTypes(false);
-      });
-
-    return () => {
-      isActive = false;
-      controller.abort();
-    };
-  }, [filters.categoryId]);
-
   const activeRequestKey = recommendationMode
     ? recommendationRequestKey
     : requestKey;
@@ -702,17 +583,29 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
 
   const sortedPosts = useMemo(
     () => {
-      const posts = sortPosts(sourceResult?.items, sortMode);
-
       if (!recommendationMode) {
-        return posts;
+        return filterDiscoveryPosts(
+          sourceResult?.items,
+          businessUserId,
+          showOwnPostsInDiscovery,
+        );
       }
 
       const startIndex = (pageNumber - 1) * PAGE_SIZE;
 
-      return posts.slice(startIndex, startIndex + PAGE_SIZE);
+      return sortPosts(sourceResult?.items, sortMode).slice(
+        startIndex,
+        startIndex + PAGE_SIZE,
+      );
     },
-    [pageNumber, recommendationMode, sortMode, sourceResult?.items],
+    [
+      businessUserId,
+      pageNumber,
+      recommendationMode,
+      showOwnPostsInDiscovery,
+      sortMode,
+      sourceResult?.items,
+    ],
   );
 
   const result = useMemo(() => {
@@ -811,26 +704,16 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
     [recommendationMode, recommendationSurvey],
   );
 
-  const updateFilter = (name, value) => {
+  const handleFiltersChange = (changes) => {
     setFilters((currentFilters) => ({
       ...currentFilters,
-      [name]: value,
+      ...changes,
     }));
     setPageNumber(1);
   };
 
-  const handleCategoryChange = (event) => {
-    const categoryId = event.target.value;
-
-    setProductTypes([]);
-    setIsLoadingProductTypes(
-      Boolean(categoryId),
-    );
-    setFilters((currentFilters) => ({
-      ...currentFilters,
-      categoryId,
-      productTypeId: "",
-    }));
+  const handleSortChange = (event) => {
+    setSortMode(event.target.value);
     setPageNumber(1);
   };
 
@@ -846,11 +729,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
   };
 
   const handleResetFilters = () => {
-    setFilters(
-      createInitialFilters(),
-    );
-    setProductTypes([]);
-    setIsLoadingProductTypes(false);
+    setFilters(createInitialFilters());
     setPageNumber(1);
   };
 
@@ -862,9 +741,7 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
       : fixedPostType === "BUY"
         ? "Tin thu mua"
         : "Tìm kiếm bài đăng cùng bộ lọc chuyên biệt theo từng sản phẩm";
-  const activeFilterCount = Object.values(filters).filter(
-    (value) => value !== "" && value != null,
-  ).length;
+  const activeFilterCount = countActiveFilters(filters);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-7 sm:px-6 lg:py-10">
@@ -907,229 +784,34 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
 
       <div className="flex flex-col gap-6 lg:flex-row">
         {isFilterOpen && (
-          <aside className="h-fit w-full shrink-0 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_32px_rgba(23,40,48,0.06)] lg:sticky lg:top-24 lg:w-72">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="flex items-center gap-2 font-black text-text">
-                <FilterOutlined className="text-primary" /> Bộ lọc
-              </h2>
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:text-text"
-              >
-                <ReloadOutlined /> Đặt lại
-              </button>
-            </div>
-
-            <div className="space-y-5">
-              {!fixedPostType && (
-                <label className="block">
-                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
-                    Loại bài đăng
-                  </span>
-                  <select
-                    value={filters.postType}
-                    onChange={(event) =>
-                      updateFilter(
-                        "postType",
-                        event.target.value,
-                      )
-                    }
-                    className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
-                  >
-                    <option value="">
-                      Tất cả bài đăng
-                    </option>
-                    <option value="Buy">
-                      Tin thu mua
-                    </option>
-                    <option value="Sell">
-                      Tin đăng bán
-                    </option>
-                  </select>
-                </label>
-              )}
-
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
-                  Danh mục
-                </span>
-                <select
-                  value={filters.categoryId}
-                  onChange={handleCategoryChange}
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
-                >
-                  <option value="">
-                    Tất cả danh mục
-                  </option>
-                  {CATEGORY_OPTIONS.map(
-                    (category) => (
-                      <option
-                        key={category.value}
-                        value={category.value}
-                      >
-                        {category.label}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
-                  Loại sản phẩm
-                </span>
-                <select
-                  value={filters.productTypeId}
-                  onChange={(event) =>
-                    updateFilter(
-                      "productTypeId",
-                      event.target.value,
-                    )
-                  }
-                  disabled={
-                    !filters.categoryId ||
-                    isLoadingProductTypes
-                  }
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:bg-background"
-                >
-                  <option value="">
-                    {isLoadingProductTypes
-                      ? "Đang tải..."
-                      : "Tất cả loại sản phẩm"}
-                  </option>
-                  {productTypes.map(
-                    (productType) => (
-                      <option
-                        key={
-                          productType.productTypeId
-                        }
-                        value={
-                          productType.productTypeId
-                        }
-                      >
-                        {
-                          productType.productTypeName
-                        }
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-
-              <div>
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
-                  Khoảng giá
-                </span>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    min="0"
-                    value={filters.minPrice}
-                    onChange={(event) =>
-                      updateFilter(
-                        "minPrice",
-                        event.target.value,
-                      )
-                    }
-                    placeholder="Từ"
-                    className="min-w-0 rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
-                  />
-                  <input
-                    type="number"
-                    min="0"
-                    value={filters.maxPrice}
-                    onChange={(event) =>
-                      updateFilter(
-                        "maxPrice",
-                        event.target.value,
-                      )
-                    }
-                    placeholder="Đến"
-                    className="min-w-0 rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
-                  />
-                </div>
-              </div>
-
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
-                  Thành phố
-                </span>
+          <SearchFilterPanel
+            filters={filters}
+            options={filterOptions}
+            onChange={handleFiltersChange}
+            onReset={handleResetFilters}
+            showPostTypeFilter={!fixedPostType && !isBusinessUser}
+          >
+            {businessUserId && !recommendationMode && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-background px-3 py-2.5">
                 <input
-                  type="text"
-                  value={filters.city}
+                  type="checkbox"
+                  checked={showOwnPostsInDiscovery}
                   onChange={(event) =>
-                    updateFilter(
-                      "city",
-                      event.target.value,
-                    )
+                    setShowOwnPostsInDiscovery(event.target.checked)
                   }
-                  placeholder="Ví dụ: Hồ Chí Minh"
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  className="mt-0.5 h-4 w-4 accent-primary"
                 />
-              </label>
-
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
-                  Vận chuyển
+                <span>
+                  <span className="block text-sm font-bold text-text">
+                    Hiện tin đăng của tôi
+                  </span>
+                  <span className="block text-xs leading-5 text-textLight">
+                    Áp dụng cho trang chủ và kết quả tìm kiếm.
+                  </span>
                 </span>
-                <select
-                  value={filters.deliveryMethod}
-                  onChange={(event) =>
-                    updateFilter(
-                      "deliveryMethod",
-                      event.target.value,
-                    )
-                  }
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
-                >
-                  <option value="">
-                    Tất cả hình thức
-                  </option>
-                  {DELIVERY_OPTIONS.map(
-                    (option) => (
-                      <option
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </option>
-                    ),
-                  )}
-                </select>
               </label>
-
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-textLight">
-                  Độ ưu tiên
-                </span>
-                <select
-                  value={filters.priorityLevel}
-                  onChange={(event) =>
-                    updateFilter(
-                      "priorityLevel",
-                      event.target.value,
-                    )
-                  }
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15"
-                >
-                  <option value="">
-                    Tất cả mức độ
-                  </option>
-                  {PRIORITY_OPTIONS.map(
-                    (option) => (
-                      <option
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-            </div>
-          </aside>
+            )}
+          </SearchFilterPanel>
         )}
 
         <section className="min-w-0 flex-1">
@@ -1162,14 +844,10 @@ const SearchPage = ({ fixedPostType, recommendationMode = false }) => {
                 </span>
                 <select
                   value={sortMode}
-                  onChange={(event) =>
-                    setSortMode(
-                      event.target.value,
-                    )
-                  }
+                  onChange={handleSortChange}
                   className="rounded-xl border border-border bg-white px-3 py-2 text-sm font-semibold text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                 >
-                  {SORT_OPTIONS.map((option) => (
+                  {SEARCH_SORT_OPTIONS.map((option) => (
                     <option
                       key={option.value}
                       value={option.value}

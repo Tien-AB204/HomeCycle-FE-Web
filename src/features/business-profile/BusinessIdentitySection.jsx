@@ -1,6 +1,12 @@
 import { useState } from "react";
 import businessProfileApi from "../../services/apis/businessProfileApi";
+import IdentityScanPanel from "../../components/shared/IdentityScanPanel";
 import SensitiveField from "../../components/shared/SensitiveField";
+import { IDENTITY_SCAN_TARGETS } from "../../services/apis/identityScanApi";
+import {
+  toTitleCaseText,
+  toUppercaseText,
+} from "../../utils/textFormat";
 import {
   BusinessField,
   BusinessFileField,
@@ -138,6 +144,29 @@ export default function BusinessIdentitySection({
     setForm((current) => ({
       ...current,
       [name]: value,
+    }));
+    setError("");
+    setSuccess("");
+  };
+
+  /*
+   * Họ tên người đại diện phải khớp họ tên trên CCCD nên điền cả hai.
+   */
+  const handleScanResult = (result) => {
+    setForm((current) => ({
+      ...current,
+      identityNumber:
+        result.identityNumber || current.identityNumber,
+      identityName: result.fullName
+        ? toUppercaseText(result.fullName)
+        : current.identityName,
+      fullName: result.fullName
+        ? toTitleCaseText(result.fullName)
+        : current.fullName,
+      identityDob:
+        result.dateOfBirth || current.identityDob,
+      identityAddress:
+        result.address || current.identityAddress,
     }));
     setError("");
     setSuccess("");
@@ -483,6 +512,14 @@ export default function BusinessIdentitySection({
             }
           />
         </div>
+
+        <IdentityScanPanel
+          target={IDENTITY_SCAN_TARGETS.BUSINESS}
+          frontFile={form.cccdFront}
+          backFile={form.cccdBack}
+          disabled={isSaving}
+          onResult={handleScanResult}
+        />
 
         <div className="flex flex-wrap justify-end gap-3 border-t border-border pt-5">
           <button
