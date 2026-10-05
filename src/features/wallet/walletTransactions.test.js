@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   getAmountSign,
   getBalanceTypeLabel,
+  getImpactFlow,
   getTransactionStatusLabel,
   getTransactionTitle,
   getTransactionTypeInfo,
@@ -40,6 +41,21 @@ test("labels statuses, directions and balance types", () => {
   assert.equal(getTransactionStatusLabel("Failed"), "Thất bại");
   assert.equal(isDirectionIn("In"), true);
   assert.equal(isDirectionIn(1), false);
-  assert.equal(getBalanceTypeLabel("Hold"), "Đang chờ rút");
+  assert.equal(getBalanceTypeLabel("Hold"), "Tiền tạm giữ");
   assert.equal(getBalanceTypeLabel("Available"), "Số dư khả dụng");
+});
+
+test("impact flow follows the ledger entries on the user's wallet", () => {
+  assert.equal(
+    getImpactFlow([{ direction: "Out", amount: 50000, balanceType: "Hold" }]),
+    "out",
+  );
+  assert.equal(
+    getImpactFlow([
+      { direction: "In", amount: 50000 },
+      { direction: "Out", amount: 10000 },
+    ]),
+    "in",
+  );
+  assert.equal(getImpactFlow([]), "none");
 });

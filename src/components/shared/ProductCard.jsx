@@ -4,6 +4,8 @@ import {
   useNavigate,
 } from "react-router-dom";
 import homeCycleMark from "../../assets/brand/homecycle-mark.png";
+import { useBusinessDisplayName } from "../../hooks/useBusinessDisplayName";
+import Avatar from "./Avatar";
 import PriorityBadge from "./PriorityBadge";
 
 const CONDITION_MAP = {
@@ -50,6 +52,12 @@ const ProductCard = ({
   const [imageFailed, setImageFailed] = useState(false);
   const [trackedImage, setTrackedImage] = useState(null);
 
+  // Tin thu mua do doanh nghiệp đăng: hiện tên doanh nghiệp thay cho username.
+  const businessDisplayName = useBusinessDisplayName(
+    data?.ownerId,
+    variant === "business-buy" && !data?.businessName,
+  );
+
   if (!data) {
     return null;
   }
@@ -82,6 +90,11 @@ const ProductCard = ({
       data.owner?.fullName ||
       "",
   ).trim();
+  const ownerAvatarUrl =
+    data.avatarUrl ||
+    data.ownerAvatarUrl ||
+    data.owner?.avatarUrl ||
+    "";
   const conditionLabel =
     CONDITION_MAP[data.condition] || data.conditionName || data.productTypeName || "Đã qua sử dụng";
   const logisticsLabel =
@@ -91,6 +104,7 @@ const ProductCard = ({
     "Thỏa thuận giao nhận";
   const postId = data.postId || "";
   const isBuyPost = variant === "business-buy";
+  const ownerLabel = businessDisplayName || ownerName;
   const resolvedNavState = navState ?? {
     returnTo: `${location.pathname}${location.search}`,
     returnState: location.state || null,
@@ -199,14 +213,14 @@ const ProductCard = ({
             </span>
           </div>
         )}
-        {ownerName && (
+        {ownerLabel && (
           <div className="flex items-center gap-1.5 text-[11px] font-bold text-textLight">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-background text-[10px] text-success" aria-hidden="true">✓</span>
-            <span className="truncate">{ownerName}</span>
+            <Avatar src={ownerAvatarUrl} alt="" className="h-5 w-5" />
+            <span className="truncate">{ownerLabel}</span>
           </div>
         )}
 
-        <h3 className={`${ownerName ? "mt-2.5" : "mt-0"} line-clamp-2 min-h-10 text-sm font-black leading-5 text-text transition group-hover:text-primary`}>
+        <h3 className={`${ownerLabel ? "mt-2.5" : "mt-0"} line-clamp-2 min-h-10 text-sm font-black leading-5 text-text transition group-hover:text-primary`}>
           {name}
         </h3>
 

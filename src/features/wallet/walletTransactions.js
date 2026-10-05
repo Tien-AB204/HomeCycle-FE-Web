@@ -67,7 +67,25 @@ export const getTransactionStatusLabel = (value) =>
 export const isDirectionIn = (value) =>
   ["0", "in"].includes(normalizeEnum(value));
 
+// Số dư tạm giữ chứa cả tiền chờ rút lẫn tiền đơn hàng chờ chuyển cho người bán.
 export const getBalanceTypeLabel = (value) =>
   ["1", "hold"].includes(normalizeEnum(value))
-    ? "Đang chờ rút"
+    ? "Tiền tạm giữ"
     : "Số dư khả dụng";
+
+/*
+ * Chiều tiền thực tế trên ví của mình theo các bút toán của giao dịch: dùng
+ * cho giao dịch mà loại giao dịch không cho biết tiền vào hay ra (ví dụ tạm
+ * giữ tiền đơn hàng cho người bán).
+ */
+export const getImpactFlow = (impacts) => {
+  const net = (Array.isArray(impacts) ? impacts : []).reduce(
+    (total, impact) =>
+      total +
+      (isDirectionIn(impact?.direction) ? 1 : -1) *
+        Math.abs(Number(impact?.amount) || 0),
+    0,
+  );
+
+  return net > 0 ? "in" : net < 0 ? "out" : "none";
+};

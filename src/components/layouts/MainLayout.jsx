@@ -6,7 +6,7 @@ import { ROLES } from "../../constants/roles";
 import { getClientEntryPath, getClientPage, MARKETPLACE_NAVIGATION } from "../../constants/clientNavigation";
 import { useAuth } from "../../hooks/useAuth";
 import subscriptionApi from "../../services/apis/subscriptionApi";
-import { normalizeRole } from "../../utils/authUtils";
+import { getUserId, normalizeRole } from "../../utils/authUtils";
 import Avatar from "../shared/Avatar";
 import NotificationBell from "../shared/NotificationBell";
 import ClientNavigation from "./ClientNavigation";
@@ -26,7 +26,7 @@ const MainLayout = () => {
   const canUseClientAccount = isAuthenticated && !isManager;
   const managerPath = role === ROLES.MODERATOR ? "/mod/dashboard" : "/admin/dashboard";
   const displayName = user?.username || user?.userName || user?.Username || user?.UserName || "Tài khoản";
-  const clientPage = canUseClientAccount ? getClientPage(location, role) : null;
+  const clientPage = canUseClientAccount ? getClientPage(location, role, getUserId(user)) : null;
   const createLabel = role === ROLES.BUSINESS ? "Đăng tin thu mua" : role === ROLES.PERSONAL ? "Đăng tin bán" : "Đăng tin";
   const closeMenu = () => setMenuOpen(false);
 

@@ -84,6 +84,12 @@ const STATUS_META = {
       "bg-success/10 text-success",
     icon: "verified",
   },
+  surveypending: {
+    label: "Chờ khảo sát thu mua",
+    className:
+      "bg-warning/10 text-warning",
+    icon: "query_stats",
+  },
   rejected: {
     label: "Cần bổ sung hồ sơ",
     className: "bg-error/10 text-error",
@@ -98,8 +104,11 @@ const STATUS_BY_NUMBER = {
   3: "rejected",
 };
 
+// Trạng thái onboarding của Backend (BusinessOnboardingStatus).
 const STATUS_ALIASES = {
   pendingapproval: "pending",
+  missingprofile: "notsubmitted",
+  completed: "verified",
 };
 
 const getStatusMeta = (status) => {
@@ -354,6 +363,9 @@ export default function BusinessProfilePage() {
     );
   const statusMeta =
     getStatusMeta(statusValue);
+  // Hồ sơ đã duyệt nhưng chưa làm khảo sát nhu cầu thu mua.
+  const isSurveyPending =
+    statusMeta === STATUS_META.surveypending;
 
   const progress = useMemo(() => {
     const values = [
@@ -621,6 +633,22 @@ export default function BusinessProfilePage() {
               </span>
               {statusMeta.label}
             </span>
+            {isSurveyPending && activeTab !== "survey" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchParams(
+                    { tab: "survey" },
+                    { replace: true },
+                  );
+                  setError("");
+                  setSuccess("");
+                }}
+                className="mt-3 block w-full rounded-xl bg-primary px-4 py-2.5 text-xs font-black text-white transition hover:bg-primary/90"
+              >
+                Hoàn tất khảo sát thu mua
+              </button>
+            )}
           </div>
 
           <nav className="hc-profile-tabs" aria-label="Các phần hồ sơ doanh nghiệp">

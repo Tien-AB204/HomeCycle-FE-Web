@@ -120,11 +120,9 @@ const getErrorMessage = (error) => {
 };
 
 const formatCurrency = (value) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
+  `${new Intl.NumberFormat("vi-VN", {
     maximumFractionDigits: 0,
-  }).format(Number(value || 0));
+  }).format(Number(value || 0))} đ`;
 
 const formatDateTime = (value) => {
   if (!value) {

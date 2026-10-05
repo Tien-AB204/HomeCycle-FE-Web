@@ -1,3 +1,4 @@
+import { dedupeAddressText } from "../../utils/addressText";
 import {
   getAgreementStatusMeta,
   getAgreementTypeLabel,
@@ -51,12 +52,12 @@ const AgreementSummary = ({ agreement }) => {
         <dl className="mt-5 grid gap-5 md:grid-cols-2">
           {agreement.agreementType === "Inspection" && <>
             <Detail label="Thời gian kiểm định" value={formatDate(details.inspectionDate)} />
-            <Detail label="Địa chỉ kiểm định" value={details.inspectionAddress} />
+            <Detail label="Địa chỉ kiểm định" value={dedupeAddressText(details.inspectionAddress)} />
           </>}
           <Detail label="Thời gian nhận hàng" value={formatDate(details.collectionDate)} />
           <Detail label="Phương thức giao nhận" value={getDeliveryMethodLabel(details.deliveryMethod)} />
-          <Detail label="Địa chỉ lấy hàng" value={details.pickupAddress} />
-          <Detail label="Địa chỉ nhận hàng" value={details.deliveryAddress} />
+          <Detail label="Địa chỉ lấy hàng" value={dedupeAddressText(details.pickupAddress)} />
+          <Detail label="Địa chỉ nhận hàng" value={dedupeAddressText(details.deliveryAddress)} />
           <Detail label="Phí vận chuyển dự kiến" value={formatCurrency(agreement.estimatedShippingFee ?? details.estimatedShippingFee)} />
           <Detail label="Điều khoản" value={details.notes} wide />
         </dl>
