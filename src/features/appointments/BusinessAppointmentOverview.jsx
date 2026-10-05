@@ -103,6 +103,37 @@ const TypeIcon = ({ item }) => (
   </span>
 );
 
+// Ngày nhiều lịch: gom theo loại để ô lịch luôn tối đa 2 dòng; giờ cụ thể xem ở "Lịch ngày".
+const MAX_TIMED_CHIPS = 2;
+
+const DayTypeCounts = ({ items }) => {
+  const inspectionCount = items.filter(isInspection).length;
+
+  return [
+    [TYPE_STYLES.inspection, inspectionCount, "kiểm định"],
+    [TYPE_STYLES.collection, items.length - inspectionCount, "thu gom"],
+  ]
+    .filter(([, count]) => count > 0)
+    .map(([style, count, label]) => (
+      <span
+        key={style.icon}
+        title={`${count} lịch ${label}`}
+        className={`flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-black ${style.className}`}
+      >
+        <span
+          className="material-symbols-outlined leading-none"
+          style={{ fontSize: 13 }}
+          aria-hidden="true"
+        >
+          {style.icon}
+        </span>
+        <span className="truncate">
+          {count} lịch
+        </span>
+      </span>
+    ));
+};
+
 const EventChip = ({ item }) => (
   <span
     title={`${formatVietnamTime(getScheduledAt(item))} ${getTypeLabel(item)}`}
@@ -345,16 +376,15 @@ export default function BusinessAppointmentOverview({
                         {Number(dayKey.slice(8))}
                       </span>
                       <span className="hidden min-w-0 space-y-0.5 sm:block">
-                        {dayItems.slice(0, 2).map((item) => (
-                          <EventChip
-                            key={`${item.appointmentId}-${item.viewType}`}
-                            item={item}
-                          />
-                        ))}
-                        {dayItems.length > 2 && (
-                          <span className="block text-[10px] font-bold text-textLight">
-                            +{dayItems.length - 2} lịch
-                          </span>
+                        {dayItems.length <= MAX_TIMED_CHIPS ? (
+                          dayItems.map((item) => (
+                            <EventChip
+                              key={`${item.appointmentId}-${item.viewType}`}
+                              item={item}
+                            />
+                          ))
+                        ) : (
+                          <DayTypeCounts items={dayItems} />
                         )}
                       </span>
                       {dayItems.length > 0 && (
