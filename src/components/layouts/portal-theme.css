@@ -120,3 +120,8 @@
   padding: 13px 12px;
   font-size: 12px;
 }
+
+/* Icon nút thao tác trong bảng: cùng cỡ với trang mới. */
+.hc-portal-theme td button .material-symbols-outlined {
+  font-size: 15px;
+}
