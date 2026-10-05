@@ -7,7 +7,9 @@ import NotificationBell from "../shared/NotificationBell";
 import { isNavItemActive } from "../../utils/pathMatch";
 
 const getDisplayName = (user, fallbackName) =>
-  user?.fullName || user?.username || fallbackName;
+  user?.email || user?.fullName || user?.username || fallbackName;
+
+const formatBadge = (count) => (count > 99 ? "99+" : String(count));
 
 const getCurrentPage = (pathname, navGroups, dashboardPath, fallbackLabel) =>
   navGroups.flatMap((group) => group.items).find((item) =>
@@ -27,6 +29,7 @@ export default function ManagementPortalLayout({
   closeMenuAriaLabel,
   notificationsPath,
   contentClassName = "",
+  badges = {},
 }) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -209,34 +212,57 @@ export default function ManagementPortalLayout({
                     }
                     className={
                       [
-                        "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition",
+                        "group relative flex items-center gap-3 rounded-xl text-sm font-bold transition",
                         desktopSidebarCollapsed
-                          ? "lg:justify-center lg:px-2"
-                          : item.child
-                            ? "ml-6 py-2 text-[13px]"
-                            : "",
+                          ? "lg:justify-center lg:px-2 lg:py-2.5"
+                          : "",
+                        item.child
+                          ? "ml-[23px] rounded-lg py-2 pl-4 pr-3 text-[13px] font-semibold before:absolute before:-left-px before:inset-y-0 before:w-px before:bg-white/15"
+                          : "px-3 py-2.5",
+                        desktopSidebarCollapsed && item.child
+                          ? "lg:ml-0 lg:before:hidden"
+                          : "",
                         active
                           ? "bg-white text-primary shadow-[0_8px_22px_rgba(23,40,48,0.12)]"
                           : "text-white/70 hover:bg-white/10 hover:text-white",
                       ].join(" ")
                     }
                   >
+                    {/* Mục con không có icon khi menu mở rộng; khi thu gọn vẫn cần icon để nhận biết. */}
+                    {(!item.child || desktopSidebarCollapsed) && (
                     <span
-                      className={`material-symbols-outlined shrink-0 ${item.child && !desktopSidebarCollapsed ? "text-[18px]" : "text-[21px]"}`}
+                      className={`material-symbols-outlined relative shrink-0 ${item.child ? "text-[18px]" : "text-[21px]"}`}
                       aria-hidden="true"
                     >
                       {item.icon}
+                      {badges[item.path] > 0 && desktopSidebarCollapsed && (
+                        <span className="absolute -right-1 -top-1 hidden h-2.5 w-2.5 rounded-full border-2 border-primary bg-[#f2b85b] lg:block" />
+                      )}
                     </span>
+                    )}
 
                     <span
                       className={
                         desktopSidebarCollapsed
-                          ? "lg:hidden"
-                          : ""
+                          ? "min-w-0 flex-1 truncate lg:hidden"
+                          : "min-w-0 flex-1 truncate"
                       }
                     >
                       {item.label}
                     </span>
+
+                    {badges[item.path] > 0 && (
+                      <span
+                        className={[
+                          "ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
+                          active ? "bg-primary text-white" : "bg-[#f2b85b] text-[#3d2b08]",
+                          desktopSidebarCollapsed ? "lg:hidden" : "",
+                        ].join(" ")}
+                        aria-label={`${badges[item.path]} mục đang chờ`}
+                      >
+                        {formatBadge(badges[item.path])}
+                      </span>
+                    )}
                   </NavLink>
                   );
                 })}
@@ -286,7 +312,12 @@ export default function ManagementPortalLayout({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div
+            className={[
+              "flex gap-2",
+              desktopSidebarCollapsed ? "lg:flex-col" : "",
+            ].join(" ")}
+          >
             <button
               type="button"
               onClick={handleGoHome}
@@ -296,7 +327,7 @@ export default function ManagementPortalLayout({
                   : undefined
               }
               className={[
-                "flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white/75 transition hover:bg-white/10 hover:text-white",
+                "flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/15 px-2 py-2.5 text-[13px] font-bold text-white/75 transition hover:bg-white/10 hover:text-white",
                 desktopSidebarCollapsed
                   ? "lg:px-2"
                   : "",
@@ -316,7 +347,7 @@ export default function ManagementPortalLayout({
                     : ""
                 }
               >
-                Về trang chủ
+                Trang chủ
               </span>
             </button>
 
@@ -329,7 +360,7 @@ export default function ManagementPortalLayout({
                   : undefined
               }
               className={[
-                "flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-bold text-white/75 transition hover:bg-error/10 hover:text-white",
+                "flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/15 px-2 py-2.5 text-[13px] font-bold text-white/75 transition hover:bg-error/10 hover:text-white",
                 desktopSidebarCollapsed
                   ? "lg:px-2"
                   : "",
