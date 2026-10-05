@@ -1,3 +1,4 @@
+import { dedupeAddressText } from "../../utils/addressText";
 import {
   useCallback,
   useEffect,
@@ -889,11 +890,11 @@ const AppointmentMonitoringPage = ({
                     {getDeliveryMethodLabel(detail.collection.deliveryMethod)}
                   </span>
                   <span>
-                    Địa chỉ lấy hàng: {detail.collection.pickupAddress || "—"}
+                    Địa chỉ lấy hàng: {dedupeAddressText(detail.collection.pickupAddress) || "—"}
                   </span>
                   <span>
                     Địa chỉ nhận hàng:{" "}
-                    {detail.collection.deliveryAddress || "—"}
+                    {dedupeAddressText(detail.collection.deliveryAddress) || "—"}
                   </span>
                 </div>
               </div>

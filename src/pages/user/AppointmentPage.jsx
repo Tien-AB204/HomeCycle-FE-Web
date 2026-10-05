@@ -13,6 +13,7 @@ import InspectionFormPanel from "../../features/appointments/InspectionFormPanel
 import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import appointmentApi from "../../services/apis/appointmentApi";
+import { dedupeAddressText } from "../../utils/addressText";
 import {
   getSafeProblemDetail,
   getSafeValidationMessage,
@@ -489,9 +490,10 @@ const AppointmentDetailModal = ({
                     Địa điểm
                   </dt>
                   <dd className="font-bold text-text">
-                    {specialized.inspectionAddress ||
-                      specialized.pickupAddress ||
-                      "—"}
+                    {dedupeAddressText(
+                      specialized.inspectionAddress ||
+                        specialized.pickupAddress,
+                    ) || "—"}
                   </dd>
                 </div>
                 {specialized.deliveryAddress && (
@@ -500,7 +502,7 @@ const AppointmentDetailModal = ({
                       Địa chỉ nhận
                     </dt>
                     <dd className="font-bold text-text">
-                      {specialized.deliveryAddress}
+                      {dedupeAddressText(specialized.deliveryAddress)}
                     </dd>
                   </div>
                 )}
@@ -1090,10 +1092,11 @@ const AppointmentPage = () => {
                   : item.sellerCheckedIn;
               const appointmentDate = getAppointmentDate(item);
               const appointmentAddress =
-                item.inspectionAddress ||
-                item.pickupAddress ||
-                item.deliveryAddress ||
-                "Chưa có địa chỉ";
+                dedupeAddressText(
+                  item.inspectionAddress ||
+                    item.pickupAddress ||
+                    item.deliveryAddress,
+                ) || "Chưa có địa chỉ";
 
               return (
                 <article
