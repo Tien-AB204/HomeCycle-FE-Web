@@ -30,6 +30,10 @@ test("follows the server clock only when the drift is noticeable", () => {
   syncServerClock(undefined);
   assert.ok(serverNow() - Date.now() > 4 * 60_000);
 
+  // Header Date cũ của response trong cache không được kéo lệch đồng hồ.
+  syncServerClock(new Date(Date.now() - 2 * 24 * 3600_000).toUTCString());
+  assert.ok(serverNow() - Date.now() > 4 * 60_000);
+
   syncServerClock(new Date().toUTCString());
   assert.ok(Math.abs(serverNow() - Date.now()) < 50);
 });
