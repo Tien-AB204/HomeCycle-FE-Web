@@ -102,9 +102,10 @@ function GhnTracking({ orderId, version }) {
   );
 }
 
-function ShipmentDetail({ orderId }) {
+// listKey đổi mỗi lần danh sách tải lại: chi tiết tải lại theo để không lệch với danh sách.
+function ShipmentDetail({ orderId, listKey }) {
   const [version, setVersion] = useState(0);
-  const requestKey = `${orderId}|${version}`;
+  const requestKey = `${orderId}|${listKey}|${version}`;
   const [state, setState] = useState({ key: "", data: null, error: "" });
   const loading = state.key !== requestKey;
 
@@ -168,7 +169,7 @@ function ShipmentDetail({ orderId }) {
           </div>
 
           {isGhnDelivery(order.deliveryMethod) ? (
-            <GhnTracking orderId={orderId} version={version} />
+            <GhnTracking orderId={orderId} version={requestKey} />
           ) : (
             <div className="tracking-box">Tracking GHN không áp dụng cho phương thức giao hàng này.</div>
           )}
@@ -311,7 +312,7 @@ export default function ShippingMonitorPage() {
           </section>
 
           {activeId ? (
-            <ShipmentDetail key={activeId} orderId={activeId} />
+            <ShipmentDetail key={activeId} orderId={activeId} listKey={list.key} />
           ) : (
             <section className="panel shipping-detail">
               <h2>Chi tiết vận chuyển</h2>
