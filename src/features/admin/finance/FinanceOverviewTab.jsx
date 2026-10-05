@@ -14,7 +14,7 @@ const Value = ({ amount }) => (
   </strong>
 );
 
-export default function FinanceOverviewTab() {
+export default function FinanceOverviewTab({ refreshKey = 0 }) {
   const walletDetailsRef = useRef(null);
   const [state, setState] = useState({ loading: true, error: "", funds: null, overview: null, health: null });
 
@@ -32,7 +32,7 @@ export default function FinanceOverviewTab() {
         setState((current) => ({ ...current, loading: false, error: "Không thể tải số dư hiện tại." }));
       });
     return () => controller.abort();
-  }, []);
+  }, [refreshKey]);
 
   const { funds, overview, health } = state;
   const position = overview?.position || {};

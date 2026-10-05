@@ -40,6 +40,7 @@ import {
   getPartsStatusLabel,
 } from "../../constants/inspections";
 import useActionToast from "../../hooks/useActionToast";
+import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
 import moderatorDisputeApi from "../../services/apis/moderatorDisputeApi";
 import {
   filterItemsByMonth,
@@ -175,14 +176,14 @@ const RESOLUTION_SOURCE_LABELS = {
 };
 
 const RESPONSE_TYPE_META = {
-  "1": { label: "Chấp nhận", color: "#2F765D", background: "rgba(47,118,93,0.10)" },
-  accept: { label: "Chấp nhận", color: "#2F765D", background: "rgba(47,118,93,0.10)" },
+  "1": { label: "Chấp nhận", color: "var(--color-success)", background: "color-mix(in srgb, var(--color-success) 10%, transparent)" },
+  accept: { label: "Chấp nhận", color: "var(--color-success)", background: "color-mix(in srgb, var(--color-success) 10%, transparent)" },
 
-  "2": { label: "Phản biện", color: "#7A1012", background: "rgba(122,16,18,0.08)" },
-  rebut: { label: "Phản biện", color: "#7A1012", background: "rgba(122,16,18,0.08)" },
+  "2": { label: "Phản biện", color: "var(--color-error)", background: "color-mix(in srgb, var(--color-error) 8%, transparent)" },
+  rebut: { label: "Phản biện", color: "var(--color-error)", background: "color-mix(in srgb, var(--color-error) 8%, transparent)" },
 
-  "3": { label: "Trình bày", color: "#2B5659", background: "rgba(43,86,89,0.10)" },
-  statement: { label: "Trình bày", color: "#2B5659", background: "rgba(43,86,89,0.10)" },
+  "3": { label: "Trình bày", color: "var(--color-primary)", background: "color-mix(in srgb, var(--color-primary) 10%, transparent)" },
+  statement: { label: "Trình bày", color: "var(--color-primary)", background: "color-mix(in srgb, var(--color-primary) 10%, transparent)" },
 };
 
 const APPOINTMENT_TYPE_LABELS = {
@@ -402,57 +403,57 @@ const getStatusMeta = (status) => {
     case 0:
       return {
         label: "Chờ xử lý",
-        color: "#9A6418",
-        background: "rgba(154,100,24,0.10)",
+        color: "var(--color-warning)",
+        background: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
       };
 
     case 1:
       return {
         label: "Đã giải quyết",
-        color: "#2F765D",
-        background: "rgba(47,118,93,0.10)",
+        color: "var(--color-success)",
+        background: "color-mix(in srgb, var(--color-success) 10%, transparent)",
       };
 
     case 2:
       return {
         label: "Đã từ chối",
-        color: "#7A1012",
-        background: "rgba(122,16,18,0.08)",
+        color: "var(--color-error)",
+        background: "color-mix(in srgb, var(--color-error) 8%, transparent)",
       };
 
     case 3:
       return {
         label: "Đã đóng",
-        color: "#547B7D",
-        background: "rgba(84,123,125,0.10)",
+        color: "var(--color-textLight)",
+        background: "color-mix(in srgb, var(--color-textLight) 10%, transparent)",
       };
 
     case 4:
       return {
         label: "Đang xử lý",
-        color: "#2B5659",
-        background: "rgba(43,86,89,0.10)",
+        color: "var(--color-primary)",
+        background: "color-mix(in srgb, var(--color-primary) 10%, transparent)",
       };
 
     case 5:
       return {
         label: "Chờ hoàn trả",
-        color: "#9A6418",
-        background: "rgba(154,100,24,0.10)",
+        color: "var(--color-warning)",
+        background: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
       };
 
     case 6:
       return {
         label: "Chờ bên kia phản hồi",
-        color: "#9A6418",
-        background: "rgba(154,100,24,0.10)",
+        color: "var(--color-warning)",
+        background: "color-mix(in srgb, var(--color-warning) 10%, transparent)",
       };
 
     default:
       return {
         label: "Chưa xác định",
-        color: "#547B7D",
-        background: "rgba(84,123,125,0.10)",
+        color: "var(--color-textLight)",
+        background: "color-mix(in srgb, var(--color-textLight) 10%, transparent)",
       };
   }
 };
@@ -1125,6 +1126,9 @@ const DisputeManagementPage = ({
     setIsResizing(true);
   };
 
+  // Có tranh chấp mới/được chuyển cho kiểm duyệt viên: tải lại danh sách hàng chờ.
+  useRealtimeRefresh(() => void fetchDisputes(), { notificationTargets: ["dispute"] });
+
   const refreshSelected = async () => {
     const tasks = [
       fetchDisputes(),
@@ -1516,8 +1520,8 @@ const DisputeManagementPage = ({
     const typeMeta =
       RESPONSE_TYPE_META[normalizeKey(response.responseType)] || {
         label: "Phản hồi",
-        color: "#547B7D",
-        background: "rgba(84,123,125,0.10)",
+        color: "var(--color-textLight)",
+        background: "color-mix(in srgb, var(--color-textLight) 10%, transparent)",
       };
 
     return (
@@ -1637,7 +1641,7 @@ const DisputeManagementPage = ({
               </span>
             </button>
 
-            <span className="rounded-full bg-[rgba(84,123,125,0.10)] px-2 py-1 text-xs font-black text-primary">
+            <span className="rounded-full bg-textLight/10 px-2 py-1 text-xs font-black text-primary">
               {totalCount}
             </span>
 
@@ -1665,7 +1669,7 @@ const DisputeManagementPage = ({
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
-                <div className="rounded-full bg-[rgba(84,123,125,0.10)] px-3 py-1 text-xs font-black text-primary">
+                <div className="rounded-full bg-textLight/10 px-3 py-1 text-xs font-black text-primary">
                   {totalCount}
                 </div>
 
@@ -1864,7 +1868,7 @@ const DisputeManagementPage = ({
                         }}
                         className={`w-full border-l-4 p-4 text-left transition ${
                           isSelected
-                            ? "border-primary bg-[rgba(84,123,125,0.10)]"
+                            ? "border-primary bg-textLight/10"
                             : "border-transparent bg-white hover:bg-background"
                         }`}
                       >
@@ -2115,9 +2119,9 @@ const DisputeManagementPage = ({
                           }
                           style={{
                             borderColor:
-                              "#7A1012",
+                              "var(--color-error)",
                             color:
-                              "#7A1012",
+                              "var(--color-error)",
                           }}
                         >
                           {isContentTarget
@@ -2217,7 +2221,7 @@ const DisputeManagementPage = ({
                     )}
                 </section>
 
-                <section className="min-w-0 rounded-2xl border border-border border-t-4 border-t-[#9A6418] bg-white p-4 shadow-sm">
+                <section className="min-w-0 rounded-2xl border border-border border-t-4 border-t-warning bg-white p-4 shadow-sm">
                   {detail.targetUser ? (
                     renderPartyHeader(
                       isPostTarget
@@ -2226,7 +2230,7 @@ const DisputeManagementPage = ({
                           ? "Người bị báo cáo"
                           : "Bên bị khiếu nại",
                       detail.targetUser,
-                      "text-[#9A6418]",
+                      "text-warning",
                     )
                   ) : (
                     <p className="text-sm text-textLight">
@@ -3048,8 +3052,8 @@ const DisputeManagementPage = ({
           ...(actionMode === "reject"
             ? {
                 style: {
-                  background: "#7A1012",
-                  borderColor: "#7A1012",
+                  background: "var(--color-error)",
+                  borderColor: "var(--color-error)",
                   color: "#FFFFFF",
                   opacity:
                     !noteIsValid ||
@@ -3164,7 +3168,7 @@ const DisputeManagementPage = ({
               0 &&
               trimmedActionNote.length <
                 10 && (
-                <p className="mt-2 text-sm text-[#7A1012]">
+                <p className="mt-2 text-sm text-error">
                   Ghi chú phải có ít nhất 10 ký tự.
                 </p>
               )}

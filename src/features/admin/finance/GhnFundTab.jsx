@@ -10,7 +10,7 @@ const isCanceled = (error) =>
  * Backend chưa có API đối soát/ghi nhận các đợt trả phí cho GHN, nên tab này
  * chỉ hiển thị phí GHN đã thu trong kỳ và số dư quỹ GHN đang tạm giữ.
  */
-export default function GhnFundTab() {
+export default function GhnFundTab({ refreshKey = 0 }) {
   const [periodDays, setPeriodDays] = useState(30);
   const [state, setState] = useState({ loading: true, error: "", collected: null, held: null });
   const period = useMemo(() => completedPeriod(periodDays), [periodDays]);
@@ -37,7 +37,7 @@ export default function GhnFundTab() {
         setState((current) => ({ ...current, loading: false, error: "Không thể tải số liệu quỹ phí GHN." }));
       });
     return () => controller.abort();
-  }, [period]);
+  }, [period, refreshKey]);
 
   return (
     <section>

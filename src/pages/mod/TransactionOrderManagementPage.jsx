@@ -35,6 +35,8 @@ import {
   filterItemsByMonth,
   sortItemsByDate,
 } from "../../utils/sortListItems";
+import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
+import { isOrderEscrowEvent } from "../../hooks/useFinanceUpdates";
 
 const { RangePicker } = DatePicker;
 
@@ -440,6 +442,9 @@ export const OrderManagementContent = ({
       });
     }
   }, [api, listParams]);
+
+  // Tiền đơn hàng vào/ra ký quỹ: tải lại danh sách đơn.
+  useRealtimeRefresh(() => void loadOrders(), { finance: isOrderEscrowEvent });
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

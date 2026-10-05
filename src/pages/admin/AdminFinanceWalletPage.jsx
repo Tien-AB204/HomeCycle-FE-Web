@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import "../../features/admin/redesign/hc-admin.css";
 import "../../features/admin/redesign/hc-finance.css";
 import FinanceActivityTab from "../../features/admin/finance/FinanceActivityTab";
 import FinanceOverviewTab from "../../features/admin/finance/FinanceOverviewTab";
 import GhnFundTab from "../../features/admin/finance/GhnFundTab";
+import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
 
 const TABS = [
   ["overview", "Tổng quan"],
@@ -15,6 +17,10 @@ export default function AdminFinanceWalletPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const requested = searchParams.get("tab");
   const tab = TABS.some(([key]) => key === requested) ? requested : "overview";
+  const [liveVersion, setLiveVersion] = useState(0);
+
+  // Số dư hiện tại đổi theo FinanceUpdated; số liệu theo kỳ đã hoàn tất không cần tải lại.
+  useRealtimeRefresh(() => setLiveVersion((current) => current + 1), { finance: true, delay: 1500 });
 
   return (
     <div className="hc-admin hc-finance">
@@ -38,9 +44,9 @@ export default function AdminFinanceWalletPage() {
             </button>
           ))}
         </nav>
-        {tab === "overview" && <FinanceOverviewTab />}
+        {tab === "overview" && <FinanceOverviewTab refreshKey={liveVersion} />}
         {tab === "finance" && <FinanceActivityTab />}
-        {tab === "ghn" && <GhnFundTab />}
+        {tab === "ghn" && <GhnFundTab refreshKey={liveVersion} />}
       </main>
     </div>
   );

@@ -31,6 +31,7 @@ import {
   sortItemsByDate,
 } from "../../utils/sortListItems";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
 
 const { RangePicker } = DatePicker;
 
@@ -336,6 +337,12 @@ const WithdrawalManagementPage = () => {
       });
     }
   }, [listParams]);
+
+  // Yêu cầu rút tiền mới (thông báo) hoặc yêu cầu đổi trạng thái (FinanceUpdated có Withdrawal).
+  useRealtimeRefresh(() => void loadWithdrawals(), {
+    notificationTargets: ["withdrawal"],
+    finance: (payload) => Boolean(payload.withdrawal),
+  });
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

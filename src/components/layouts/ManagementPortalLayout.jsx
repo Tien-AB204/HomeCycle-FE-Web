@@ -26,6 +26,7 @@ export default function ManagementPortalLayout({
   openMenuAriaLabel,
   closeMenuAriaLabel,
   notificationsPath,
+  contentClassName = "",
 }) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -402,7 +403,7 @@ export default function ManagementPortalLayout({
           </div>
         </header>
 
-        <main className="min-h-0 flex-1 overflow-y-auto">
+        <main className={`min-h-0 flex-1 overflow-y-auto ${contentClassName}`}>
           <Outlet />
         </main>
       </div>

@@ -18,6 +18,7 @@ import {
 } from "../../utils/sortListItems";
 import { useLocation } from "react-router-dom";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
 
 const VerificationPage = () => {
   const location = useLocation();
@@ -118,6 +119,12 @@ const VerificationPage = () => {
       return [];
     }
   }, [activeTab]);
+
+  // Hồ sơ mới gửi xác minh: chỉ cập nhật danh sách chờ, giữ nguyên hồ sơ đang xem.
+  useRealtimeRefresh(
+    async () => setProfiles(await fetchProfilesList()),
+    { notificationTargets: ["personalProfile", "businessProfile"] },
+  );
 
   const fetchProfileDetail = useCallback(async (id) => {
     const endpoint =
