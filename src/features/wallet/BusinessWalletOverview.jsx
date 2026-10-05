@@ -316,10 +316,13 @@ export default function BusinessWalletOverview({
           </p>
         ) : (
           <>
-            <DailyFlowChart rows={flowRows} />
-            {!hasFlow && (
-              <p className="mt-3 text-center text-xs text-textLight">
-                Không có biến động số dư khả dụng trong kỳ này.
+            {hasFlow ? (
+              <DailyFlowChart rows={flowRows} />
+            ) : (
+              <p className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-textLight">
+                Không có biến động số dư khả dụng trong{" "}
+                {formatDayKey(dayKeys[0], { withYear: false })}–
+                {formatDayKey(dayKeys[dayKeys.length - 1], { withYear: false })}.
               </p>
             )}
             {ledgerState.truncated && (

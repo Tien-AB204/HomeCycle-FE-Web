@@ -86,14 +86,16 @@ const StatusBadge = ({ status }) => {
 
 const EventChip = ({ item }) => (
   <span
-    className={[
-      "block truncate rounded-md px-1.5 py-0.5 text-left text-[10px] font-bold",
-      isInspection(item)
-        ? "bg-[#537DA9]/15 text-[#3F6690]"
-        : "bg-success/15 text-success",
-    ].join(" ")}
+    title={`${formatVietnamTime(getScheduledAt(item))} ${getTypeLabel(item)}`}
+    className="flex min-w-0 items-center gap-1 text-[10px] font-bold tabular-nums text-text"
   >
-    {formatVietnamTime(getScheduledAt(item))} {getTypeLabel(item)}
+    <i
+      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+        isInspection(item) ? "bg-[#537DA9]" : "bg-success"
+      }`}
+      aria-hidden="true"
+    />
+    {formatVietnamTime(getScheduledAt(item))}
   </span>
 );
 
@@ -253,7 +255,7 @@ export default function BusinessAppointmentOverview({
             />
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <WorkspacePanel
               title="Lịch hẹn theo tháng"
               description="Chọn ngày để xem lịch trong ngày · Giờ Việt Nam"
@@ -361,60 +363,63 @@ export default function BusinessAppointmentOverview({
                   Thu gom
                 </span>
               </div>
+            </WorkspacePanel>
 
-              <h3 className="mt-5 border-t border-border pt-4 text-sm font-black text-text">
-                Lịch ngày {formatDayKey(selectedDay)}
-              </h3>
-              {selectedItems.length === 0 ? (
-                <p className="py-6 text-center text-sm text-textLight">
-                  Không có lịch vào ngày này.
-                </p>
-              ) : (
-                <div className="mt-2 divide-y divide-border">
-                  {selectedItems.map((item) => (
-                    <div
-                      key={`${item.appointmentId}-${item.viewType}`}
-                      className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-start gap-3 py-3"
-                    >
-                      <time className="text-sm font-black tabular-nums text-text">
-                        {formatVietnamTime(getScheduledAt(item))}
-                      </time>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-black text-text">
-                          {getTypeLabel(item)} ·{" "}
-                          {item.counterpartyName || "Người dùng HomeCycle"}
-                        </p>
-                        <p className="mt-0.5 truncate text-xs text-textLight">
-                          {getAddress(item)}
-                        </p>
-                        <div className="mt-1.5">
-                          <StatusBadge status={item.appointmentStatus} />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => onOpenDetail(item)}
-                        className="rounded-lg border border-border px-3 py-1.5 text-xs font-black text-primary transition hover:border-primary hover:bg-primary/10"
+            <div className="grid gap-5">
+              <WorkspacePanel
+                title="Cơ cấu trạng thái lịch"
+                description="Theo loại lịch đã chọn · không đổi khi chọn ngày"
+              >
+                <StatusRing
+                  rows={getAppointmentRingRows(rows)}
+                  unit="lịch hẹn"
+                  activeKey={status}
+                  onSelect={showStatus}
+                />
+              </WorkspacePanel>
+              <WorkspacePanel
+                title={`Lịch ngày ${formatDayKey(selectedDay)}`}
+                description="Chọn ngày khác trên lịch tháng để xem"
+              >
+                {selectedItems.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-textLight">
+                    Không có lịch vào ngày này.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {selectedItems.map((item) => (
+                      <div
+                        key={`${item.appointmentId}-${item.viewType}`}
+                        className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-start gap-3 py-3 first:pt-0"
                       >
-                        Xem lịch
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </WorkspacePanel>
-
-            <WorkspacePanel
-              title="Cơ cấu trạng thái lịch"
-              description="Theo loại lịch đã chọn · không đổi khi chọn ngày"
-            >
-              <StatusRing
-                rows={getAppointmentRingRows(rows)}
-                unit="lịch hẹn"
-                activeKey={status}
-                onSelect={showStatus}
-              />
-            </WorkspacePanel>
+                        <time className="text-sm font-black tabular-nums text-text">
+                          {formatVietnamTime(getScheduledAt(item))}
+                        </time>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-black text-text">
+                            {getTypeLabel(item)} ·{" "}
+                            {item.counterpartyName || "Người dùng HomeCycle"}
+                          </p>
+                          <p className="mt-0.5 truncate text-xs text-textLight">
+                            {getAddress(item)}
+                          </p>
+                          <div className="mt-1.5">
+                            <StatusBadge status={item.appointmentStatus} />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onOpenDetail(item)}
+                          className="rounded-lg border border-border px-3 py-1.5 text-xs font-black text-primary transition hover:border-primary hover:bg-primary/10"
+                        >
+                          Xem lịch
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </WorkspacePanel>
+            </div>
           </div>
 
           <WorkspacePanel
