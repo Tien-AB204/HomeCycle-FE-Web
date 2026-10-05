@@ -24,7 +24,7 @@ const MainLayout = () => {
   const clientEntryPath = getClientEntryPath(role);
   const isManager = role === ROLES.MODERATOR || role === ROLES.ADMIN;
   const canUseClientAccount = isAuthenticated && !isManager;
-  const managerPath = role === ROLES.MODERATOR ? "/mod/dashboard" : "/admin/dashboard";
+  const managerPath = role === ROLES.MODERATOR ? "/mod/shipping" : "/admin/dashboard";
   const displayName = user?.username || user?.userName || user?.Username || user?.UserName || "Tài khoản";
   const clientPage = canUseClientAccount ? getClientPage(location, role, getUserId(user)) : null;
   const createLabel = role === ROLES.BUSINESS ? "Đăng tin thu mua" : role === ROLES.PERSONAL ? "Đăng tin bán" : "Đăng tin";

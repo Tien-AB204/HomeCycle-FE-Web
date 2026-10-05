@@ -57,6 +57,7 @@ export const createOrderReadApi = ({ listPath, detailPath }) => ({
   getOrders: async ({
     group,
     deliveryMethod,
+    shipmentStatus,
     keyword,
     status,
     paymentStatus,
@@ -92,6 +93,14 @@ export const createOrderReadApi = ({ listPath, detailPath }) => ({
       deliveryMethod !== ""
     ) {
       params.DeliveryMethod = deliveryMethod;
+    }
+
+    if (
+      shipmentStatus !== undefined &&
+      shipmentStatus !== null &&
+      shipmentStatus !== ""
+    ) {
+      params.ShipmentStatus = shipmentStatus;
     }
 
     if (String(keyword || "").trim()) {
@@ -146,7 +155,7 @@ export const createOrderReadApi = ({ listPath, detailPath }) => ({
     );
   },
 
-  getOrderById: async (orderId, { signal } = {}) => {
+  getOrderById: async (orderId, { signal, skipGlobalErrorPage = false } = {}) => {
     const id = String(orderId || "").trim();
 
     if (!id) {
@@ -155,7 +164,7 @@ export const createOrderReadApi = ({ listPath, detailPath }) => ({
 
     const response = await axiosClient.get(
       `${detailPath}/${encodeURIComponent(id)}`,
-      { signal },
+      { signal, skipGlobalErrorPage },
     );
 
     const source = response?.data ?? response ?? {};
@@ -189,9 +198,30 @@ export const createOrderReadApi = ({ listPath, detailPath }) => ({
   },
 });
 
-const moderatorOrderApi = createOrderReadApi({
-  listPath: "/moderator/orders",
-  detailPath: "/moderator/orders",
-});
+const moderatorOrderApi = {
+  ...createOrderReadApi({
+    listPath: "/moderator/orders",
+    detailPath: "/moderator/orders",
+  }),
+
+  /*
+   * Trạng thái GHN đã lưu (cập nhật qua webhook), chỉ dành cho đơn giao qua
+   * GHN. Lỗi 400/404/409 có message để hiện ngay trong khu vực tracking.
+   */
+  getShipmentTracking: async (orderId, { signal } = {}) => {
+    const id = String(orderId || "").trim();
+
+    if (!id) {
+      throw new Error("Không tìm thấy mã đơn hàng.");
+    }
+
+    const response = await axiosClient.get(
+      `/moderator/orders/${encodeURIComponent(id)}/shipment-tracking`,
+      { signal, skipGlobalErrorPage: true },
+    );
+
+    return response?.data ?? response ?? {};
+  },
+};
 
 export default moderatorOrderApi;
