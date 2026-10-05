@@ -46,7 +46,7 @@ export const getHomePathByRole = (role) => {
       return "/admin/dashboard";
 
     case ROLES.MODERATOR:
-      return "/mod/verification";
+      return "/mod/shipping";
 
     case ROLES.BUSINESS:
     case ROLES.PERSONAL:

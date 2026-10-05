@@ -26,6 +26,7 @@ import ReportedReviewManagementPage from "../pages/mod/ReportedReviewManagementP
 import TransactionOrderManagementPage from "../pages/mod/TransactionOrderManagementPage";
 import WithdrawalManagementPage from "../pages/mod/WithdrawalManagementPage";
 import ModDashboardPage from "../pages/mod/ModDashboardPage";
+import ShippingMonitorPage from "../pages/mod/ShippingMonitorPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
 import HomeRoute from "./HomeRoute";
@@ -252,10 +253,12 @@ const AppRouter = () => {
       <Route element={<RoleRoute allowedRole={ROLES.MODERATOR} />}>
         <Route path="/mod" element={<ModLayout />}>
           {/* Äá»•i redirect máº·c Ä‘á»‹nh vá» dashboard */}
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="shipping" replace />} />
 
           {/* ThÃªm Route cho Dashboard má»›i */}
           <Route path="dashboard" element={<ModDashboardPage />} />
+
+          <Route path="shipping" element={<ShippingMonitorPage />} />
 
           <Route path="notifications" element={<NotificationPage />} />
 

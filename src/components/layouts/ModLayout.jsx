@@ -51,6 +51,11 @@ const MOD_NAV_GROUPS = [
         icon: "receipt_long",
       },
       {
+        label: "Theo dõi vận chuyển",
+        path: "/mod/shipping",
+        icon: "local_shipping",
+      },
+      {
         label: "Lịch hẹn",
         path: "/mod/appointments",
         icon: "event_available",
