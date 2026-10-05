@@ -488,17 +488,21 @@ const VerificationPage = () => {
               chevron_right
             </span>
           </button>
-          {!loadingList && (
-            <span
-              className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-bold text-warning"
-              title="Hồ sơ chờ duyệt"
-            >
-              {monthFilteredProfiles.length}
+          {/* Không dùng chữ dọc: biểu tượng + số, tên đầy đủ hiện khi rê chuột. */}
+          <div
+            className="flex flex-col items-center gap-1 text-textLight"
+            title="Hồ sơ chờ duyệt"
+            aria-label={`${monthFilteredProfiles.length} hồ sơ chờ duyệt`}
+          >
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              fact_check
             </span>
-          )}
-          <span className="rotate-180 text-xs font-semibold text-textLight [writing-mode:vertical-rl]">
-            Hồ sơ chờ duyệt
-          </span>
+            {!loadingList && (
+              <span className="rounded-full bg-warning/10 px-2 py-0.5 text-xs font-bold text-warning">
+                {monthFilteredProfiles.length}
+              </span>
+            )}
+          </div>
         </div>
       ) : (
       <div
