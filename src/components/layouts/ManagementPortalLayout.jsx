@@ -237,7 +237,7 @@ export default function ManagementPortalLayout({
                     >
                       {item.icon}
                       {badges[item.path] > 0 && desktopSidebarCollapsed && (
-                        <span className="absolute -right-1 -top-1 hidden h-2.5 w-2.5 rounded-full border-2 border-primary bg-[#f2b85b] lg:block" />
+                        <span className="absolute -right-1 -top-1 hidden h-2.5 w-2.5 rounded-full border-2 border-primary bg-white lg:block" />
                       )}
                     </span>
                     )}
@@ -255,8 +255,9 @@ export default function ManagementPortalLayout({
                     {badges[item.path] > 0 && (
                       <span
                         className={[
-                          "ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums",
-                          active ? "bg-primary text-white" : "bg-[#f2b85b] text-[#3d2b08]",
+                          // Nhãn số việc chờ dùng tông của menu để không lấn át tên mục.
+                          "ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold leading-none tabular-nums",
+                          active ? "bg-primary/10 text-primary" : "bg-white/15 text-white",
                           desktopSidebarCollapsed ? "lg:hidden" : "",
                         ].join(" ")}
                         aria-label={`${badges[item.path]} mục đang chờ`}
