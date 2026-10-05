@@ -51,7 +51,6 @@ import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 import GhnWebhookTestConsolePage from "../pages/demo/GhnWebhookTestConsolePage";
 
 // Business Pages
-import BusinessDashboardPage from "../pages/business/BusinessDashboardPage";
 
 // User Pages
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
@@ -212,12 +211,11 @@ const AppRouter = () => {
           <Route path="/ho-so" element={<ProfilePage />} />
         </Route>
 
-        <Route element={<RoleRoute allowedRole={ROLES.BUSINESS} />}>
-          <Route
-            path="/business/dashboard"
-            element={<BusinessDashboardPage />}
-          />
-        </Route>
+        {/* Trang tổng quan DN cũ đã gộp vào Đơn hàng / Lịch hẹn / Ví; giữ đường dẫn cho link cũ. */}
+        <Route
+          path="/business/dashboard"
+          element={<Navigate to="/don-hang" replace />}
+        />
       </Route>
 
       {/* ÄÄƒng nháº­p vÃ  Ä‘Äƒng kÃ½ */}

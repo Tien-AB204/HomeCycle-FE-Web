@@ -10,9 +10,6 @@ export const getClientEntryPath = (role) =>
   role === ROLES.BUSINESS ? "/tin-thu-mua?view=mine" : "/tin-dang-ban?view=mine";
 
 export const getClientNavigation = (role) => [
-  ...(role === ROLES.BUSINESS ? [{ name: "", items: [
-    { name: "Hiệu quả thu mua", path: "/business/dashboard", icon: "query_stats" },
-  ] }] : []),
   { name: "Tin đăng", items: [
     { name: "Tin của tôi", path: getClientEntryPath(role), icon: "inventory_2", key: "posts" },
   ] },
