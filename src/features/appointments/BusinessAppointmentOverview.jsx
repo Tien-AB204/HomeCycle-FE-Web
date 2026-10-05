@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   APPOINTMENT_PERSPECTIVE,
   APPOINTMENT_STATUS,
@@ -85,64 +85,111 @@ const StatusBadge = ({ status }) => {
 };
 
 // Hai màu khác hẳn sắc độ (xanh dương / cam) để nhìn lướt vẫn phân biệt được loại lịch.
-const TYPE_STYLES = {
-  inspection: { icon: "fact_check", className: "bg-[#2F6FB0] text-white" },
-  collection: { icon: "local_shipping", className: "bg-[#B45309] text-white" },
+const TYPE_COLORS = {
+  inspection: "bg-[#2F6FB0] text-white",
+  collection: "bg-[#B45309] text-white",
 };
 
-const getTypeStyle = (item) =>
-  isInspection(item) ? TYPE_STYLES.inspection : TYPE_STYLES.collection;
-
-const TypeIcon = ({ item }) => (
-  <span
-    className="material-symbols-outlined leading-none"
-    style={{ fontSize: 13 }}
-    aria-hidden="true"
-  >
-    {getTypeStyle(item).icon}
-  </span>
-);
-
-// Ngày nhiều lịch: gom theo loại để ô lịch luôn tối đa 2 dòng; giờ cụ thể xem ở "Lịch ngày".
-const MAX_TIMED_CHIPS = 2;
-
-const DayTypeCounts = ({ items }) => {
-  const inspectionCount = items.filter(isInspection).length;
-
-  return [
-    [TYPE_STYLES.inspection, inspectionCount, "kiểm định"],
-    [TYPE_STYLES.collection, items.length - inspectionCount, "thu gom"],
-  ]
-    .filter(([, count]) => count > 0)
-    .map(([style, count, label]) => (
-      <span
-        key={style.icon}
-        title={`${count} lịch ${label}`}
-        className={`flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-black ${style.className}`}
-      >
-        <span
-          className="material-symbols-outlined leading-none"
-          style={{ fontSize: 13 }}
-          aria-hidden="true"
-        >
-          {style.icon}
-        </span>
-        <span className="truncate">
-          {count} lịch
-        </span>
-      </span>
-    ));
-};
+const getTypeColor = (item) =>
+  isInspection(item) ? TYPE_COLORS.inspection : TYPE_COLORS.collection;
 
 const EventChip = ({ item }) => (
   <span
     title={`${formatVietnamTime(getScheduledAt(item))} ${getTypeLabel(item)}`}
-    className={`flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums ${getTypeStyle(item).className}`}
+    className={`block truncate rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums ${getTypeColor(item)}`}
   >
-    <TypeIcon item={item} />
     {formatVietnamTime(getScheduledAt(item))}
   </span>
 );
+
+const DayAppointmentList = ({ items, onOpenDetail }) =>
+  items.length === 0 ? (
+    <p className="py-6 text-center text-sm text-textLight">
+      Không có lịch vào ngày này.
+    </p>
+  ) : (
+    <div className="divide-y divide-border">
+      {items.map((item) => (
+        <div
+          key={`${item.appointmentId}-${item.viewType}`}
+          className="grid grid-cols-[60px_minmax(0,1fr)_auto] items-start gap-3 py-3 first:pt-0 last:pb-0"
+        >
+          <time
+            className={`rounded-md px-1.5 py-0.5 text-center text-xs font-black tabular-nums ${getTypeColor(item)}`}
+          >
+            {formatVietnamTime(getScheduledAt(item))}
+          </time>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-black text-text">
+              {getTypeLabel(item)} · {item.counterpartyName || "Người dùng HomeCycle"}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-textLight">{getAddress(item)}</p>
+            <div className="mt-1.5">
+              <StatusBadge status={item.appointmentStatus} />
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => onOpenDetail(item)}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-black text-primary transition hover:border-primary hover:bg-primary/10"
+          >
+            Xem lịch
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
+function DayAppointmentsModal({ dayKey, items, onClose, onOpenDetail }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#172830]/45 p-4"
+      onClick={onClose}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="day-appointments-title"
+        onClick={(event) => event.stopPropagation()}
+        className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-[0_28px_80px_rgba(23,40,48,0.28)]"
+      >
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h2 id="day-appointments-title" className="text-lg font-black text-text">
+              Lịch ngày {formatDayKey(dayKey)}
+            </h2>
+            <p className="mt-0.5 text-xs text-textLight">{items.length} lịch hẹn</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Đóng"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-background text-textLight transition hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">
+              close
+            </span>
+          </button>
+        </div>
+        <DayAppointmentList
+          items={items}
+          onOpenDetail={(item) => {
+            onClose();
+            onOpenDetail(item);
+          }}
+        />
+      </section>
+    </div>
+  );
+}
 
 export default function BusinessAppointmentOverview({
   items,
@@ -155,6 +202,7 @@ export default function BusinessAppointmentOverview({
   const [type, setType] = useState("all");
   const [monthCursor, setMonthCursor] = useState(() => parseDayKey(todayKey));
   const [selectedDay, setSelectedDay] = useState(todayKey);
+  const [modalDay, setModalDay] = useState("");
   const [scope, setScope] = useState(APPOINTMENT_SCOPE.ALL);
   const [status, setStatus] = useState("");
   const [keyword, setKeyword] = useState("");
@@ -354,64 +402,67 @@ export default function BusinessAppointmentOverview({
                   const isSelected = dayKey === selectedDay;
 
                   return (
-                    <button
+                    <div
                       key={dayKey}
-                      type="button"
-                      onClick={() => setSelectedDay(dayKey)}
-                      aria-pressed={isSelected}
-                      aria-label={`${formatDayKey(dayKey)}, ${dayItems.length} lịch`}
                       className={[
-                        "flex min-h-14 flex-col gap-1 rounded-lg border p-1.5 text-left transition sm:min-h-[84px]",
+                        "flex min-h-14 flex-col rounded-lg border transition sm:min-h-[84px]",
                         isSelected
                           ? "border-primary bg-primary/5"
                           : "border-border/70 hover:border-primary/40",
                       ].join(" ")}
                     >
-                      <span
-                        className={[
-                          "flex h-6 w-6 items-center justify-center rounded-full text-xs font-black",
-                          dayKey === todayKey ? "bg-primary text-white" : "text-text",
-                        ].join(" ")}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDay(dayKey)}
+                        aria-pressed={isSelected}
+                        aria-label={`${formatDayKey(dayKey)}, ${dayItems.length} lịch`}
+                        className="flex min-w-0 flex-1 flex-col gap-1 p-1.5 text-left"
                       >
-                        {Number(dayKey.slice(8))}
-                      </span>
-                      <span className="hidden min-w-0 space-y-0.5 sm:block">
-                        {dayItems.length <= MAX_TIMED_CHIPS ? (
-                          dayItems.map((item) => (
-                            <EventChip
-                              key={`${item.appointmentId}-${item.viewType}`}
-                              item={item}
-                            />
-                          ))
-                        ) : (
-                          <DayTypeCounts items={dayItems} />
-                        )}
-                      </span>
-                      {dayItems.length > 0 && (
-                        <span className="text-[10px] font-black text-primary sm:hidden">
-                          {dayItems.length} lịch
+                        <span
+                          className={[
+                            "flex h-6 w-6 items-center justify-center rounded-full text-xs font-black",
+                            dayKey === todayKey ? "bg-primary text-white" : "text-text",
+                          ].join(" ")}
+                        >
+                          {Number(dayKey.slice(8))}
                         </span>
+                        {dayItems[0] && (
+                          <span className="hidden min-w-0 sm:block">
+                            <EventChip item={dayItems[0]} />
+                          </span>
+                        )}
+                        {dayItems.length > 0 && (
+                          <span className="text-[10px] font-black text-primary sm:hidden">
+                            {dayItems.length} lịch
+                          </span>
+                        )}
+                      </button>
+                      {dayItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedDay(dayKey);
+                            setModalDay(dayKey);
+                          }}
+                          aria-label={`Xem tất cả ${dayItems.length} lịch ngày ${formatDayKey(dayKey)}`}
+                          className="mx-1.5 mb-1.5 hidden rounded-md bg-background px-1.5 py-0.5 text-left text-[10px] font-black text-primary transition hover:bg-primary/10 sm:block"
+                        >
+                          +{dayItems.length - 1}
+                        </button>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
 
               <div className="mt-3 flex flex-wrap gap-4 text-[11px] font-bold text-textLight">
-                {[TYPE_STYLES.inspection, TYPE_STYLES.collection].map((style, index) => (
-                  <span key={style.icon} className="flex items-center gap-1.5">
-                    <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-md ${style.className}`}
-                      aria-hidden="true"
-                    >
-                      <span
-                        className="material-symbols-outlined leading-none"
-                        style={{ fontSize: 14 }}
-                      >
-                        {style.icon}
-                      </span>
-                    </span>
-                    {index === 0 ? "Kiểm định" : "Thu gom"}
+                {[
+                  [TYPE_COLORS.inspection, "Kiểm định"],
+                  [TYPE_COLORS.collection, "Thu gom"],
+                ].map(([color, label]) => (
+                  <span key={label} className="flex items-center gap-1.5">
+                    <i className={`h-3 w-3 rounded-[3px] ${color}`} aria-hidden="true" />
+                    {label}
                   </span>
                 ))}
               </div>
@@ -433,43 +484,7 @@ export default function BusinessAppointmentOverview({
                 title={`Lịch ngày ${formatDayKey(selectedDay)}`}
                 description="Chọn ngày khác trên lịch tháng để xem"
               >
-                {selectedItems.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-textLight">
-                    Không có lịch vào ngày này.
-                  </p>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {selectedItems.map((item) => (
-                      <div
-                        key={`${item.appointmentId}-${item.viewType}`}
-                        className="grid grid-cols-[52px_minmax(0,1fr)_auto] items-start gap-3 py-3 first:pt-0"
-                      >
-                        <time className="text-sm font-black tabular-nums text-text">
-                          {formatVietnamTime(getScheduledAt(item))}
-                        </time>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-black text-text">
-                            {getTypeLabel(item)} ·{" "}
-                            {item.counterpartyName || "Người dùng HomeCycle"}
-                          </p>
-                          <p className="mt-0.5 truncate text-xs text-textLight">
-                            {getAddress(item)}
-                          </p>
-                          <div className="mt-1.5">
-                            <StatusBadge status={item.appointmentStatus} />
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => onOpenDetail(item)}
-                          className="rounded-lg border border-border px-3 py-1.5 text-xs font-black text-primary transition hover:border-primary hover:bg-primary/10"
-                        >
-                          Xem lịch
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <DayAppointmentList items={selectedItems} onOpenDetail={onOpenDetail} />
               </WorkspacePanel>
             </div>
           </div>
@@ -659,6 +674,15 @@ export default function BusinessAppointmentOverview({
             </div>
           </WorkspacePanel>
         </>
+      )}
+
+      {modalDay && (
+        <DayAppointmentsModal
+          dayKey={modalDay}
+          items={byDay.get(modalDay) || []}
+          onClose={() => setModalDay("")}
+          onOpenDetail={onOpenDetail}
+        />
       )}
     </section>
   );
