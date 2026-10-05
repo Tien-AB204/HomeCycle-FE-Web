@@ -95,7 +95,7 @@ const formatCurrency = (value) => {
   const amount = Number(value);
 
   return Number.isFinite(amount)
-    ? `${amount.toLocaleString("vi-VN")} ₫`
+    ? `${amount.toLocaleString("vi-VN")} đ`
     : "—";
 };
 

@@ -26,16 +26,17 @@ import ReportedReviewManagementPage from "../pages/mod/ReportedReviewManagementP
 import TransactionOrderManagementPage from "../pages/mod/TransactionOrderManagementPage";
 import WithdrawalManagementPage from "../pages/mod/WithdrawalManagementPage";
 import ModDashboardPage from "../pages/mod/ModDashboardPage";
+import ShippingMonitorPage from "../pages/mod/ShippingMonitorPage";
 import PostModerationPage from "../pages/mod/PostModerationPage";
 import VerificationPage from "../pages/mod/VerificationPage";
 import HomeRoute from "./HomeRoute";
 import RoleRoute from "./RoleRoute";
 
 // Admin Pages
-import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminBusinessSurveyPage from "../pages/admin/AdminBusinessSurveyPage";
 import AdminOverviewPage from "../pages/admin/AdminOverviewPage";
 import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
+import { getFinanceTabPath } from "../features/admin/finance/financeLookup";
 import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
 import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
 import AdminPostsPage from "../pages/admin/AdminPostsPage";
@@ -47,11 +48,9 @@ import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
 import AdminSubscriptionsPage from "../pages/admin/AdminSubscriptionsPage";
-import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 import GhnWebhookTestConsolePage from "../pages/demo/GhnWebhookTestConsolePage";
 
 // Business Pages
-import BusinessDashboardPage from "../pages/business/BusinessDashboardPage";
 
 // User Pages
 import { MARKETPLACE_POST_TYPES } from "../constants/marketplace";
@@ -90,6 +89,13 @@ function LegacyUsersRedirect() {
   const params = new URLSearchParams(useLocation().search);
   params.set("tab", "list");
   return <Navigate to={`/admin/dashboard/users?${params}`} replace />;
+}
+
+// Trang "Ví & giao dịch" cũ đã gộp vào Tài chính & ví; link cũ mở đúng tab tương ứng.
+function LegacyFinanceRedirect({ tab }) {
+  const { search } = useLocation();
+  const requested = tab || new URLSearchParams(search).get("tab");
+  return <Navigate to={getFinanceTabPath(requested)} replace />;
 }
 
 const AppRouter = () => {
@@ -212,12 +218,11 @@ const AppRouter = () => {
           <Route path="/ho-so" element={<ProfilePage />} />
         </Route>
 
-        <Route element={<RoleRoute allowedRole={ROLES.BUSINESS} />}>
-          <Route
-            path="/business/dashboard"
-            element={<BusinessDashboardPage />}
-          />
-        </Route>
+        {/* Trang tổng quan DN cũ đã gộp vào Đơn hàng / Lịch hẹn / Ví; giữ đường dẫn cho link cũ. */}
+        <Route
+          path="/business/dashboard"
+          element={<Navigate to="/don-hang" replace />}
+        />
       </Route>
 
       {/* ÄÄƒng nháº­p vÃ  Ä‘Äƒng kÃ½ */}
@@ -248,10 +253,12 @@ const AppRouter = () => {
       <Route element={<RoleRoute allowedRole={ROLES.MODERATOR} />}>
         <Route path="/mod" element={<ModLayout />}>
           {/* Äá»•i redirect máº·c Ä‘á»‹nh vá» dashboard */}
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route index element={<Navigate to="shipping" replace />} />
 
           {/* ThÃªm Route cho Dashboard má»›i */}
           <Route path="dashboard" element={<ModDashboardPage />} />
+
+          <Route path="shipping" element={<ShippingMonitorPage />} />
 
           <Route path="notifications" element={<NotificationPage />} />
 
@@ -375,11 +382,10 @@ const AppRouter = () => {
             }
           />
 
+          {/* Trang "Hoạt động mua bán" đã bỏ; link cũ về trang doanh nghiệp. */}
           <Route
             path="dashboard/businesses/performance"
-            element={
-              <AdminDashboardModulePage dashboard="business-performance" />
-            }
+            element={<Navigate to="/admin/dashboard/businesses/overview" replace />}
           />
 
           <Route path="categories" element={<CategoryPage />} />
@@ -402,19 +408,13 @@ const AppRouter = () => {
             element={<Navigate to="/admin/dashboard/posts?tab=reports" replace />}
           />
 
-          <Route
-            path="finance-management"
-            element={<FinanceOperationsPage />}
-          />
+          <Route path="finance-management" element={<LegacyFinanceRedirect />} />
 
-          <Route
-            path="system-wallet"
-            element={<Navigate to="/admin/finance-management?tab=funds" replace />}
-          />
+          <Route path="system-wallet" element={<LegacyFinanceRedirect tab="funds" />} />
 
           <Route
             path="finance-operations"
-            element={<Navigate to="/admin/finance-management?tab=transactions" replace />}
+            element={<LegacyFinanceRedirect tab="transactions" />}
           />
 
           <Route path="policies" element={<PlatformPolicyPage />} />

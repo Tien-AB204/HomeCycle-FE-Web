@@ -6,6 +6,9 @@ import {
   getOrderStatusMeta,
   getPaymentDisplayMeta,
 } from "../../constants/orders";
+import { ROLES } from "../../constants/roles";
+import BusinessOrdersOverview from "../../features/orders/BusinessOrdersOverview";
+import { useAuth } from "../../hooks/useAuth";
 import orderApi from "../../services/apis/orderApi";
 import {
   getSafeProblemDetail,
@@ -30,7 +33,7 @@ const ORDER_STATUS_OPTIONS = Object.freeze([
 ]);
 
 const formatCurrency = (value) =>
-  `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
+  `${Number(value || 0).toLocaleString("vi-VN")} đ`;
 
 const getErrorMessage = (error) => {
   const responseData =
@@ -107,6 +110,8 @@ const ProductThumbnail = ({ item }) => {
 };
 
 const OrderListPage = () => {
+  const { user } = useAuth();
+  const isBusiness = user?.role === ROLES.BUSINESS;
   const [keyword, setKeyword] = useState("");
   const [status, setStatus] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
@@ -185,6 +190,17 @@ const OrderListPage = () => {
     setState((current) => ({ ...current, loading: true, error: "" }));
     setVersion((value) => value + 1);
   };
+
+  if (isBusiness) {
+    return (
+      <BusinessOrdersOverview
+        items={state.items}
+        loading={state.loading}
+        error={state.error}
+        onRefresh={refreshOrders}
+      />
+    );
+  }
 
   return (
     <section className="mx-auto min-h-[calc(100vh-220px)] w-full max-w-7xl px-4 pb-14 pt-7 sm:px-6">

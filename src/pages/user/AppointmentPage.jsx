@@ -8,11 +8,12 @@ import {
 } from "../../constants/appointments";
 import { getDeliveryMethodLabel } from "../../constants/agreements";
 import { ROLES } from "../../constants/roles";
-import BusinessAppointmentCalendar from "../../features/appointments/BusinessAppointmentCalendar";
+import BusinessAppointmentOverview from "../../features/appointments/BusinessAppointmentOverview";
 import InspectionFormPanel from "../../features/appointments/InspectionFormPanel";
 import { useAuth } from "../../hooks/useAuth";
 import { useChatRealtime } from "../../hooks/useChatRealtime";
 import appointmentApi from "../../services/apis/appointmentApi";
+import { dedupeAddressText } from "../../utils/addressText";
 import {
   getSafeProblemDetail,
   getSafeValidationMessage,
@@ -489,9 +490,10 @@ const AppointmentDetailModal = ({
                     Địa điểm
                   </dt>
                   <dd className="font-bold text-text">
-                    {specialized.inspectionAddress ||
-                      specialized.pickupAddress ||
-                      "—"}
+                    {dedupeAddressText(
+                      specialized.inspectionAddress ||
+                        specialized.pickupAddress,
+                    ) || "—"}
                   </dd>
                 </div>
                 {specialized.deliveryAddress && (
@@ -500,7 +502,7 @@ const AppointmentDetailModal = ({
                       Địa chỉ nhận
                     </dt>
                     <dd className="font-bold text-text">
-                      {specialized.deliveryAddress}
+                      {dedupeAddressText(specialized.deliveryAddress)}
                     </dd>
                   </div>
                 )}
@@ -901,37 +903,11 @@ const AppointmentPage = () => {
   if (isBusiness) {
     return (
       <>
-        <BusinessAppointmentCalendar
+        {/* Lọc và tìm kiếm chạy trên danh sách đã tải để số liệu luôn tính trên toàn bộ lịch. */}
+        <BusinessAppointmentOverview
           items={state.items}
           loading={state.loading}
           error={state.error}
-          keyword={keyword}
-          appliedKeyword={appliedKeyword}
-          status={status}
-          onKeywordChange={setKeyword}
-          onSearch={(nextKeyword) =>
-            changeFilter(
-              setAppliedKeyword,
-              nextKeyword,
-            )
-          }
-          onStatusChange={(nextStatus) =>
-            changeFilter(
-              setStatus,
-              nextStatus,
-            )
-          }
-          onReset={() => {
-            setState((current) => ({
-              ...current,
-              loading: true,
-              error: "",
-            }));
-            setKeyword("");
-            setAppliedKeyword("");
-            setStatus("");
-            setPageNumber(1);
-          }}
           onOpenDetail={openDetail}
         />
 
@@ -1090,10 +1066,11 @@ const AppointmentPage = () => {
                   : item.sellerCheckedIn;
               const appointmentDate = getAppointmentDate(item);
               const appointmentAddress =
-                item.inspectionAddress ||
-                item.pickupAddress ||
-                item.deliveryAddress ||
-                "Chưa có địa chỉ";
+                dedupeAddressText(
+                  item.inspectionAddress ||
+                    item.pickupAddress ||
+                    item.deliveryAddress,
+                ) || "Chưa có địa chỉ";
 
               return (
                 <article

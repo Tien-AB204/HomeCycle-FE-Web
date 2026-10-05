@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input, Button, Spin, Descriptions, Empty, Tag, Alert } from "antd";
 import {
   SearchOutlined,
@@ -19,6 +19,17 @@ import {
 import { useLocation } from "react-router-dom";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
 import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
+import useStoredFlag from "../../hooks/useStoredFlag";
+import CollapsibleListPanel from "../../components/mod/CollapsibleListPanel";
+import {
+  getNeighborId,
+  getNextAfterReview,
+  getProfileId,
+  getQueuePosition,
+} from "../../features/mod/verification/verificationQueue";
+
+const LIST_COLLAPSED_KEY = "hc.mod.verification.listCollapsed";
+
 
 const VerificationPage = () => {
   const location = useLocation();
@@ -40,54 +51,8 @@ const VerificationPage = () => {
   const [monthFilter, setMonthFilter] = useState("");
   const debouncedKeyword = useDebounce(searchKeyword, 500);
 
-  // --- STATE RESIZABLE CỘT TRÁI ---
-  const [sidebarWidth, setSidebarWidth] = useState(380);
-  const [isResizing, setIsResizing] = useState(false);
-  const resizeSessionRef = useRef(null);
-
-  const startResizing = (e) => {
-    e.preventDefault();
-
-    resizeSessionRef.current = {
-      startX: e.clientX,
-      startWidth: sidebarWidth,
-    };
-
-    setIsResizing(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const session = resizeSessionRef.current;
-
-      if (!isResizing || !session) return;
-
-      const delta =
-        e.clientX - session.startX;
-
-      const newWidth =
-        session.startWidth + delta;
-
-      if (newWidth >= 300 && newWidth <= 600) {
-        setSidebarWidth(newWidth);
-      }
-    };
-
-    const handleMouseUp = () => {
-      resizeSessionRef.current = null;
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing]);
+  // Thu gọn danh sách để phần chi tiết rộng hơn; nhớ lựa chọn cho lần sau.
+  const [listCollapsed, setListCollapsed] = useStoredFlag(LIST_COLLAPSED_KEY);
 
   // Chi tiết
   const [selectedProfileId, setSelectedProfileId] = useState(null);
@@ -249,6 +214,26 @@ const VerificationPage = () => {
     (profile) => profile?.createdAt,
   );
 
+  // Hàng đợi theo đúng thứ tự đang hiển thị để đi tới hồ sơ trước/sau.
+  const queueIds = sortedProfiles.map(getProfileId);
+  const queuePosition = getQueuePosition(queueIds, selectedProfileId);
+  const previousProfileId = getNeighborId(queueIds, selectedProfileId, -1);
+  const nextProfileId = getNeighborId(queueIds, selectedProfileId, 1);
+
+  // Duyệt/từ chối xong thì mở luôn hồ sơ kế tiếp; hết hồ sơ mới quay về màn trống.
+  const finishReview = (successMsg) => {
+    const followingId = getNextAfterReview(queueIds, selectedProfileId);
+    setProfiles((prev) =>
+      prev.filter((p) => getProfileId(p) !== selectedProfileId),
+    );
+    if (followingId) {
+      setRejectReason("");
+      setSelectedProfileId(followingId);
+    } else {
+      handleResetSelection(successMsg);
+    }
+  };
+
   useEffect(() => {
     if (!selectedProfileId) {
       return;
@@ -292,14 +277,7 @@ const VerificationPage = () => {
       setActionFeedback(null);
       await reviewProfileApi(selectedProfileId, true, "Hợp lệ");
 
-      setProfiles((prev) =>
-        prev.filter(
-          (p) =>
-            (p.businessProfileId || p.personalProfileId || p.id) !==
-            selectedProfileId,
-        ),
-      );
-      handleResetSelection("Đã duyệt hồ sơ thành công!");
+      finishReview("Đã duyệt hồ sơ thành công!");
       actionToast.success("Đã duyệt hồ sơ");
     } catch (error) {
       const msg =
@@ -326,14 +304,7 @@ const VerificationPage = () => {
       setActionFeedback(null);
       await reviewProfileApi(selectedProfileId, false, rejectReason.trim());
 
-      setProfiles((prev) =>
-        prev.filter(
-          (p) =>
-            (p.businessProfileId || p.personalProfileId || p.id) !==
-            selectedProfileId,
-        ),
-      );
-      handleResetSelection("Đã từ chối hồ sơ thành công!");
+      finishReview("Đã từ chối hồ sơ thành công!");
       actionToast.success("Đã từ chối hồ sơ");
     } catch (error) {
       const msg =
@@ -441,10 +412,16 @@ const VerificationPage = () => {
   return (
     <div className="flex h-[calc(100vh-72px)] min-h-0 bg-white text-text font-sans overflow-hidden">
       {/* CỘT TRÁI */}
-      <div
-        style={{ width: `${sidebarWidth}px` }}
-        className="min-h-0 border-r border-border flex flex-col shrink-0 bg-background/60 relative select-none"
+      <CollapsibleListPanel
+        collapsed={listCollapsed}
+        onCollapsedChange={setListCollapsed}
+        title="Hồ sơ chờ duyệt"
+        icon="fact_check"
+        count={loadingList ? null : monthFilteredProfiles.length}
+        className="bg-background/60"
       >
+        {({ collapseButton }) => (
+        <>
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-bold flex items-center gap-2">
@@ -455,6 +432,7 @@ const VerificationPage = () => {
                 </span>
               )}
             </h2>
+            {collapseButton}
           </div>
           <div className="flex border-b border-border mb-4">
             <button
@@ -511,8 +489,7 @@ const VerificationPage = () => {
           ) : (
             <div className="divide-y divide-border">
               {sortedProfiles.map((p) => {
-                const currentId =
-                  p.businessProfileId || p.personalProfileId || p.id;
+                const currentId = getProfileId(p);
                 const currentName =
                   p.businessName ||
                   p.companyName ||
@@ -544,12 +521,9 @@ const VerificationPage = () => {
           )}
         </div>
 
-        <div
-          onMouseDown={startResizing}
-          className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-20 hover:bg-success ${isResizing ? "bg-success" : "bg-transparent"}`}
-          title="Kéo để thay đổi kích thước"
-        />
-      </div>
+        </>
+        )}
+      </CollapsibleListPanel>
 
       {/* CỘT PHẢI */}
       <div className="min-h-0 min-w-0 flex-1 flex flex-col relative bg-white overflow-hidden">
@@ -565,8 +539,19 @@ const VerificationPage = () => {
             )}
             <IdcardOutlined className="text-6xl mb-4 text-border" />
             <p className="text-lg">
-              Chọn một hồ sơ bên danh sách để bắt đầu đối chiếu dữ liệu
+              {listCollapsed
+                ? "Danh sách đang thu gọn. Bắt đầu từ hồ sơ đầu tiên hoặc mở lại danh sách."
+                : "Chọn một hồ sơ bên danh sách để bắt đầu đối chiếu dữ liệu"}
             </p>
+            {queueIds.length > 0 && (
+              <Button
+                type="primary"
+                className="mt-4 bg-success hover:bg-success/90 border-none"
+                onClick={() => setSelectedProfileId(queueIds[0])}
+              >
+                Bắt đầu từ hồ sơ đầu tiên
+              </Button>
+            )}
           </div>
         ) : loadingDetail ? (
           <div className="flex-1 flex items-center justify-center bg-background">
@@ -580,6 +565,25 @@ const VerificationPage = () => {
         ) : profileDetail ? (
           <>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-background/60 p-5">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <Button
+                  disabled={!previousProfileId || submitting}
+                  onClick={() => setSelectedProfileId(previousProfileId)}
+                >
+                  ‹ Hồ sơ trước
+                </Button>
+                <span className="text-xs font-semibold text-textLight">
+                  {queuePosition
+                    ? `Hồ sơ ${queuePosition} / ${queueIds.length}`
+                    : `Không nằm trong danh sách đang lọc · ${queueIds.length} hồ sơ`}
+                </span>
+                <Button
+                  disabled={!nextProfileId || submitting}
+                  onClick={() => setSelectedProfileId(nextProfileId)}
+                >
+                  Hồ sơ sau ›
+                </Button>
+              </div>
               <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-border bg-white p-5 shadow-[0_10px_28px_rgba(24,63,65,0.05)]">
                 <div>
                   <h1 className="text-2xl font-bold text-text">

@@ -21,6 +21,7 @@ import {
 } from "@ant-design/icons";
 import { ROLES } from "../../constants/roles";
 import Avatar from "../../components/shared/Avatar";
+import { useBusinessDisplayName } from "../../hooks/useBusinessDisplayName";
 import PostThumbnail from "../../components/shared/PostThumbnail";
 import { PriorityNotice } from "../../components/shared/PriorityBadge";
 import PostLifecycleControl from "../../components/shared/PostLifecycleControl";
@@ -546,6 +547,11 @@ const PostDetailPage = ({ ownerMode = false }) => {
     isBuyPostType(
       post?.postType,
     );
+  // Tin thu mua do doanh nghiệp đăng: hiện tên doanh nghiệp thay cho username.
+  const ownerBusinessName = useBusinessDisplayName(
+    post?.ownerId,
+    isBuyPost && !ownerMode,
+  );
   const product = isBuyPost
     ? post?.requirement || {}
     : post?.product || {};
@@ -1205,7 +1211,7 @@ const PostDetailPage = ({ ownerMode = false }) => {
                   className="mt-3 inline-flex items-center gap-2 rounded-lg border border-border bg-white py-1.5 pl-1.5 pr-3 text-sm font-bold text-text transition hover:border-primary/40 hover:text-primary"
                 >
                   <Avatar src={post.avatarUrl} alt="" className="h-7 w-7" />
-                  {post.ownerName || "Người đăng"}
+                  {ownerBusinessName || post.ownerName || "Người đăng"}
                 </Link>
               )}
 

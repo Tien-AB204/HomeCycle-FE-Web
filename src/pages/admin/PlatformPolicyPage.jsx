@@ -9,6 +9,7 @@ import {
   getSafeValidationMessage,
 } from "../../utils/safeErrorMessage";
 import PortalPageHeader from "../../components/admin/PortalPageHeader";
+import useActionToast from "../../hooks/useActionToast";
 
 const POLICY_TABS = [
   {
@@ -43,7 +44,7 @@ const POLICY_TABS = [
     key: PLATFORM_POLICY_TYPES.PAYMENT,
     label: "Thanh toán",
     description:
-      "Tỷ lệ đặt cọc và thời gian hiệu lực của thanh toán.",
+      "Thời gian hiệu lực của thanh toán.",
     icon: "payments",
   },
   {
@@ -168,16 +169,6 @@ const APPOINTMENT_FIELDS = [
 ];
 
 const PAYMENT_FIELDS = [
-  {
-    name: "depositRatePercent",
-    label: "Tỷ lệ đặt cọc",
-    unit: "%",
-    min: 0,
-    max: 100,
-    minExclusive: true,
-    integer: false,
-    step: "any",
-  },
   {
     name: "paymentExpiryMinutes",
     label: "Thời gian hiệu lực thanh toán",
@@ -913,6 +904,7 @@ function VersionDetail({ detail, policyType }) {
 }
 
 export default function PlatformPolicyPage() {
+  const actionToast = useActionToast();
   const [activeTab, setActiveTab] = useState(
     PLATFORM_POLICY_TYPES.DISPUTE,
   );
@@ -928,7 +920,6 @@ export default function PlatformPolicyPage() {
 
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
 
   const [requestVersion, setRequestVersion] = useState(0);
   const [versionDetail, setVersionDetail] = useState(null);
@@ -1064,7 +1055,6 @@ export default function PlatformPolicyPage() {
   const refresh = () => {
     setLoading(true);
     setError("");
-    setSuccessMessage("");
     setActionError("");
     setVersionDetail(null);
     setRequestVersion(
@@ -1079,14 +1069,12 @@ export default function PlatformPolicyPage() {
     }));
 
     setActionError("");
-    setSuccessMessage("");
   };
 
   const handleFileContextChange = (context) => {
     setFileContext(context);
     setDraft(createFileDraft(currentPolicy, context));
     setActionError("");
-    setSuccessMessage("");
   };
 
   const handleExtensionChange = (
@@ -1114,7 +1102,6 @@ export default function PlatformPolicyPage() {
     });
 
     setActionError("");
-    setSuccessMessage("");
   };
 
   const buildStandardPayload = () => {
@@ -1289,7 +1276,6 @@ export default function PlatformPolicyPage() {
     }
 
     setActionError("");
-    setSuccessMessage("");
 
     try {
       const payload =
@@ -1317,7 +1303,8 @@ export default function PlatformPolicyPage() {
         payload,
       );
 
-      setSuccessMessage(
+      actionToast.success(
+        "Cập nhật thành công",
         "Đã cập nhật chính sách hệ thống.",
       );
 
@@ -1374,7 +1361,6 @@ export default function PlatformPolicyPage() {
 
     setActionLoading(true);
     setActionError("");
-    setSuccessMessage("");
 
     try {
       await platformPolicyApi.restoreVersion(
@@ -1385,7 +1371,8 @@ export default function PlatformPolicyPage() {
       setRestoreTarget(null);
       setVersionDetail(null);
 
-      setSuccessMessage(
+      actionToast.success(
+        "Khôi phục thành công",
         `Đã khôi phục nội dung từ phiên bản v${restoreTarget.version}.`,
       );
 
@@ -1444,15 +1431,6 @@ export default function PlatformPolicyPage() {
           </div>
         )}
 
-        {successMessage && (
-          <div
-            role="status"
-            className="rounded-2xl border border-success/20 bg-success/10 px-5 py-4 text-sm font-bold text-success"
-          >
-            {successMessage}
-          </div>
-        )}
-
         {actionError && (
           <div
             role="alert"
@@ -1488,7 +1466,6 @@ export default function PlatformPolicyPage() {
                           setLoading(true);
                           setError("");
                           setActionError("");
-                          setSuccessMessage("");
                           setVersionDetail(null);
                           setActiveTab(tab.key);
                         }}
@@ -1573,7 +1550,7 @@ export default function PlatformPolicyPage() {
                               }
                             />
                           ) : (
-                            <div className="grid gap-4 md:grid-cols-2">
+                            <div className={`grid gap-4 ${activeFields.length > 1 ? "md:grid-cols-2" : ""}`}>
                               {activeFields.map((field) => (
                                 <NumberPolicyField
                                   key={field.name}
@@ -1689,7 +1666,6 @@ export default function PlatformPolicyPage() {
                                       }),
                                     );
                                     setActionError("");
-                                    setSuccessMessage("");
                                   }}
                                   className="min-w-0 flex-1 bg-transparent px-4 py-3 text-sm font-bold text-text outline-none disabled:cursor-not-allowed"
                                 />

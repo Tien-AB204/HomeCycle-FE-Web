@@ -5,6 +5,8 @@ import {
   useRef,
   useState,
 } from "react";
+import CollapsibleListPanel from "../../components/mod/CollapsibleListPanel";
+import useStoredFlag from "../../hooks/useStoredFlag";
 import {
   Alert,
   Button,
@@ -679,19 +681,11 @@ const getActionFlag = (
 
 const LIST_COLLAPSED_KEY = "homecycle.disputeListCollapsed";
 
-const readListCollapsed = () => {
-  try {
-    return window.localStorage.getItem(LIST_COLLAPSED_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
 
 const DisputeManagementPage = ({
   initialTargetType,
   api = moderatorDisputeApi,
   readOnly = false,
-  eyebrow = "Kiểm duyệt",
   title = "Quản lý tranh chấp",
 } = {}) => {
   const location = useLocation();
@@ -756,13 +750,8 @@ const DisputeManagementPage = ({
   const [totalCount, setTotalCount] =
     useState(0);
 
-  const [sidebarWidth, setSidebarWidth] =
-    useState(420);
   const [listCollapsed, setListCollapsed] =
-    useState(readListCollapsed);
-  const [isResizing, setIsResizing] =
-    useState(false);
-  const resizeSessionRef = useRef(null);
+    useStoredFlag(LIST_COLLAPSED_KEY);
 
   const [actionMode, setActionMode] =
     useState(null);
@@ -1043,88 +1032,7 @@ const DisputeManagementPage = ({
       window.clearTimeout(timeoutId);
   }, [keywordInput]);
 
-  useEffect(() => {
-    if (!isResizing) {
-      return undefined;
-    }
 
-    const handleMouseMove = (
-      event,
-    ) => {
-      const session =
-        resizeSessionRef.current;
-
-      if (!session) {
-        return;
-      }
-
-      const delta =
-        event.clientX -
-        session.startX;
-
-      const nextWidth =
-        session.startWidth + delta;
-
-      setSidebarWidth(
-        Math.min(
-          600,
-          Math.max(300, nextWidth),
-        ),
-      );
-    };
-
-    const handleMouseUp = () => {
-      resizeSessionRef.current =
-        null;
-      setIsResizing(false);
-    };
-
-    window.addEventListener(
-      "mousemove",
-      handleMouseMove,
-    );
-
-    window.addEventListener(
-      "mouseup",
-      handleMouseUp,
-    );
-
-    return () => {
-      window.removeEventListener(
-        "mousemove",
-        handleMouseMove,
-      );
-
-      window.removeEventListener(
-        "mouseup",
-        handleMouseUp,
-      );
-    };
-  }, [isResizing]);
-
-  const toggleListCollapsed = (nextCollapsed) => {
-    setListCollapsed(nextCollapsed);
-
-    try {
-      window.localStorage.setItem(
-        LIST_COLLAPSED_KEY,
-        nextCollapsed ? "1" : "0",
-      );
-    } catch {
-      // Không lưu được thì chỉ giữ trong phiên hiện tại.
-    }
-  };
-
-  const startResizing = (event) => {
-    event.preventDefault();
-
-    resizeSessionRef.current = {
-      startX: event.clientX,
-      startWidth: sidebarWidth,
-    };
-
-    setIsResizing(true);
-  };
 
   // Có tranh chấp mới/được chuyển cho kiểm duyệt viên: tải lại danh sách hàng chờ.
   useRealtimeRefresh(() => void fetchDisputes(), { notificationTargets: ["dispute"] });
@@ -1627,63 +1535,28 @@ const DisputeManagementPage = ({
   return (
     <>
       <div className="flex h-[calc(100vh-72px)] min-h-0 overflow-hidden bg-background text-text">
-        {listCollapsed ? (
-          <aside className="flex w-14 shrink-0 flex-col items-center gap-3 border-r border-border bg-white py-4">
-            <button
-              type="button"
-              onClick={() => toggleListCollapsed(false)}
-              title="Mở danh sách"
-              aria-label="Mở danh sách tranh chấp"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-textLight transition hover:border-primary hover:text-primary"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                keyboard_double_arrow_right
-              </span>
-            </button>
-
-            <span className="rounded-full bg-textLight/10 px-2 py-1 text-xs font-black text-primary">
-              {totalCount}
-            </span>
-
-            <span className="rotate-180 text-xs font-bold text-textLight [writing-mode:vertical-rl]">
-              {title}
-            </span>
-          </aside>
-        ) : (
-        <section
-          style={{
-            width: `${sidebarWidth}px`,
-          }}
-          className="relative flex min-h-0 shrink-0 select-none flex-col border-r border-border bg-white"
+        <CollapsibleListPanel
+          collapsed={listCollapsed}
+          onCollapsedChange={setListCollapsed}
+          title={title}
+          icon="gavel"
+          count={totalCount}
+          defaultWidth={420}
         >
+          {({ collapseButton }) => (
+          <>
           <div className="border-b border-border p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-primary">
-                  {eyebrow}
-                </p>
-
-                <h1 className="text-xl font-black text-text">
-                  {title}
-                </h1>
-              </div>
+              <h1 className="text-xl font-black text-text">
+                {title}
+              </h1>
 
               <div className="flex shrink-0 items-center gap-2">
                 <div className="rounded-full bg-textLight/10 px-3 py-1 text-xs font-black text-primary">
                   {totalCount}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => toggleListCollapsed(true)}
-                  title="Thu gọn danh sách"
-                  aria-label="Thu gọn danh sách tranh chấp"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-textLight transition hover:border-primary hover:text-primary"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    keyboard_double_arrow_left
-                  </span>
-                </button>
+                {collapseButton}
               </div>
             </div>
 
@@ -1984,29 +1857,16 @@ const DisputeManagementPage = ({
             />
           </div>
 
-          <div
-            onMouseDown={
-              startResizing
-            }
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Thay đổi độ rộng danh sách tranh chấp"
-            title="Kéo để thay đổi độ rộng danh sách"
-            className={`absolute right-0 top-0 z-20 h-full w-1.5 cursor-col-resize transition-colors ${
-              isResizing
-                ? "bg-primary/50"
-                : "bg-transparent hover:bg-primary/40"
-            }`}
-          />
-        </section>
-        )}
+          </>
+          )}
+        </CollapsibleListPanel>
 
         <section className="@container min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain bg-background/60">
           {!selectedDisputeId ? (
             <div className="flex h-full items-center justify-center p-8">
               <Empty description="Chọn một tranh chấp để xem chi tiết">
                 {listCollapsed && (
-                  <Button onClick={() => toggleListCollapsed(false)}>
+                  <Button onClick={() => setListCollapsed(false)}>
                     Mở danh sách tranh chấp
                   </Button>
                 )}
@@ -2170,7 +2030,7 @@ const DisputeManagementPage = ({
 
               </div>
 
-              <div className="grid items-start gap-4 @2xl:grid-cols-2">
+              <div className="grid gap-4 @2xl:grid-cols-2">
                 <section className="min-w-0 rounded-2xl border border-border border-t-4 border-t-primary bg-white p-4 shadow-sm">
                   {renderPartyHeader(
                     isContentTarget

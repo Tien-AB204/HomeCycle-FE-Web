@@ -7,6 +7,7 @@
  * nếu không đọc được thì giữ độ lệch 0 và dùng giờ máy.
  */
 let serverOffsetMs = 0;
+const MAX_TRUSTED_OFFSET_MS = 6 * 60 * 60 * 1000;
 
 /*
  * Header Date chỉ chính xác tới giây và đến chậm theo độ trễ mạng nên bỏ qua
@@ -20,6 +21,12 @@ export const syncServerClock = (dateHeader) => {
   }
 
   const offset = serverMs - Date.now();
+
+  // Response lấy từ cache mang header Date cũ: độ lệch quá lớn là không thật.
+  if (Math.abs(offset) > MAX_TRUSTED_OFFSET_MS) {
+    return;
+  }
+
   serverOffsetMs = Math.abs(offset) < 2000 ? 0 : offset;
 };
 

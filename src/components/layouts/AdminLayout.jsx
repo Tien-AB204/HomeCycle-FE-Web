@@ -36,14 +36,8 @@ const ADMIN_NAV_GROUPS = [
       {
         label: "Doanh nghiệp & khảo sát",
         path: "/admin/dashboard/businesses/overview",
-        matchPaths: ["/admin/dashboard/businesses/demand"],
+        matchPaths: ["/admin/dashboard/businesses/demand", "/admin/dashboard/businesses/performance"],
         icon: "domain",
-        child: true,
-      },
-      {
-        label: "Hoạt động mua bán",
-        path: "/admin/dashboard/businesses/performance",
-        icon: "monitoring",
         child: true,
       },
       {
@@ -60,14 +54,8 @@ const ADMIN_NAV_GROUPS = [
       {
         label: "Tài chính & ví",
         path: "/admin/dashboard/finance",
-        matchPaths: ["/admin/dashboard/payments"],
+        matchPaths: ["/admin/dashboard/payments", "/admin/finance-management"],
         icon: "account_balance",
-      },
-      {
-        label: "Ví & giao dịch",
-        path: "/admin/finance-management",
-        icon: "receipt_long",
-        child: true,
       },
     ],
   },

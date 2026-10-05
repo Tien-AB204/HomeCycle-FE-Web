@@ -1,3 +1,5 @@
+import { joinAddressParts } from "../../utils/addressText";
+
 export const GHN_REQUIRED_NOTES = Object.freeze([
   {
     value: "CHOTHUHANG",
@@ -456,15 +458,11 @@ export const formatGhnContactAddress = (
   const address =
     contact?.address || {};
 
-  return [
+  // addressDetail thường đã có phường/tỉnh: bỏ phần trùng để không lặp.
+  return joinAddressParts([
     address.addressDetail,
     address.wardName,
     address.districtName,
     address.provinceName,
-  ]
-    .map((value) =>
-      String(value || "").trim(),
-    )
-    .filter(Boolean)
-    .join(", ");
+  ]);
 };

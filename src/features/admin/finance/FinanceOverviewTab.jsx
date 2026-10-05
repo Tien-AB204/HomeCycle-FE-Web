@@ -8,13 +8,16 @@ import { money } from "./financeFormat";
 const isCanceled = (error) =>
   error?.name === "CanceledError" || error?.code === "ERR_CANCELED";
 
+// Quỹ phí GHN: mục đích 1 (enum) hoặc tên enum.
+const isGhnFund = (purpose) => String(purpose) === "1" || String(purpose) === "Shipping_Escrow";
+
 const Value = ({ amount }) => (
   <strong className="value">
     {Number(amount || 0).toLocaleString("vi-VN")} <small>₫</small>
   </strong>
 );
 
-export default function FinanceOverviewTab({ refreshKey = 0 }) {
+export default function FinanceOverviewTab({ refreshKey = 0, onNavigate }) {
   const walletDetailsRef = useRef(null);
   const [state, setState] = useState({ loading: true, error: "", funds: null, overview: null, health: null });
 
@@ -26,7 +29,10 @@ export default function FinanceOverviewTab({ refreshKey = 0 }) {
       adminDashboardApi.getFinanceOverview({ signal }).catch(() => null),
       adminDashboardApi.getFinanceHealth({ signal }).catch(() => null),
     ])
-      .then(([funds, overview, health]) => setState({ loading: false, error: "", funds, overview, health }))
+      .then(([funds, overview, health]) => {
+        if (signal.aborted) return;
+        setState({ loading: false, error: "", funds, overview, health });
+      })
       .catch((error) => {
         if (isCanceled(error)) return;
         setState((current) => ({ ...current, loading: false, error: "Không thể tải số dư hiện tại." }));
@@ -88,8 +94,8 @@ export default function FinanceOverviewTab({ refreshKey = 0 }) {
       <div className="split">
         <section className="panel">
           <div className="panel-title">
-            <div><h2>Các khoản số dư</h2></div>
-            <button type="button" className="text" onClick={openWalletDetails}>Chi tiết số dư ↓</button>
+            <div><h2>Tiền đang được giữ ở đâu?</h2></div>
+            <button type="button" className="text" onClick={openWalletDetails}>Xem phân loại số dư ↓</button>
           </div>
           <div className="summaryrow">
             <div>Tiền người dùng có thể sử dụng<span className="muted">Số dư ví có thể thanh toán hoặc yêu cầu rút</span></div>
@@ -176,7 +182,10 @@ export default function FinanceOverviewTab({ refreshKey = 0 }) {
             <h3>Số dư theo mục đích ví hệ thống</h3>
             {systemWallets.map((wallet) => (
               <div className="summaryrow" key={wallet.walletId || wallet.purpose}>
-                <span>{SYSTEM_PURPOSE_LABELS[wallet.purpose] || "Ví hệ thống khác"}</span>
+                <span>
+                  {SYSTEM_PURPOSE_LABELS[wallet.purpose] || "Ví hệ thống khác"}
+                  {isGhnFund(wallet.purpose) && <small>Phí vận chuyển đã thu và đang giữ trong ví hệ thống</small>}
+                </span>
                 <strong>{money(wallet.balance)}</strong>
               </div>
             ))}
@@ -184,12 +193,17 @@ export default function FinanceOverviewTab({ refreshKey = 0 }) {
               <span>Tổng ví hệ thống</span>
               <strong>{money(funds?.totalSystemBalance)}</strong>
             </div>
-            <p className="footnote">Số dư ví doanh thu tại thời điểm hiện tại không mặc định bằng doanh thu phát sinh trong kỳ.</p>
+            <p className="footnote">Số dư ví doanh thu khác với doanh thu phát sinh trong kỳ. Số dư quỹ GHN không mặc định là số tiền phải thanh toán ngay.</p>
           </section>
         </div>
       </details>
 
-      <p className="page-end">Lịch sử, danh sách ví, yêu cầu rút và màn tra cứu chi tiết nằm ở mục “Ví & giao dịch”.</p>
+      <div className="jump-links">
+        <button type="button" onClick={() => onNavigate?.("escrows")}>Xem tiền giữ theo đơn →</button>
+        <button type="button" onClick={() => onNavigate?.("holds")}>Xem tạm giữ theo tài khoản →</button>
+        <button type="button" onClick={() => onNavigate?.("payments")}>Tra cứu thanh toán →</button>
+      </div>
+      <p className="page-end">Số dư hiện tại không thay đổi theo kỳ báo cáo ở tab Tài chính.</p>
     </section>
   );
 }

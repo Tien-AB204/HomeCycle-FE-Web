@@ -21,7 +21,7 @@ const OWN_POST_REVIEW_MESSAGE =
   "Chủ bài đăng không thể tự đánh giá đơn hàng của tin đăng.";
 
 const formatCurrency = (value) =>
-  `${Number(value || 0).toLocaleString("vi-VN")} ₫`;
+  `${Number(value || 0).toLocaleString("vi-VN")} đ`;
 
 const formatDate = (value) => {
   const date = new Date(value);

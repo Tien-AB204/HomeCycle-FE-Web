@@ -1,3 +1,4 @@
+import BusinessWalletOverview from "../../features/wallet/BusinessWalletOverview";
 import PendingSettlementsCard from "../../features/wallet/PendingSettlementsCard";
 import WalletTransactionsPanel from "../../features/wallet/WalletTransactionsPanel";
 import {
@@ -8,6 +9,8 @@ import {
   useState,
 } from "react";
 import { useLocation } from "react-router-dom";
+import { ROLES } from "../../constants/roles";
+import { useAuth } from "../../hooks/useAuth";
 import walletApi from "../../services/apis/walletApi";
 import {
   getSafeProblemDetail,
@@ -100,16 +103,9 @@ const getBalanceLabel = (
 const formatCurrency = (
   value,
 ) =>
-  new Intl.NumberFormat(
-    "vi-VN",
-    {
-      style: "currency",
-      currency: "VND",
-      maximumFractionDigits: 0,
-    },
-  ).format(
-    Number(value || 0),
-  );
+  `${new Intl.NumberFormat("vi-VN", {
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0))} đ`;
 
 const formatDateTime = (
   value,
@@ -255,6 +251,8 @@ const maskBankAccountNumber = (
 
 const WalletPage = () => {
   const location = useLocation();
+  const { user } = useAuth();
+  const isBusiness = user?.role === ROLES.BUSINESS;
 
   const [
     wallet,
@@ -971,7 +969,7 @@ const WalletPage = () => {
         </p>
 
         <h1 className="mt-2 text-3xl font-black">
-          Ví HomeCycle
+          {isBusiness ? "Ví doanh nghiệp" : "Ví HomeCycle"}
         </h1>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
@@ -1003,6 +1001,14 @@ const WalletPage = () => {
         </div>
       ) : (
         <>
+          {isBusiness ? (
+            <BusinessWalletOverview
+              availableBalance={availableBalance}
+              holdBalance={holdBalance}
+              quota={withdrawalQuota}
+              refreshKey={`${availableBalance}-${holdBalance}`}
+            />
+          ) : (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <article className="rounded-2xl border border-border bg-white p-5 shadow-[0_10px_30px_rgba(23,40,48,0.05)] sm:p-6">
               <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
@@ -1036,6 +1042,7 @@ const WalletPage = () => {
               </p>
             </article>
           </div>
+          )}
 
           <PendingSettlementsCard
             refreshKey={`${availableBalance}-${holdBalance}`}
@@ -1054,7 +1061,8 @@ const WalletPage = () => {
               Khi tạo yêu cầu, số tiền tương ứng sẽ được khóa khỏi số dư khả dụng và chuyển sang phần đang giữ trong lúc chờ xử lý.
             </p>
 
-            {withdrawalQuota && (
+            {/* Doanh nghiệp đã xem hạn mức ở phần tổng quan phía trên. */}
+            {withdrawalQuota && !isBusiness && (
               <div className="mt-4 rounded-xl border border-border bg-background p-4">
                 <div className="grid gap-3 text-sm sm:grid-cols-3">
                   <div>
