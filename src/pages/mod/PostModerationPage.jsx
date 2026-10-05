@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   SearchOutlined,
   LoadingOutlined,
@@ -17,6 +17,8 @@ import EvidenceImage from "../../components/shared/EvidenceImage";
 import ListMonthDropdown from "../../components/shared/ListMonthDropdown";
 import ListSortDropdown from "../../components/shared/ListSortDropdown";
 import useActionToast from "../../hooks/useActionToast";
+import useStoredFlag from "../../hooks/useStoredFlag";
+import CollapsibleListPanel from "../../components/mod/CollapsibleListPanel";
 import { filterItemsByMonth } from "../../utils/sortListItems";
 
 const MODERATOR_FUNCTIONALITY_LABELS = {
@@ -142,54 +144,8 @@ const PostModerationPage = () => {
 
   const isReportedSource = listSource === "reported";
 
-  // --- STATE RESIZABLE CỘT TRÁI ---
-  const [sidebarWidth, setSidebarWidth] = useState(380);
-  const [isResizing, setIsResizing] = useState(false);
-  const resizeSessionRef = useRef(null);
-
-  const startResizing = (e) => {
-    e.preventDefault();
-
-    resizeSessionRef.current = {
-      startX: e.clientX,
-      startWidth: sidebarWidth,
-    };
-
-    setIsResizing(true);
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      const session = resizeSessionRef.current;
-
-      if (!isResizing || !session) return;
-
-      const delta =
-        e.clientX - session.startX;
-
-      const newWidth =
-        session.startWidth + delta;
-
-      if (newWidth >= 300 && newWidth <= 600) {
-        setSidebarWidth(newWidth);
-      }
-    };
-
-    const handleMouseUp = () => {
-      resizeSessionRef.current = null;
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing]);
+  // Thu gọn danh sách để phần chi tiết rộng hơn; nhớ lựa chọn cho lần sau.
+  const [listCollapsed, setListCollapsed] = useStoredFlag("hc.mod.posts.listCollapsed");
 
   // Inline Actions
   const [actionState, setActionState] = useState("idle");
@@ -578,11 +534,16 @@ const PostModerationPage = () => {
 
   return (
     <div className="flex h-[calc(100vh-72px)] min-h-0 bg-white animate-fade-in overflow-hidden">
-      {/* CỘT TRÁI (CÓ RESIZE & SEARCH ID) */}
-      <div
-        style={{ width: `${sidebarWidth}px` }}
-        className="min-h-0 border-r border-border flex flex-col bg-white shrink-0 relative select-none"
+      {/* CỘT TRÁI (CÓ RESIZE & THU GỌN) */}
+      <CollapsibleListPanel
+        collapsed={listCollapsed}
+        onCollapsedChange={setListCollapsed}
+        title="Quản lý bài đăng"
+        icon="inventory_2"
+        count={isLoadingList ? null : pagination.totalCount}
       >
+        {({ collapseButton }) => (
+        <>
         <div className="p-4 flex justify-between items-center border-b border-border">
           <h2 className="text-lg font-bold text-text flex items-center gap-2">
             Quản lý Bài đăng
@@ -592,6 +553,7 @@ const PostModerationPage = () => {
               </span>
             )}
           </h2>
+          {collapseButton}
         </div>
 
         <div className="p-4 pb-3 border-b border-border bg-background/60">
@@ -866,13 +828,9 @@ const PostModerationPage = () => {
           </div>
         </div>
 
-        {/* Thanh kéo chuột resize */}
-        <div
-          onMouseDown={startResizing}
-          className={`absolute top-0 right-0 w-1.5 h-full cursor-col-resize transition-colors z-20 hover:bg-success ${isResizing ? "bg-success" : "bg-transparent"}`}
-          title="Kéo để thay đổi kích thước"
-        />
-      </div>
+        </>
+        )}
+      </CollapsibleListPanel>
 
       {/* CỘT PHẢI */}
       <div className="min-h-0 min-w-0 flex-1 flex flex-col bg-white overflow-hidden border-l border-border">
@@ -899,6 +857,11 @@ const PostModerationPage = () => {
                 Chọn một bài đăng bên trái để xem thông tin,
                 hình ảnh và thao tác kiểm duyệt.
               </p>
+              {listCollapsed && (
+                <Button className="mt-4" onClick={() => setListCollapsed(false)}>
+                  Mở danh sách bài đăng
+                </Button>
+              )}
             </div>
           </div>
         ) : isLoadingDetail ? (
