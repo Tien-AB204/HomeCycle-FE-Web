@@ -32,7 +32,6 @@ import HomeRoute from "./HomeRoute";
 import RoleRoute from "./RoleRoute";
 
 // Admin Pages
-import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
 import AdminBusinessSurveyPage from "../pages/admin/AdminBusinessSurveyPage";
 import AdminOverviewPage from "../pages/admin/AdminOverviewPage";
 import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
@@ -380,11 +379,10 @@ const AppRouter = () => {
             }
           />
 
+          {/* Trang "Hoạt động mua bán" đã bỏ; link cũ về trang doanh nghiệp. */}
           <Route
             path="dashboard/businesses/performance"
-            element={
-              <AdminDashboardModulePage dashboard="business-performance" />
-            }
+            element={<Navigate to="/admin/dashboard/businesses/overview" replace />}
           />
 
           <Route path="categories" element={<CategoryPage />} />
