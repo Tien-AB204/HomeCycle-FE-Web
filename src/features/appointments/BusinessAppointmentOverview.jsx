@@ -84,17 +84,31 @@ const StatusBadge = ({ status }) => {
   );
 };
 
+// Hai màu khác hẳn sắc độ (xanh dương / cam) để nhìn lướt vẫn phân biệt được loại lịch.
+const TYPE_STYLES = {
+  inspection: { icon: "fact_check", className: "bg-[#2F6FB0] text-white" },
+  collection: { icon: "local_shipping", className: "bg-[#B45309] text-white" },
+};
+
+const getTypeStyle = (item) =>
+  isInspection(item) ? TYPE_STYLES.inspection : TYPE_STYLES.collection;
+
+const TypeIcon = ({ item }) => (
+  <span
+    className="material-symbols-outlined leading-none"
+    style={{ fontSize: 13 }}
+    aria-hidden="true"
+  >
+    {getTypeStyle(item).icon}
+  </span>
+);
+
 const EventChip = ({ item }) => (
   <span
     title={`${formatVietnamTime(getScheduledAt(item))} ${getTypeLabel(item)}`}
-    className="flex min-w-0 items-center gap-1 text-[10px] font-bold tabular-nums text-text"
+    className={`flex min-w-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-black tabular-nums ${getTypeStyle(item).className}`}
   >
-    <i
-      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-        isInspection(item) ? "bg-[#537DA9]" : "bg-success"
-      }`}
-      aria-hidden="true"
-    />
+    <TypeIcon item={item} />
     {formatVietnamTime(getScheduledAt(item))}
   </span>
 );
@@ -354,14 +368,22 @@ export default function BusinessAppointmentOverview({
               </div>
 
               <div className="mt-3 flex flex-wrap gap-4 text-[11px] font-bold text-textLight">
-                <span className="flex items-center gap-1.5">
-                  <i className="h-2.5 w-2.5 rounded-[3px] bg-[#537DA9]" aria-hidden="true" />
-                  Kiểm định
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <i className="h-2.5 w-2.5 rounded-[3px] bg-success" aria-hidden="true" />
-                  Thu gom
-                </span>
+                {[TYPE_STYLES.inspection, TYPE_STYLES.collection].map((style, index) => (
+                  <span key={style.icon} className="flex items-center gap-1.5">
+                    <span
+                      className={`flex h-5 w-5 items-center justify-center rounded-md ${style.className}`}
+                      aria-hidden="true"
+                    >
+                      <span
+                        className="material-symbols-outlined leading-none"
+                        style={{ fontSize: 14 }}
+                      >
+                        {style.icon}
+                      </span>
+                    </span>
+                    {index === 0 ? "Kiểm định" : "Thu gom"}
+                  </span>
+                ))}
               </div>
             </WorkspacePanel>
 
