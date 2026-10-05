@@ -85,11 +85,31 @@ const DISPUTE_EDITABLE_FIELDS = [
     max: 100,
   },
   {
+    name: "responseWindowHours",
+    label: "Thời hạn phản hồi tranh chấp",
+    unit: "giờ",
+    min: 1,
+    max: 168,
+    defaultValue: 24,
+    description:
+      "Thời gian bên bị khiếu nại được phản hồi trước khi tranh chấp chuyển sang Kiểm duyệt viên.",
+  },
+  {
+    name: "disputeLossPenaltyPoints",
+    label: "Điểm phạt khi thua tranh chấp",
+    unit: "điểm",
+    min: 1,
+    max: 100,
+    description:
+      "Máy chủ trừ điểm uy tín bên thua khi Kiểm duyệt viên kết luận tranh chấp.",
+  },
+  {
     name: "postViolationPenaltyPoints",
     label: "Điểm phạt khi bài đăng vi phạm",
     unit: "điểm",
     min: 1,
     max: 100,
+    defaultValue: 10,
     description:
       "Máy chủ áp dụng mức này khi Kiểm duyệt viên xác nhận một bài đăng vi phạm.",
   },
@@ -99,32 +119,14 @@ const DISPUTE_EDITABLE_FIELDS = [
     unit: "điểm",
     min: 1,
     max: 100,
+    defaultValue: 5,
     description:
       "Máy chủ áp dụng mức này khi Kiểm duyệt viên xác nhận một đánh giá vi phạm.",
   },
 ];
 
-const DISPUTE_READONLY_FIELDS = [
-  {
-    name: "returnWindowDays",
-    label: "Thời hạn hoàn trả",
-    unit: "ngày",
-    min: 1,
-    max: 30,
-  },
-  {
-    name: "disputeLossPenaltyPoints",
-    label: "Điểm phạt khi thua tranh chấp",
-    unit: "điểm",
-    min: 1,
-    max: 100,
-  },
-];
-
-const DISPUTE_FIELDS = [
-  ...DISPUTE_EDITABLE_FIELDS,
-  ...DISPUTE_READONLY_FIELDS,
-];
+// Thời hạn hoàn trả không hiển thị: Backend đã tắt luồng hoàn trả.
+const DISPUTE_FIELDS = DISPUTE_EDITABLE_FIELDS;
 
 const APPOINTMENT_FIELDS = [
   {
@@ -154,6 +156,14 @@ const APPOINTMENT_FIELDS = [
     unit: "giờ",
     min: 1,
     max: 720,
+  },
+  {
+    name: "reminderBeforeMinutes",
+    label: "Nhắc trước lịch hẹn",
+    unit: "phút",
+    min: 1,
+    max: 1440,
+    defaultValue: 60,
   },
 ];
 
@@ -883,8 +893,16 @@ function VersionDetail({ detail, policyType }) {
               </p>
 
               <p className="mt-1 font-black text-text">
-                {detail?.config?.[field.name] ?? "—"}{" "}
+                {detail?.config?.[field.name] ??
+                  field.defaultValue ??
+                  "—"}{" "}
                 {field.unit}
+                {detail?.config?.[field.name] == null &&
+                  field.defaultValue != null && (
+                    <span className="ml-1 text-xs font-semibold text-textLight">
+                      (mặc định)
+                    </span>
+                  )}
               </p>
             </div>
           ))}
@@ -1592,40 +1610,6 @@ export default function PlatformPolicyPage() {
                                 </p>
                               </div>
 
-                              <div className="rounded-2xl border border-border bg-background/60 p-4">
-                                <p className="text-sm font-black text-text">
-                                  Thông tin chỉ đọc
-                                </p>
-
-                                <p className="mt-1 text-xs leading-5 text-textLight">
-                                  Hai giá trị dưới đây đang được
-                                  máy chủ sử dụng nhưng tài liệu
-                                  bàn giao hiện chưa mở quyền cập
-                                  nhật cho giao diện quản trị.
-                                </p>
-
-                                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                  {DISPUTE_READONLY_FIELDS.map(
-                                    (field) => (
-                                      <div
-                                        key={field.name}
-                                        className="rounded-xl border border-border bg-white px-4 py-3"
-                                      >
-                                        <p className="text-xs font-bold text-textLight">
-                                          {field.label}
-                                        </p>
-
-                                        <p className="mt-1 font-black text-text">
-                                          {currentPolicy?.config?.[
-                                            field.name
-                                          ] ?? "—"}{" "}
-                                          {field.unit}
-                                        </p>
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </div>
                             </div>
                           )}
 

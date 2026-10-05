@@ -10,9 +10,10 @@ const FIELDS = [
   { key: "normalDisputeWindowDays", label: "Thời hạn mở tranh chấp thông thường", unit: "ngày", min: 1, max: 365, group: "window" },
   { key: "lowReputationDisputeWindowDays", label: "Thời hạn khi uy tín thấp", unit: "ngày", min: 1, max: 365, group: "window" },
   { key: "lowReputationThreshold", label: "Ngưỡng uy tín thấp", unit: "điểm", min: 0, max: 100, group: "window" },
-  { key: "postViolationPenaltyPoints", label: "Phạt bài đăng vi phạm", unit: "điểm", min: 1, max: 100, group: "penalty" },
-  { key: "reviewViolationPenaltyPoints", label: "Phạt đánh giá vi phạm", unit: "điểm", min: 1, max: 100, group: "penalty" },
-  { key: "responseWindowHours", label: "Thời hạn phản hồi", unit: "giờ", min: 1, max: 168, group: "extra" },
+  { key: "postViolationPenaltyPoints", label: "Phạt bài đăng vi phạm", unit: "điểm", min: 1, max: 100, group: "penalty", defaultValue: 10 },
+  { key: "reviewViolationPenaltyPoints", label: "Phạt đánh giá vi phạm", unit: "điểm", min: 1, max: 100, group: "penalty", defaultValue: 5 },
+  { key: "disputeLossPenaltyPoints", label: "Phạt khi thua tranh chấp", unit: "điểm", min: 1, max: 100, group: "penalty" },
+  { key: "responseWindowHours", label: "Thời hạn phản hồi", unit: "giờ", min: 1, max: 168, group: "extra", defaultValue: 24 },
 ];
 
 const errorMessage = (error, fallback) =>
@@ -167,12 +168,8 @@ export default function DisputeConfigTab({ onToast }) {
           <div className="configgrid">{fieldRows("penalty")}</div>
         </div>
         <details className="fold subsection">
-          <summary>Giá trị bổ sung và thông tin chỉ đọc</summary>
+          <summary>Giá trị bổ sung</summary>
           <div className="configgrid" style={{ marginTop: 12 }}>{fieldRows("extra")}</div>
-          <div className="readonly">
-            <span>Phạt thua tranh chấp: <strong>{config.disputeLossPenaltyPoints ?? "—"} điểm</strong></span>
-            <span className="badge gray">Chỉ đọc</span>
-          </div>
         </details>
         <div className="savebar">
           <div>
@@ -229,7 +226,10 @@ export default function DisputeConfigTab({ onToast }) {
                 {FIELDS.map((field) => (
                   <div key={field.key}>
                     <span className="muted">{field.label}</span>
-                    <strong>{readConfig(versionDetail)[field.key] ?? "—"} {field.unit}</strong>
+                    <strong>
+                      {readConfig(versionDetail)[field.key] ?? field.defaultValue ?? "—"} {field.unit}
+                      {readConfig(versionDetail)[field.key] == null && field.defaultValue != null && <span className="muted"> (mặc định)</span>}
+                    </strong>
                   </div>
                 ))}
               </div>
