@@ -19,6 +19,7 @@ export default function OnboardingGuideHost() {
   const isClient = role === ROLES.PERSONAL || role === ROLES.BUSINESS;
   const shouldCheck =
     isAuthenticated && isClient && Boolean(userId) && !pathname.startsWith("/auth");
+  const sessionCreatedAt = user?.createdAt || "";
   const [shownFor, setShownFor] = useState("");
 
   useEffect(() => {
@@ -30,10 +31,12 @@ export default function OnboardingGuideHost() {
 
     publicProfileApi
       .getProfile(userId, { signal: controller.signal })
-      .then((profile) => profile.joinedAt)
-      .catch(() => null)
+      .then((profile) => profile.joinedAt || null)
+      // Chưa có hồ sơ công khai (vd doanh nghiệp chưa duyệt): dùng ngày tạo
+      // trong phiên đăng nhập nếu có, không thì để lần sau kiểm tra lại.
+      .catch(() => sessionCreatedAt || undefined)
       .then((joinedAt) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || joinedAt === undefined) return;
 
         if (isNewAccount(joinedAt)) {
           setShownFor(userId);
@@ -44,7 +47,7 @@ export default function OnboardingGuideHost() {
       });
 
     return () => controller.abort();
-  }, [shouldCheck, userId]);
+  }, [sessionCreatedAt, shouldCheck, userId]);
 
   const close = () => {
     markGuideSeen(userId);

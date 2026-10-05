@@ -14,8 +14,10 @@ const loadBusinessName = (userId) => {
         .then((profile) =>
           profile.kind === "business" ? profile.businessName || "" : "",
         )
-        .catch(() => {
-          nameCache.delete(userId);
+        .catch((error) => {
+          // Hồ sơ không công khai (404/403) thì nhớ luôn; lỗi mạng mới thử lại.
+          const status = Number(error?.response?.status);
+          if (status !== 404 && status !== 403) nameCache.delete(userId);
           return "";
         }),
     );
