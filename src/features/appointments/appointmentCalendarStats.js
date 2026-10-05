@@ -5,6 +5,9 @@ import {
   getAppointmentStatusMeta,
   normalizeAppointmentStatus,
 } from "../../constants/appointments.js";
+import { toVietnamDayKey } from "../../utils/vietnamDate.js";
+
+export { formatVietnamTime, toVietnamDayKey } from "../../utils/vietnamDate.js";
 
 export const APPOINTMENT_SCOPE = Object.freeze({
   ALL: "all",
@@ -29,31 +32,7 @@ export const APPOINTMENT_RING_STATUSES = Object.freeze([
   { status: APPOINTMENT_STATUS.MISSED, color: "#B04E57" },
 ]);
 
-const VIETNAM_DAY_FORMAT = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Asia/Ho_Chi_Minh",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-const VIETNAM_TIME_FORMAT = new Intl.DateTimeFormat("vi-VN", {
-  timeZone: "Asia/Ho_Chi_Minh",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
 const pad = (value) => String(value).padStart(2, "0");
-
-// "YYYY-MM-DD" theo giờ Việt Nam, để lịch không lệch ngày khi máy đặt múi giờ khác.
-export const toVietnamDayKey = (value) => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "" : VIETNAM_DAY_FORMAT.format(date);
-};
-
-export const formatVietnamTime = (value) => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "--:--" : VIETNAM_TIME_FORMAT.format(date);
-};
 
 export const getScheduledAt = (item) =>
   item?.inspectionDate || item?.collectionDate || null;
