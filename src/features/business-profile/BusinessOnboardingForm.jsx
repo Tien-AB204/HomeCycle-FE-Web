@@ -15,6 +15,8 @@ import {
   toUppercaseText,
 } from "../../utils/textFormat";
 import BusinessAddressFields from "./BusinessAddressFields";
+import { buildDemoBusinessForm } from "./demoBusinessForm";
+import { DEMO_BUSINESS_SAMPLES } from "../../constants/demoBusinessSample";
 import {
   BusinessField,
   BusinessFileField,
@@ -156,6 +158,21 @@ export default function BusinessOnboardingForm({
       ...current,
       [name]: value,
     }));
+    setError("");
+  };
+
+  const fillDemoSample = (sampleKey) => {
+    const sample = DEMO_BUSINESS_SAMPLES.find(
+      (item) => item.key === sampleKey,
+    );
+
+    if (!sample) {
+      return;
+    }
+
+    setForm((current) =>
+      buildDemoBusinessForm(current, sample),
+    );
     setError("");
   };
 
@@ -555,6 +572,34 @@ export default function BusinessOnboardingForm({
       </div>
 
       <FormMessage error={error} />
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-2">
+          <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }} aria-hidden="true">
+            auto_awesome
+          </span>
+          <div>
+            <p className="text-sm font-black text-text">Điền dữ liệu mẫu</p>
+            <p className="text-xs leading-5 text-textLight">
+              Điền nhanh thông tin doanh nghiệp, địa chỉ và ngân hàng. Thông tin CCCD lấy từ bước quét, ảnh giấy tờ vẫn cần tự tải lên.
+            </p>
+          </div>
+        </div>
+        <select
+          aria-label="Chọn hồ sơ doanh nghiệp mẫu"
+          value=""
+          disabled={isSubmitting}
+          onChange={(event) => fillDemoSample(event.target.value)}
+          className="w-full rounded-xl border border-border bg-white px-3.5 py-3 text-sm text-text outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/10 sm:max-w-xs"
+        >
+          <option value="">Chọn hồ sơ mẫu...</option>
+          {DEMO_BUSINESS_SAMPLES.map((sample) => (
+            <option key={sample.key} value={sample.key}>
+              {sample.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <OnboardingSection
         number="01"
