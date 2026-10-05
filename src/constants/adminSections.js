@@ -1,8 +1,3 @@
-export const USER_SECTION_TABS = Object.freeze([
-  { label: "Tổng quan", path: "/admin/dashboard/users", exact: true },
-  { label: "Danh sách tài khoản", path: "/admin/users" },
-]);
-
 export const ORDER_SECTION_TABS = Object.freeze([
   { label: "Tổng quan", path: "/admin/dashboard/orders", exact: true },
   { label: "Lịch sử đơn hàng", path: "/admin/dashboard/orders/history" },
@@ -11,12 +6,6 @@ export const ORDER_SECTION_TABS = Object.freeze([
 export const APPOINTMENT_SECTION_TABS = Object.freeze([
   { label: "Tổng quan", path: "/admin/dashboard/appointments", exact: true },
   { label: "Lịch sử lịch hẹn", path: "/admin/dashboard/appointments/history" },
-]);
-
-export const POST_SECTION_TABS = Object.freeze([
-  { label: "Tổng quan", path: "/admin/dashboard/posts", exact: true },
-  { label: "Danh sách bài đăng", path: "/admin/posts", exact: true },
-  { label: "Bài đăng bị báo cáo", path: "/admin/posts/reported" },
 ]);
 
 export const BUSINESS_SECTION_TABS = Object.freeze([

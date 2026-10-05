@@ -15,31 +15,36 @@ const ADMIN_NAV_GROUPS = [
     group: "VẬN HÀNH",
     items: [
       {
-        label: "Thanh toán",
-        path: "/admin/dashboard/payments",
-        icon: "payments",
-      },
-      {
-        label: "Đơn hàng",
+        label: "Đơn hàng & lịch hẹn",
         path: "/admin/dashboard/orders",
+        matchPaths: ["/admin/dashboard/appointments"],
         icon: "inventory_2",
-      },
-      {
-        label: "Lịch hẹn",
-        path: "/admin/dashboard/appointments",
-        icon: "event",
       },
       {
         label: "Tranh chấp",
         path: "/admin/dashboard/disputes",
         matchPaths: ["/admin/dispute-categories"],
         icon: "gavel",
+        child: true,
       },
       {
         label: "Người dùng",
         path: "/admin/dashboard/users",
         matchPaths: ["/admin/users"],
         icon: "group",
+      },
+      {
+        label: "Doanh nghiệp & khảo sát",
+        path: "/admin/dashboard/businesses/overview",
+        matchPaths: ["/admin/dashboard/businesses/demand"],
+        icon: "domain",
+        child: true,
+      },
+      {
+        label: "Hoạt động mua bán",
+        path: "/admin/dashboard/businesses/performance",
+        icon: "monitoring",
+        child: true,
       },
       {
         label: "Bài đăng",
@@ -53,30 +58,16 @@ const ADMIN_NAV_GROUPS = [
     group: "TÀI CHÍNH",
     items: [
       {
-        label: "Tổng quan",
+        label: "Tài chính & ví",
         path: "/admin/dashboard/finance",
+        matchPaths: ["/admin/dashboard/payments"],
         icon: "account_balance",
       },
       {
         label: "Ví & giao dịch",
         path: "/admin/finance-management",
         icon: "receipt_long",
-      },
-    ],
-  },
-  {
-    group: "DOANH NGHIỆP",
-    items: [
-      {
-        label: "Tổng quan & Nhu cầu",
-        path: "/admin/dashboard/businesses/overview",
-        matchPaths: ["/admin/dashboard/businesses/demand"],
-        icon: "domain",
-      },
-      {
-        label: "Hoạt động mua bán",
-        path: "/admin/dashboard/businesses/performance",
-        icon: "monitoring",
+        child: true,
       },
     ],
   },

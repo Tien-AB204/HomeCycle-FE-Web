@@ -1,4 +1,5 @@
 import ManagementPortalLayout from "./ManagementPortalLayout";
+import useModQueueCounts from "./useModQueueCounts";
 
 const MOD_NAV_GROUPS = [
   {
@@ -64,6 +65,8 @@ const MOD_NAV_GROUPS = [
 ];
 
 export default function ModLayout() {
+  const queueCounts = useModQueueCounts();
+
   return (
     <ManagementPortalLayout
       navGroups={MOD_NAV_GROUPS}
@@ -77,6 +80,7 @@ export default function ModLayout() {
       openMenuAriaLabel="Mở menu kiểm duyệt"
       closeMenuAriaLabel="Đóng menu kiểm duyệt"
       notificationsPath="/mod/notifications"
+      badges={queueCounts}
     />
   );
 }

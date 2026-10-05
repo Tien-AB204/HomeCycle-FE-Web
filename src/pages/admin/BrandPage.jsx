@@ -527,14 +527,14 @@ export default function BrandPage() {
   };
 
   return (
-    <div className="m-6 rounded-xl border border-border bg-white p-6 shadow-sm">
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div className="hc-portal-page">
+      <div className="hc-page-head">
         <div>
-          <h2 className="text-xl font-bold text-text">
+          <h1>
             Quản lý thương hiệu
-          </h2>
+          </h1>
 
-          <p className="mt-1 text-sm text-textLight">
+          <p>
             Quản lý{" "}
             {pagination.totalCount} thương
             hiệu sản phẩm trên hệ thống
@@ -549,7 +549,7 @@ export default function BrandPage() {
           disabled={Boolean(
             deletingBrandId,
           )}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 font-medium text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
         >
           <span className="material-symbols-outlined text-[20px]">
             add
@@ -558,6 +558,8 @@ export default function BrandPage() {
           Thêm thương hiệu mới
         </button>
       </div>
+
+      <div className="hc-portal-card">
 
       <section className="mb-6 rounded-lg border border-border bg-background p-4">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px_auto]">
@@ -979,6 +981,7 @@ export default function BrandPage() {
         onCancel={handleCloseStatusConfirmation}
         onConfirm={handleChangeBrandStatus}
       />
+      </div>
     </div>
   );
 }

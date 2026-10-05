@@ -1,0 +1,975 @@
+/*
+ * Giao diện Admin mới theo bản mô phỏng HTML ("New Admin").
+ * Mọi quy tắc nằm trong .hc-admin để không ảnh hưởng các trang khác.
+ */
+.hc-admin {
+  --ink: #20343c;
+  --muted: #657b81;
+  --teal: #2d595d;
+  --green: #2d8067;
+  --blue: #527eaf;
+  --line: #dce4e5;
+  --bg: #f4f7f7;
+  --soft: #eaf3f2;
+  --amber: #996215;
+  --red: #ae434d;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.hc-admin *,
+.hc-admin *::before,
+.hc-admin *::after {
+  box-sizing: border-box;
+}
+
+.hc-admin button,
+.hc-admin input,
+.hc-admin select {
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 9px 12px;
+}
+
+.hc-admin button {
+  cursor: pointer;
+}
+
+.hc-admin button:hover {
+  background: var(--soft);
+}
+
+.hc-admin button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.hc-admin button:focus-visible,
+.hc-admin a:focus-visible,
+.hc-admin summary:focus-visible {
+  outline: 3px solid #86bdb5;
+  outline-offset: 3px;
+}
+
+.hc-admin button.primary,
+.hc-admin button[aria-selected="true"] {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+
+.hc-admin button.text {
+  border: 0;
+  background: transparent;
+  color: var(--teal);
+  padding: 4px 0;
+  text-align: left;
+}
+
+.hc-admin .content {
+  max-width: 1430px;
+  padding: 25px 32px 45px;
+  margin: auto;
+}
+
+.hc-admin .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hc-admin .tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: #fff;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  margin-bottom: 23px;
+}
+
+.hc-admin .tabs button {
+  border: 0;
+  padding: 9px 19px;
+  font-weight: 650;
+}
+
+.hc-admin .header {
+  margin-bottom: 18px;
+}
+
+.hc-admin h1 {
+  font-size: 27px;
+  letter-spacing: -0.6px;
+  line-height: 1.25;
+  margin: 3px 0 9px;
+  font-weight: 700;
+}
+
+.hc-admin h2 {
+  font-size: 17px;
+  margin: 0 0 4px;
+  font-weight: 650;
+}
+
+.hc-admin h3 {
+  font-size: 14px;
+  margin: 0 0 4px;
+  font-weight: 650;
+}
+
+.hc-admin p {
+  margin: 0 0 10px;
+}
+
+.hc-admin .eyebrow {
+  font-size: 11px;
+  letter-spacing: 1.3px;
+  font-weight: 700;
+  color: var(--teal);
+}
+
+.hc-admin .muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.hc-admin .notice {
+  border-radius: 7px;
+  background: #edf3f4;
+  padding: 9px 12px;
+  color: #60747b;
+  font-size: 12px;
+  margin: 16px 0;
+}
+
+.hc-admin .notice.error {
+  background: #fae9eb;
+  color: var(--red);
+}
+
+.hc-admin .stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 18px;
+}
+
+.hc-admin .metric {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 17px 19px;
+}
+
+.hc-admin .metric .value {
+  font-size: 29px;
+  font-weight: 730;
+  letter-spacing: -0.8px;
+  margin: 5px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-admin .metric .label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.hc-admin .metric button {
+  font-size: 12px;
+}
+
+/* Thẻ KPI: 3 thẻ đầu xanh ngọc, các thẻ sau xanh dương (như bản mô phỏng). */
+.hc-admin .stats > .metric:nth-child(-n + 3) {
+  background: #edf6f3;
+  border-color: #cddfd8;
+  border-top: 3px solid #397768;
+}
+
+.hc-admin .stats > .metric:nth-child(-n + 3) .label,
+.hc-admin .stats > .metric:nth-child(-n + 3) .value,
+.hc-admin .stats > .metric:nth-child(-n + 3) button.text {
+  color: #285e50;
+}
+
+.hc-admin .stats > .metric:nth-child(n + 4) {
+  background: #eef4fc;
+  border-color: #d3dfed;
+  border-top: 3px solid #5b80b4;
+}
+
+.hc-admin .stats > .metric:nth-child(n + 4) .label,
+.hc-admin .stats > .metric:nth-child(n + 4) .value,
+.hc-admin .stats > .metric:nth-child(n + 4) button.text {
+  color: #365c8b;
+}
+
+.hc-admin .split {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.hc-admin .panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 0;
+}
+
+.hc-admin .panel p.muted {
+  margin: 3px 0 16px;
+}
+
+.hc-admin .barrow {
+  display: grid;
+  grid-template-columns: 115px minmax(0, 1fr) 28px;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+  font-size: 12px;
+}
+
+.hc-admin .track {
+  height: 8px;
+  background: #f0f4f4;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hc-admin .fill {
+  height: 100%;
+  background: var(--teal);
+  border-radius: 6px;
+}
+
+.hc-admin .attention {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+}
+
+.hc-admin .attention:first-of-type {
+  border-top: 0;
+}
+
+.hc-admin .attention strong {
+  font-size: 18px;
+  color: var(--amber);
+}
+
+.hc-admin .attention.danger strong {
+  color: var(--red);
+}
+
+.hc-admin .pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--soft);
+  color: var(--teal);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.hc-admin .pill.green {
+  background: #e9f5ee;
+  color: var(--green);
+}
+
+.hc-admin .pill.amber {
+  background: #fbf2e3;
+  color: var(--amber);
+}
+
+.hc-admin .pill.red {
+  background: #fae9eb;
+  color: var(--red);
+}
+
+.hc-admin .pill.gray {
+  background: #f0f2f3;
+  color: var(--muted);
+}
+
+.hc-admin .methodheading {
+  margin: 23px 0 13px;
+}
+
+.hc-admin .methodheading select {
+  font-size: 12px;
+  margin-left: 7px;
+}
+
+.hc-admin .methodrow {
+  margin: 11px 0;
+}
+
+.hc-admin .methodrow .row {
+  font-size: 13px;
+  margin-bottom: 7px;
+}
+
+.hc-admin .methodrow .track {
+  height: 9px;
+}
+
+.hc-admin .methodrow strong {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-admin .methodfooter {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Lịch tháng */
+.hc-admin .calendar-panel {
+  background: #e7eff7;
+  border-color: #bdcfe0;
+}
+
+.hc-admin .calendar-panel h2 {
+  color: #365c8b;
+}
+
+.hc-admin .calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  gap: 20px;
+}
+
+.hc-admin .calendar-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.hc-admin .calendar-toolbar .month {
+  font-weight: 700;
+  font-size: 16px;
+  margin-right: auto;
+}
+
+.hc-admin .calendar-toolbar select {
+  font-size: 12px;
+  max-width: 180px;
+}
+
+.hc-admin .legend {
+  display: flex;
+  gap: 17px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hc-admin .dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+  margin-right: 5px;
+}
+
+.hc-admin .dot.collection {
+  background: #658cbd;
+}
+
+.hc-admin .calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-left: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  background: #fff;
+}
+
+.hc-admin .weekday {
+  text-align: center;
+  padding: 7px;
+  background: #f6f9f9;
+  color: var(--muted);
+  font-size: 11px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.hc-admin .day {
+  height: 112px;
+  border: 0;
+  border-radius: 0;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 7px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.hc-admin .day.outside {
+  background: #f8fafb;
+  color: #b1bcbf;
+}
+
+.hc-admin .day.chosen {
+  background: #edf6f4;
+  box-shadow: inset 0 0 0 2px var(--teal);
+}
+
+.hc-admin .day .date {
+  font-size: 12px;
+}
+
+.hc-admin .day.today .date {
+  background: var(--teal);
+  color: #fff;
+  border-radius: 50%;
+  width: 23px;
+  height: 23px;
+  text-align: center;
+  line-height: 23px;
+}
+
+.hc-admin .event {
+  display: block;
+  border-radius: 4px;
+  padding: 3px 5px;
+  background: #eaf3f0;
+  color: var(--teal);
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hc-admin .event.collection {
+  background: #edf1fa;
+  color: #436a9b;
+}
+
+.hc-admin .event.late {
+  background: #fae9eb;
+  color: var(--red);
+}
+
+.hc-admin .event.ended {
+  opacity: 0.7;
+}
+
+.hc-admin .eventmore {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.hc-admin .day-detail {
+  background: #f7faf9;
+  padding: 16px;
+  border-radius: 9px;
+  min-width: 0;
+}
+
+.hc-admin .scheduleitem {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.hc-admin .scheduleitem:last-child {
+  border: 0;
+}
+
+.hc-admin .scheduleitem strong {
+  display: block;
+  font-size: 13px;
+  margin: 5px 0;
+}
+
+.hc-admin .scheduleitem p {
+  margin: 6px 0;
+}
+
+.hc-admin .empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 27px 8px;
+  font-size: 13px;
+}
+
+.hc-admin .appointment-status {
+  margin-top: 18px;
+  margin-bottom: 18px;
+  padding: 14px 18px;
+}
+
+.hc-admin .appointment-status h2 {
+  font-size: 15px;
+}
+
+.hc-admin .appointment-status .row > div > p.muted {
+  margin: 2px 0 10px;
+}
+
+.hc-admin .appointment-status-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.hc-admin .appointment-status-grid .methodrow {
+  margin: 0;
+}
+
+.hc-admin .appointment-status-grid .methodrow > .row {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.hc-admin .appointment-status-grid .methodrow > .row > span {
+  display: block;
+  font-size: 12px;
+}
+
+.hc-admin .appointment-status-grid .methodrow button {
+  padding: 1px 0;
+  font-size: 12px;
+}
+
+.hc-admin .appointment-status-grid .track {
+  height: 5px;
+}
+
+.hc-admin .appointment-total {
+  font-size: 21px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-admin .appointment-total small {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Khối thu gọn và báo cáo theo kỳ */
+.hc-admin .fold {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 18px 0;
+  padding: 16px 20px;
+}
+
+.hc-admin .fold summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 14px;
+}
+
+.hc-admin .fold[open] summary {
+  margin-bottom: 18px;
+}
+
+.hc-admin .periodstats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.hc-admin .periodstats div {
+  background: #f6f9f8;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.hc-admin .periodstats strong {
+  display: block;
+  font-size: 21px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-admin .weekbars {
+  display: flex;
+  align-items: flex-end;
+  height: 155px;
+  gap: 18px;
+  padding: 16px 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.hc-admin .week {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+}
+
+.hc-admin .week .pair {
+  height: 115px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 7px;
+}
+
+.hc-admin .column {
+  background: var(--teal);
+  width: 25px;
+  position: relative;
+  min-height: 1px;
+}
+
+.hc-admin .column.second {
+  background: var(--green);
+}
+
+.hc-admin .column span {
+  position: absolute;
+  top: -19px;
+  left: 0;
+  right: 0;
+  font-size: 11px;
+}
+
+.hc-admin .weeklabel {
+  padding: 8px;
+  font-size: 11px;
+  text-align: center;
+}
+
+/* Tra cứu lịch sử */
+.hc-admin .histcards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 13px;
+  margin: 16px 0;
+}
+
+.hc-admin .histcards button {
+  text-align: left;
+  padding: 16px 19px;
+  background: #fff;
+  border-radius: 11px;
+}
+
+.hc-admin .histcards button strong {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 2px;
+}
+
+.hc-admin .histcards button[aria-selected="true"] {
+  background: var(--soft);
+  color: var(--teal);
+  border-color: var(--teal);
+}
+
+.hc-admin .histcards button[aria-selected="true"] .muted {
+  color: var(--teal);
+}
+
+.hc-admin .filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.hc-admin .filters label {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hc-admin .filters .search {
+  flex: 1;
+  min-width: 210px;
+}
+
+.hc-admin .filters input,
+.hc-admin .filters select {
+  min-width: 130px;
+  font-size: 12px;
+}
+
+.hc-admin .advanced {
+  margin: 0 0 15px;
+}
+
+.hc-admin .advanced summary {
+  font-size: 12px;
+  color: var(--teal);
+  cursor: pointer;
+}
+
+.hc-admin .advanced .filters {
+  margin: 12px 0 0;
+}
+
+.hc-admin .tablewrap {
+  overflow-x: auto;
+}
+
+.hc-admin table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.hc-admin th {
+  background: #f7f9f9;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 12px;
+  white-space: nowrap;
+}
+
+.hc-admin td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.hc-admin td small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.hc-admin .tablewrap button {
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 6px 9px;
+}
+
+.hc-admin .pagination {
+  margin-top: 17px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Hộp thoại chi tiết */
+.hc-admin dialog {
+  margin: auto;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 0;
+  max-width: 720px;
+  width: calc(100% - 30px);
+  max-height: 85vh;
+  color: var(--ink);
+  background: #fff;
+}
+
+.hc-admin dialog::backdrop {
+  background: #16303870;
+}
+
+.hc-admin .modalhead {
+  padding: 19px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.hc-admin .modalbody {
+  padding: 24px;
+}
+
+.hc-admin .kv {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 17px;
+}
+
+.hc-admin .kv div {
+  font-size: 12px;
+}
+
+.hc-admin .kv strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.hc-admin .modalbody .section {
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 20px;
+}
+
+.hc-admin .timeline {
+  border-left: 2px solid var(--line);
+  margin: 13px 0 0 5px;
+  padding-left: 18px;
+}
+
+.hc-admin .timeline div {
+  padding: 0 0 16px;
+  font-size: 12px;
+}
+
+.hc-admin footer {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 20px;
+}
+
+@media (max-width: 1180px) {
+  .hc-admin .content {
+    padding: 24px 20px;
+  }
+
+  .hc-admin .calendar-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hc-admin .day-detail {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0 20px;
+  }
+
+  .hc-admin .day-detail h3,
+  .hc-admin .day-detail > .muted,
+  .hc-admin .day-detail > .empty {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 801px) and (max-width: 1180px) {
+  .hc-admin .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .hc-admin .appointment-status-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 18px;
+  }
+}
+
+@media (max-width: 800px) {
+  .hc-admin .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hc-admin .split {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-admin .day {
+    height: 94px;
+  }
+
+  .hc-admin .content {
+    padding: 20px 13px;
+  }
+
+  .hc-admin .calendar-toolbar select {
+    max-width: 145px;
+  }
+
+  .hc-admin .panel {
+    padding: 16px;
+  }
+
+  .hc-admin .event {
+    font-size: 10px;
+    padding: 2px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hc-admin h1 {
+    font-size: 23px;
+  }
+
+  .hc-admin .metric {
+    padding: 13px;
+  }
+
+  .hc-admin .metric .value {
+    font-size: 25px;
+  }
+
+  .hc-admin .day {
+    height: 82px;
+    padding: 4px;
+  }
+
+  .hc-admin .event {
+    font-size: 0;
+    min-height: 6px;
+    padding: 0;
+  }
+
+  .hc-admin .eventmore {
+    font-size: 9px;
+  }
+
+  .hc-admin .calendar-toolbar {
+    gap: 5px;
+  }
+
+  .hc-admin .calendar-toolbar select {
+    max-width: 100%;
+    flex: 1;
+  }
+
+  .hc-admin .day-detail {
+    display: block;
+  }
+
+  .hc-admin .histcards button {
+    padding: 13px;
+  }
+
+  .hc-admin .periodstats {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-admin .kv {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-admin .weekbars {
+    gap: 9px;
+  }
+
+  .hc-admin .column {
+    width: 18px;
+  }
+
+  .hc-admin .appointment-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 // Layouts
 import AdminLayout from "../components/layouts/AdminLayout";
@@ -33,24 +33,20 @@ import RoleRoute from "./RoleRoute";
 
 // Admin Pages
 import AdminDashboardModulePage from "../pages/admin/AdminDashboardModulePage";
-import AdminDashboardPage from "../pages/admin/AdminDashboardPage";
-import AdminFinanceDashboardPage from "../pages/admin/AdminFinanceDashboardPage";
-import AdminAppointmentHistoryPage from "../pages/admin/AdminAppointmentHistoryPage";
-import AdminDisputeHistoryPage from "../pages/admin/AdminDisputeHistoryPage";
-import AdminOrderHistoryPage from "../pages/admin/AdminOrderHistoryPage";
-import AdminPostOverviewPage from "../pages/admin/AdminPostOverviewPage";
-import AdminReportedPostPage from "../pages/admin/AdminReportedPostPage";
-import AdminUserDashboardPage from "../pages/admin/AdminUserDashboardPage";
+import AdminBusinessSurveyPage from "../pages/admin/AdminBusinessSurveyPage";
+import AdminOverviewPage from "../pages/admin/AdminOverviewPage";
+import AdminFinanceWalletPage from "../pages/admin/AdminFinanceWalletPage";
+import AdminDisputesPage from "../pages/admin/AdminDisputesPage";
+import AdminOrdersAppointmentsPage from "../pages/admin/AdminOrdersAppointmentsPage";
+import AdminPostsPage from "../pages/admin/AdminPostsPage";
+import AdminUsersPage from "../pages/admin/AdminUsersPage";
 import AuditLogPage from "../pages/admin/AuditLogPage";
 import BrandPage from "../pages/admin/BrandPage";
 import CategoryPage from "../pages/admin/CategoryPage";
-import DisputeCategoryPage from "../pages/admin/DisputeCategoryPage";
 import PlatformPolicyPage from "../pages/admin/PlatformPolicyPage";
-import PostManagementPage from "../pages/admin/PostManagementPage";
 import ProductTypeAttributePage from "../pages/admin/ProductTypeAttributePage";
 import ProductTypePage from "../pages/admin/ProductTypePage";
-import SubscriptionPackagePage from "../pages/admin/SubscriptionPackagePage";
-import UserManagementPage from "../pages/admin/UserManagementPage";
+import AdminSubscriptionsPage from "../pages/admin/AdminSubscriptionsPage";
 import FinanceOperationsPage from "../pages/shared/FinanceOperationsPage";
 import GhnWebhookTestConsolePage from "../pages/demo/GhnWebhookTestConsolePage";
 
@@ -79,12 +75,22 @@ import PostSectionPage from "../pages/user/PostSectionPage";
 import ProfilePage from "../pages/user/ProfilePage";
 import ClientEntryRoute from "./ClientEntryRoute";
 import ReceivedReviewsPage from "../pages/user/ReceivedReviewsPage";
+import PublicProfilePage from "../pages/user/PublicProfilePage";
+import GuidePage from "../pages/public/GuidePage";
+import PolicyPage from "../pages/public/PolicyPage";
 import SubscriptionPage from "../pages/user/SubscriptionPage";
 
 const isGhnWebhookDemoEnabled =
   String(import.meta.env.VITE_ENABLE_GHN_WEBHOOK_SIMULATOR || "")
     .trim()
     .toLowerCase() === "true";
+
+// Đường dẫn cũ /admin/users?userId=... vẫn mở đúng tài khoản trong tab danh sách.
+function LegacyUsersRedirect() {
+  const params = new URLSearchParams(useLocation().search);
+  params.set("tab", "list");
+  return <Navigate to={`/admin/dashboard/users?${params}`} replace />;
+}
 
 const AppRouter = () => {
   return (
@@ -95,6 +101,10 @@ const AppRouter = () => {
         <Route path="/" element={<HomeRoute />} />
 
         <Route path="/search" element={<SearchPage />} />
+
+        <Route path="/huong-dan" element={<GuidePage />} />
+
+        <Route path="/chinh-sach" element={<PolicyPage />} />
 
         <Route path="/posts/:postId" element={<PostDetailPage />} />
 
@@ -184,6 +194,8 @@ const AppRouter = () => {
             path="/danh-gia/nguoi-dung/:userId"
             element={<ReceivedReviewsPage />}
           />
+
+          <Route path="/nguoi-dung/:userId" element={<PublicProfilePage />} />
 
           <Route
             path="/thuong-luong/:negotiationId"
@@ -293,81 +305,73 @@ const AppRouter = () => {
       {/* Admin */}
       <Route element={<RoleRoute allowedRole={ROLES.ADMIN} />}>
         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboardPage />} />
+          <Route index element={<AdminOverviewPage />} />
 
-          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="dashboard" element={<AdminOverviewPage />} />
 
           <Route path="notifications" element={<NotificationPage />} />
 
           <Route
             path="dashboard/finance"
-            element={<AdminFinanceDashboardPage />}
+            element={<AdminFinanceWalletPage />}
           />
 
           <Route
             path="dashboard/users"
-            element={<AdminUserDashboardPage />}
+            element={<AdminUsersPage />}
           />
 
           <Route
             path="dashboard/posts"
-            element={<AdminPostOverviewPage />}
+            element={<AdminPostsPage />}
           />
 
           <Route
             path="dashboard/orders/history"
-            element={<AdminOrderHistoryPage />}
+            element={<Navigate to="/admin/dashboard/orders?tab=history" replace />}
           />
 
           <Route
             path="dashboard/appointments/history"
-            element={<AdminAppointmentHistoryPage />}
+            element={<Navigate to="/admin/dashboard/orders?tab=history&kind=appointments" replace />}
           />
 
           <Route
             path="dashboard/disputes/history"
-            element={<AdminDisputeHistoryPage />}
+            element={<Navigate to="/admin/dashboard/disputes" replace />}
           />
 
           <Route
             path="dashboard/payments"
-            element={
-              <AdminDashboardModulePage dashboard="payments" />
-            }
+            element={<Navigate to="/admin/dashboard/finance?tab=finance" replace />}
           />
 
           <Route
             path="dashboard/orders"
-            element={
-              <AdminDashboardModulePage dashboard="orders" />
-            }
+            element={<AdminOrdersAppointmentsPage />}
           />
 
           <Route
             path="dashboard/appointments"
-            element={
-              <AdminDashboardModulePage dashboard="appointments" />
-            }
+            element={<Navigate to="/admin/dashboard/orders" replace />}
           />
 
           <Route
             path="dashboard/disputes"
-            element={
-              <AdminDashboardModulePage dashboard="disputes" />
-            }
+            element={<AdminDisputesPage />}
           />
 
           <Route
             path="dashboard/businesses/overview"
             element={
-              <AdminDashboardModulePage dashboard="business-overview" />
+              <AdminBusinessSurveyPage />
             }
           />
 
           <Route
             path="dashboard/businesses/demand"
             element={
-              <AdminDashboardModulePage dashboard="business-demand" />
+              <Navigate to="/admin/dashboard/businesses/overview" replace />
             }
           />
 
@@ -389,13 +393,13 @@ const AppRouter = () => {
             element={<ProductTypeAttributePage />}
           />
 
-          <Route path="users" element={<UserManagementPage />} />
+          <Route path="users" element={<LegacyUsersRedirect />} />
 
-          <Route path="posts" element={<PostManagementPage />} />
+          <Route path="posts" element={<Navigate to="/admin/dashboard/posts?tab=list" replace />} />
 
           <Route
             path="posts/reported"
-            element={<AdminReportedPostPage />}
+            element={<Navigate to="/admin/dashboard/posts?tab=reports" replace />}
           />
 
           <Route
@@ -417,7 +421,7 @@ const AppRouter = () => {
 
           <Route
             path="dispute-categories"
-            element={<DisputeCategoryPage />}
+            element={<Navigate to="/admin/dashboard/disputes?tab=categories" replace />}
           />
 
           <Route
@@ -427,7 +431,7 @@ const AppRouter = () => {
 
           <Route
             path="subscription-packages"
-            element={<SubscriptionPackagePage />}
+            element={<AdminSubscriptionsPage />}
           />
         </Route>
       </Route>

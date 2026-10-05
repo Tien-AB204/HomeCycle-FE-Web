@@ -1,0 +1,416 @@
+/* Trang Bài đăng — theo homecycle-admin-listings-local.html */
+.hc-posts .content {
+  max-width: 1340px;
+  padding: 25px 30px 40px;
+}
+
+.hc-posts .heading,
+.hc-posts .section-head,
+.hc-posts .panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hc-posts .heading {
+  margin-bottom: 18px;
+}
+
+.hc-posts .panel-head {
+  align-items: start;
+  margin-bottom: 14px;
+}
+
+.hc-posts .section-head {
+  margin: 0 0 13px;
+}
+
+.hc-posts .section-head h2,
+.hc-posts .panel-head h2 {
+  margin: 0;
+}
+
+.hc-posts .stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 18px;
+}
+
+.hc-posts .stats > .metric,
+.hc-posts .period-summary > .metric {
+  border: 1px solid #cddfd8;
+  border-top: 3px solid #397768;
+  border-radius: 11px;
+  background: #edf6f3;
+  padding: 17px 19px;
+  min-width: 0;
+}
+
+.hc-posts .metric .label {
+  font-size: 12px;
+  font-weight: 650;
+  color: #285e50;
+  margin: 0;
+}
+
+.hc-posts .metric .value {
+  font-size: 29px;
+  line-height: 1.3;
+  font-weight: 750;
+  color: #285e50;
+  margin: 7px 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+}
+
+.hc-posts .metric small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hc-posts .stats > .metric.blue,
+.hc-posts .period-summary > .metric.blue {
+  background: #eef4fc;
+  border-color: #d3dfed;
+  border-top-color: var(--blue);
+}
+
+.hc-posts .metric.blue .label,
+.hc-posts .metric.blue .value {
+  color: #365f91;
+}
+
+.hc-posts .stats > .metric.red {
+  background: #fbf0f1;
+  border-color: #ead4d8;
+  border-top-color: var(--red);
+}
+
+.hc-posts .metric.red .label,
+.hc-posts .metric.red .value {
+  color: var(--red);
+}
+
+.hc-posts .grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.hc-posts .panel {
+  padding: 19px 20px;
+}
+
+.hc-posts .chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: var(--soft);
+  border-radius: 5px;
+  color: var(--teal);
+  white-space: nowrap;
+}
+
+.hc-posts .barrow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 4px 8px;
+  margin: 13px 0;
+}
+
+.hc-posts .barlabel {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.hc-posts .barlabel strong {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-posts .barlabel button.text {
+  padding: 0;
+  font-size: 12px;
+}
+
+.hc-posts .track {
+  height: 5px;
+  align-self: center;
+  background: #edf2f2;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.hc-posts .track i {
+  display: block;
+  height: 100%;
+  background: var(--teal);
+  border-radius: 5px;
+}
+
+.hc-posts .percent {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-posts .note {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 10px;
+}
+
+.hc-posts .type-split {
+  display: grid;
+  gap: 9px;
+}
+
+.hc-posts .type-split button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #f7faf9;
+  border-color: #e0e8e6;
+  text-align: left;
+}
+
+.hc-posts .type-split strong {
+  font-size: 18px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-posts .type-split small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.hc-posts .right {
+  text-align: right;
+}
+
+.hc-posts .period-section {
+  margin-top: 8px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.hc-posts .periodbar {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+
+.hc-posts .periodbar label {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hc-posts .periodbar select {
+  font-size: 12px;
+}
+
+.hc-posts .periodbar > .muted {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.hc-posts .period-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+  margin-bottom: 18px;
+}
+
+.hc-posts .period-summary .metric .value {
+  font-size: 24px;
+}
+
+.hc-posts .period-section > .grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hc-posts .legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 8px 0 10px;
+}
+
+.hc-posts .legend span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.hc-posts .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  display: inline-block;
+  background: var(--teal);
+  margin: 0;
+}
+
+.hc-posts .chart {
+  display: block;
+  width: 100%;
+}
+
+.hc-posts .chart text {
+  font: 11px system-ui, sans-serif;
+  fill: var(--muted);
+}
+
+.hc-posts .preview {
+  margin-top: 20px;
+}
+
+.hc-posts .preview .section-head {
+  margin-bottom: 14px;
+}
+
+.hc-posts .post-title,
+.hc-posts .tablewrap button.post-title {
+  font-size: 12px;
+  font-weight: 650;
+  padding: 0;
+  text-align: left;
+  white-space: normal;
+}
+
+.hc-posts .sub {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.hc-posts .report-status {
+  color: var(--red);
+}
+
+.hc-posts .badge {
+  display: inline-block;
+  font-size: 11px;
+  border-radius: 5px;
+  padding: 3px 8px;
+  background: #edf3f3;
+  color: var(--teal);
+  white-space: nowrap;
+}
+
+.hc-posts .badge.blue {
+  background: #e7f0fc;
+  color: #365f91;
+}
+
+.hc-posts .badge.Active {
+  background: #e5f2ea;
+  color: var(--green);
+}
+
+.hc-posts .badge.Suspended {
+  background: #fae8eb;
+  color: var(--red);
+}
+
+.hc-posts .badge.Closed,
+.hc-posts .badge.Deleted {
+  background: #f0f2f3;
+  color: var(--muted);
+}
+
+.hc-posts .fold {
+  margin: 14px 0;
+}
+
+.hc-posts .fold summary {
+  font-size: 12px;
+  color: var(--teal);
+  cursor: pointer;
+}
+
+.hc-posts .fold .filters {
+  margin: 14px 0 0;
+}
+
+.hc-posts .result {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 16px 0 0;
+}
+
+.hc-posts .actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.hc-posts .reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+
+.hc-posts .reasons li + li {
+  margin-top: 3px;
+}
+
+@media (max-width: 1000px) {
+  .hc-posts .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hc-posts .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-posts .periodbar > .muted {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .hc-posts .stats,
+  .hc-posts .period-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-posts .periodbar label {
+    flex: 1;
+    min-width: 100%;
+    justify-content: space-between;
+  }
+}

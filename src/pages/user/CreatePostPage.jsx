@@ -15,6 +15,15 @@ import { buildAiPricingContext } from "../../features/posts/aiPriceSuggestion";
 import DraftSupplierSuggestionPanel from "../../features/posts/DraftSupplierSuggestionPanel";
 import MediaUploadField from "../../features/posts/MediaUploadField";
 import PostAddressFields from "../../features/posts/PostAddressFields";
+import {
+  buildDemoAttributeValues,
+  buildDemoBuyForm,
+  buildDemoSellForm,
+} from "../../features/posts/demoPostForm";
+import {
+  DEMO_BUY_POST_SAMPLES,
+  DEMO_SELL_POST_SAMPLES,
+} from "../../constants/demoPostSample";
 import PostThumbnail from "../../components/shared/PostThumbnail";
 import {
   DAMAGE_LEVEL_OPTIONS,
@@ -593,6 +602,40 @@ const CreatePostPage = () => {
     setIsLoadingAttributes(Boolean(productTypeId));
   };
 
+  // Điền tin mẫu để demo. Ảnh vẫn do người dùng tự thêm.
+  const fillDemoSample = (sampleKey) => {
+    const samples = isBuyPost ? DEMO_BUY_POST_SAMPLES : DEMO_SELL_POST_SAMPLES;
+    const sample = samples.find((item) => item.key === sampleKey);
+
+    if (!sample) {
+      return;
+    }
+
+    const nextForm = isBuyPost
+      ? buildDemoBuyForm(form, sample)
+      : buildDemoSellForm(form, sample);
+
+    setForm(nextForm);
+    setAttributeValues(
+      isBuyPost ? {} : buildDemoAttributeValues(sample.attributeValues),
+    );
+    setFieldErrors({});
+    setAttributeErrors({});
+    setServerError("");
+    setSuccessMessage("");
+
+    if (nextForm.categoryId !== form.categoryId) {
+      setProductTypes([]);
+      setIsLoadingProductTypes(true);
+    }
+
+    if (nextForm.productTypeId !== form.productTypeId) {
+      setAttributes([]);
+      setAttributeLoadError("");
+      setIsLoadingAttributes(true);
+    }
+  };
+
   const handleAttributeChange = (attributeId, field, value) => {
     setAttributeValues((currentValues) => ({
       ...currentValues,
@@ -1129,6 +1172,37 @@ const CreatePostPage = () => {
           </span>
         </div>
       </header>
+
+      {!isEditing && (
+        <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2">
+            <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }} aria-hidden="true">
+              auto_awesome
+            </span>
+            <div>
+              <p className="text-sm font-black text-text">Điền dữ liệu mẫu</p>
+              <p className="text-xs leading-5 text-textLight">
+                Chọn một {isBuyPost ? "tin thu mua" : "tin bán"} mẫu để điền nhanh form.
+                {isBuyPost ? "" : " Ảnh sản phẩm vẫn cần tự thêm."}
+              </p>
+            </div>
+          </div>
+          <select
+            aria-label="Chọn dữ liệu mẫu"
+            value=""
+            disabled={isSubmitting || isLoadingReferences}
+            onChange={(event) => fillDemoSample(event.target.value)}
+            className={`${inputClassName} sm:max-w-xs`}
+          >
+            <option value="">Chọn dữ liệu mẫu...</option>
+            {(isBuyPost ? DEMO_BUY_POST_SAMPLES : DEMO_SELL_POST_SAMPLES).map((sample) => (
+              <option key={sample.key} value={sample.key}>
+                {sample.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {referenceError && (
         <div

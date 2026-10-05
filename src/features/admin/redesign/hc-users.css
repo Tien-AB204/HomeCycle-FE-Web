@@ -1,0 +1,365 @@
+/* Trang Người dùng — theo homecycle-admin-users-local.html */
+.hc-users .content {
+  max-width: 1340px;
+  padding: 25px 30px 40px;
+}
+
+.hc-users .heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.hc-users .snapshot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 18px;
+}
+
+.hc-users .kpis {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.hc-users .kpi {
+  padding: 17px 19px;
+  border-radius: 11px;
+  background: #edf6f3;
+  border: 1px solid #cddfd8;
+  border-top: 3px solid #397768;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hc-users .kpi > .muted:first-child {
+  color: #285e50;
+  font-weight: 650;
+  margin: 0;
+}
+
+.hc-users .kpi .value {
+  color: #285e50;
+  font-size: 30px;
+  font-weight: 750;
+  line-height: 1.3;
+  margin: 6px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-users .kpi.pending {
+  background: #fff4eb;
+  border-color: #edd9c6;
+  border-top-color: #b67a2c;
+}
+
+.hc-users .kpi.pending > .muted:first-child,
+.hc-users .kpi.pending .value {
+  color: #8a5a1a;
+}
+
+.hc-users .kpi.suspended {
+  background: #fbf0f1;
+  border-color: #ead4d8;
+  border-top-color: #a7404b;
+}
+
+.hc-users .kpi.suspended > .muted:first-child,
+.hc-users .kpi.suspended .value {
+  color: var(--red);
+}
+
+.hc-users .two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.hc-users .panel {
+  padding: 19px;
+}
+
+.hc-users .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.hc-users .bar-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 75px;
+  gap: 10px;
+  align-items: center;
+  margin: 18px 0;
+  font-size: 12px;
+}
+
+.hc-users .bar-label {
+  display: flex;
+  flex-direction: column;
+}
+
+.hc-users .bar {
+  height: 12px;
+  border-radius: 4px;
+  background: var(--soft);
+  overflow: hidden;
+}
+
+.hc-users .bar i {
+  display: block;
+  height: 100%;
+  background: var(--teal);
+  border-radius: 4px;
+}
+
+.hc-users .num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  font-size: 12px;
+}
+
+.hc-users .section-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 12px;
+}
+
+.hc-users .trend {
+  margin-top: 18px;
+}
+
+.hc-users .trend-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: end;
+}
+
+.hc-users .trend-tools label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.hc-users .trend-metrics {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin: 18px 0;
+}
+
+.hc-users .trend-metrics strong {
+  display: block;
+  font-size: 21px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-users .legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 12px 0;
+}
+
+.hc-users .legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hc-users .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--teal);
+  display: inline-block;
+  margin: 0;
+}
+
+.hc-users .dot.secondary {
+  background: var(--blue);
+}
+
+.hc-users .chart {
+  display: block;
+  width: 100%;
+}
+
+.hc-users .chart text {
+  font: 11px system-ui, sans-serif;
+  fill: var(--muted);
+}
+
+.hc-users .chart .gridline {
+  stroke: var(--line);
+}
+
+.hc-users .chart path {
+  fill: none;
+  stroke: var(--teal);
+  stroke-width: 2.5;
+}
+
+.hc-users .chart path.previous {
+  stroke: var(--blue);
+  stroke-width: 2;
+  stroke-dasharray: 6 5;
+}
+
+.hc-users .chart circle {
+  fill: var(--teal);
+}
+
+.hc-users .chart circle.previous {
+  fill: var(--blue);
+}
+
+.hc-users .filters label:first-child {
+  flex: 1;
+  min-width: 200px;
+}
+
+.hc-users .pill {
+  border-radius: 20px;
+}
+
+.hc-users .email {
+  display: block;
+  color: var(--muted);
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.hc-users .list-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hc-users .list-actions button {
+  font-size: 11px;
+  padding: 6px 9px;
+}
+
+.hc-users .list-actions button.danger {
+  color: var(--red);
+  border-color: #ead4d8;
+}
+
+.hc-users .table-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+
+.hc-users dialog {
+  max-width: 500px;
+  padding: 24px;
+  border-radius: 14px;
+}
+
+.hc-users .dialog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.hc-users .editform {
+  display: grid;
+  gap: 14px;
+}
+
+.hc-users .editform label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+}
+
+.hc-users .modalfoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+.hc-users .field-error {
+  color: var(--red);
+  font-size: 12px;
+}
+
+.hc-users .toast {
+  position: sticky;
+  bottom: 12px;
+  background: #254f53;
+  color: #fff;
+  padding: 11px 15px;
+  border-radius: 8px;
+  font-size: 12px;
+  margin-top: 18px;
+}
+
+@media (max-width: 800px) {
+  .hc-users .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .hc-users .kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-users .bar-row {
+    grid-template-columns: 95px minmax(0, 1fr) 65px;
+    gap: 6px;
+  }
+}
+
+.hc-users .detail-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.hc-users .detail-row span:first-child {
+  color: var(--muted);
+}
+
+.hc-users .detail-row span:last-child {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.hc-users .modalfoot button.danger {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}

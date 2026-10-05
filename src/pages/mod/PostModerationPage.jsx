@@ -519,7 +519,7 @@ const PostModerationPage = () => {
         );
       case "DELETED":
         return (
-          <span className="text-stone-600 bg-stone-100 px-2 py-0.5 rounded text-xs font-semibold border border-stone-300">
+          <span className="text-textLight bg-background px-2 py-0.5 rounded text-xs font-semibold border border-border">
             Đã xóa
           </span>
         );

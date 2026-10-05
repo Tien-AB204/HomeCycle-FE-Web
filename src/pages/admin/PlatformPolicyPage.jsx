@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import platformPolicyApi, {
   PLATFORM_POLICY_TYPES,
@@ -7,6 +8,7 @@ import {
   getSafeProblemDetail,
   getSafeValidationMessage,
 } from "../../utils/safeErrorMessage";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const POLICY_TABS = [
   {
@@ -83,11 +85,31 @@ const DISPUTE_EDITABLE_FIELDS = [
     max: 100,
   },
   {
+    name: "responseWindowHours",
+    label: "Thời hạn phản hồi tranh chấp",
+    unit: "giờ",
+    min: 1,
+    max: 168,
+    defaultValue: 24,
+    description:
+      "Thời gian bên bị khiếu nại được phản hồi trước khi tranh chấp chuyển sang Kiểm duyệt viên.",
+  },
+  {
+    name: "disputeLossPenaltyPoints",
+    label: "Điểm phạt khi thua tranh chấp",
+    unit: "điểm",
+    min: 1,
+    max: 100,
+    description:
+      "Máy chủ trừ điểm uy tín bên thua khi Kiểm duyệt viên kết luận tranh chấp.",
+  },
+  {
     name: "postViolationPenaltyPoints",
     label: "Điểm phạt khi bài đăng vi phạm",
     unit: "điểm",
     min: 1,
     max: 100,
+    defaultValue: 10,
     description:
       "Máy chủ áp dụng mức này khi Kiểm duyệt viên xác nhận một bài đăng vi phạm.",
   },
@@ -97,32 +119,14 @@ const DISPUTE_EDITABLE_FIELDS = [
     unit: "điểm",
     min: 1,
     max: 100,
+    defaultValue: 5,
     description:
       "Máy chủ áp dụng mức này khi Kiểm duyệt viên xác nhận một đánh giá vi phạm.",
   },
 ];
 
-const DISPUTE_READONLY_FIELDS = [
-  {
-    name: "returnWindowDays",
-    label: "Thời hạn hoàn trả",
-    unit: "ngày",
-    min: 1,
-    max: 30,
-  },
-  {
-    name: "disputeLossPenaltyPoints",
-    label: "Điểm phạt khi thua tranh chấp",
-    unit: "điểm",
-    min: 1,
-    max: 100,
-  },
-];
-
-const DISPUTE_FIELDS = [
-  ...DISPUTE_EDITABLE_FIELDS,
-  ...DISPUTE_READONLY_FIELDS,
-];
+// Thời hạn hoàn trả không hiển thị: Backend đã tắt luồng hoàn trả.
+const DISPUTE_FIELDS = DISPUTE_EDITABLE_FIELDS;
 
 const APPOINTMENT_FIELDS = [
   {
@@ -152,6 +156,14 @@ const APPOINTMENT_FIELDS = [
     unit: "giờ",
     min: 1,
     max: 720,
+  },
+  {
+    name: "reminderBeforeMinutes",
+    label: "Nhắc trước lịch hẹn",
+    unit: "phút",
+    min: 1,
+    max: 1440,
+    defaultValue: 60,
   },
 ];
 
@@ -881,8 +893,16 @@ function VersionDetail({ detail, policyType }) {
               </p>
 
               <p className="mt-1 font-black text-text">
-                {detail?.config?.[field.name] ?? "—"}{" "}
+                {detail?.config?.[field.name] ??
+                  field.defaultValue ??
+                  "—"}{" "}
                 {field.unit}
+                {detail?.config?.[field.name] == null &&
+                  field.defaultValue != null && (
+                    <span className="ml-1 text-xs font-semibold text-textLight">
+                      (mặc định)
+                    </span>
+                  )}
               </p>
             </div>
           ))}
@@ -1392,25 +1412,12 @@ export default function PlatformPolicyPage() {
 
   return (
     <>
-      <section className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8">
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-primary/90 to-primary/80 px-6 py-7 text-white shadow-[0_18px_45px_rgba(24,63,65,0.16)] sm:px-8">
-          <div className="pointer-events-none absolute -right-12 -top-24 h-56 w-56 rounded-full border-[38px] border-white/5" />
-
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70">
-            Cấu hình nền tảng
-          </p>
-
-          <h2 className="mt-2 text-2xl font-black sm:text-3xl">
-            Chính sách hệ thống
-          </h2>
-
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-white/75">
-            Quản lý chính sách tranh chấp, đánh giá,
-            uy tín, lịch hẹn, tải tệp, thanh toán, rút
-            tiền, đơn hàng và lịch sử phiên bản theo
-            máy chủ HomeCycle.
-          </p>
-        </div>
+      <section className="hc-portal-page space-y-6">
+        <PortalPageHeader
+          className="hc-page-head-flush"
+          title="Chính sách hệ thống"
+          description="Quản lý chính sách tranh chấp, đánh giá, uy tín, lịch hẹn, tải tệp, thanh toán, rút tiền, đơn hàng và lịch sử phiên bản theo máy chủ HomeCycle."
+        />
 
         {error && (
           <div
@@ -1525,6 +1532,16 @@ export default function PlatformPolicyPage() {
                           <p className="mt-2 max-w-2xl text-sm leading-6 text-textLight">
                             {activeTabInfo.description}
                           </p>
+
+                          {activeTab === PLATFORM_POLICY_TYPES.DISPUTE && (
+                            <p className="mt-1 text-sm text-textLight">
+                              Cũng chỉnh được tại{" "}
+                              <Link to="/admin/dashboard/disputes?tab=config" className="font-semibold text-primary hover:underline">
+                                Tranh chấp → Cấu hình giá trị
+                              </Link>
+                              ; hai nơi dùng chung một cấu hình.
+                            </p>
+                          )}
                         </div>
 
                         {currentPolicy && (
@@ -1593,40 +1610,6 @@ export default function PlatformPolicyPage() {
                                 </p>
                               </div>
 
-                              <div className="rounded-2xl border border-border bg-background/60 p-4">
-                                <p className="text-sm font-black text-text">
-                                  Thông tin chỉ đọc
-                                </p>
-
-                                <p className="mt-1 text-xs leading-5 text-textLight">
-                                  Hai giá trị dưới đây đang được
-                                  máy chủ sử dụng nhưng tài liệu
-                                  bàn giao hiện chưa mở quyền cập
-                                  nhật cho giao diện quản trị.
-                                </p>
-
-                                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                                  {DISPUTE_READONLY_FIELDS.map(
-                                    (field) => (
-                                      <div
-                                        key={field.name}
-                                        className="rounded-xl border border-border bg-white px-4 py-3"
-                                      >
-                                        <p className="text-xs font-bold text-textLight">
-                                          {field.label}
-                                        </p>
-
-                                        <p className="mt-1 font-black text-text">
-                                          {currentPolicy?.config?.[
-                                            field.name
-                                          ] ?? "—"}{" "}
-                                          {field.unit}
-                                        </p>
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </div>
                             </div>
                           )}
 

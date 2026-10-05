@@ -31,6 +31,8 @@ import {
   sortItemsByDate,
 } from "../../utils/sortListItems";
 import { getSafeProblemDetail } from "../../utils/safeErrorMessage";
+import useRealtimeRefresh from "../../hooks/useRealtimeRefresh";
+import PortalPageHeader from "../../components/admin/PortalPageHeader";
 
 const { RangePicker } = DatePicker;
 
@@ -336,6 +338,12 @@ const WithdrawalManagementPage = () => {
       });
     }
   }, [listParams]);
+
+  // Yêu cầu rút tiền mới (thông báo) hoặc yêu cầu đổi trạng thái (FinanceUpdated có Withdrawal).
+  useRealtimeRefresh(() => void loadWithdrawals(), {
+    notificationTargets: ["withdrawal"],
+    finance: (payload) => Boolean(payload.withdrawal),
+  });
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -750,21 +758,12 @@ const WithdrawalManagementPage = () => {
   ];
 
   return (
-    <section className="mx-auto w-full max-w-[1500px] px-4 py-7 sm:px-6 lg:px-8">
-      <div className="overflow-hidden rounded-3xl bg-primary px-6 py-7 text-white shadow-[0_18px_50px_rgba(23,40,48,0.14)]">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-white/65">
-          Trung tâm kiểm duyệt
-        </p>
-
-        <h1 className="mt-2 text-3xl font-black">
-          Quản lý yêu cầu rút tiền
-        </h1>
-
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/75">
-          Theo dõi các yêu cầu rút tiền của người dùng trên toàn hệ thống theo
-          trạng thái và thời gian.
-        </p>
-      </div>
+    <section className="hc-portal-page">
+      <PortalPageHeader
+        className="hc-page-head-flush"
+        title="Quản lý yêu cầu rút tiền"
+        description="Theo dõi các yêu cầu rút tiền của người dùng trên toàn hệ thống theo trạng thái và thời gian."
+      />
 
       {feedback && (
         <Alert
