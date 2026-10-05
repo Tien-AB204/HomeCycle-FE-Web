@@ -29,7 +29,10 @@ export default function FinanceOverviewTab({ refreshKey = 0, onNavigate }) {
       adminDashboardApi.getFinanceOverview({ signal }).catch(() => null),
       adminDashboardApi.getFinanceHealth({ signal }).catch(() => null),
     ])
-      .then(([funds, overview, health]) => setState({ loading: false, error: "", funds, overview, health }))
+      .then(([funds, overview, health]) => {
+        if (signal.aborted) return;
+        setState({ loading: false, error: "", funds, overview, health });
+      })
       .catch((error) => {
         if (isCanceled(error)) return;
         setState((current) => ({ ...current, loading: false, error: "Không thể tải số dư hiện tại." }));
