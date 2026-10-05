@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import platformPolicyApi, {
   PLATFORM_POLICY_TYPES,
 } from "../../../services/apis/platformPolicyApi";
@@ -151,6 +152,9 @@ export default function DisputeConfigTab({ onToast }) {
         <strong>Chính sách đang áp dụng</strong>
         <div className="muted">
           {policy?.updatedAt ? `Cập nhật lúc ${formatDateTime(policy.updatedAt)}.` : loading ? "Đang tải..." : "Chưa có thông tin cập nhật."}
+        </div>
+        <div className="muted">
+          Cũng chỉnh được tại <Link to="/admin/policies">Chính sách hệ thống → Tranh chấp</Link>; hai nơi dùng chung một cấu hình.
         </div>
       </div>
 

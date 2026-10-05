@@ -648,3 +648,8 @@
     grid-template-columns: 1fr;
   }
 }
+
+.hc-disputes .configintro a {
+  color: var(--teal);
+  font-weight: 600;
+}

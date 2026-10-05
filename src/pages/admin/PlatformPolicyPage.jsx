@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import ConfirmActionModal from "../../components/shared/ConfirmActionModal";
 import platformPolicyApi, {
   PLATFORM_POLICY_TYPES,
@@ -1513,6 +1514,16 @@ export default function PlatformPolicyPage() {
                           <p className="mt-2 max-w-2xl text-sm leading-6 text-textLight">
                             {activeTabInfo.description}
                           </p>
+
+                          {activeTab === PLATFORM_POLICY_TYPES.DISPUTE && (
+                            <p className="mt-1 text-sm text-textLight">
+                              Cũng chỉnh được tại{" "}
+                              <Link to="/admin/dashboard/disputes?tab=config" className="font-semibold text-primary hover:underline">
+                                Tranh chấp → Cấu hình giá trị
+                              </Link>
+                              ; hai nơi dùng chung một cấu hình.
+                            </p>
+                          )}
                         </div>
 
                         {currentPolicy && (
