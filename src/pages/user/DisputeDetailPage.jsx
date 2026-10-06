@@ -671,6 +671,11 @@ const DisputeDetailPage = () => {
                   dispute.resolvedAt ?? timestamps.resolvedAt,
                 )}
               </DetailRow>
+              {dispute.moderator?.username && (
+                <DetailRow label="Kiểm duyệt viên xử lý">
+                  {dispute.moderator.username}
+                </DetailRow>
+              )}
             </dl>
 
             <div className="border-t border-border py-5">

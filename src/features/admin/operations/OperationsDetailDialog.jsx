@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getDisputeStatusMeta } from "../../../constants/disputes";
 import {
   getInspectionConclusionLabel,
   getInspectionStatusLabel,
@@ -60,6 +61,14 @@ function OrderDetail({ summary, data, onOpen }) {
         <KeyValue label="Cách giao nhận" value={labelOf(DELIVERY_METHOD_LABELS, order.deliveryMethod, "delivery", "—")} />
         <KeyValue label="Ngày tạo" value={formatDateTime(order.createdAt)} />
         <KeyValue label="Ngày hoàn tất" value={formatDateTime(order.completedAt)} />
+        {order.dispute?.latestDisputeId && (
+          <KeyValue
+            label="Tranh chấp gần nhất"
+            value={order.dispute.hasActiveDispute
+              ? "Đang tranh chấp"
+              : getDisputeStatusMeta(order.dispute.latestDisputeStatus).label}
+          />
+        )}
       </div>
 
       <div className="section">

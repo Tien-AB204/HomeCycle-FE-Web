@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { getDisputeStatusMeta } from "../../constants/disputes";
 import orderApi from "../../services/apis/orderApi";
 import OrderDisputeModal from "../disputes/OrderDisputeModal";
 import { getGhnErrorMessage } from "../../utils/ghnErrorMessages";
@@ -470,13 +471,15 @@ const OrderTransactionActions = ({ order, detail, onRefresh }) => {
               <p className="mt-1 text-xs leading-5 text-textLight">
                 {detail?.dispute?.hasActiveDispute
                   ? "Đơn hàng đang có một tranh chấp được xử lý."
+                  : latestDisputeId
+                    ? `Tranh chấp gần nhất: ${getDisputeStatusMeta(detail.dispute.latestDisputeStatus).label}.`
                   : canCreateDispute
                     ? "Nếu có vấn đề với giao dịch, bạn có thể gửi bằng chứng để hệ thống xem xét."
                     : "Trạng thái hiện tại của đơn hàng không cho phép tạo tranh chấp."}
               </p>
             </div>
 
-            {detail?.dispute?.hasActiveDispute && latestDisputeId && (
+            {latestDisputeId && (
               <Link
                 to={`/tranh-chap/${latestDisputeId}`}
                 className="shrink-0 rounded-lg border border-warning/30 bg-white px-4 py-2.5 text-center text-sm font-black text-warning transition hover:bg-warning/10"

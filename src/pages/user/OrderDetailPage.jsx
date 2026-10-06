@@ -5,6 +5,7 @@ import {
   getPaymentDisplayMeta,
   isPaymentStatus,
 } from "../../constants/orders";
+import { getDisputeStatusMeta } from "../../constants/disputes";
 import OrderTransactionActions from "../../features/orders/OrderTransactionActions";
 import OrderReviewSection from "../../features/reviews/OrderReviewSection";
 import orderApi from "../../services/apis/orderApi";
@@ -1215,7 +1216,9 @@ const OrderDetailPage = () => {
           "Đánh giá hiện chưa khả dụng theo trạng thái giao dịch.";
   const disputeDescription = detail.dispute?.hasActiveDispute
     ? "Đơn hàng đang có tranh chấp cần được xử lý."
-    : "Đơn hàng hiện không có tranh chấp.";
+    : detail.dispute?.latestDisputeId
+      ? `Tranh chấp gần nhất: ${getDisputeStatusMeta(detail.dispute.latestDisputeStatus).label}.`
+      : "Đơn hàng hiện không có tranh chấp.";
   const counterpartyUserId =
     detail.counterpartyUserId ||
     detail.counterpartyId ||
