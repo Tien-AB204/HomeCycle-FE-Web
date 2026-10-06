@@ -213,7 +213,7 @@ const DemoLoginModal = ({ open, onClose, onLoggedIn }) => {
         className="w-full max-w-sm rounded-2xl border border-border bg-white p-6 shadow-[0_24px_70px_rgba(24,63,65,0.22)]"
       >
         <h2 id="demo-login-title" className="text-lg font-black text-text">
-          Đăng nhập Admin cho demo
+          Đăng nhập cho demo
         </h2>
         <p className="mt-1 text-xs leading-5 text-textLight">
           Phiên này chỉ dùng cho công cụ mô phỏng, tách khỏi phiên đăng nhập của HomeCycle và mất khi đóng tab.
@@ -506,7 +506,7 @@ export default function GhnWebhookTestConsolePage() {
                 <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
                   login
                 </span>
-                Đăng nhập Admin
+                Đăng nhập
               </button>
             )}
           </div>
@@ -592,7 +592,7 @@ export default function GhnWebhookTestConsolePage() {
 
           {!demoSession && (
             <p className="mt-4 text-sm font-semibold text-textLight">
-              Đăng nhập tài khoản Admin (nút góc trên) để tra cứu và gửi callback mô phỏng.
+              Đăng nhập để tra cứu và gửi callback mô phỏng.
             </p>
           )}
 
