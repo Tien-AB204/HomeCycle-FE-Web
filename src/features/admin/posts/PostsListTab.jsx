@@ -60,6 +60,8 @@ export default function PostsListTab({ preset, onOpenPost }) {
     setPage(1);
   };
   const advancedActive = Boolean(filters.CategoryId || filters.City || filters.OwnerRole || filters.HasOpenReports || filters.SortBy !== "Newest");
+  const activeAdvancedCount = [filters.CategoryId, filters.City, filters.OwnerRole, filters.HasOpenReports, filters.SortBy !== "Newest"].filter(Boolean).length;
+  const hasActiveFilters = Boolean(keyword.trim() || city.trim() || filters.PostType || filters.Status || advancedActive);
 
   return (
     <section>
@@ -70,7 +72,7 @@ export default function PostsListTab({ preset, onOpenPost }) {
         </div>
       </div>
       <section className="panel">
-        <div className="filters">
+        <div className="filters post-filter-row">
           <label className="search">
             Tìm bài đăng
             <input type="search" value={keyword} onChange={(event) => setKeyword(event.target.value)} maxLength={200} placeholder="Tên sản phẩm, mã bài hoặc người đăng" />
@@ -90,10 +92,13 @@ export default function PostsListTab({ preset, onOpenPost }) {
               {POST_STATES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
-          <button type="button" onClick={reset}>Xóa bộ lọc</button>
+          <button type="button" onClick={reset} disabled={!hasActiveFilters}>Xóa bộ lọc</button>
         </div>
-        <details className="fold" open={advancedActive || undefined}>
-          <summary>Lọc thêm</summary>
+        <details className="fold post-advanced-filters" open={advancedActive || undefined}>
+          <summary>
+            <span>Lọc nâng cao</span>
+            {activeAdvancedCount > 0 && <span className="filter-count">{activeAdvancedCount} đang áp dụng</span>}
+          </summary>
           <div className="filters">
             <label>
               Danh mục
@@ -140,7 +145,7 @@ export default function PostsListTab({ preset, onOpenPost }) {
           {!list.error && list.result && <PostTable rows={items} onOpen={onOpenPost} />}
         </div>
         <div className="result">
-          <span aria-live="polite">{list.result ? `${num(list.result.totalCount)} bài phù hợp · Không gồm nháp` : ""}</span>
+          <span aria-live="polite">{loading ? "Đang cập nhật danh sách…" : list.result ? `${num(list.result.totalCount)} bài phù hợp · Không gồm nháp` : ""}</span>
           <div className="actions">
             <button type="button" onClick={() => setPage((current) => current - 1)} disabled={page <= 1 || loading}>Trước</button>
             <span>{page} / {totalPages}</span>

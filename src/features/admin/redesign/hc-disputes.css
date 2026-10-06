@@ -653,3 +653,198 @@
   color: var(--teal);
   font-weight: 600;
 }
+
+/* Lịch sử tranh chấp: giữ thanh lọc gọn, rõ thứ tự thao tác và dễ dùng trên màn hình nhỏ. */
+.hc-disputes .history-filters {
+  display: grid;
+  grid-template-columns: minmax(280px, 560px) 180px 180px auto;
+  align-items: end;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.hc-disputes .history-filters > label {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.hc-disputes .history-filters .search {
+  flex: initial;
+  min-width: 0;
+}
+
+.hc-disputes .history-filters input,
+.hc-disputes .history-filters select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+}
+
+.hc-disputes .history-filter-actions {
+  display: flex;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.hc-disputes .history-filter-actions button {
+  min-height: 42px;
+}
+
+.hc-disputes .history-filter-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.hc-disputes .history-advanced-filters {
+  margin: 0;
+}
+
+.hc-disputes .history-advanced-filters > summary {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.hc-disputes .history-advanced-filters > summary::-webkit-details-marker {
+  display: none;
+}
+
+.hc-disputes .history-advanced-filters > summary::after {
+  content: "+";
+  font-size: 16px;
+  line-height: 1;
+}
+
+.hc-disputes .history-advanced-filters[open] > summary {
+  margin-bottom: 12px;
+  background: #f5f9f8;
+  border-color: #c8dcda;
+}
+
+.hc-disputes .history-advanced-filters[open] > summary::after {
+  content: "−";
+}
+
+.hc-disputes .history-advanced-filters > summary:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.hc-disputes .history-advanced-filters .filter-count {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e8f1ef;
+  color: var(--teal);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.hc-disputes .history-advanced-filters .filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 360px) repeat(2, minmax(155px, 180px));
+  align-items: end;
+  gap: 10px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8faf9;
+}
+
+.hc-disputes .history-advanced-filters .filters label {
+  min-width: 0;
+}
+
+.hc-disputes .history-advanced-filters .filters select,
+.hc-disputes .history-advanced-filters .filters input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+}
+
+.hc-disputes .history-table {
+  margin-top: 14px !important;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.hc-disputes .history-table table {
+  min-width: 900px;
+}
+
+.hc-disputes .history-table th {
+  padding: 12px 14px;
+}
+
+.hc-disputes .history-table td {
+  padding: 14px;
+}
+
+.hc-disputes .history-table td:nth-child(5) {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hc-disputes .history-table tbody tr[data-row] {
+  transition: background 0.15s ease;
+}
+
+@media (max-width: 1040px) {
+  .hc-disputes .history-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hc-disputes .history-filters > .search,
+  .hc-disputes .history-filter-actions {
+    grid-column: 1 / -1;
+  }
+
+  .hc-disputes .history-filter-actions {
+    justify-content: flex-end;
+  }
+
+  .hc-disputes .history-advanced-filters .filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hc-disputes .history-advanced-filters .filters label:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .hc-disputes .history-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hc-disputes .history-filters > .search,
+  .hc-disputes .history-filter-actions {
+    grid-column: auto;
+  }
+
+  .hc-disputes .history-filter-actions button {
+    flex: 1;
+  }
+
+  .hc-disputes .history-advanced-filters .filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hc-disputes .history-advanced-filters .filters label:first-child {
+    grid-column: auto;
+  }
+}

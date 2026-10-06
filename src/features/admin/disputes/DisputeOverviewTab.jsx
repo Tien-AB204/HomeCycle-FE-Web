@@ -270,6 +270,9 @@ export default function DisputeOverviewTab({ categories, openDisputeId }) {
     .filter((item) => item.count > 0)
     .sort((a, b) => b.count - a.count);
   const reasonTotal = reasonRows.reduce((sum, row) => sum + row.count, 0);
+  const hasDraftFilters = Object.values(draft).some((value) => String(value ?? "").trim());
+  const hasAppliedFilters = Object.values(applied).some((value) => String(value ?? "").trim());
+  const activeAdvancedFilterCount = [draft.categoryId, draft.from, draft.to].filter(Boolean).length;
 
   const openHistory = (filters = {}) => {
     const next = { ...EMPTY_FILTERS, ...filters };
@@ -328,7 +331,7 @@ export default function DisputeOverviewTab({ categories, openDisputeId }) {
         <h2>Lịch sử tranh chấp</h2>
         <p className="muted">Tra cứu toàn bộ hồ sơ. Chọn một dòng để xem thông tin, phản hồi và lịch sử liên quan.</p>
         <section className="panel">
-          <div className="filters">
+          <div className="filters history-filters">
             <label className="search">
               Tìm kiếm
               <input
@@ -352,11 +355,22 @@ export default function DisputeOverviewTab({ categories, openDisputeId }) {
                 {TARGET_TYPE_OPTIONS.map((key) => <option key={key} value={key}>{TARGET_TYPE_LABELS[key]}</option>)}
               </select>
             </label>
-            <button type="button" className="primary" onClick={search}>Tìm kiếm</button>
-            <button type="button" onClick={() => openHistory()}>Xóa bộ lọc</button>
+            <div className="history-filter-actions">
+              <button type="button" className="primary" onClick={search} disabled={list.loading}>
+                {list.loading ? "Đang tìm…" : "Tìm kiếm"}
+              </button>
+              <button type="button" onClick={() => openHistory()} disabled={!hasDraftFilters && !hasAppliedFilters}>
+                Xóa bộ lọc
+              </button>
+            </div>
           </div>
-          <details className="fold" open={Boolean(draft.categoryId || draft.from || draft.to) || undefined}>
-            <summary>Lọc thêm theo nguyên nhân và ngày gửi</summary>
+          <details className="fold history-advanced-filters" open={Boolean(draft.categoryId || draft.from || draft.to) || undefined}>
+            <summary>
+              <span>Lọc theo nguyên nhân và ngày gửi</span>
+              {activeAdvancedFilterCount > 0 && (
+                <span className="filter-count">{activeAdvancedFilterCount} đang chọn</span>
+              )}
+            </summary>
             <div className="filters">
               <label>
                 Nguyên nhân
@@ -375,7 +389,7 @@ export default function DisputeOverviewTab({ categories, openDisputeId }) {
           </details>
 
           {list.error && <div className="notice error">{list.error}</div>}
-          <div className="tablewrap" style={{ marginTop: 16 }}>
+          <div className="tablewrap history-table">
             <table>
               <thead>
                 <tr><th>Hồ sơ / Đối tượng</th><th>Nguyên nhân</th><th>Người gửi / Bị khiếu nại</th><th>Trạng thái</th><th>Ngày gửi</th><th /></tr>
