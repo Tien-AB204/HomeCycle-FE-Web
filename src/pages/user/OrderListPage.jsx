@@ -6,6 +6,7 @@ import {
   getOrderStatusMeta,
   getPaymentDisplayMeta,
 } from "../../constants/orders";
+import { getDisputeStatusMeta } from "../../constants/disputes";
 import { ROLES } from "../../constants/roles";
 import BusinessOrdersOverview from "../../features/orders/BusinessOrdersOverview";
 import { useAuth } from "../../hooks/useAuth";
@@ -323,6 +324,11 @@ const OrderListPage = () => {
               const orderStatus = getOrderStatusMeta(item.orderStatus);
               const paymentStatus = getPaymentDisplayMeta(item);
               const productName = item.productName || "Sản phẩm trong đơn hàng";
+              const dispute = item.dispute;
+              const hasDispute = Boolean(dispute?.latestDisputeId);
+              const disputeStatus = getDisputeStatusMeta(
+                dispute?.latestDisputeStatus,
+              );
 
               return (
                 <article
@@ -359,6 +365,13 @@ const OrderListPage = () => {
                     <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-black ${orderStatus.className}`}>
                       {orderStatus.label}
                     </span>
+                    {hasDispute && (
+                      <span className="mt-1 inline-flex rounded-full border border-warning/30 bg-warning/10 px-2.5 py-1 text-[11px] font-black text-warning">
+                        {dispute.hasActiveDispute
+                          ? "Đang tranh chấp"
+                          : disputeStatus.label}
+                      </span>
+                    )}
                   </div>
 
                   <div>

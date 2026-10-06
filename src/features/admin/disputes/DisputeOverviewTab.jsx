@@ -171,7 +171,7 @@ function DisputeDetailDialog({ target, onClose }) {
                   <div className="detail-metadata">
                     <div><span>Ngày gửi</span><strong>{formatDateTime(item.createdAt)}</strong></div>
                     <div><span>Cập nhật gần nhất</span><strong>{formatDateTime(item.updatedAt)}</strong></div>
-                    <div><span>Kiểm duyệt viên phụ trách</span><strong>{item.moderatorId ? "Đã phân công" : "Chưa phân công"}</strong></div>
+                    <div><span>Kiểm duyệt viên phụ trách</span><strong>{item.moderator?.username || (item.moderatorId ? "Đã phân công" : "Chưa phân công")}</strong></div>
                   </div>
                 </section>
                 <section className={`detail-box detail-result${resolved ? " is-resolved" : ""}`}>

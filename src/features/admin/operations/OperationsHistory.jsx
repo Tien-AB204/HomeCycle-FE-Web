@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { getDisputeStatusMeta } from "../../../constants/disputes";
 import {
   adminAppointmentHistoryApi,
   adminOrderHistoryApi,
@@ -93,6 +94,16 @@ function OrderRows({ items, onOpenDetail }) {
       <td>
         <strong>{order.orderCode || "Chưa có mã"}</strong>
         <small>{order.productName || "Sản phẩm HomeCycle"}</small>
+        {order.dispute?.latestDisputeId && (
+          <small
+            className="muted"
+            style={order.dispute.hasActiveDispute ? { color: "var(--red)" } : undefined}
+          >
+            {order.dispute.hasActiveDispute
+              ? "Đang tranh chấp"
+              : getDisputeStatusMeta(order.dispute.latestDisputeStatus).label}
+          </small>
+        )}
       </td>
       <td>
         {formatMoney(order.finalTotalAmount)}

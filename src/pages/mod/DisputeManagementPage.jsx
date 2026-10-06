@@ -2675,7 +2675,7 @@ const DisputeManagementPage = ({
                   </Descriptions.Item>
 
                   <Descriptions.Item label="Kiểm duyệt viên phụ trách">
-                    {detail.moderatorId ||
+                    {detail.moderator?.username ||
                       "Chưa có"}
                   </Descriptions.Item>
 

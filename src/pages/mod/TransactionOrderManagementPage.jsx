@@ -679,7 +679,13 @@ export const OrderManagementContent = ({
       key: "flags",
       render: (_, record) => (
         <div className="flex flex-wrap gap-1">
-          {record?.hasActiveDispute && <Tag color="error">Tranh chấp</Tag>}
+          {record?.dispute?.latestDisputeId && (
+            <Tag color={record.dispute.hasActiveDispute ? "error" : "default"}>
+              {record.dispute.hasActiveDispute
+                ? "Đang tranh chấp"
+                : getDisputeStatusLabel(record.dispute.latestDisputeStatus)}
+            </Tag>
+          )}
           {record?.hasInspection && <Tag color="blue">Kiểm định</Tag>}
         </div>
       ),
